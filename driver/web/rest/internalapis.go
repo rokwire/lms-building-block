@@ -1,0 +1,12 @@
+package rest
+
+import (
+	"rewards/core"
+	"rewards/core/model"
+)
+
+// InternalApisHandler handles the rest internal APIs implementation
+type InternalApisHandler struct {
+	app    *core.Application
+	config *model.Config
+}

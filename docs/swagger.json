@@ -1,0 +1,71 @@
+{
+    "schemes": [
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "RoRewards Building Block API Documentation.",
+        "title": "Rewards Building Block API",
+        "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.3"
+    },
+    "host": "localhost",
+    "basePath": "/content",
+    "paths": {
+        "/api/v1": {
+            "get": {
+                "description": "Wraps all Canvas V1 api requests",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Client"
+                ],
+                "operationId": "V1Wrapper",
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/version": {
+            "get": {
+                "description": "Gives the service version.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Client"
+                ],
+                "operationId": "Version",
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "AdminGroupAuth": {
+            "type": "apiKey",
+            "name": "GROUP",
+            "in": "header"
+        },
+        "AdminUserAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header (add Bearer prefix to the Authorization value)"
+        },
+        "InternalApiAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header (add INTERNAL-API-KEY with correct value as a header)"
+        }
+    }
+}
