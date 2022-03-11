@@ -18,13 +18,13 @@
 package main
 
 import (
+	"lms/core"
+	"lms/core/model"
+	cacheadapter "lms/driven/cache"
+	storage "lms/driven/storage"
+	driver "lms/driver/web"
 	"log"
 	"os"
-	"rewards/core"
-	"rewards/core/model"
-	cacheadapter "rewards/driven/cache"
-	storage "rewards/driven/storage"
-	driver "rewards/driver/web"
 	"strings"
 )
 

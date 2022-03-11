@@ -1,8 +1,8 @@
 package rest
 
 import (
-	"rewards/core"
-	"rewards/core/model"
+	"lms/core"
+	"lms/core/model"
 )
 
 // InternalApisHandler handles the rest internal APIs implementation

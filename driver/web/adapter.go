@@ -20,12 +20,12 @@ package web
 import (
 	"fmt"
 	"github.com/rokwire/core-auth-library-go/tokenauth"
+	"lms/core"
+	"lms/core/model"
+	"lms/driver/web/rest"
+	"lms/utils"
 	"log"
 	"net/http"
-	"rewards/core"
-	"rewards/core/model"
-	"rewards/driver/web/rest"
-	"rewards/utils"
 	"strings"
 
 	"github.com/casbin/casbin"
@@ -93,7 +93,7 @@ func (we Adapter) serveDoc(w http.ResponseWriter, r *http.Request) {
 }
 
 func (we Adapter) serveDocUI() http.Handler {
-	url := fmt.Sprintf("%s/rewards/doc", we.host)
+	url := fmt.Sprintf("%s/lms/doc", we.host)
 	return httpSwagger.Handler(httpSwagger.URL(url))
 }
 

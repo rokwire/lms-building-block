@@ -4,10 +4,10 @@ import (
 	"github.com/rokwire/core-auth-library-go/authservice"
 	"github.com/rokwire/core-auth-library-go/tokenauth"
 	"github.com/rokwire/logging-library-go/logs"
+	"lms/core"
+	"lms/core/model"
 	"log"
 	"net/http"
-	"rewards/core"
-	"rewards/core/model"
 )
 
 // CoreAuth implementation

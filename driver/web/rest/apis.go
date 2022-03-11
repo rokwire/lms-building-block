@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"github.com/rokwire/core-auth-library-go/tokenauth"
 	"io/ioutil"
+	"lms/core"
+	"lms/core/model"
 	"log"
 	"net/http"
-	"rewards/core"
-	"rewards/core/model"
 	"strings"
 )
 

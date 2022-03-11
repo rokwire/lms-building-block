@@ -18,7 +18,7 @@
 package core
 
 import (
-	cacheadapter "rewards/driven/cache"
+	cacheadapter "lms/driven/cache"
 )
 
 //Application represents the core application code based on hexagonal architecture

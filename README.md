@@ -1,4 +1,4 @@
-# Content building block
+# LMS building block
 
 Go project to provide rest service for rokwire building block content results.
 
@@ -22,7 +22,6 @@ MONGO_DATABASE | < value > | yes | MongoDB database name
 MONGO_TIMEOUT | < value > | no | MongoDB timeout in milliseconds. Set default value(500 milliseconds) if omitted
 DEFAULT_CACHE_EXPIRATION_SECONDS | < value > | false | Default cache expiration time in seconds. Default: 120
 CORE_SERVICE_REG_LOADER_URL | < value > | yes | Core service reg loader url
-LMS_SERVICE_URL | < value > | yes | Rewards base URL
 INTERNAL_API_KEY | < value > | yes | Internal API key for the corresponding environment
 CANVAS_TOKEN | < value > | yes | Canvas token that will be used for auth with Canvas APIs
 CANVAS_TOKEN_TYPE | < value > | yes | Canvas token type (e.g Bearer)
@@ -112,7 +111,7 @@ Verify the service is running as calling the get version API.
 
 #### Call get version API
 
-curl -X GET -i http://localhost/rewards/version
+curl -X GET -i http://localhost/lms/version
 
 Response
 ```

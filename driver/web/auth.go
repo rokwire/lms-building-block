@@ -19,11 +19,11 @@ package web
 
 import (
 	"fmt"
+	"lms/core"
+	"lms/core/model"
+	web "lms/driver/web/auth"
 	"log"
 	"net/http"
-	"rewards/core"
-	"rewards/core/model"
-	web "rewards/driver/web/auth"
 )
 
 // Auth handler

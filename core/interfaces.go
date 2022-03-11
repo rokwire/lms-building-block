@@ -17,7 +17,7 @@
 
 package core
 
-import "rewards/driven/storage"
+import "lms/driven/storage"
 
 // Services exposes APIs for the driver adapters
 type Services interface {

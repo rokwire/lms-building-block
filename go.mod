@@ -1,4 +1,4 @@
-module rewards
+module lms
 
 go 1.16
 
