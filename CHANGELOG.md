@@ -6,5 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2022-04-26
+- Update Swagger library due to security issue [#1](https://github.com/rokwire/lms-building-block/issues/1)
+
 ## [1.0.1] - 2022-03-11
 - Introduce LMS BB 

@@ -49,7 +49,7 @@ type Adapter struct {
 
 // @title Rewards Building Block API
 // @description RoRewards Building Block API Documentation.
-// @version 0.0.3
+// @version 1.0.2
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost
