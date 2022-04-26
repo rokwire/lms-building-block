@@ -5,9 +5,9 @@
 Patches for **Rokwire Building Blocks** in this repository will only be applied to the following versions:
 
 | Version | Supported          |
-| ------- | ------------------ |
-| 0.0.1   | :white_check_mark: |
-| <0.0.1   | :x: |
+|---------| ------------------ |
+| 1.0.2   | :white_check_mark: |
+| <1.0.2  | :x: |
 
 
 ## Reporting a Vulnerability
