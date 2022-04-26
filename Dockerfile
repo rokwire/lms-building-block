@@ -13,7 +13,7 @@ FROM alpine:3.13
 #we need timezone database
 RUN apk --no-cache add tzdata
 
-COPY --from=builder /lms-app/bin/rewards /
+COPY --from=builder /lms-app/bin/lms /
 COPY --from=builder /lms-app/docs/swagger.yaml /docs/swagger.yaml
 
 COPY --from=builder /lms-app/driver/web/authorization_model.conf /driver/web/authorization_model.conf
