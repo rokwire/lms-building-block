@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2022-04-29
+- Update Core auth library to the latest version and repo [#4](https://github.com/rokwire/lms-building-block/issues/4)
+
 ## [1.0.2] - 2022-04-26
 - Update Swagger library due to security issue [#1](https://github.com/rokwire/lms-building-block/issues/1)
 
