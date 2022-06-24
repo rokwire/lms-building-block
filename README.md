@@ -1,6 +1,11 @@
-# LMS building block
+# LMS Building Block
 
-Go project to provide rest service for rokwire building block content results.
+The LMS Building Block provides access to integrated Learning Management Systems (LMS) for the Rokwire platform.
+
+## Documentation
+The functionality provided by this application is documented in the [Wiki](https://github.com/rokwire/lms-building-block/wiki).
+
+The API documentation is available here: https://api.rokwire.illinois.edu/lms/doc/ui/index.html
 
 ## Set Up
 
@@ -13,20 +18,20 @@ Go v1.16+
 ### Environment variables
 The following Environment variables are supported. The service will not start unless those marked as Required are supplied.
 
-Name|Value|Required|Description
+Name|Format|Required|Description
 ---|---|---|---
-PORT | < value > | yes | The port number of the listening port
-HOST | < value > | yes | Host name
+PORT | < int > | yes | Port to be used by this application
+INTERNAL_API_KEY | < string > | yes | Internal API key for invocation by other BBs
 MONGO_AUTH | <mongodb://USER:PASSWORD@HOST:PORT/DATABASE NAME> | yes | MongoDB authentication string. The user must have read/write privileges.
-MONGO_DATABASE | < value > | yes | MongoDB database name
-MONGO_TIMEOUT | < value > | no | MongoDB timeout in milliseconds. Set default value(500 milliseconds) if omitted
-DEFAULT_CACHE_EXPIRATION_SECONDS | < value > | false | Default cache expiration time in seconds. Default: 120
-CORE_SERVICE_REG_LOADER_URL | < value > | yes | Core service reg loader url
-INTERNAL_API_KEY | < value > | yes | Internal API key for the corresponding environment
-CANVAS_TOKEN | < value > | yes | Canvas token that will be used for auth with Canvas APIs
-CANVAS_TOKEN_TYPE | < value > | yes | Canvas token type (e.g Bearer)
-CANVAS_BASE_URL | < value > | yes | Canvas base URL for API calls
-LMS_SERVICE_URL | < value > | yes | LMS service URL that is defined within the Core BB
+MONGO_DATABASE | < string > | yes | MongoDB database name
+MONGO_TIMEOUT | < int > | no | MongoDB timeout in milliseconds. Defaults to 500.
+DEFAULT_CACHE_EXPIRATION_SECONDS | < int > | false | Default cache expiration time in seconds. Defaults to 120
+HOST | < url > | yes | URL where this application is being hosted
+CORE_BB_HOST | < url > | yes | Core BB host URL
+LMS_SERVICE_URL | < url > | yes | Notifications BB base URL
+CANVAS_BASE_URL | < url > | yes | Canvas base URL for API calls
+CANVAS_TOKEN_TYPE | < string > | yes | Canvas token type (e.g Bearer)
+CANVAS_TOKEN | < string > | yes | Canvas token that will be used for auth with Canvas APIs
 
 ### Run Application
 
@@ -118,8 +123,14 @@ Response
 1.9.0
 ```
 
-## Documentation
+## Contributing
+If you would like to contribute to this project, please be sure to read the [Contributing Guidelines](CONTRIBUTING.md), [Code of Conduct](CODE_OF_CONDUCT.md), and [Conventions](CONVENTIONS.md) before beginning.
 
-The documentation is placed here - https://api-dev.rokwire.illinois.edu/docs/
+### Secret Detection
+This repository is configured with a [pre-commit](https://pre-commit.com/) hook that runs [Yelp's Detect Secrets](https://github.com/Yelp/detect-secrets). If you intend to contribute directly to this repository, you must install pre-commit on your local machine to ensure that no secrets are pushed accidentally.
 
-Alternatively the documentation is served by the service on the following url - https://api-dev.rokwire.illinois.edu/rewards/doc/ui/
+```
+# Install software 
+$ git pull  # Pull in pre-commit configuration & baseline 
+$ pip install pre-commit 
+$ pre-commit install
