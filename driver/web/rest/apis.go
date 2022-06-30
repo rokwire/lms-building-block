@@ -103,7 +103,7 @@ func (h ApisHandler) V1Wrapper(claims *tokenauth.Claims, w http.ResponseWriter, 
 }
 
 func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
-	providerUserID := claims.ExternalIDs["net_id"]
+	providerUserID := h.getProviderUserID(claims)
 	courses, err := h.app.Services.GetCourses(providerUserID)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
@@ -115,6 +115,13 @@ func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.Re
 	}
 
 	return l.HttpResponseSuccessJSON(data)
+}
+
+func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
+	if claims == nil {
+		return ""
+	}
+	return claims.ExternalIDs["illinois_oidc.net_id"]
 }
 
 // NewApisHandler creates new rest Handler instance
