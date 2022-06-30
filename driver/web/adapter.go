@@ -19,7 +19,6 @@ package web
 
 import (
 	"fmt"
-	"github.com/rokwire/core-auth-library-go/tokenauth"
 	"lms/core"
 	"lms/core/model"
 	"lms/driver/web/rest"
@@ -27,6 +26,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/rokwire/core-auth-library-go/tokenauth"
+	"github.com/rokwire/logging-library-go/logs"
 
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
@@ -45,6 +47,8 @@ type Adapter struct {
 	internalApisHandler rest.InternalApisHandler
 
 	app *core.Application
+
+	logger *logs.Logger
 }
 
 // @title Rewards Building Block API
@@ -81,8 +85,10 @@ func (we Adapter) Start() {
 
 	// handle apis
 	apiRouter := subrouter.PathPrefix("/api").Subrouter()
-	apiRouter.PathPrefix("/v1").Handler(we.userAuthWrapFunc(we.apisHandler.V1Wrapper))
-	//.HandlerFunc(we.userAuthWrapFunc(we.apisHandler.V1Wrapper))
+	//to be deprecated
+	apiRouter.PathPrefix("/v1").Handler(we.userAuthWrapFuncDeprecated(we.apisHandler.V1Wrapper))
+
+	apiRouter.PathPrefix("/courses").Handler(we.userAuthWrapFunc(we.apisHandler.GetCourses))
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
@@ -122,9 +128,9 @@ func (we Adapter) apiKeyOrTokenWrapFunc(handler apiKeysAuthFunc) http.HandlerFun
 	}
 }
 
-type userAuthFunc = func(*tokenauth.Claims, http.ResponseWriter, *http.Request)
+type userAuthFuncDeprecated = func(*tokenauth.Claims, http.ResponseWriter, *http.Request)
 
-func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
+func (we Adapter) userAuthWrapFuncDeprecated(handler userAuthFuncDeprecated) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		utils.LogRequest(req)
 
@@ -134,6 +140,46 @@ func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 			return
 		}
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	}
+}
+
+type userAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
+
+func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		logObj := we.logger.NewRequestLog(req)
+
+		logObj.RequestReceived()
+
+		coreAuth, claims := we.auth.coreAuth.Check(req)
+		if !(coreAuth && claims != nil && !claims.Anonymous) {
+			//unauthorized
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+
+		// process the request
+		response := handler(logObj, claims, w, req)
+
+		/// return response
+		// headers
+		if len(response.Headers) > 0 {
+			for key, values := range response.Headers {
+				if len(values) > 0 {
+					for _, value := range values {
+						w.Header().Add(key, value)
+					}
+				}
+			}
+		}
+		// response code
+		w.WriteHeader(response.ResponseCode)
+		// body
+		if len(response.Body) > 0 {
+			w.Write(response.Body)
+		}
+
+		logObj.RequestComplete()
 	}
 }
 
@@ -187,7 +233,7 @@ func (we Adapter) internalAPIKeyAuthWrapFunc(handler internalAPIKeyAuthFunc) htt
 }
 
 // NewWebAdapter creates new WebAdapter instance
-func NewWebAdapter(host string, port string, app *core.Application, config *model.Config) Adapter {
+func NewWebAdapter(host string, port string, app *core.Application, config *model.Config, logger *logs.Logger) Adapter {
 	auth := NewAuth(app, config)
 	authorization := casbin.NewEnforcer("driver/web/authorization_model.conf", "driver/web/authorization_policy.csv")
 
@@ -203,6 +249,7 @@ func NewWebAdapter(host string, port string, app *core.Application, config *mode
 		adminApisHandler:    adminApisHandler,
 		internalApisHandler: internalApisHandler,
 		app:                 app,
+		logger:              logger,
 	}
 }
 

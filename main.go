@@ -26,6 +26,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 var (
@@ -39,6 +41,9 @@ func main() {
 	if len(Version) == 0 {
 		Version = "dev"
 	}
+
+	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties("/lms/version")}}
+	logger := logs.NewLogger("core", &loggerOpts)
 
 	port := getEnvKey("PORT", true)
 
@@ -79,7 +84,7 @@ func main() {
 		CanvasToken:     canvasToken,
 	}
 
-	webAdapter := driver.NewWebAdapter(host, port, application, &config)
+	webAdapter := driver.NewWebAdapter(host, port, application, &config, logger)
 
 	webAdapter.Start()
 }

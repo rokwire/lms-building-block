@@ -18,14 +18,18 @@
 package rest
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/rokwire/core-auth-library-go/tokenauth"
 	"io/ioutil"
 	"lms/core"
 	"lms/core/model"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/rokwire/core-auth-library-go/tokenauth"
+	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/logutils"
 )
 
 const maxUploadSize = 15 * 1024 * 1024 // 15 mb
@@ -96,6 +100,21 @@ func (h ApisHandler) V1Wrapper(claims *tokenauth.Claims, w http.ResponseWriter, 
 	log.Printf("%s %d %s", r.Method, resp.StatusCode, r.URL.String())
 	w.WriteHeader(resp.StatusCode)
 	w.Write(data)
+}
+
+func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := claims.ExternalIDs["net_id"]
+	courses, err := h.app.Services.GetCourses(providerUserID)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(courses)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "course", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
 }
 
 // NewApisHandler creates new rest Handler instance

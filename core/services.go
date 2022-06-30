@@ -17,8 +17,15 @@
 
 package core
 
+import "lms/core/model"
+
 func (app *Application) getVersion() string {
 	return app.version
+}
+
+func (app *Application) getCourses(providerUserID string) ([]model.Course, error) {
+	//TODO
+	return nil, nil
 }
 
 // OnCollectionUpdated callback that indicates the reward types collection is changed

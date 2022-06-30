@@ -17,11 +17,16 @@
 
 package core
 
-import "lms/driven/storage"
+import (
+	"lms/core/model"
+	"lms/driven/storage"
+)
 
 // Services exposes APIs for the driver adapters
 type Services interface {
 	GetVersion() string
+
+	GetCourses(providerUserID string) ([]model.Course, error)
 }
 
 type servicesImpl struct {
@@ -30,6 +35,10 @@ type servicesImpl struct {
 
 func (s *servicesImpl) GetVersion() string {
 	return s.app.getVersion()
+}
+
+func (s *servicesImpl) GetCourses(providerUserID string) ([]model.Course, error) {
+	return s.app.getCourses(providerUserID)
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
