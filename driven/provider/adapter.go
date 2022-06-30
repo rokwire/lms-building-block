@@ -26,6 +26,7 @@ import (
 	"lms/core/model"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -38,14 +39,22 @@ type Adapter struct {
 
 //GetCourses gets the user courses
 func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
-	//TODO
-	pathAndParams := fmt.Sprintf("/api/v1/courses?as_user_id=sis_user_id:%s", userID)
+	//params
+	queryParamsItems := map[string]string{}
+	queryParamsItems["as_user_id"] = fmt.Sprintf("sis_user_id:%s", userID)
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/courses%s", queryParams)
+
+	//execute query
 	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
 	if err != nil {
 		log.Print("error getting courses")
 		return nil, err
 	}
 
+	//prepare the response and return it
 	var courses []model.Course
 	err = json.Unmarshal(data, &courses)
 	if err != nil {
@@ -53,6 +62,21 @@ func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
 		return nil, err
 	}
 	return courses, nil
+}
+
+func (a *Adapter) constructQueryParams(items map[string]string) string {
+	if len(items) == 0 {
+		return ""
+	}
+
+	values := url.Values{}
+
+	for k, v := range items {
+		values.Add(k, v)
+	}
+
+	query := values.Encode()
+	return fmt.Sprintf("?%s", query)
 }
 
 func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method string) ([]byte, error) {
