@@ -67,7 +67,7 @@ func main() {
 	canvasBaseURL := getEnvKey("CANVAS_BASE_URL", true)
 	canvasTokenType := getEnvKey("CANVAS_TOKEN_TYPE", true)
 	canvasToken := getEnvKey("CANVAS_TOKEN", true)
-	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken)
+	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
 
 	// application
 	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, cacheAdapter)

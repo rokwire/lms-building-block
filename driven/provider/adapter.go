@@ -18,22 +18,88 @@
 package provider
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"lms/core/model"
+	"log"
+	"net/http"
+	"strings"
 )
 
 //Adapter implements the Provider interface
 type Adapter struct {
-	host  string
-	token string
+	host      string
+	token     string
+	tokenType string
 }
 
 //GetCourses gets the user courses
 func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
 	//TODO
-	return nil, nil
+	pathAndParams := fmt.Sprintf("/api/v1/courses?as_user_id=sis_user_id:%s", userID)
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting courses")
+		return nil, err
+	}
+
+	var courses []model.Course
+	err = json.Unmarshal(data, &courses)
+	if err != nil {
+		log.Print("error converting courses")
+		return nil, err
+	}
+	return courses, nil
+}
+
+func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method string) ([]byte, error) {
+	//body
+	requestBody, err := ioutil.ReadAll(body)
+	if err != nil {
+		log.Printf("error getting body - %s", pathAndParams)
+		return nil, err
+	}
+
+	//url
+	url := fmt.Sprintf("%s%s", a.host, pathAndParams)
+
+	//request
+	req, err := http.NewRequest(method, url, strings.NewReader(string(requestBody)))
+	if err != nil {
+		log.Printf("error creating request - %s", pathAndParams)
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("%s %s", a.tokenType, a.token))
+
+	//execute
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("error executing request - %s", pathAndParams)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if !(resp.StatusCode >= 200 && resp.StatusCode <= 299) {
+		//we have an error
+		errorMessage := fmt.Sprintf("error with response code %d", resp.StatusCode)
+		log.Print(errorMessage)
+		return nil, errors.New(errorMessage)
+	}
+
+	//return the response
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("error converting response body - %s", pathAndParams)
+		return nil, err
+	}
+	return data, nil
 }
 
 //NewProviderAdapter creates a new provider adapter
-func NewProviderAdapter(host string, token string) *Adapter {
-	return &Adapter{host: host, token: token}
+func NewProviderAdapter(host string, token string, tokenType string) *Adapter {
+	return &Adapter{host: host, token: token, tokenType: tokenType}
 }
