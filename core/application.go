@@ -28,6 +28,8 @@ type Application struct {
 
 	Services Services //expose to the drivers adapters
 
+	Provider Provider
+
 	storage      Storage
 	cacheAdapter *cacheadapter.CacheAdapter
 }
@@ -38,10 +40,11 @@ func (app *Application) Start() {
 }
 
 // NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, cacheadapter *cacheadapter.CacheAdapter) *Application {
+func NewApplication(version string, build string, storage Storage, provider Provider, cacheadapter *cacheadapter.CacheAdapter) *Application {
 	application := Application{
 		version:      version,
 		build:        build,
+		Provider:     provider,
 		storage:      storage,
 		cacheAdapter: cacheadapter}
 

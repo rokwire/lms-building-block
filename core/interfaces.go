@@ -20,13 +20,15 @@ package core
 import (
 	"lms/core/model"
 	"lms/driven/storage"
+
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 // Services exposes APIs for the driver adapters
 type Services interface {
 	GetVersion() string
 
-	GetCourses(providerUserID string) ([]model.Course, error)
+	GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error)
 }
 
 type servicesImpl struct {
@@ -37,11 +39,15 @@ func (s *servicesImpl) GetVersion() string {
 	return s.app.getVersion()
 }
 
-func (s *servicesImpl) GetCourses(providerUserID string) ([]model.Course, error) {
-	return s.app.getCourses(providerUserID)
+func (s *servicesImpl) GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error) {
+	return s.app.getCourses(l, providerUserID)
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
+}
+
+type Provider interface {
+	GetCourses(userID string) ([]model.Course, error)
 }

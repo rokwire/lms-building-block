@@ -15,28 +15,25 @@
  *   limitations under the License.
  */
 
-package core
+package provider
 
 import (
 	"lms/core/model"
-
-	"github.com/rokwire/logging-library-go/logs"
 )
 
-func (app *Application) getVersion() string {
-	return app.version
+//Adapter implements the Provider interface
+type Adapter struct {
+	host  string
+	token string
 }
 
-func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.Course, error) {
-	courses, err := app.Provider.GetCourses(providerUserID)
-	if err != nil {
-		l.Debugf("error getting courses - %s", err)
-		return nil, err
-	}
-	return courses, nil
+//GetCourses gets the user courses
+func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
+	//TODO
+	return nil, nil
 }
 
-// OnCollectionUpdated callback that indicates the reward types collection is changed
-func (app *Application) OnCollectionUpdated(name string) {
-
+//NewProviderAdapter creates a new provider adapter
+func NewProviderAdapter(host string, token string) *Adapter {
+	return &Adapter{host: host, token: token}
 }

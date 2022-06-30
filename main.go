@@ -21,6 +21,7 @@ import (
 	"lms/core"
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
+	"lms/driven/provider"
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
 	"log"
@@ -62,18 +63,20 @@ func main() {
 	defaultCacheExpirationSeconds := getEnvKey("DEFAULT_CACHE_EXPIRATION_SECONDS", false)
 	cacheAdapter := cacheadapter.NewCacheAdapter(defaultCacheExpirationSeconds)
 
+	//provider adapter
+	canvasBaseURL := getEnvKey("CANVAS_BASE_URL", true)
+	canvasTokenType := getEnvKey("CANVAS_TOKEN_TYPE", true)
+	canvasToken := getEnvKey("CANVAS_TOKEN", true)
+	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken)
+
 	// application
-	application := core.NewApplication(Version, Build, storageAdapter, cacheAdapter)
+	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, cacheAdapter)
 	application.Start()
 
 	// web adapter
 	host := getEnvKey("HOST", true)
 	coreBBHost := getEnvKey("CORE_BB_HOST", true)
 	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
-
-	canvasBaseURL := getEnvKey("CANVAS_BASE_URL", true)
-	canvasTokenType := getEnvKey("CANVAS_TOKEN_TYPE", true)
-	canvasToken := getEnvKey("CANVAS_TOKEN", true)
 
 	config := model.Config{
 		InternalAPIKey:  internalAPIKey,

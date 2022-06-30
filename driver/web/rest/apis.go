@@ -104,7 +104,8 @@ func (h ApisHandler) V1Wrapper(claims *tokenauth.Claims, w http.ResponseWriter, 
 
 func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
-	courses, err := h.app.Services.GetCourses(providerUserID)
+
+	courses, err := h.app.Services.GetCourses(l, providerUserID)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
 	}
