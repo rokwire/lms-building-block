@@ -88,7 +88,8 @@ func (we Adapter) Start() {
 	//to be deprecated
 	apiRouter.PathPrefix("/v1").Handler(we.userAuthWrapFuncDeprecated(we.apisHandler.V1Wrapper))
 
-	apiRouter.PathPrefix("/courses").Handler(we.userAuthWrapFunc(we.apisHandler.GetCourses))
+	apiRouter.HandleFunc("/courses", we.userAuthWrapFunc(we.apisHandler.GetCourses)).Methods("GET")
+	apiRouter.HandleFunc("/courses/{id}", we.userAuthWrapFunc(we.apisHandler.GetCourse)).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }

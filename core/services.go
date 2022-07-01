@@ -36,6 +36,15 @@ func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.
 	return courses, nil
 }
 
+func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error) {
+	course, err := app.Provider.GetCourse(providerUserID, courseID, include)
+	if err != nil {
+		l.Debugf("error getting course - %s", err)
+		return nil, err
+	}
+	return course, nil
+}
+
 // OnCollectionUpdated callback that indicates the reward types collection is changed
 func (app *Application) OnCollectionUpdated(name string) {
 

@@ -25,8 +25,10 @@ import (
 	"lms/core/model"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/rokwire/core-auth-library-go/tokenauth"
 	"github.com/rokwire/logging-library-go/logs"
 	"github.com/rokwire/logging-library-go/logutils"
@@ -111,6 +113,40 @@ func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.Re
 	}
 
 	data, err := json.Marshal(courses)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "course", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	var include *string
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = &includeParam
+	}
+
+	course, err := h.app.Services.GetCourse(l, providerUserID, courseID, include)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(course)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionMarshal, "course", nil, err, http.StatusInternalServerError, false)
 	}

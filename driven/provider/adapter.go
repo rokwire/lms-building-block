@@ -64,6 +64,12 @@ func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
 	return courses, nil
 }
 
+//GetCourse gives the the course for the provided id
+func (a *Adapter) GetCourse(userID string, courseID int, include *string) (*model.Course, error) {
+	//TODO
+	return nil, nil
+}
+
 func (a *Adapter) constructQueryParams(items map[string]string) string {
 	if len(items) == 0 {
 		return ""

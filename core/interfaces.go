@@ -29,6 +29,7 @@ type Services interface {
 	GetVersion() string
 
 	GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error)
+	GetCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error)
 }
 
 type servicesImpl struct {
@@ -43,6 +44,10 @@ func (s *servicesImpl) GetCourses(l *logs.Log, providerUserID string) ([]model.C
 	return s.app.getCourses(l, providerUserID)
 }
 
+func (s *servicesImpl) GetCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error) {
+	return s.app.getCourse(l, providerUserID, courseID, include)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
@@ -50,4 +55,5 @@ type Storage interface {
 
 type Provider interface {
 	GetCourses(userID string) ([]model.Course, error)
+	GetCourse(userID string, courseID int, include *string) (*model.Course, error)
 }
