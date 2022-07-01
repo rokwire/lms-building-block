@@ -66,8 +66,32 @@ func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
 
 //GetCourse gives the the course for the provided id
 func (a *Adapter) GetCourse(userID string, courseID int, include *string) (*model.Course, error) {
-	//TODO
-	return nil, nil
+	//params
+	queryParamsItems := map[string]string{}
+	queryParamsItems["as_user_id"] = fmt.Sprintf("sis_user_id:%s", userID)
+	if include != nil {
+		queryParamsItems["include[]"] = *include
+	}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/courses/%d%s", courseID, queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting courses")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var course *model.Course
+	err = json.Unmarshal(data, &course)
+	if err != nil {
+		log.Print("error converting course")
+		return nil, err
+	}
+	return course, nil
 }
 
 func (a *Adapter) constructQueryParams(items map[string]string) string {
