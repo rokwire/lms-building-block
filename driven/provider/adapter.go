@@ -94,6 +94,36 @@ func (a *Adapter) GetCourse(userID string, courseID int, include *string) (*mode
 	return course, nil
 }
 
+//GetAssignmentGroups gives the the course assignment groups for the user
+func (a *Adapter) GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
+	//params
+	queryParamsItems := map[string]string{}
+	queryParamsItems["as_user_id"] = fmt.Sprintf("sis_user_id:%s", userID)
+	if include != nil {
+		queryParamsItems["include[]"] = *include
+	}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/courses/%d/assignment_groups%s", courseID, queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting courses")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var assignmentGroups []model.AssignmentGroup
+	err = json.Unmarshal(data, &assignmentGroups)
+	if err != nil {
+		log.Print("error converting course")
+		return nil, err
+	}
+	return assignmentGroups, nil
+}
+
 func (a *Adapter) constructQueryParams(items map[string]string) string {
 	if len(items) == 0 {
 		return ""

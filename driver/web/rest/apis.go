@@ -154,6 +154,40 @@ func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.Res
 	return l.HttpResponseSuccessJSON(data)
 }
 
+func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	var include *string
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = &includeParam
+	}
+
+	assignmentGroups, err := h.app.Services.GetAssignmentGroups(l, providerUserID, courseID, include)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "assignment group", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(assignmentGroups)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "assignment group", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
 func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
 	if claims == nil {
 		return ""
