@@ -17,8 +17,24 @@
 
 package model
 
+import "time"
+
 type Course struct {
 	ID                     int    `json:"id"`
 	Name                   string `json:"name"`
 	AccessRestrictedByDate bool   `json:"access_restricted_by_date"`
+}
+
+type Assignment struct {
+	ID       int        `json:"id"`
+	Name     string     `json:"name"`
+	CourseID int        `json:"course_id"`
+	HTMLUrl  string     `json:"html_url"`
+	Position *int       `json:"position"`
+	DueAt    *time.Time `json:"due_at"`
+}
+
+type AssignmentGroup struct {
+	ID          int          `json:"id"`
+	Assignments []Assignment `json:"assignments"`
 }
