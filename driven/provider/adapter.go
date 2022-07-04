@@ -40,8 +40,8 @@ type Adapter struct {
 //GetCourses gets the user courses
 func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
 	//params
-	queryParamsItems := map[string]string{}
-	queryParamsItems["as_user_id"] = fmt.Sprintf("sis_user_id:%s", userID)
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
 	queryParams := a.constructQueryParams(queryParamsItems)
 
 	//path + params
@@ -67,10 +67,10 @@ func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
 //GetCourse gives the the course for the provided id
 func (a *Adapter) GetCourse(userID string, courseID int, include *string) (*model.Course, error) {
 	//params
-	queryParamsItems := map[string]string{}
-	queryParamsItems["as_user_id"] = fmt.Sprintf("sis_user_id:%s", userID)
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
 	if include != nil {
-		queryParamsItems["include[]"] = *include
+		queryParamsItems["include[]"] = []string{*include}
 	}
 	queryParams := a.constructQueryParams(queryParamsItems)
 
@@ -97,10 +97,10 @@ func (a *Adapter) GetCourse(userID string, courseID int, include *string) (*mode
 //GetAssignmentGroups gives the the course assignment groups for the user
 func (a *Adapter) GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
 	//params
-	queryParamsItems := map[string]string{}
-	queryParamsItems["as_user_id"] = fmt.Sprintf("sis_user_id:%s", userID)
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
 	if include != nil {
-		queryParamsItems["include[]"] = *include
+		queryParamsItems["include[]"] = []string{*include}
 	}
 	queryParams := a.constructQueryParams(queryParamsItems)
 
@@ -127,13 +127,17 @@ func (a *Adapter) GetAssignmentGroups(userID string, courseID int, include *stri
 //GetCourseUser gives the course user
 func (a *Adapter) GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
 	//params
-	queryParamsItems := map[string]string{}
-	queryParamsItems["as_user_id"] = fmt.Sprintf("sis_user_id:%s", userID)
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	includes := []string{}
 	if includeEnrolments {
-		queryParamsItems["include[]"] = "enrollments"
+		includes = append(includes, "enrollments")
 	}
 	if includeScores {
-		queryParamsItems["include[]"] = "current_grading_period_scores"
+		includes = append(includes, "current_grading_period_scores")
+	}
+	if len(includes) > 0 {
+		queryParamsItems["include[]"] = includes
 	}
 
 	queryParams := a.constructQueryParams(queryParamsItems)
@@ -158,15 +162,17 @@ func (a *Adapter) GetCourseUser(userID string, courseID int, includeEnrolments b
 	return user, nil
 }
 
-func (a *Adapter) constructQueryParams(items map[string]string) string {
+func (a *Adapter) constructQueryParams(items map[string][]string) string {
 	if len(items) == 0 {
 		return ""
 	}
 
 	values := url.Values{}
 
-	for k, v := range items {
-		values.Add(k, v)
+	for k, list := range items {
+		for _, listItem := range list {
+			values.Add(k, listItem)
+		}
 	}
 
 	query := values.Encode()
