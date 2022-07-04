@@ -162,6 +162,33 @@ func (a *Adapter) GetCourseUser(userID string, courseID int, includeEnrolments b
 	return user, nil
 }
 
+//GetCurrentUser gives the current user
+func (a *Adapter) GetCurrentUser(userID string) (*model.User, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/users/self%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting courses")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var user *model.User
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		log.Print("error converting users")
+		return nil, err
+	}
+	return user, nil
+}
+
 func (a *Adapter) constructQueryParams(items map[string][]string) string {
 	if len(items) == 0 {
 		return ""

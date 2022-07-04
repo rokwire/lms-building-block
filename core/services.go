@@ -63,6 +63,15 @@ func (app *Application) getCourseUser(l *logs.Log, providerUserID string, course
 	return user, nil
 }
 
+func (app *Application) getCurrentUser(l *logs.Log, providerUserID string) (*model.User, error) {
+	user, err := app.Provider.GetCurrentUser(providerUserID)
+	if err != nil {
+		l.Debugf("error getting user - %s", err)
+		return nil, err
+	}
+	return user, nil
+}
+
 // OnCollectionUpdated callback that indicates the reward types collection is changed
 func (app *Application) OnCollectionUpdated(name string) {
 

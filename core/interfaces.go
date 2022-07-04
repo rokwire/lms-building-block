@@ -32,6 +32,7 @@ type Services interface {
 	GetCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error)
 	GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
+	GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error)
 }
 
 type servicesImpl struct {
@@ -58,6 +59,10 @@ func (s *servicesImpl) GetCourseUser(l *logs.Log, providerUserID string, courseI
 	return s.app.getCourseUser(l, providerUserID, courseID, includeEnrolments, includeScores)
 }
 
+func (s *servicesImpl) GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error) {
+	return s.app.getCurrentUser(l, providerUserID)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
@@ -68,4 +73,5 @@ type Provider interface {
 	GetCourse(userID string, courseID int, include *string) (*model.Course, error)
 	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
+	GetCurrentUser(userID string) (*model.User, error)
 }

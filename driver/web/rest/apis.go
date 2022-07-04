@@ -229,6 +229,23 @@ func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.Resp
 	return l.HttpResponseSuccessJSON(data)
 }
 
+//GetCurrentUser gets the current user
+func (h ApisHandler) GetCurrentUser(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	user, err := h.app.Services.GetCurrentUser(l, providerUserID)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "user", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(user)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "user", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
 func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
 	if claims == nil {
 		return ""
