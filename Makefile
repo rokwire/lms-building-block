@@ -126,7 +126,7 @@ oapi-gen-types: ;
 
 .PHONY: oapi-gen-docs
 oapi-gen-docs: ;
-	swagger-cli bundle docs/index.yaml --outfile driver/web/docs/gen/def.yaml --type yaml
+	swagger-cli bundle driver/web/docs/index.yaml --outfile driver/web/docs/gen/def.yaml --type yaml
 
 .PHONY: log-variables
 log-variables: ; $(info $(M) Log info…) @ ## Log the variables values

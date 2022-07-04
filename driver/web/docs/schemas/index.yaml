@@ -1,0 +1,3 @@
+# course
+Course:
+  $ref: "./course/Course.yaml"

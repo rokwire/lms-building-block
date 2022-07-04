@@ -12,3 +12,5 @@ paths:
   #api
   /api/vi:
     $ref: "./resources/api/v1/v1.yaml"
+  /api/courses:
+    $ref: "./resources/api/courses/courses.yaml"
