@@ -54,8 +54,13 @@ func (app *Application) getAssignmentGroups(l *logs.Log, providerUserID string, 
 	return assignmentGroups, nil
 }
 
-func (app *Application) getUsers(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) ([]model.User, error) {
-	return nil, nil
+func (app *Application) getCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
+	user, err := app.Provider.GetCourseUser(providerUserID, courseID, includeEnrolments, includeScores)
+	if err != nil {
+		l.Debugf("error getting user - %s", err)
+		return nil, err
+	}
+	return user, nil
 }
 
 // OnCollectionUpdated callback that indicates the reward types collection is changed

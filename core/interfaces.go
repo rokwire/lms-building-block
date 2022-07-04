@@ -31,7 +31,7 @@ type Services interface {
 	GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error)
 	GetCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error)
 	GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error)
-	GetUsers(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) ([]model.User, error)
+	GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 }
 
 type servicesImpl struct {
@@ -54,8 +54,8 @@ func (s *servicesImpl) GetAssignmentGroups(l *logs.Log, providerUserID string, c
 	return s.app.getAssignmentGroups(l, providerUserID, courseID, include)
 }
 
-func (s *servicesImpl) GetUsers(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) ([]model.User, error) {
-	return s.app.getUsers(l, providerUserID, courseID, includeEnrolments, includeScores)
+func (s *servicesImpl) GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
+	return s.app.getCourseUser(l, providerUserID, courseID, includeEnrolments, includeScores)
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
@@ -67,4 +67,5 @@ type Provider interface {
 	GetCourses(userID string) ([]model.Course, error)
 	GetCourse(userID string, courseID int, include *string) (*model.Course, error)
 	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
+	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 }

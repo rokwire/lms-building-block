@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"lms/core"
 	"lms/core/model"
+	"lms/utils"
 	"log"
 	"net/http"
 	"strconv"
@@ -212,33 +213,20 @@ func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.Resp
 	if len(includeParam) > 0 {
 		include = strings.Split(includeParam, ",")
 	}
-	includeEnrolments := h.checkHasInclude(include, "enrollments")
-	includeScores := h.checkHasInclude(include, "scores")
+	includeEnrolments := utils.Exist(include, "enrollments")
+	includeScores := utils.Exist(include, "scores")
 
-	users, err := h.app.Services.GetUsers(l, providerUserID, courseID, includeEnrolments, includeScores)
+	user, err := h.app.Services.GetCourseUser(l, providerUserID, courseID, includeEnrolments, includeScores)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "user", nil, err, http.StatusInternalServerError, true)
 	}
 
-	data, err := json.Marshal(users)
+	data, err := json.Marshal(user)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionMarshal, "user", nil, err, http.StatusInternalServerError, false)
 	}
 
 	return l.HttpResponseSuccessJSON(data)
-}
-
-func (h ApisHandler) checkHasInclude(list []string, value string) bool {
-	if len(list) == 0 {
-		return false
-	}
-
-	for _, s := range list {
-		if value == s {
-			return true
-		}
-	}
-	return false
 }
 
 func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
