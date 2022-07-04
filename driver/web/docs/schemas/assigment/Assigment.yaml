@@ -6,8 +6,8 @@ properties:
   name:
     type: string
   courseID:
-    type: int
+    type: integer
   htmlurl:
     type: string
   position:
-    type: int
+    type: integer

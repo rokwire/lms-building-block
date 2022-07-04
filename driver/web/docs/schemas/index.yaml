@@ -8,6 +8,14 @@ Assigment:
 AssigmentGroup:
   $ref: "./assigment/AssigmentGroup.yaml"
 
+# user
+User:
+  $ref: "./user/User.yaml"
+Enrollment:
+  $ref: "./user/Enrollment.yaml"
+Grade:
+  $ref: "./user/Grade.yaml"
+
 
 _api_req_get_Course:
   $ref: "./apis/api/get-course/request/Request.yaml"

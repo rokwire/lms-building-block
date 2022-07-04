@@ -1,0 +1,4 @@
+type: object
+properties:
+  current_score:
+    type: float64
