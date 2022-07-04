@@ -10,7 +10,9 @@ servers:
     description: Development server
 paths:
   #api
-  /api/vi:
+  /api/v1:
     $ref: "./resources/api/v1/v1.yaml"
   /api/courses:
     $ref: "./resources/api/courses/courses.yaml"
+  /api/courses/{id}:
+    $ref: "./resources/api/courses/coursesID.yaml"

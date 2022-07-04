@@ -1,4 +1,6 @@
 get:
+  tags:
+  - api
   description: Wraps all Canvas V1 api requests
   operationId: V1Wrapper
   produces:

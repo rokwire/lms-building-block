@@ -1,3 +1,9 @@
 # course
 Course:
   $ref: "./course/Course.yaml"
+
+
+_api_req_get_Organization:
+  $ref: "./apis/api/get-course/request/Request.yaml"
+_api_res_get_Organization:
+  $ref: "./apis/system/get-organization/response/Response.yaml"
