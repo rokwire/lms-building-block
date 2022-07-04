@@ -38,3 +38,19 @@ type AssignmentGroup struct {
 	ID          int          `json:"id"`
 	Assignments []Assignment `json:"assignments"`
 }
+
+type Grade struct {
+	CurrentScore *float64 `json:"current_score"`
+}
+
+type Enrollment struct {
+	ID    int    `json:"id"`
+	Type  string `json:"type"`
+	Grade *Grade `json:"grade"`
+}
+
+type User struct {
+	ID          int          `json:"id"`
+	Name        string       `json:"name"`
+	Enrollments []Enrollment `json:"enrollments"`
+}
