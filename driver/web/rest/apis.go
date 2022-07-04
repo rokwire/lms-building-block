@@ -191,6 +191,56 @@ func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, 
 	return l.HttpResponseSuccessJSON(data)
 }
 
+//GetUsers gets course users
+func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	include := []string{}
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = strings.Split(includeParam, ",")
+	}
+	includeEnrolments := h.checkHasInclude(include, "enrollments")
+	includeScores := h.checkHasInclude(include, "scores")
+
+	users, err := h.app.Services.GetUsers(l, providerUserID, courseID, includeEnrolments, includeScores)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "user", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(users)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "user", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+func (h ApisHandler) checkHasInclude(list []string, value string) bool {
+	if len(list) == 0 {
+		return false
+	}
+
+	for _, s := range list {
+		if value == s {
+			return true
+		}
+	}
+	return false
+}
+
 func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
 	if claims == nil {
 		return ""

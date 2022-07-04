@@ -54,6 +54,10 @@ func (app *Application) getAssignmentGroups(l *logs.Log, providerUserID string, 
 	return assignmentGroups, nil
 }
 
+func (app *Application) getUsers(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) ([]model.User, error) {
+	return nil, nil
+}
+
 // OnCollectionUpdated callback that indicates the reward types collection is changed
 func (app *Application) OnCollectionUpdated(name string) {
 
