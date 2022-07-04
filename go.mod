@@ -14,6 +14,6 @@ require (
 	github.com/rokwire/core-auth-library-go v1.0.9
 	github.com/rokwire/logging-library-go v1.0.3
 	github.com/swaggo/http-swagger v1.2.6
-	github.com/swaggo/swag v1.8.1
+	github.com/swaggo/swag v1.8.1 // indirect
 	go.mongodb.org/mongo-driver v1.8.2
 )
