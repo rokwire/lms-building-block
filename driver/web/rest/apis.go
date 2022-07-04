@@ -104,6 +104,7 @@ func (h ApisHandler) V1Wrapper(claims *tokenauth.Claims, w http.ResponseWriter, 
 	w.Write(data)
 }
 
+//GetCourses gets courses
 func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
 
@@ -120,6 +121,7 @@ func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.Re
 	return l.HttpResponseSuccessJSON(data)
 }
 
+//GetCourse gets a course
 func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
 
@@ -154,6 +156,7 @@ func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.Res
 	return l.HttpResponseSuccessJSON(data)
 }
 
+//GetAssignemntGroups gets course assignments
 func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
 
