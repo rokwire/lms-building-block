@@ -65,13 +65,13 @@ paths:
         - bearerAuth: []
       parameters:
         - name: id
-          in: path
+          in: query
           description: ID of the course
           required: true
-          style: simple
+          style: form
           explode: false
-          schema:
-            type: string
+          schema: null
+          type: string
       responses:
         '200':
           description: successful operation
@@ -106,13 +106,13 @@ paths:
         - bearerAuth: []
       parameters:
         - name: id
-          in: path
+          in: query
           description: ID of the course
           required: true
-          style: simple
+          style: form
           explode: false
-          schema:
-            type: string
+          schema: null
+          type: string
       responses:
         '200':
           description: successful operation
