@@ -1,0 +1,30 @@
+openapi: 3.0.3
+info:
+  title: Rokwire LMS Building Block API
+  description: LMS Building Block API Documentation
+  version: 1.23.0
+servers:
+  - url: 'http://localhost/lms'
+    description: Local server
+  - lms: 'https://api-dev.rokwire.illinois.edu/lms'
+    description: Development server
+paths:
+  /api/vi:
+    get:
+      '200':
+        description: Successful operation
+        content:
+          text/plain:
+            schema:
+              type: string
+      '400':
+        description: Bad request
+      '401':
+        description: Unauthorized
+      '500':
+        description: Internal error
+      description: Wraps all Canvas V1 api requests
+      operationId: V1Wrapper
+      produces:
+        - text/plain
+      responses: null
