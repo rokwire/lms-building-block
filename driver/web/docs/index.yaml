@@ -20,3 +20,5 @@ paths:
     $ref: "./resources/api/courses/assigment-groups.yaml"
   /api/courses/{id}/users:
     $ref: "./resources/api/courses/userID.yaml"
+  /api/user/self:
+    $ref: "./resources/api/user/user.yaml"
