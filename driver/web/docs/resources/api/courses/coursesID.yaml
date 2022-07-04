@@ -8,11 +8,16 @@ get:
     - bearerAuth: []
   parameters:
   - name: id
-    in: query
+    in: path
     description: ID of the course
     required: true
-    style: form
+    style: simple
     explode: false
+    schema:
+    type: string
+  - name: include
+    in: query
+    description: include = enrollments,scores
     schema:
     type: string
   responses:
