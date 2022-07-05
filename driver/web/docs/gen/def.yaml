@@ -6,7 +6,7 @@ info:
 servers:
   - url: 'http://localhost/lms'
     description: Local server
-  - lms: 'https://api-dev.rokwire.illinois.edu/lms'
+  - url: 'https://api-dev.rokwire.illinois.edu/lms/doc'
     description: Development server
 paths:
   /api/v1:
@@ -90,7 +90,7 @@ paths:
                     readOnly: true
                   name:
                     type: string
-                  accessRestrictedByDate:
+                  access_restricted_by_date:
                     type: boolean
         '400':
           description: Bad request
@@ -141,9 +141,9 @@ paths:
                         type: string
                       name:
                         type: string
-                      courseID:
+                      course_id:
                         type: integer
-                      htmlurl:
+                      html_url:
                         type: string
                       position:
                         type: integer

@@ -5,9 +5,9 @@ properties:
     type: string
   name:
     type: string
-  courseID:
+  course_id:
     type: integer
-  htmlurl:
+  html_url:
     type: string
   position:
     type: integer

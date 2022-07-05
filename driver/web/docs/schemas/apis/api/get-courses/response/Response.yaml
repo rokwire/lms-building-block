@@ -5,7 +5,7 @@ properties:
     readOnly: true
   name:
     type: string
-  accessRestrictedByDate:
+  access_restricted_by_date:
     type: boolean
 
     

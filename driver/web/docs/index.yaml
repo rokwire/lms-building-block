@@ -6,7 +6,7 @@ info:
 servers:
   - url: 'http://localhost/lms'
     description: Local server
-  - lms: 'https://api-dev.rokwire.illinois.edu/lms'
+  - url: 'https://api-dev.rokwire.illinois.edu/lms/doc'
     description: Development server
 paths:
   #api
