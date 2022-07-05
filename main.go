@@ -21,11 +21,14 @@ import (
 	"lms/core"
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
+	"lms/driven/provider"
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 var (
@@ -39,6 +42,9 @@ func main() {
 	if len(Version) == 0 {
 		Version = "dev"
 	}
+
+	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties("/lms/version")}}
+	logger := logs.NewLogger("core", &loggerOpts)
 
 	port := getEnvKey("PORT", true)
 
@@ -57,18 +63,20 @@ func main() {
 	defaultCacheExpirationSeconds := getEnvKey("DEFAULT_CACHE_EXPIRATION_SECONDS", false)
 	cacheAdapter := cacheadapter.NewCacheAdapter(defaultCacheExpirationSeconds)
 
+	//provider adapter
+	canvasBaseURL := getEnvKey("CANVAS_BASE_URL", true)
+	canvasTokenType := getEnvKey("CANVAS_TOKEN_TYPE", true)
+	canvasToken := getEnvKey("CANVAS_TOKEN", true)
+	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
+
 	// application
-	application := core.NewApplication(Version, Build, storageAdapter, cacheAdapter)
+	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, cacheAdapter)
 	application.Start()
 
 	// web adapter
 	host := getEnvKey("HOST", true)
 	coreBBHost := getEnvKey("CORE_BB_HOST", true)
 	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
-
-	canvasBaseURL := getEnvKey("CANVAS_BASE_URL", true)
-	canvasTokenType := getEnvKey("CANVAS_TOKEN_TYPE", true)
-	canvasToken := getEnvKey("CANVAS_TOKEN", true)
 
 	config := model.Config{
 		InternalAPIKey:  internalAPIKey,
@@ -79,7 +87,7 @@ func main() {
 		CanvasToken:     canvasToken,
 	}
 
-	webAdapter := driver.NewWebAdapter(host, port, application, &config)
+	webAdapter := driver.NewWebAdapter(host, port, application, &config, logger)
 
 	webAdapter.Start()
 }

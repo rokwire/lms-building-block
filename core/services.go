@@ -17,8 +17,59 @@
 
 package core
 
+import (
+	"lms/core/model"
+
+	"github.com/rokwire/logging-library-go/logs"
+)
+
 func (app *Application) getVersion() string {
 	return app.version
+}
+
+func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.Course, error) {
+	courses, err := app.Provider.GetCourses(providerUserID)
+	if err != nil {
+		l.Debugf("error getting courses - %s", err)
+		return nil, err
+	}
+	return courses, nil
+}
+
+func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error) {
+	course, err := app.Provider.GetCourse(providerUserID, courseID, include)
+	if err != nil {
+		l.Debugf("error getting course - %s", err)
+		return nil, err
+	}
+	return course, nil
+}
+
+func (app *Application) getAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
+	assignmentGroups, err := app.Provider.GetAssignmentGroups(providerUserID, courseID, include)
+	if err != nil {
+		l.Debugf("error getting assignment groups - %s", err)
+		return nil, err
+	}
+	return assignmentGroups, nil
+}
+
+func (app *Application) getCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
+	user, err := app.Provider.GetCourseUser(providerUserID, courseID, includeEnrolments, includeScores)
+	if err != nil {
+		l.Debugf("error getting user - %s", err)
+		return nil, err
+	}
+	return user, nil
+}
+
+func (app *Application) getCurrentUser(l *logs.Log, providerUserID string) (*model.User, error) {
+	user, err := app.Provider.GetCurrentUser(providerUserID)
+	if err != nil {
+		l.Debugf("error getting user - %s", err)
+		return nil, err
+	}
+	return user, nil
 }
 
 // OnCollectionUpdated callback that indicates the reward types collection is changed

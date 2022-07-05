@@ -1,0 +1,11 @@
+type: object
+properties:
+  id:
+    type: string
+    readOnly: true
+  name:
+    type: string
+  accessRestrictedByDate:
+    type: boolean
+
+    

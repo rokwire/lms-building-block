@@ -18,14 +18,21 @@
 package rest
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/rokwire/core-auth-library-go/tokenauth"
 	"io/ioutil"
 	"lms/core"
 	"lms/core/model"
+	"lms/utils"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
+
+	"github.com/gorilla/mux"
+	"github.com/rokwire/core-auth-library-go/tokenauth"
+	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/logutils"
 )
 
 const maxUploadSize = 15 * 1024 * 1024 // 15 mb
@@ -96,6 +103,154 @@ func (h ApisHandler) V1Wrapper(claims *tokenauth.Claims, w http.ResponseWriter, 
 	log.Printf("%s %d %s", r.Method, resp.StatusCode, r.URL.String())
 	w.WriteHeader(resp.StatusCode)
 	w.Write(data)
+}
+
+//GetCourses gets courses
+func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	courses, err := h.app.Services.GetCourses(l, providerUserID)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(courses)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "course", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+//GetCourse gets a course
+func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	var include *string
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = &includeParam
+	}
+
+	course, err := h.app.Services.GetCourse(l, providerUserID, courseID, include)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(course)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "course", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+//GetAssignemntGroups gets course assignments
+func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	var include *string
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = &includeParam
+	}
+
+	assignmentGroups, err := h.app.Services.GetAssignmentGroups(l, providerUserID, courseID, include)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "assignment group", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(assignmentGroups)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "assignment group", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+//GetUsers gets course users
+func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	include := []string{}
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = strings.Split(includeParam, ",")
+	}
+	includeEnrolments := utils.Exist(include, "enrollments")
+	includeScores := utils.Exist(include, "scores")
+
+	user, err := h.app.Services.GetCourseUser(l, providerUserID, courseID, includeEnrolments, includeScores)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "user", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(user)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "user", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+//GetCurrentUser gets the current user
+func (h ApisHandler) GetCurrentUser(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+
+	user, err := h.app.Services.GetCurrentUser(l, providerUserID)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "user", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(user)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "user", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
+	if claims == nil {
+		return ""
+	}
+	return claims.ExternalIDs["illinois_oidc.net_id"]
 }
 
 // NewApisHandler creates new rest Handler instance
