@@ -120,6 +120,6 @@ Response
 
 ## Documentation
 
-The documentation is placed here - https://api-dev.rokwire.illinois.edu/docs/
+The documentation is placed here - https://api-dev.rokwire.illinois.edu/lms/doc/ui/index.html
 
 Alternatively the documentation is served by the service on the following url - https://api-dev.rokwire.illinois.edu/rewards/doc/ui/

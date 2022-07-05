@@ -37,7 +37,7 @@ import (
 
 //Adapter entity
 type Adapter struct {
-	host          string
+	lmsServiceURL string
 	port          string
 	auth          *Auth
 	authorization *casbin.Enforcer
@@ -103,7 +103,7 @@ func (we Adapter) serveDoc(w http.ResponseWriter, r *http.Request) {
 }
 
 func (we Adapter) serveDocUI() http.Handler {
-	url := fmt.Sprintf("%s/doc", we.host)
+	url := fmt.Sprintf("%s/doc", we.lmsServiceURL)
 	return httpSwagger.Handler(httpSwagger.URL(url))
 }
 
@@ -237,7 +237,7 @@ func (we Adapter) internalAPIKeyAuthWrapFunc(handler internalAPIKeyAuthFunc) htt
 }
 
 // NewWebAdapter creates new WebAdapter instance
-func NewWebAdapter(host string, port string, app *core.Application, config *model.Config, logger *logs.Logger) Adapter {
+func NewWebAdapter(port string, app *core.Application, config *model.Config, logger *logs.Logger) Adapter {
 	auth := NewAuth(app, config)
 	authorization := casbin.NewEnforcer("driver/web/authorization_model.conf", "driver/web/authorization_policy.csv")
 
@@ -245,7 +245,7 @@ func NewWebAdapter(host string, port string, app *core.Application, config *mode
 	adminApisHandler := rest.NewAdminApisHandler(app, config)
 	internalApisHandler := rest.NewInternalApisHandler(app, config)
 	return Adapter{
-		host:                host,
+		lmsServiceURL:       config.LmsServiceURL,
 		port:                port,
 		auth:                auth,
 		authorization:       authorization,
