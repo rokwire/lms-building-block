@@ -68,6 +68,7 @@ type Storage interface {
 	SetListener(listener storage.CollectionListener)
 }
 
+//Provider interface for LMS provider
 type Provider interface {
 	GetCourses(userID string) ([]model.Course, error)
 	GetCourse(userID string, courseID int, include *string) (*model.Course, error)

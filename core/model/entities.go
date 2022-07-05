@@ -19,12 +19,14 @@ package model
 
 import "time"
 
+//Course entity
 type Course struct {
 	ID                     int    `json:"id"`
 	Name                   string `json:"name"`
 	AccessRestrictedByDate bool   `json:"access_restricted_by_date"`
 }
 
+//Assignment entity
 type Assignment struct {
 	ID       int        `json:"id"`
 	Name     string     `json:"name"`
@@ -34,21 +36,25 @@ type Assignment struct {
 	DueAt    *time.Time `json:"due_at"`
 }
 
+//AssignmentGroup entity
 type AssignmentGroup struct {
 	ID          int          `json:"id"`
 	Assignments []Assignment `json:"assignments"`
 }
 
+//Grade entity
 type Grade struct {
 	CurrentScore *float64 `json:"current_score"`
 }
 
+//Enrollment entity
 type Enrollment struct {
 	ID    int    `json:"id"`
 	Type  string `json:"type"`
 	Grade *Grade `json:"grade"`
 }
 
+//User entity
 type User struct {
 	ID          int          `json:"id"`
 	Name        string       `json:"name"`
