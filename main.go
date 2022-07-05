@@ -74,7 +74,6 @@ func main() {
 	application.Start()
 
 	// web adapter
-	host := getEnvKey("HOST", true)
 	coreBBHost := getEnvKey("CORE_BB_HOST", true)
 	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
 
@@ -87,7 +86,7 @@ func main() {
 		CanvasToken:     canvasToken,
 	}
 
-	webAdapter := driver.NewWebAdapter(host, port, application, &config, logger)
+	webAdapter := driver.NewWebAdapter(port, application, &config, logger)
 
 	webAdapter.Start()
 }
