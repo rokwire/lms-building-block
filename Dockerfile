@@ -14,7 +14,7 @@ FROM alpine:3.13
 RUN apk --no-cache add tzdata
 
 COPY --from=builder /lms-app/bin/lms /
-COPY --from=builder /lms-app/docs/swagger.yaml /docs/swagger.yaml
+COPY --from=builder /lms-app/driver/web/docs/gen/def.yaml /driver/web/docs/gen/def.yaml
 
 COPY --from=builder /lms-app/driver/web/authorization_model.conf /driver/web/authorization_model.conf
 COPY --from=builder /lms-app/driver/web/authorization_policy.csv /driver/web/authorization_policy.csv
