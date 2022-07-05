@@ -37,7 +37,7 @@ import (
 
 //Adapter entity
 type Adapter struct {
-	host          string
+	lmsServiceURL string
 	port          string
 	auth          *Auth
 	authorization *casbin.Enforcer
@@ -103,7 +103,7 @@ func (we Adapter) serveDoc(w http.ResponseWriter, r *http.Request) {
 }
 
 func (we Adapter) serveDocUI() http.Handler {
-	url := fmt.Sprintf("%s/lms/doc", we.host)
+	url := fmt.Sprintf("%s/doc", we.lmsServiceURL)
 	return httpSwagger.Handler(httpSwagger.URL(url))
 }
 
@@ -245,6 +245,7 @@ func NewWebAdapter(port string, app *core.Application, config *model.Config, log
 	adminApisHandler := rest.NewAdminApisHandler(app, config)
 	internalApisHandler := rest.NewInternalApisHandler(app, config)
 	return Adapter{
+		lmsServiceURL:       config.LmsServiceURL,
 		port:                port,
 		auth:                auth,
 		authorization:       authorization,
