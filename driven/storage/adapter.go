@@ -103,6 +103,23 @@ func (sa *Adapter) UpdateNudge(ID string, name string, body string, params *map[
 	return nil
 }
 
+//DeleteNudge deletes nudge
+func (sa *Adapter) DeleteNudge(ID string) error {
+	filter := bson.M{"_id": ID}
+	result, err := sa.db.nudges.DeleteOne(filter, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": ID}, err)
+	}
+	if result == nil {
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": ID}, err)
+	}
+	deletedCount := result.DeletedCount
+	if deletedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": ID}, err)
+	}
+	return nil
+}
+
 // Event
 
 func (m *database) onDataChanged(changeDoc map[string]interface{}) {

@@ -78,3 +78,17 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	}
 	return l.HttpResponseSuccess()
 }
+
+func (h AdminApisHandler) DeleteNudge(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	params := mux.Vars(r)
+	nudgeID := params["id"]
+	if len(nudgeID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	err := h.app.Admin.DeleteNudge(l, nudgeID)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionDelete, "", nil, err, http.StatusInternalServerError, true)
+	}
+	return l.HttpResponseSuccess()
+}

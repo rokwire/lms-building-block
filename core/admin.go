@@ -53,7 +53,13 @@ func (app *Application) updateNudge(l *logs.Log, ID string, name string, body st
 	if err != nil {
 		return nil
 	}
-
 	return err
+}
 
+func (app *Application) deleteNudge(l *logs.Log, ID string) error {
+	err := app.storage.DeleteNudge(ID)
+	if err != nil {
+		return nil
+	}
+	return err
 }
