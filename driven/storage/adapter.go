@@ -18,9 +18,15 @@
 package storage
 
 import (
+	"lms/core/model"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/rokwire/logging-library-go/errors"
+	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/logutils"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Adapter implements the Storage interface
@@ -35,7 +41,7 @@ func (sa *Adapter) Start() error {
 }
 
 // NewStorageAdapter creates a new storage adapter instance
-func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string) *Adapter {
+func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)
 	if err != nil {
 		log.Println("Set default timeout - 500")
@@ -43,13 +49,24 @@ func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout stri
 	}
 	timeoutMS := time.Millisecond * time.Duration(timeout)
 
-	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS}
+	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
 	return &Adapter{db: db}
 }
 
 // SetListener sets the upper layer listener for sending collection changed callbacks
 func (sa *Adapter) SetListener(listener CollectionListener) {
 	sa.db.listener = listener
+}
+
+// LoadAllNudges loads all nudges
+func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
+	filter := bson.D{}
+	var result []model.Nudge
+	err := sa.db.nudges.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge", nil, err)
+	}
+	return result, nil
 }
 
 // Event

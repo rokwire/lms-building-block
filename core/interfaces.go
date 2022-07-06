@@ -66,6 +66,8 @@ func (s *servicesImpl) GetCurrentUser(l *logs.Log, providerUserID string) (*mode
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
+
+	LoadAllNudges() ([]model.Nudge, error)
 }
 
 //Provider interface for LMS provider

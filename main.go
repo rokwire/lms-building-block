@@ -54,7 +54,7 @@ func main() {
 	mongoDBAuth := getEnvKey("MONGO_AUTH", true)
 	mongoDBName := getEnvKey("MONGO_DATABASE", true)
 	mongoTimeout := getEnvKey("MONGO_TIMEOUT", false)
-	storageAdapter := storage.NewStorageAdapter(mongoDBAuth, mongoDBName, mongoTimeout)
+	storageAdapter := storage.NewStorageAdapter(mongoDBAuth, mongoDBName, mongoTimeout, logger)
 	err := storageAdapter.Start()
 	if err != nil {
 		log.Fatal("Cannot start the mongoDB adapter - " + err.Error())

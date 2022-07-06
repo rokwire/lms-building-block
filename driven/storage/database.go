@@ -22,6 +22,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/rokwire/logging-library-go/logs"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -38,8 +39,12 @@ type database struct {
 	mongoDBName  string
 	mongoTimeout time.Duration
 
+	logger *logs.Logger
+
 	db       *mongo.Database
 	dbClient *mongo.Client
+
+	nudges *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -66,9 +71,24 @@ func (m *database) start() error {
 	//apply checks
 	db := client.Database(m.mongoDBName)
 
+	nudges := &collectionWrapper{database: m, coll: db.Collection("nudges")}
+	err = m.applyNudgesChecks(nudges)
+	if err != nil {
+		return err
+	}
+
 	//asign the db, db client and the collections
 	m.db = db
 	m.dbClient = client
 
+	m.nudges = nudges
+
+	return nil
+}
+
+func (m *database) applyNudgesChecks(authenticationTypes *collectionWrapper) error {
+	m.logger.Info("apply nudges checks.....")
+
+	m.logger.Info("nudges check passed")
 	return nil
 }
