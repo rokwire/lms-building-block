@@ -41,7 +41,7 @@ delete:
   - Admin
   summary: Delete nudge
   description: |
-    Delete nudge
+    Delete nudge by ID
   security:
     - bearerAuth: []
   parameters:
