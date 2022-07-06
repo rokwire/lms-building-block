@@ -38,6 +38,7 @@ type Services interface {
 type Admin interface {
 	GetNudges() ([]model.Nudge, error)
 	CreateNudge(l *logs.Log, name string, body string, params *map[string]interface{}) (*model.Nudge, error)
+	UpdateNudge(l *logs.Log, id string, name string, body string, params *map[string]interface{}) error
 }
 
 type servicesImpl struct {
@@ -81,12 +82,17 @@ func (s *administrationImpl) CreateNudge(l *logs.Log, name string, body string, 
 	return s.app.createNudge(l, name, body, params)
 }
 
+func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
+	return s.app.updateNudge(l, ID, name, body, params)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
 
 	LoadAllNudges() ([]model.Nudge, error)
 	InsertNudge(item model.Nudge) error
+	UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error
 }
 
 //Provider interface for LMS provider

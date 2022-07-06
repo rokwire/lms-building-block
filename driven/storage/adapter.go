@@ -27,6 +27,7 @@ import (
 	"github.com/rokwire/logging-library-go/logs"
 	"github.com/rokwire/logging-library-go/logutils"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Adapter implements the Storage interface
@@ -76,6 +77,29 @@ func (sa *Adapter) InsertNudge(item model.Nudge) error {
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
 	}
+	return nil
+}
+
+//UpdateNudge updates nudge
+func (sa *Adapter) UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error {
+
+	nudgeFilter := bson.D{primitive.E{Key: "_id", Value: ID}}
+	updateNudge := bson.D{
+		primitive.E{Key: "$set", Value: bson.D{
+			primitive.E{Key: "name", Value: name},
+			primitive.E{Key: "body", Value: body},
+			primitive.E{Key: "params", Value: params},
+		}},
+	}
+
+	result, err := sa.db.nudges.UpdateOne(nudgeFilter, updateNudge, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": ID}, err)
+	}
+	if result.MatchedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": ID}, err)
+	}
+
 	return nil
 }
 

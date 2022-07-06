@@ -47,3 +47,13 @@ func (app *Application) createNudge(l *logs.Log, name string, body string, param
 	}
 	return &nudge, nil
 }
+
+func (app *Application) updateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
+	err := app.storage.UpdateNudge(ID, name, body, params)
+	if err != nil {
+		return nil
+	}
+
+	return err
+
+}

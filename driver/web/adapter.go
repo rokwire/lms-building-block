@@ -99,6 +99,7 @@ func (we Adapter) Start() {
 
 	adminRouter.HandleFunc("/nudges", we.userAuthWrapFunc(we.adminApisHandler.GetNudges)).Methods("GET")
 	adminRouter.HandleFunc("/nudge", we.userAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
+	adminRouter.HandleFunc("/nudge/{id}", we.userAuthWrapFunc(we.adminApisHandler.UpdateNudge)).Methods("PUT")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
