@@ -98,6 +98,7 @@ func (we Adapter) Start() {
 	adminRouter := subrouter.PathPrefix("/admin").Subrouter()
 
 	adminRouter.HandleFunc("/nudges", we.userAuthWrapFunc(we.adminApisHandler.GetNudges)).Methods("GET")
+	adminRouter.HandleFunc("/nudge", we.userAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }

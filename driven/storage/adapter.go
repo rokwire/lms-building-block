@@ -69,6 +69,16 @@ func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 	return result, nil
 }
 
+//InsertNudge inserts a new Nudge
+func (sa *Adapter) InsertNudge(item model.Nudge) error {
+	nudge := model.Nudge{ID: item.ID, Name: item.Name, Body: item.Body, Params: item.Params}
+	_, err := sa.db.nudges.InsertOne(nudge)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+	}
+	return nil
+}
+
 // Event
 
 func (m *database) onDataChanged(changeDoc map[string]interface{}) {
