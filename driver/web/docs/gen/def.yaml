@@ -234,3 +234,158 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+  /admin/nudges:
+    get:
+      tags:
+        - Admin
+      summary: Get nudges
+      description: |
+        Get nudges
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      readOnly: true
+                      type: string
+                    name:
+                      type: string
+                    body:
+                      type: string
+                    params:
+                      type: object
+                      nullable: true
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+    post:
+      tags:
+        - Admin
+      summary: Create Nudge
+      description: |
+        Creates Nudge
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: creates one nudge
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+                - body
+                - params
+              type: object
+              properties:
+                name:
+                  type: string
+                body:
+                  type: string
+                params:
+                  type: object
+                  nullable: true
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+  '/admin/nudges/{id}':
+    put:
+      tags:
+        - Admin
+      summary: Update nudge by ID
+      description: |
+        Updates nudge by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the nudge that needs to be updated
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: update one nudge
+        content:
+          application/json:
+            schema:
+              required:
+                - id
+                - name
+                - body
+                - params
+              type: object
+              properties:
+                id:
+                  readOnly: true
+                  type: string
+                name:
+                  type: string
+                body:
+                  type: string
+                params:
+                  type: object
+                  nullable: true
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+    delete:
+      tags:
+        - Admin
+      summary: Delete nudge
+      description: |
+        Delete nudge
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The nudge ID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error

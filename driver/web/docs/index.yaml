@@ -22,3 +22,9 @@ paths:
     $ref: "./resources/api/courses/userID.yaml"
   /api/user/self:
     $ref: "./resources/api/user/user.yaml"
+
+  #admin
+  /admin/nudges:
+    $ref: "./resources/admin/nudges/nudges.yaml"
+  /admin/nudges/{id}:
+    $ref: "./resources/admin/nudges/nudgesID.yaml"

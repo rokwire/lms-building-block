@@ -1,0 +1,13 @@
+type: object
+properties:
+  id:
+    readOnly: true
+    type: string
+  name:
+    type: string
+  body:
+    type: string
+  params:
+    type: object
+    nullable: true
+ 
