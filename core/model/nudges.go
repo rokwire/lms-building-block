@@ -19,7 +19,7 @@ package model
 
 //Nudge entity
 type Nudge struct {
-	ID     int                    `json:"id" bson:"_id"`        //last_login
+	ID     string                 `json:"id" bson:"_id"`        //last_login
 	Name   string                 `json:"name" bson:"name"`     //"Last Canvas use was over 2 weeks"
 	Body   string                 `json:"body" bson:"body"`     //"You have not used the Canvas Application in over 2 weeks."
 	Params map[string]interface{} `json:"params" bson:"params"` //Nudge specific settings
