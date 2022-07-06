@@ -94,6 +94,11 @@ func (we Adapter) Start() {
 	apiRouter.HandleFunc("/courses/{id}/users", we.userAuthWrapFunc(we.apisHandler.GetUsers)).Methods("GET")
 	apiRouter.HandleFunc("/users/self", we.userAuthWrapFunc(we.apisHandler.GetCurrentUser)).Methods("GET")
 
+	// admin apis
+	adminRouter := subrouter.PathPrefix("/admin").Subrouter()
+
+	adminRouter.HandleFunc("/nudges", we.userAuthWrapFunc(we.adminApisHandler.GetNudges)).Methods("GET")
+
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
 

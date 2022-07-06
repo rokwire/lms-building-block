@@ -35,7 +35,15 @@ type Services interface {
 	GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error)
 }
 
+type Admin interface {
+	GetNudges() ([]model.Nudge, error)
+}
+
 type servicesImpl struct {
+	app *Application
+}
+
+type administrationImpl struct {
 	app *Application
 }
 
@@ -61,6 +69,11 @@ func (s *servicesImpl) GetCourseUser(l *logs.Log, providerUserID string, courseI
 
 func (s *servicesImpl) GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error) {
 	return s.app.getCurrentUser(l, providerUserID)
+}
+
+//admin
+func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
+	return s.app.getNudges()
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
