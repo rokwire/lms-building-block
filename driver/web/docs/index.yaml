@@ -6,7 +6,7 @@ info:
 servers:
   - url: 'http://localhost/lms'
     description: Local server
-  - url: 'https://api-dev.rokwire.illinois.edu/lms/doc'
+  - url: 'https://api-dev.rokwire.illinois.edu/lms'
     description: Development server
 tags:
   - name: Api
@@ -14,31 +14,31 @@ tags:
   - name: Admin
     description: Clients administration APIs.
 paths:
-#api
-/api/v1:
-  $ref: "./resources/api/v1/v1.yaml"
-/api/courses:
-  $ref: "./resources/api/courses/courses.yaml"
-/api/courses/{id}:
-  $ref: "./resources/api/courses/coursesID.yaml"
-/api/courses/{id}/assignment-groups:
-  $ref: "./resources/api/courses/assigment-groups.yaml"
-/api/courses/{id}/users:
-  $ref: "./resources/api/courses/userID.yaml"
-/api/user/self:
-  $ref: "./resources/api/user/user.yaml"
+  #api
+  /api/v1:
+    $ref: "./resources/api/v1/v1.yaml"
+  /api/courses:
+    $ref: "./resources/api/courses/courses.yaml"
+  /api/courses/{id}:
+    $ref: "./resources/api/courses/coursesID.yaml"
+  /api/courses/{id}/assignment-groups:
+    $ref: "./resources/api/courses/assigment-groups.yaml"
+  /api/courses/{id}/users:
+    $ref: "./resources/api/courses/userID.yaml"
+  /api/user/self:
+    $ref: "./resources/api/user/user.yaml"
 
 #admin
-admin/nudges:
-  $ref: "./resources/admin/nudges/nudges.yaml"
-admin/nudges/{id}:
-  $ref: "./resources/admin/nudges/nudgesID.yaml"
+  /admin/nudges:
+    $ref: "./resources/admin/nudges/nudges.yaml"
+  /admin/nudges/{id}:
+    $ref: "./resources/admin/nudges/nudgesID.yaml"
 
-components:
-  securitySchemes:
-      bearerAuth:            # arbitrary name for the security scheme
-        type: http
-        scheme: bearer
-        bearerFormat: JWT
-schemas:
-  $ref: "./schemas/index.yaml"
+  components:
+    securitySchemes:
+        bearerAuth:            # arbitrary name for the security scheme
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+    schemas:
+     $ref: "./schemas/index.yaml"

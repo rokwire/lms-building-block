@@ -6,469 +6,331 @@ info:
 servers:
   - url: 'http://localhost/lms'
     description: Local server
-  - url: 'https://api-dev.rokwire.illinois.edu/lms/doc'
+  - url: 'https://api-dev.rokwire.illinois.edu/lms'
     description: Development server
 tags:
   - name: Api
     description: Clients  APIs.
   - name: Admin
     description: Clients administration APIs.
-paths: null
-/api/v1:
-  get:
-    '200':
-      description: Successful operation
-      content:
-        text/plain:
+paths:
+  /api/v1:
+    get:
+      '200':
+        description: Successful operation
+        content:
+          text/plain:
+            schema:
+              type: string
+      '400':
+        description: Bad request
+      '401':
+        description: Unauthorized
+      '500':
+        description: Internal error
+      tags:
+        - api
+      description: Wraps all Canvas V1 api requests
+      operationId: V1Wrapper
+      produces:
+        - text/plain
+      responses: null
+  /api/courses:
+    get:
+      tags:
+        - api
+      summary: Get courses
+      description: |
+        Get courses
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/paths/components/schemas/Course'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+  '/api/courses/{id}':
+    get:
+      tags:
+        - api
+      summary: Get course by ID
+      description: |
+        Gets course by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the course
+          required: true
+          style: simple
+          explode: false
+          schema: null
+          type: string
+        - name: include
+          in: query
+          description: 'include = enrollments,scores'
+          schema: null
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/components/schemas/Course'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal error
+  '/api/courses/{id}/assignment-groups':
+    get:
+      tags:
+        - api
+      summary: Get assignment-groups by ID
+      description: |
+        Gets assignment-groups by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the course
+          required: true
+          style: simple
+          explode: false
+          schema: null
+          type: string
+        - name: include
+          in: query
+          description: 'include = enrollments,scores'
+          schema: null
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/components/schemas/AssigmentGroup'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal error
+  '/api/courses/{id}/users':
+    get:
+      tags:
+        - api
+      summary: Get user by ID
+      description: |
+        Gets user by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the course
+          required: true
+          style: simple
+          explode: false
+          schema: null
+          type: string
+        - name: include
+          in: query
+          description: 'include = enrollments,scores'
+          schema: null
+          type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/components/schemas/User'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal error
+  /api/user/self:
+    get:
+      tags:
+        - api
+      summary: Get current user
+      description: |
+        Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/paths/components/schemas/User'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+  /admin/nudges:
+    get:
+      tags:
+        - Admin
+      summary: Get nudges
+      description: |
+        Get nudges
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/paths/components/schemas/Nudge'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+    post:
+      tags:
+        - Admin
+      summary: Create Nudge
+      description: |
+        Creates Nudge
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: creates one nudge
+        content:
+          application/json:
+            schema:
+              $ref: '#/paths/components/schemas/_admin_req_create_nudge'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+  '/admin/nudges/{id}':
+    put:
+      tags:
+        - Admin
+      summary: Update nudge by ID
+      description: |
+        Updates nudge by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the nudge that needs to be updated
+          required: true
+          style: simple
+          explode: false
           schema:
             type: string
-    '400':
-      description: Bad request
-    '401':
-      description: Unauthorized
-    '500':
-      description: Internal error
-    tags:
-      - api
-    description: Wraps all Canvas V1 api requests
-    operationId: V1Wrapper
-    produces:
-      - text/plain
-    responses: null
-/api/courses:
-  get:
-    tags:
-      - api
-    summary: Get courses
-    description: |
-      Get courses
-    security:
-      - bearerAuth: []
-    responses:
-      '200':
-        description: Successful operation
+      requestBody:
+        description: update one nudge
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/schemas/Course'
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '500':
-        description: Internal error
-'/api/courses/{id}':
-  get:
-    tags:
-      - api
-    summary: Get course by ID
-    description: |
-      Gets course by ID
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: id
-        in: path
-        description: ID of the course
+              $ref: '#/paths/components/schemas/_admin_req_update_nudge'
         required: true
-        style: simple
-        explode: false
-        schema: null
-        type: string
-      - name: include
-        in: query
-        description: 'include = enrollments,scores'
-        schema: null
-        type: string
-    responses:
-      '200':
-        description: successful operation
-        content:
-          application/json:
-            schema:
-              $ref: '#/schemas/Course'
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '404':
-        description: Not Found
-      '500':
-        description: Internal error
-'/api/courses/{id}/assignment-groups':
-  get:
-    tags:
-      - api
-    summary: Get assignment-groups by ID
-    description: |
-      Gets assignment-groups by ID
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: id
-        in: path
-        description: ID of the course
-        required: true
-        style: simple
-        explode: false
-        schema: null
-        type: string
-      - name: include
-        in: query
-        description: 'include = enrollments,scores'
-        schema: null
-        type: string
-    responses:
-      '200':
-        description: successful operation
-        content:
-          application/json:
-            schema:
-              $ref: '#/schemas/AssigmentGroup'
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '404':
-        description: Not Found
-      '500':
-        description: Internal error
-'/api/courses/{id}/users':
-  get:
-    tags:
-      - api
-    summary: Get user by ID
-    description: |
-      Gets user by ID
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: id
-        in: path
-        description: ID of the course
-        required: true
-        style: simple
-        explode: false
-        schema: null
-        type: string
-      - name: include
-        in: query
-        description: 'include = enrollments,scores'
-        schema: null
-        type: string
-    responses:
-      '200':
-        description: successful operation
-        content:
-          application/json:
-            schema:
-              $ref: '#/schemas/User'
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '404':
-        description: Not Found
-      '500':
-        description: Internal error
-/api/user/self:
-  get:
-    tags:
-      - api
-    summary: Get current user
-    description: |
-      Get current user
-    security:
-      - bearerAuth: []
-    responses:
-      '200':
-        description: Successful operation
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/schemas/User'
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '500':
-        description: Internal error
-admin/nudges:
-  get:
-    tags:
-      - Admin
-    summary: Get nudges
-    description: |
-      Get nudges
-    security:
-      - bearerAuth: []
-    responses:
-      '200':
-        description: Successful operation
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/schemas/Nudge'
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '500':
-        description: Internal error
-  post:
-    tags:
-      - Admin
-    summary: Create Nudge
-    description: |
-      Creates Nudge
-    security:
-      - bearerAuth: []
-    requestBody:
-      description: creates one nudge
-      content:
-        application/json:
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+    delete:
+      tags:
+        - Admin
+      summary: Delete nudge
+      description: |
+        Delete nudge by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: The nudge ID
+          required: true
           schema:
-            $ref: '#/schemas/_admin_req_create-Nudge'
-      required: true
-    responses:
-      '200':
-        description: Success
-        content:
-          text/plain:
-            schema:
-              type: string
-              example: Success
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '500':
-        description: Internal error
-'admin/nudges/{id}':
-  put:
-    tags:
-      - Admin
-    summary: Update nudge by ID
-    description: |
-      Updates nudge by ID
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: id
-        in: path
-        description: ID of the nudge that needs to be updated
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-    requestBody:
-      description: update one nudge
-      content:
-        application/json:
-          schema:
-            $ref: '#/schemas/_admin_req_update-Nudge'
-      required: true
-    responses:
-      '200':
-        description: Success
-        content:
-          text/plain:
-            schema:
-              type: string
-              example: Success
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '500':
-        description: Internal error
-  delete:
-    tags:
-      - Admin
-    summary: Delete nudge
-    description: |
-      Delete nudge by ID
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: id
-        in: path
-        description: The nudge ID
-        required: true
-        schema:
-          type: string
-    responses:
-      '200':
-        description: Success
-      '400':
-        description: Bad request
-      '401':
-        description: Unauthorized
-      '500':
-        description: Internal error
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-schemas:
-  Course:
-    type: object
-    properties:
-      id:
-        type: string
-        readOnly: true
-      name:
-        type: string
-      access_restricted_by_date:
-        type: boolean
-  Assigment:
-    type: object
-    properties:
-      id:
-        readOnly: true
-        type: string
-      name:
-        type: string
-      course_id:
-        type: integer
-      html_url:
-        type: string
-      position:
-        type: integer
-  AssigmentGroup:
-    type: object
-    properties:
-      id:
-        type: string
-      assigments:
-        $ref: '#/schemas/Assigment'
-  User:
-    type: object
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-      enrollments:
-        $ref: '#/schemas/Enrollment'
-  Enrollment:
-    type: object
-    properties:
-      id:
-        type: integer
-      type:
-        type: string
-      grade:
-        $ref: '#/schemas/Grade'
-  Grade:
-    type: object
-    properties:
-      current_score:
-        type: float64
-  Nudge:
-    type: object
-    properties:
-      id:
-        readOnly: true
-        type: string
-      name:
-        type: string
-      body:
-        type: string
-      params:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+  components:
+    securitySchemes:
+      bearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+    schemas:
+      Course:
         type: object
-        nullable: true
-  _admin_req_create-Nudge:
-    required:
-      - id
-      - name
-      - body
-      - params
-    type: object
-    properties:
-      name:
-        type: string
-      body:
-        type: string
-      params:
-        type: object
-        nullable: true
-  _admin_res_create-Nudge:
-    required:
-      - id
-      - name
-      - body
-      - params
-    type: object
-    properties:
-      id:
-        readOnly: true
-        type: string
-      name:
-        type: string
-      body:
-        type: string
-      params:
-        type: object
-        nullable: true
-  _admin_req_update-Nudge:
-    required:
-      - id
-      - name
-      - body
-      - params
-    type: object
-    properties:
-      id:
-        readOnly: true
-        type: string
-      name:
-        type: string
-      body:
-        type: string
-      params:
-        type: object
-        nullable: true
-  _admin_res_update-Nudge:
-    required:
-      - id
-      - name
-      - body
-      - params
-    type: object
-    properties:
-      id:
-        readOnly: true
-        type: string
-      name:
-        type: string
-      body:
-        type: string
-      params:
-        type: object
-        nullable: true
-  _api_req_get_Course:
-    required:
-      - id
-    properties:
-      id:
-        readOnly: true
-        type: string
-  _api_res_get_Course:
-    type: object
-    properties:
-      id:
-        type: string
-      assigments:
+        properties:
+          id:
+            type: string
+            readOnly: true
+          name:
+            type: string
+          access_restricted_by_date:
+            type: boolean
+      Assigment:
         type: object
         properties:
           id:
@@ -482,12 +344,152 @@ schemas:
             type: string
           position:
             type: integer
-  _api_req_get_Assigment-group:
-    required:
-      - id
-    properties:
-      id:
-        readOnly: true
-        type: string
-  _api_res_get_Assigment-group:
-    $ref: '#/schemas/_api_res_get_Course'
+      AssigmentGroup:
+        type: object
+        properties:
+          id:
+            type: string
+          assigments:
+            $ref: '#/paths/components/schemas/Assigment'
+      User:
+        type: object
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+          enrollments:
+            $ref: '#/paths/components/schemas/Enrollment'
+      Enrollment:
+        type: object
+        properties:
+          id:
+            type: integer
+          type:
+            type: string
+          grade:
+            $ref: '#/paths/components/schemas/Grade'
+      Grade:
+        type: object
+        properties:
+          current_score:
+            type: float64
+      Nudge:
+        required:
+          - id
+          - name
+          - body
+          - params
+        type: object
+        properties:
+          id:
+            readOnly: true
+            type: string
+          name:
+            type: string
+          body:
+            type: string
+          params:
+            type: object
+            nullable: true
+      _admin_req_create_nudge:
+        type: object
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          body:
+            type: string
+          params:
+            type: object
+            nullable: true
+      _admin_res_create_nudge:
+        required:
+          - id
+          - name
+          - body
+          - params
+        type: object
+        properties:
+          id:
+            readOnly: true
+            type: string
+          name:
+            type: string
+          body:
+            type: string
+          params:
+            type: object
+            nullable: true
+      _admin_req_update_nudge:
+        required:
+          - id
+          - name
+          - body
+          - params
+        type: object
+        properties:
+          id:
+            readOnly: true
+            type: string
+          name:
+            type: string
+          body:
+            type: string
+          params:
+            type: object
+            nullable: true
+      _admin_res_update_nudge:
+        required:
+          - id
+          - name
+          - body
+          - params
+        type: object
+        properties:
+          id:
+            readOnly: true
+            type: string
+          name:
+            type: string
+          body:
+            type: string
+          params:
+            type: object
+            nullable: true
+      _api_req_get_Course:
+        required:
+          - id
+        properties:
+          id:
+            readOnly: true
+            type: string
+      _api_res_get_Course:
+        type: object
+        properties:
+          id:
+            type: string
+          assigments:
+            type: object
+            properties:
+              id:
+                readOnly: true
+                type: string
+              name:
+                type: string
+              course_id:
+                type: integer
+              html_url:
+                type: string
+              position:
+                type: integer
+      _api_req_get_Assigment-group:
+        required:
+          - id
+        properties:
+          id:
+            readOnly: true
+            type: string
+      _api_res_get_Assigment-group:
+        $ref: '#/paths/components/schemas/_api_res_get_Course'

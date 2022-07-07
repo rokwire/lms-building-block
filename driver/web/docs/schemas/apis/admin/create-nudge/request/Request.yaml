@@ -1,10 +1,7 @@
-required:
-  - id
-  - name
-  - body
-  - params
 type: object
 properties:
+  id:
+    type: string
   name:
     type: string
   body:
