@@ -14,23 +14,25 @@ User:
 Enrollment:
   $ref: "./user/Enrollment.yaml"
 Grade:
-  $ref: "./user/Grade.yaml"
+ $ref: "./user/Grade.yaml"
 
 # nudge
 Nudge:
   $ref: "./nudges/Nudge.yaml"
 
-###nudges api
-_admin_req_create_Nudge:
+ ###nudges api
+_admin_req_create-Nudge:
   $ref: "./apis/admin/create-nudge/request/Request.yaml"
-_admin_res_create_Nudge:
+_admin_res_create-Nudge:
   $ref: "./apis/admin/create-nudge/response/Response.yaml"
-_admin_req_update_Nudge:
+_admin_req_update-Nudge:
   $ref: "./apis/admin/update-nudge/request/Request.yaml"
-_admin_res_update_Nudge:
+_admin_res_update-Nudge:
   $ref: "./apis/admin/update-nudge/response/Response.yaml"
 
-### api
+
+
+ ### api
 _api_req_get_Course:
   $ref: "./apis/api/get-course/request/Request.yaml"
 _api_res_get_Course:
@@ -39,3 +41,5 @@ _api_req_get_Assigment-group:
   $ref: "./apis/api/get-assigment-groups/request/Request.yaml"
 _api_res_get_Assigment-group:
   $ref: "./apis/api/get-assigment-groups/response/Response.yaml"
+
+  ## end ADMIN section
