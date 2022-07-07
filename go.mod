@@ -9,7 +9,7 @@ require (
 	github.com/casbin/casbin/v2 v2.50.0 // indirect
 	github.com/deepmap/oapi-codegen v1.11.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/getkin/kin-openapi v0.97.0 // indirect
+	github.com/getkin/kin-openapi v0.97.0
 	github.com/go-chi/chi v4.0.2+incompatible // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
