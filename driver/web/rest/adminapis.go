@@ -22,7 +22,7 @@ type AdminApisHandler struct {
 //GetNudges gets all the nudges
 func (h AdminApisHandler) GetNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 
-	nudges, err := h.app.Admin.GetNudges()
+	nudges, err := h.app.Administration.GetNudges()
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "nudge", nil, err, http.StatusInternalServerError, true)
 	}
@@ -47,7 +47,7 @@ func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	_, err = h.app.Admin.CreateNudge(l, requestData.Name, requestData.Body, &requestData.Params)
+	_, err = h.app.Administration.CreateNudge(l, requestData.Name, requestData.Body, &requestData.Params)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}
@@ -72,7 +72,7 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	err = h.app.Admin.UpdateNudge(l, ID, requestData.Name, requestData.Body, &requestData.Params)
+	err = h.app.Administration.UpdateNudge(l, ID, requestData.Name, requestData.Body, &requestData.Params)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}
@@ -86,7 +86,7 @@ func (h AdminApisHandler) DeleteNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
 	}
 
-	err := h.app.Admin.DeleteNudge(l, nudgeID)
+	err := h.app.Administration.DeleteNudge(l, nudgeID)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionDelete, "", nil, err, http.StatusInternalServerError, true)
 	}

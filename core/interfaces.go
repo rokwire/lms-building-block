@@ -35,7 +35,7 @@ type Services interface {
 	GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error)
 }
 
-type Admin interface {
+type Administration interface {
 	GetNudges() ([]model.Nudge, error)
 	CreateNudge(l *logs.Log, name string, body string, params *map[string]interface{}) (*model.Nudge, error)
 	UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
@@ -43,10 +43,6 @@ type Admin interface {
 }
 
 type servicesImpl struct {
-	app *Application
-}
-
-type administrationImpl struct {
 	app *Application
 }
 
@@ -75,6 +71,11 @@ func (s *servicesImpl) GetCurrentUser(l *logs.Log, providerUserID string) (*mode
 }
 
 //admin
+
+type administrationImpl struct {
+	app *Application
+}
+
 func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
 	return s.app.getNudges()
 }

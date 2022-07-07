@@ -26,8 +26,8 @@ type Application struct {
 	version string
 	build   string
 
-	Services Services //expose to the drivers adapters
-	Admin    Admin
+	Services       Services       //expose to the drivers adapters
+	Administration Administration //expose to the drivers adapters
 
 	Provider Provider
 
@@ -51,7 +51,7 @@ func NewApplication(version string, build string, storage Storage, provider Prov
 
 	// add the drivers ports/interfaces
 	application.Services = &servicesImpl{app: &application}
-	application.Admin = &administrationImpl{app: &application}
+	application.Administration = &administrationImpl{app: &application}
 
 	return &application
 }
