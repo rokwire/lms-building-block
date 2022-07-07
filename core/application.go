@@ -18,6 +18,7 @@
 package core
 
 import (
+	"lms/core/model"
 	cacheadapter "lms/driven/cache"
 	"time"
 
@@ -32,7 +33,8 @@ type Application struct {
 	Services       Services       //expose to the drivers adapters
 	Administration Administration //expose to the drivers adapters
 
-	Provider Provider
+	provider Provider
+	groupsBB GroupsBB
 
 	storage      Storage
 	cacheAdapter *cacheadapter.CacheAdapter
@@ -128,16 +130,39 @@ func (app *Application) processNudges() {
 func (app *Application) processAllNudges() {
 	app.logger.Info("processAllNudges")
 
-	//TODO
+	//1. get all nudges
+	nudges, err := app.storage.LoadAllNudges()
+	if err != nil {
+		app.logger.Errorf("error on processing all nudges - %s", err)
+		return
+	}
+
+	//2. get all users
+	users, err := app.groupsBB.GetUsers()
+	if err != nil {
+		app.logger.Errorf("error getting all users - %s", err)
+		return
+	}
+
+	//process every nudge
+	for _, nudge := range nudges {
+		app.processNudge(nudge, users)
+	}
+}
+
+func (app *Application) processNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
+	app.logger.Infof("processNudge - %s", nudge.ID)
 }
 
 // NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, provider Provider, cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
+func NewApplication(version string, build string, storage Storage, provider Provider, groupsBB GroupsBB,
+	cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
 	timerDone := make(chan bool)
 	application := Application{
 		version:      version,
 		build:        build,
-		Provider:     provider,
+		provider:     provider,
+		groupsBB:     groupsBB,
 		storage:      storage,
 		cacheAdapter: cacheadapter,
 		logger:       logger,

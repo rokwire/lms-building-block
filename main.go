@@ -21,6 +21,7 @@ import (
 	"lms/core"
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
+	"lms/driven/groups"
 	"lms/driven/provider"
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
@@ -69,8 +70,10 @@ func main() {
 	canvasToken := getEnvKey("CANVAS_TOKEN", true)
 	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
 
+	groupsBBAdapter := groups.NewGroupsAdapter()
+
 	// application
-	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, cacheAdapter, logger)
+	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, groupsBBAdapter, cacheAdapter, logger)
 	application.Start()
 
 	// web adapter

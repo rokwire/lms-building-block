@@ -110,3 +110,14 @@ type Provider interface {
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
 }
+
+//GroupsBB interface for the Groups building block communication
+type GroupsBB interface {
+	GetUsers() ([]GroupsBBUser, error)
+}
+
+//GroupsBBUser entity
+type GroupsBBUser struct {
+	UserID string
+	NetID  string
+}
