@@ -121,3 +121,8 @@ type GroupsBBUser struct {
 	UserID string
 	NetID  string
 }
+
+//NotificationsBB interface for the Notifications building block communication
+type NotificationsBB interface {
+	SendNotifications() error
+}

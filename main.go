@@ -22,6 +22,7 @@ import (
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
 	"lms/driven/groups"
+	"lms/driven/notifications"
 	"lms/driven/provider"
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
@@ -75,8 +76,12 @@ func main() {
 	testNetID := getEnvKey("LMS_TEST_NET_ID", true)
 	groupsBBAdapter := groups.NewGroupsAdapter(testUserID, testNetID)
 
+	//notifications BB adapter
+	notificationsBBAdapter := notifications.NewNotificationsAdapter()
+
 	// application
-	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, groupsBBAdapter, cacheAdapter, logger)
+	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
+		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, logger)
 	application.Start()
 
 	// web adapter

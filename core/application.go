@@ -33,8 +33,9 @@ type Application struct {
 	Services       Services       //expose to the drivers adapters
 	Administration Administration //expose to the drivers adapters
 
-	provider Provider
-	groupsBB GroupsBB
+	provider        Provider
+	groupsBB        GroupsBB
+	notificationsBB NotificationsBB
 
 	storage      Storage
 	cacheAdapter *cacheadapter.CacheAdapter
@@ -155,18 +156,20 @@ func (app *Application) processNudge(nudge model.Nudge, allUsers []GroupsBBUser)
 }
 
 // NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, provider Provider, groupsBB GroupsBB,
+func NewApplication(version string, build string, storage Storage, provider Provider,
+	groupsBB GroupsBB, notificationsBB NotificationsBB,
 	cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
 	timerDone := make(chan bool)
 	application := Application{
-		version:      version,
-		build:        build,
-		provider:     provider,
-		groupsBB:     groupsBB,
-		storage:      storage,
-		cacheAdapter: cacheadapter,
-		logger:       logger,
-		timerDone:    timerDone}
+		version:         version,
+		build:           build,
+		provider:        provider,
+		groupsBB:        groupsBB,
+		notificationsBB: notificationsBB,
+		storage:         storage,
+		cacheAdapter:    cacheadapter,
+		logger:          logger,
+		timerDone:       timerDone}
 
 	// add the drivers ports/interfaces
 	application.Services = &servicesImpl{app: &application}
