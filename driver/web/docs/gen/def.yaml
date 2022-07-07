@@ -4,10 +4,15 @@ info:
   description: LMS Building Block API Documentation
   version: 1.23.0
 servers:
-  - url: 'http://localhost/lms'
+  - url: 'http://localhost/lms/doc'
     description: Local server
   - url: 'https://api-dev.rokwire.illinois.edu/lms/doc'
     description: Development server
+tags:
+  - name: Api
+    description: Clients  APIs.
+  - name: Admin
+    description: Clients administration APIs.
 paths:
   /api/v1:
     get:
@@ -47,7 +52,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1api~1courses~1%7Bid%7D/get/responses/200/content/application~1json/schema'
+                  $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
@@ -83,15 +88,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    readOnly: true
-                  name:
-                    type: string
-                  access_restricted_by_date:
-                    type: boolean
+                $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
@@ -129,24 +126,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  assigments:
-                    type: object
-                    properties:
-                      id:
-                        readOnly: true
-                        type: string
-                      name:
-                        type: string
-                      course_id:
-                        type: integer
-                      html_url:
-                        type: string
-                      position:
-                        type: integer
+                $ref: '#/components/schemas/AssigmentGroup'
         '400':
           description: Bad request
         '401':
@@ -184,24 +164,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
-                  enrollments:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      type:
-                        type: string
-                      grade:
-                        type: object
-                        properties:
-                          current_score:
-                            type: float64
+                $ref: '#/components/schemas/User'
         '400':
           description: Bad request
         '401':
@@ -227,7 +190,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/paths/~1api~1courses~1%7Bid%7D~1users/get/responses/200/content/application~1json/schema'
+                  $ref: '#/components/schemas/User'
         '400':
           description: Bad request
         '401':
@@ -251,18 +214,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    id:
-                      readOnly: true
-                      type: string
-                    name:
-                      type: string
-                    body:
-                      type: string
-                    params:
-                      type: object
-                      nullable: true
+                  $ref: '#/components/schemas/Nudge'
         '400':
           description: Bad request
         '401':
@@ -282,19 +234,7 @@ paths:
         content:
           application/json:
             schema:
-              required:
-                - name
-                - body
-                - params
-              type: object
-              properties:
-                name:
-                  type: string
-                body:
-                  type: string
-                params:
-                  type: object
-                  nullable: true
+              $ref: '#/components/schemas/_admin_req_create_Nudge'
         required: true
       responses:
         '200':
@@ -333,23 +273,7 @@ paths:
         content:
           application/json:
             schema:
-              required:
-                - id
-                - name
-                - body
-                - params
-              type: object
-              properties:
-                id:
-                  readOnly: true
-                  type: string
-                name:
-                  type: string
-                body:
-                  type: string
-                params:
-                  type: object
-                  nullable: true
+              $ref: '#/components/schemas/_admin_req_update_Nudge'
         required: true
       responses:
         '200':
@@ -389,3 +313,181 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        access_restricted_by_date:
+          type: boolean
+    Assigment:
+      type: object
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        course_id:
+          type: integer
+        html_url:
+          type: string
+        position:
+          type: integer
+    AssigmentGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        assigments:
+          $ref: '#/components/schemas/Assigment'
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        enrollments:
+          $ref: '#/components/schemas/Enrollment'
+    Enrollment:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        grade:
+          $ref: '#/components/schemas/Grade'
+    Grade:
+      type: object
+      properties:
+        current_score:
+          type: float64
+    Nudge:
+      type: object
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        body:
+          type: string
+        params:
+          type: object
+          nullable: true
+    _admin_req_create_Nudge:
+      required:
+        - id
+        - name
+        - body
+        - params
+      type: object
+      properties:
+        name:
+          type: string
+        body:
+          type: string
+        params:
+          type: object
+          nullable: true
+    _admin_res_create_Nudge:
+      required:
+        - id
+        - name
+        - body
+        - params
+      type: object
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        body:
+          type: string
+        params:
+          type: object
+          nullable: true
+    _admin_req_update_Nudge:
+      required:
+        - id
+        - name
+        - body
+        - params
+      type: object
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        body:
+          type: string
+        params:
+          type: object
+          nullable: true
+    _admin_res_update_Nudge:
+      required:
+        - id
+        - name
+        - body
+        - params
+      type: object
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        body:
+          type: string
+        params:
+          type: object
+          nullable: true
+    _api_req_get_Course:
+      required:
+        - id
+      properties:
+        id:
+          readOnly: true
+          type: string
+    _api_res_get_Course:
+      type: object
+      properties:
+        id:
+          type: string
+        assigments:
+          type: object
+          properties:
+            id:
+              readOnly: true
+              type: string
+            name:
+              type: string
+            course_id:
+              type: integer
+            html_url:
+              type: string
+            position:
+              type: integer
+    _api_req_get_Assigment-group:
+      required:
+        - id
+      properties:
+        id:
+          readOnly: true
+          type: string
+    _api_res_get_Assigment-group:
+      $ref: '#/components/schemas/_api_res_get_Course'

@@ -1,4 +1,5 @@
 required:
+  - id
   - name
   - body
   - params

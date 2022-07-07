@@ -4,10 +4,15 @@ info:
   description: LMS Building Block API Documentation
   version: 1.23.0
 servers:
-  - url: 'http://localhost/lms'
+  - url: 'http://localhost/lms/doc'
     description: Local server
   - url: 'https://api-dev.rokwire.illinois.edu/lms/doc'
     description: Development server
+tags:
+  - name: Api
+    description: Clients  APIs.
+  - name: Admin
+    description: Clients administration APIs.
 paths:
   #api
   /api/v1:
@@ -28,3 +33,12 @@ paths:
     $ref: "./resources/admin/nudges/nudges.yaml"
   /admin/nudges/{id}:
     $ref: "./resources/admin/nudges/nudgesID.yaml"
+
+components:
+  securitySchemes:
+      bearerAuth:            # arbitrary name for the security scheme
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+  schemas:
+    $ref: "./schemas/index.yaml"

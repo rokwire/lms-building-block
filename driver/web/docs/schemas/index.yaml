@@ -20,22 +20,22 @@ Grade:
 Nudge:
   $ref: "./nudges/Nudge.yaml"
 
-#nudges api
+###nudges api
 _admin_req_create_Nudge:
   $ref: "./apis/admin/create-nudge/request/Request.yaml"
 _admin_res_create_Nudge:
-  $ref: "./apis/admin/update-nudge/response/Response.yaml"
+  $ref: "./apis/admin/create-nudge/response/Response.yaml"
 _admin_req_update_Nudge:
   $ref: "./apis/admin/update-nudge/request/Request.yaml"
 _admin_res_update_Nudge:
   $ref: "./apis/admin/update-nudge/response/Response.yaml"
 
-
+### api
 _api_req_get_Course:
   $ref: "./apis/api/get-course/request/Request.yaml"
 _api_res_get_Course:
-  $ref: "./apis/system/get-assigment-groups/response/Response.yaml"
+  $ref: "./apis/api/get-assigment-groups/response/Response.yaml"
 _api_req_get_Assigment-group:
   $ref: "./apis/api/get-assigment-groups/request/Request.yaml"
-_api_res_get_Assigmen-group:
-  $ref: "./apis/system/get-organization/response/Response.yaml"
+_api_res_get_Assigment-group:
+  $ref: "./apis/api/get-assigment-groups/response/Response.yaml"
