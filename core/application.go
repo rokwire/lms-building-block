@@ -19,6 +19,9 @@ package core
 
 import (
 	cacheadapter "lms/driven/cache"
+	"time"
+
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 //Application represents the core application code based on hexagonal architecture
@@ -33,21 +36,112 @@ type Application struct {
 
 	storage      Storage
 	cacheAdapter *cacheadapter.CacheAdapter
+
+	logger *logs.Logger
+
+	//nudges timer
+	dailyNudgesTimer *time.Timer
+	timerDone        chan bool
 }
 
 // Start starts the core part of the application
 func (app *Application) Start() {
 	app.storage.SetListener(app)
+
+	go app.setupNudgesTimer()
+}
+
+func (app *Application) setupNudgesTimer() {
+	app.logger.Info("Setup nudges timer")
+
+	//cancel if active
+	if app.dailyNudgesTimer != nil {
+		app.logger.Info("setupNudgesTimer -> there is active timer, so cancel it")
+
+		app.timerDone <- true
+		app.dailyNudgesTimer.Stop()
+	}
+
+	//wait until it is the correct moment from the day
+	location, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		app.logger.Errorf("Error getting location:%s\n", err.Error())
+	}
+	now := time.Now().In(location)
+	app.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
+
+	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
+
+	var durationInSeconds int
+	app.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
+	if nowSecondsInDay <= desiredMoment {
+		app.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
+		durationInSeconds = desiredMoment - nowSecondsInDay
+	} else {
+		app.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
+		leftToday := 86400 - nowSecondsInDay
+		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+	}
+	//app.logger.Infof("%d", durationInSeconds)
+	//duration := time.Second * time.Duration(20)
+	duration := time.Second * time.Duration(durationInSeconds)
+	app.logger.Infof("setupNudgesTimer -> first call after %s", duration)
+
+	app.dailyNudgesTimer = time.NewTimer(duration)
+	select {
+	case <-app.dailyNudgesTimer.C:
+		app.logger.Info("setupNudgesTimer -> nudges timer expired")
+		app.dailyNudgesTimer = nil
+
+		app.processNudges()
+	case <-app.timerDone:
+		// timer aborted
+		app.logger.Info("setupNudgesTimer -> nudges timer aborted")
+		app.dailyNudgesTimer = nil
+	}
+}
+
+func (app *Application) processNudges() {
+	app.logger.Info("processNudges")
+
+	//process nudges
+	app.processAllNudges()
+
+	//generate new color after 24 hours
+	duration := time.Hour * 24
+	app.logger.Infof("processNudges -> next call after %s", duration)
+	app.dailyNudgesTimer = time.NewTimer(duration)
+	select {
+	case <-app.dailyNudgesTimer.C:
+		app.logger.Info("processNudges -> nudges timer expired")
+		app.dailyNudgesTimer = nil
+
+		app.processNudges()
+	case <-app.timerDone:
+		// timer aborted
+		app.logger.Info("processNudges -> nudges timer aborted")
+		app.dailyNudgesTimer = nil
+	}
+}
+
+func (app *Application) processAllNudges() {
+	app.logger.Info("processAllNudges")
+
+	//TODO
 }
 
 // NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, provider Provider, cacheadapter *cacheadapter.CacheAdapter) *Application {
+func NewApplication(version string, build string, storage Storage, provider Provider, cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
+	timerDone := make(chan bool)
 	application := Application{
 		version:      version,
 		build:        build,
 		Provider:     provider,
 		storage:      storage,
-		cacheAdapter: cacheadapter}
+		cacheAdapter: cacheadapter,
+		logger:       logger,
+		timerDone:    timerDone}
 
 	// add the drivers ports/interfaces
 	application.Services = &servicesImpl{app: &application}

@@ -70,7 +70,7 @@ func main() {
 	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
 
 	// application
-	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, cacheAdapter)
+	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, cacheAdapter, logger)
 	application.Start()
 
 	// web adapter
