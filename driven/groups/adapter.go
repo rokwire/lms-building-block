@@ -21,15 +21,18 @@ import "lms/core"
 
 //Adapter implements the groups BB interface
 type Adapter struct {
+	testUserID string
+	testNetID  string
 }
 
 //GetUsers get user from the groups BB
 func (a *Adapter) GetUsers() ([]core.GroupsBBUser, error) {
 	//TODO
-	return nil, nil
+	users := []core.GroupsBBUser{{UserID: a.testUserID, NetID: a.testNetID}}
+	return users, nil
 }
 
 //NewGroupsAdapter creates a new groups BB adapter
-func NewGroupsAdapter() *Adapter {
-	return &Adapter{}
+func NewGroupsAdapter(testUserID string, testNetID string) *Adapter {
+	return &Adapter{testUserID: testUserID, testNetID: testNetID}
 }

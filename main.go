@@ -70,7 +70,10 @@ func main() {
 	canvasToken := getEnvKey("CANVAS_TOKEN", true)
 	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
 
-	groupsBBAdapter := groups.NewGroupsAdapter()
+	//groups BB adapter
+	testUserID := getEnvKey("LMS_TEST_USER_ID", true)
+	testNetID := getEnvKey("LMS_TEST_NET_ID", true)
+	groupsBBAdapter := groups.NewGroupsAdapter(testUserID, testNetID)
 
 	// application
 	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, groupsBBAdapter, cacheAdapter, logger)
