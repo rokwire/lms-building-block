@@ -153,6 +153,17 @@ func (app *Application) processAllNudges() {
 
 func (app *Application) processNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
 	app.logger.Infof("processNudge - %s", nudge.ID)
+
+	switch nudge.ID {
+	case "last_login":
+		app.processLastLoginNudge(nudge, allUsers)
+	default:
+		app.logger.Infof("Not supported nudge - %s", nudge.ID)
+	}
+}
+
+func (app *Application) processLastLoginNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
+	app.logger.Infof("processLastLoginNudge - %s", nudge.ID)
 }
 
 // NewApplication creates new Application
