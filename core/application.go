@@ -108,7 +108,7 @@ func (app *Application) processNudges() {
 	//process nudges
 	app.processAllNudges()
 
-	//generate new color after 24 hours
+	//generate new processing after 24 hours
 	duration := time.Hour * 24
 	app.logger.Infof("processNudges -> next call after %s", duration)
 	app.dailyNudgesTimer = time.NewTimer(duration)
