@@ -224,7 +224,8 @@ func (app *Application) sendLastLoginNudgeForUser(nudge model.Nudge, user Groups
 	app.logger.Infof("sendLastLoginNudgeForUser - %s - %s", nudge.ID, user.UserID)
 
 	//send push notification
-	err := app.notificationsBB.SendNotifications()
+	recipient := Recipient{UserID: user.UserID, Name: ""}
+	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body)
 	if err != nil {
 		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
 		return

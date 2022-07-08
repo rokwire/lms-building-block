@@ -129,5 +129,11 @@ type GroupsBBUser struct {
 
 //NotificationsBB interface for the Notifications building block communication
 type NotificationsBB interface {
-	SendNotifications() error
+	SendNotifications(recipients []Recipient, text string, body string) error
+}
+
+//Recipient entity
+type Recipient struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
 }
