@@ -38,7 +38,7 @@ type Services interface {
 
 type Administration interface {
 	GetNudges() ([]model.Nudge, error)
-	CreateNudge(l *logs.Log, name string, body string, params *map[string]interface{}) (*model.Nudge, error)
+	CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
 	UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
 	DeleteNudge(l *logs.Log, ID string) error
 }
@@ -81,8 +81,8 @@ func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
 	return s.app.getNudges()
 }
 
-func (s *administrationImpl) CreateNudge(l *logs.Log, name string, body string, params *map[string]interface{}) (*model.Nudge, error) {
-	return s.app.createNudge(l, name, body, params)
+func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
+	return s.app.createNudge(l, ID, name, body, params)
 }
 
 func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
@@ -98,7 +98,7 @@ type Storage interface {
 	SetListener(listener storage.CollectionListener)
 
 	LoadAllNudges() ([]model.Nudge, error)
-	InsertNudge(item model.Nudge) error
+	InsertNudge(ID string, name string, body string, params *map[string]interface{}) error
 	UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error
 	DeleteNudge(ID string) error
 }

@@ -35,19 +35,26 @@ func (h AdminApisHandler) GetNudges(l *logs.Log, claims *tokenauth.Claims, w htt
 	return l.HttpResponseSuccessJSON(data)
 }
 
+type createNudge struct {
+	ID     string                 `json:"id" bson:"id"`
+	Name   string                 `json:"name" bson:"name"`
+	Body   string                 `json:"body" bson:"body"`
+	Params map[string]interface{} `json:"params" bson:"params"`
+}
+
 //CreateNudge creates nudge
 func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionRead, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, false)
 	}
-	var requestData model.Nudge
+	var requestData createNudge
 	err = json.Unmarshal(data, &requestData)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	_, err = h.app.Administration.CreateNudge(l, requestData.Name, requestData.Body, &requestData.Params)
+	err = h.app.Administration.CreateNudge(l, requestData.ID, requestData.Name, requestData.Body, &requestData.Params)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}

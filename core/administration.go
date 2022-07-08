@@ -20,7 +20,6 @@ package core
 import (
 	"lms/core/model"
 
-	"github.com/google/uuid"
 	"github.com/rokwire/logging-library-go/errors"
 	"github.com/rokwire/logging-library-go/logs"
 )
@@ -37,15 +36,13 @@ func (app *Application) getNudges() ([]model.Nudge, error) {
 	return nudges, nil
 }
 
-func (app *Application) createNudge(l *logs.Log, name string, body string, params *map[string]interface{}) (*model.Nudge, error) {
+func (app *Application) createNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
 	//create and insert nudge
-	id, _ := uuid.NewUUID()
-	nudge := model.Nudge{ID: id.String(), Name: name, Body: body, Params: *params}
-	err := app.storage.InsertNudge(nudge)
+	err := app.storage.InsertNudge(ID, name, body, params)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &nudge, nil
+	return nil
 }
 
 func (app *Application) updateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {

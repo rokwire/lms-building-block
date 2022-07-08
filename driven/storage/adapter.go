@@ -70,9 +70,17 @@ func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 	return result, nil
 }
 
+type createNudge struct {
+	ID     string                 `json:"id" bson:"id"`
+	Name   string                 `json:"name" bson:"name"`
+	Body   string                 `json:"body" bson:"body"`
+	Params map[string]interface{} `json:"params" bson:"params"`
+}
+
 //InsertNudge inserts a new Nudge
-func (sa *Adapter) InsertNudge(item model.Nudge) error {
-	nudge := model.Nudge{ID: item.ID, Name: item.Name, Body: item.Body, Params: item.Params}
+func (sa *Adapter) InsertNudge(ID string, name string, body string, params *map[string]interface{}) error {
+	nudge := createNudge{ID: ID, Name: name, Body: body, Params: *params}
+
 	_, err := sa.db.nudges.InsertOne(nudge)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
