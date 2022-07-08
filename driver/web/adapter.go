@@ -88,8 +88,6 @@ func (we Adapter) Start() {
 
 	// handle apis
 	apiRouter := subrouter.PathPrefix("/api").Subrouter()
-	//to be deprecated
-	apiRouter.PathPrefix("/v1").Handler(we.userAuthWrapFuncDeprecated(we.apisHandler.V1Wrapper))
 
 	apiRouter.HandleFunc("/courses", we.userAuthWrapFunc(we.apisHandler.GetCourses)).Methods("GET")
 	apiRouter.HandleFunc("/courses/{id}", we.userAuthWrapFunc(we.apisHandler.GetCourse)).Methods("GET")
@@ -123,38 +121,6 @@ func (we Adapter) wrapFunc(handler http.HandlerFunc) http.HandlerFunc {
 		utils.LogRequest(req)
 
 		handler(w, req)
-	}
-}
-
-type apiKeysAuthFunc = func(http.ResponseWriter, *http.Request)
-
-func (we Adapter) apiKeyOrTokenWrapFunc(handler apiKeysAuthFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		utils.LogRequest(req)
-
-		// apply core token check
-		coreAuth, _ := we.auth.coreAuth.Check(req)
-		if coreAuth {
-			handler(w, req)
-			return
-		}
-
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-	}
-}
-
-type userAuthFuncDeprecated = func(*tokenauth.Claims, http.ResponseWriter, *http.Request)
-
-func (we Adapter) userAuthWrapFuncDeprecated(handler userAuthFuncDeprecated) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		utils.LogRequest(req)
-
-		coreAuth, claims := we.auth.coreAuth.Check(req)
-		if coreAuth && claims != nil && !claims.Anonymous {
-			handler(claims, w, req)
-			return
-		}
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 	}
 }
 
