@@ -17,10 +17,21 @@
 
 package model
 
+import "time"
+
 //Nudge entity
 type Nudge struct {
 	ID     string                 `json:"id" bson:"_id"`        //last_login
 	Name   string                 `json:"name" bson:"name"`     //"Last Canvas use was over 2 weeks"
 	Body   string                 `json:"body" bson:"body"`     //"You have not used the Canvas Application in over 2 weeks."
 	Params map[string]interface{} `json:"params" bson:"params"` //Nudge specific settings
+}
+
+//SentNudge entity
+type SentNudge struct {
+	NudgeID      string    `bson:"nudge_id"`
+	UserID       string    `bson:"user_id"`
+	NetID        string    `bson:"net_id"`
+	CriteriaHash string    `bson:"criteria_hash"`
+	DateSent     time.Time `bson:"date_sent"`
 }
