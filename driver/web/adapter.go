@@ -18,7 +18,6 @@
 package web
 
 import (
-	"context"
 	"fmt"
 	"lms/core"
 	"lms/core/model"
@@ -27,10 +26,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/getkin/kin-openapi/openapi3filter"
-
 	"github.com/getkin/kin-openapi/routers"
-	"github.com/rokwire/logging-library-go/logutils"
 
 	"github.com/rokwire/core-auth-library-go/tokenauth"
 	"github.com/rokwire/logging-library-go/logs"
@@ -104,10 +100,10 @@ func (we Adapter) Start() {
 	///admin ///
 	adminRouter := subrouter.PathPrefix("/admin").Subrouter()
 
-	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.GetNudges, nil)).Methods("GET")
-	adminRouter.HandleFunc("/nudge", we.adminAuthWrapFunc(we.adminApisHandler.CreateNudge, nil)).Methods("POST")
-	adminRouter.HandleFunc("/nudge/{id}", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudge, nil)).Methods("PUT")
-	adminRouter.HandleFunc("/nudge/{id}", we.adminAuthWrapFunc(we.adminApisHandler.DeleteNudge, nil)).Methods("DELETE")
+	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.GetNudges)).Methods("GET")
+	adminRouter.HandleFunc("/nudge", we.adminAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
+	adminRouter.HandleFunc("/nudge/{id}", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudge)).Methods("PUT")
+	adminRouter.HandleFunc("/nudge/{id}", we.adminAuthWrapFunc(we.adminApisHandler.DeleteNudge)).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
@@ -202,48 +198,26 @@ func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 	}
 }
 
-type adminAuthFunc = func(*logs.Log, *http.Request, *tokenauth.Claims) logs.HttpResponse
+type adminAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
 
-func (we Adapter) adminAuthWrapFunc(handler adminAuthFunc, authorization Authorization) http.HandlerFunc {
+func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		logObj := we.logger.NewRequestLog(req)
 
 		logObj.RequestReceived()
 
-		var err error
-
-		//1. validate request
-		requestValidationInput, err := we.validateRequest(req)
-		if err != nil {
-			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
+		coreAuth, claims := we.auth.coreAuth.Check(req)
+		if !(coreAuth && claims != nil && !claims.Anonymous) {
+			//unauthorized
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
 
-		//2. process it
-		var response logs.HttpResponse
-		if authorization != nil {
-			responseStatus, claims, err := authorization.check(req)
-			if err != nil {
-				logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, responseStatus, true)
-				return
-			}
-			response = handler(logObj, req, claims)
-		} else {
-			response = handler(logObj, req, nil)
-		}
+		// process the request
+		response := handler(logObj, claims, w, req)
 
-		//3. validate the response
-		env := "localhost"
-		if env != "production" {
-			err = we.validateResponse(requestValidationInput, response)
-			if err != nil {
-				logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeResponse, &logutils.FieldArgs{"code": response.ResponseCode, "headers": response.Headers, "body": string(response.Body)}, err, http.StatusInternalServerError, true)
-				return
-			}
-		}
-
-		//4. return response
-		//4.1 headers
+		/// return response
+		// headers
 		if len(response.Headers) > 0 {
 			for key, values := range response.Headers {
 				if len(values) > 0 {
@@ -253,14 +227,13 @@ func (we Adapter) adminAuthWrapFunc(handler adminAuthFunc, authorization Authori
 				}
 			}
 		}
-		//4.2 response code
+		// response code
 		w.WriteHeader(response.ResponseCode)
-		//4.3 body
+		// body
 		if len(response.Body) > 0 {
 			w.Write(response.Body)
 		}
 
-		//5. print
 		logObj.RequestComplete()
 	}
 }
@@ -279,49 +252,6 @@ func (we Adapter) internalAPIKeyAuthWrapFunc(handler internalAPIKeyAuthFunc) htt
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		}
 	}
-}
-
-func (we Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
-	route, pathParams, err := we.openAPIRouter.FindRoute(req)
-	if err != nil {
-		return nil, err
-	}
-
-	dummyAuthFunc := func(c context.Context, input *openapi3filter.AuthenticationInput) error {
-		return nil
-	}
-	options := &openapi3filter.Options{AuthenticationFunc: dummyAuthFunc}
-	requestValidationInput := &openapi3filter.RequestValidationInput{
-		Request:    req,
-		PathParams: pathParams,
-		Route:      route,
-		Options:    options,
-	}
-
-	if err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput); err != nil {
-		return nil, err
-	}
-	return requestValidationInput, nil
-}
-
-func (we Adapter) validateResponse(requestValidationInput *openapi3filter.RequestValidationInput, response logs.HttpResponse) error {
-	responseCode := response.ResponseCode
-	body := response.Body
-	header := response.Headers
-	options := openapi3filter.Options{IncludeResponseStatus: true}
-
-	responseValidationInput := &openapi3filter.ResponseValidationInput{
-		RequestValidationInput: requestValidationInput,
-		Status:                 responseCode,
-		Header:                 header,
-		Options:                &options}
-	responseValidationInput.SetBodyBytes(body)
-
-	err := openapi3filter.ValidateResponse(context.Background(), responseValidationInput)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // NewWebAdapter creates new WebAdapter instance
