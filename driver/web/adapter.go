@@ -173,6 +173,10 @@ func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 		logObj.RequestReceived()
 
 		coreAuth, claims := we.auth.coreAuth.Check(req)
+		if claims.Admin != true {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
 		if !(coreAuth && claims != nil && !claims.Anonymous) {
 			//unauthorized
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
