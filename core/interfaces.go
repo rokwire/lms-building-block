@@ -20,6 +20,7 @@ package core
 import (
 	"lms/core/model"
 	"lms/driven/storage"
+	"time"
 
 	"github.com/rokwire/logging-library-go/logs"
 )
@@ -109,6 +110,7 @@ type Provider interface {
 	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
+	GetLastLogin(userID string) (*time.Time, error)
 }
 
 //GroupsBB interface for the Groups building block communication

@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 //Adapter implements the Provider interface
@@ -187,6 +188,39 @@ func (a *Adapter) GetCurrentUser(userID string) (*model.User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+//GetLastLogin gives the last login date for the user
+func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParamsItems["include[]"] = []string{"last_login"}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/users/self%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting last login")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var user *model.User
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		log.Print("error converting user")
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, nil
+	}
+
+	return user.LastLogin, nil
 }
 
 func (a *Adapter) constructQueryParams(items map[string][]string) string {

@@ -87,7 +87,7 @@ func (app *Application) setupNudgesTimer() {
 		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
 	}
 	//app.logger.Infof("%d", durationInSeconds)
-	//duration := time.Second * time.Duration(20)
+	//duration := time.Second * time.Duration(3)
 	duration := time.Second * time.Duration(durationInSeconds)
 	app.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
@@ -128,6 +128,7 @@ func (app *Application) processNudges() {
 	}
 }
 
+//TODO - decide if we need to loop through nudges or through all users(are the users the same for the nudges?)
 func (app *Application) processAllNudges() {
 	app.logger.Info("processAllNudges")
 
@@ -164,6 +165,22 @@ func (app *Application) processNudge(nudge model.Nudge, allUsers []GroupsBBUser)
 
 func (app *Application) processLastLoginNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
 	app.logger.Infof("processLastLoginNudge - %s", nudge.ID)
+
+	for _, user := range allUsers {
+		app.processLastLoginNudgePerUser(nudge, user)
+	}
+}
+
+func (app *Application) processLastLoginNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
+	app.logger.Infof("processLastLoginNudge - %s", nudge.ID)
+
+	//1. get last login
+	lastLogin, err := app.provider.GetLastLogin(user.NetID)
+	if err != nil {
+		app.logger.Errorf("error getting last login for - %s", user.NetID)
+	}
+
+	app.logger.Debugf("%s", lastLogin)
 }
 
 // NewApplication creates new Application
