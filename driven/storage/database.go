@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/rokwire/logging-library-go/logs"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -44,7 +46,8 @@ type database struct {
 	db       *mongo.Database
 	dbClient *mongo.Client
 
-	nudges *collectionWrapper
+	nudges     *collectionWrapper
+	sentNudges *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -77,18 +80,56 @@ func (m *database) start() error {
 		return err
 	}
 
+	sentNudges := &collectionWrapper{database: m, coll: db.Collection("sent_nudges")}
+	err = m.applySentNudgesChecks(sentNudges)
+	if err != nil {
+		return err
+	}
+
 	//asign the db, db client and the collections
 	m.db = db
 	m.dbClient = client
 
 	m.nudges = nudges
+	m.sentNudges = sentNudges
 
 	return nil
 }
 
-func (m *database) applyNudgesChecks(authenticationTypes *collectionWrapper) error {
+func (m *database) applyNudgesChecks(nudges *collectionWrapper) error {
 	m.logger.Info("apply nudges checks.....")
 
 	m.logger.Info("nudges check passed")
+	return nil
+}
+
+func (m *database) applySentNudgesChecks(sentNudges *collectionWrapper) error {
+	m.logger.Info("apply sent nudges checks.....")
+
+	//add nudge_id index
+	err := sentNudges.AddIndex(bson.D{primitive.E{Key: "nudge_id", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
+	//add user_id index
+	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "user_id", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
+	//add net_id index
+	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
+	//add criteria_hash index
+	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "criteria_hash", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
+	m.logger.Info("sent nudges check passed")
 	return nil
 }
