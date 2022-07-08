@@ -46,6 +46,9 @@ func (h ApisHandler) Version(w http.ResponseWriter, r *http.Request) {
 //GetCourses gets courses
 func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
+	}
 
 	courses, err := h.app.Services.GetCourses(l, providerUserID)
 	if err != nil {
@@ -63,6 +66,9 @@ func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.Re
 //GetCourse gets a course
 func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
+	}
 
 	//course id
 	params := mux.Vars(r)
@@ -98,6 +104,9 @@ func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.Res
 //GetAssignemntGroups gets course assignments
 func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
+	}
 
 	//course id
 	params := mux.Vars(r)
@@ -133,6 +142,9 @@ func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, 
 //GetUsers gets course users
 func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
+	}
 
 	//course id
 	params := mux.Vars(r)
@@ -170,6 +182,9 @@ func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.Resp
 //GetCurrentUser gets the current user
 func (h ApisHandler) GetCurrentUser(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
+	}
 
 	user, err := h.app.Services.GetCurrentUser(l, providerUserID)
 	if err != nil {
@@ -188,7 +203,7 @@ func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
 	if claims == nil {
 		return ""
 	}
-	return claims.ExternalIDs["illinois_oidc.net_id"]
+	return claims.ExternalIDs["net_id"]
 }
 
 // NewApisHandler creates new rest Handler instance

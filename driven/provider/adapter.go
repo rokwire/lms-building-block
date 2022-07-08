@@ -268,19 +268,20 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 	}
 	defer resp.Body.Close()
 
-	if !(resp.StatusCode >= 200 && resp.StatusCode <= 299) {
-		//we have an error
-		errorMessage := fmt.Sprintf("error with response code %d", resp.StatusCode)
-		log.Print(errorMessage)
-		return nil, errors.New(errorMessage)
-	}
-
 	//return the response
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("error converting response body - %s", pathAndParams)
 		return nil, err
 	}
+
+	if !(resp.StatusCode >= 200 && resp.StatusCode <= 299) {
+		//we have an error
+		errorMessage := fmt.Sprintf("error with response code %d: %s", resp.StatusCode, string(data))
+		log.Print(errorMessage)
+		return nil, errors.New(errorMessage)
+	}
+
 	return data, nil
 }
 
