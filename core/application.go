@@ -203,7 +203,17 @@ func (app *Application) processLastLoginNudgePerUser(nudge model.Nudge, user Gro
 	//need to send but first check if it has been send before
 
 	//check if has been sent before
-	//TODO
+	criteriaHash := app.generateLastLoginHash(*lastLogin, hours)
+	sentNudge, err := app.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	if err != nil {
+		//not reached the max hours, so not send notification
+		app.logger.Errorf("error checking if sent nudge exists - %s - %s", nudge.ID, user.NetID)
+		return
+	}
+	if sentNudge != nil {
+		app.logger.Infof("this has been already sent - %s - %s", nudge.ID, user.NetID)
+		return
+	}
 
 	//it has not been sent, so sent it
 	app.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours)
