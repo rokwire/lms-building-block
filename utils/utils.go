@@ -19,6 +19,7 @@ package utils
 
 import (
 	"fmt"
+	"hash/fnv"
 	"log"
 	"net/http"
 	"sort"
@@ -293,4 +294,11 @@ func Exist(list []string, value string) bool {
 		}
 	}
 	return false
+}
+
+//Hash hashes the s value
+func Hash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
 }

@@ -21,12 +21,13 @@ import (
 	"lms/core"
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
+	"lms/driven/groups"
+	"lms/driven/notifications"
 	"lms/driven/provider"
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/rokwire/logging-library-go/logs"
 )
@@ -54,7 +55,7 @@ func main() {
 	mongoDBAuth := getEnvKey("MONGO_AUTH", true)
 	mongoDBName := getEnvKey("MONGO_DATABASE", true)
 	mongoTimeout := getEnvKey("MONGO_TIMEOUT", false)
-	storageAdapter := storage.NewStorageAdapter(mongoDBAuth, mongoDBName, mongoTimeout)
+	storageAdapter := storage.NewStorageAdapter(mongoDBAuth, mongoDBName, mongoTimeout, logger)
 	err := storageAdapter.Start()
 	if err != nil {
 		log.Fatal("Cannot start the mongoDB adapter - " + err.Error())
@@ -69,8 +70,20 @@ func main() {
 	canvasToken := getEnvKey("CANVAS_TOKEN", true)
 	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
 
+	//groups BB adapter
+	testUserID := getEnvKey("LMS_TEST_USER_ID", true)
+	testNetID := getEnvKey("LMS_TEST_NET_ID", true)
+	testUserID2 := getEnvKey("LMS_TEST_USER_ID2", true)
+	testNetID2 := getEnvKey("LMS_TEST_NET_ID2", true)
+	groupsBBAdapter := groups.NewGroupsAdapter(testUserID, testNetID, testUserID2, testNetID2)
+
+	//notifications BB adapter
+	notificationHost := getEnvKey("LMS_NOTIFICATIONS_BB_HOST", true)
+	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey)
+
 	// application
-	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter, cacheAdapter)
+	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
+		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, logger)
 	application.Start()
 
 	// web adapter
@@ -89,18 +102,6 @@ func main() {
 	webAdapter := driver.NewWebAdapter(port, application, &config, logger)
 
 	webAdapter.Start()
-}
-
-func getEnvKeyAsList(key string, required bool) []string {
-	stringValue := getEnvKey(key, required)
-
-	// it is comma separated format
-	stringListValue := strings.Split(stringValue, ",")
-	if len(stringListValue) == 0 && required {
-		log.Fatalf("missing or empty env var: %s", key)
-	}
-
-	return stringListValue
 }
 
 func getEnvKey(key string, required bool) string {

@@ -19,12 +19,9 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"lms/core"
 	"lms/core/model"
 	"lms/utils"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,74 +32,15 @@ import (
 	"github.com/rokwire/logging-library-go/logutils"
 )
 
-const maxUploadSize = 15 * 1024 * 1024 // 15 mb
-
 //ApisHandler handles the rest APIs implementation
 type ApisHandler struct {
 	app    *core.Application
 	config *model.Config
 }
 
-//Version gives the service version
-// @Description Gives the service version.
-// @Tags Client
-// @ID Version
-// @Produce plain
-// @Success 200
-// @Router /version [get]
+//Version gets version
 func (h ApisHandler) Version(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(h.app.Services.GetVersion()))
-}
-
-// V1Wrapper Wraps all Canvas V1 api requests
-// @Description Wraps all Canvas V1 api requests
-// @Tags Client
-// @ID V1Wrapper
-// @Produce plain
-// @Success 200
-// @Router /api/v1 [get]
-func (h ApisHandler) V1Wrapper(claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) {
-	requestBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("%s %d %s", r.Method, http.StatusInternalServerError, r.URL.String())
-		log.Printf("V1Wrapper error: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	path := strings.ReplaceAll(r.URL.Path, "/lms", "")
-	url := fmt.Sprintf("%s%s?%s", h.config.CanvasBaseURL, path, r.URL.RawQuery)
-
-	client := &http.Client{}
-	req, err := http.NewRequest(r.Method, url, strings.NewReader(string(requestBody)))
-	if err != nil {
-		log.Printf("%s %d %s", r.Method, http.StatusInternalServerError, r.URL.String())
-		log.Printf("V1Wrapper error: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", h.config.CanvasTokenType, h.config.CanvasToken))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("%s %d %s", r.Method, resp.StatusCode, r.URL.String())
-		log.Printf("V1Wrapper error: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("%s %d %s", r.Method, http.StatusInternalServerError, r.URL.String())
-		log.Printf("V1Wrapper error: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	log.Printf("%s %d %s", r.Method, resp.StatusCode, r.URL.String())
-	w.WriteHeader(resp.StatusCode)
-	w.Write(data)
 }
 
 //GetCourses gets courses

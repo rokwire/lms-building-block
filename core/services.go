@@ -28,7 +28,7 @@ func (app *Application) getVersion() string {
 }
 
 func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.Course, error) {
-	courses, err := app.Provider.GetCourses(providerUserID)
+	courses, err := app.provider.GetCourses(providerUserID)
 	if err != nil {
 		l.Debugf("error getting courses - %s", err)
 		return nil, err
@@ -37,7 +37,7 @@ func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.
 }
 
 func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error) {
-	course, err := app.Provider.GetCourse(providerUserID, courseID, include)
+	course, err := app.provider.GetCourse(providerUserID, courseID, include)
 	if err != nil {
 		l.Debugf("error getting course - %s", err)
 		return nil, err
@@ -46,7 +46,7 @@ func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID i
 }
 
 func (app *Application) getAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
-	assignmentGroups, err := app.Provider.GetAssignmentGroups(providerUserID, courseID, include)
+	assignmentGroups, err := app.provider.GetAssignmentGroups(providerUserID, courseID, include)
 	if err != nil {
 		l.Debugf("error getting assignment groups - %s", err)
 		return nil, err
@@ -55,7 +55,7 @@ func (app *Application) getAssignmentGroups(l *logs.Log, providerUserID string, 
 }
 
 func (app *Application) getCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
-	user, err := app.Provider.GetCourseUser(providerUserID, courseID, includeEnrolments, includeScores)
+	user, err := app.provider.GetCourseUser(providerUserID, courseID, includeEnrolments, includeScores)
 	if err != nil {
 		l.Debugf("error getting user - %s", err)
 		return nil, err
@@ -64,7 +64,7 @@ func (app *Application) getCourseUser(l *logs.Log, providerUserID string, course
 }
 
 func (app *Application) getCurrentUser(l *logs.Log, providerUserID string) (*model.User, error) {
-	user, err := app.Provider.GetCurrentUser(providerUserID)
+	user, err := app.provider.GetCurrentUser(providerUserID)
 	if err != nil {
 		l.Debugf("error getting user - %s", err)
 		return nil, err

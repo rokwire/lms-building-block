@@ -6,8 +6,13 @@ info:
 servers:
   - url: 'http://localhost/lms'
     description: Local server
-  - url: 'https://api-dev.rokwire.illinois.edu/lms/doc'
+  - url: 'https://api-dev.rokwire.illinois.edu/lms'
     description: Development server
+tags:
+  - name: Api
+    description: Clients  APIs.
+  - name: Admin
+    description: Clients administration APIs.
 paths:
   #api
   /api/v1:
@@ -22,3 +27,18 @@ paths:
     $ref: "./resources/api/courses/userID.yaml"
   /api/user/self:
     $ref: "./resources/api/user/user.yaml"
+
+#admin
+  /admin/nudges:
+    $ref: "./resources/admin/nudges/nudges.yaml"
+  /admin/nudges/{id}:
+    $ref: "./resources/admin/nudges/nudgesID.yaml"
+
+  components:
+    securitySchemes:
+        bearerAuth:            # arbitrary name for the security scheme
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+    schemas:
+     $ref: "./schemas/index.yaml"

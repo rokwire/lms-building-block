@@ -20,6 +20,7 @@ package core
 import (
 	"lms/core/model"
 	"lms/driven/storage"
+	"time"
 
 	"github.com/rokwire/logging-library-go/logs"
 )
@@ -33,6 +34,14 @@ type Services interface {
 	GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error)
+}
+
+// Administration exposes APIs for the driver adapters
+type Administration interface {
+	GetNudges() ([]model.Nudge, error)
+	CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
+	UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
+	DeleteNudge(l *logs.Log, ID string) error
 }
 
 type servicesImpl struct {
@@ -63,9 +72,39 @@ func (s *servicesImpl) GetCurrentUser(l *logs.Log, providerUserID string) (*mode
 	return s.app.getCurrentUser(l, providerUserID)
 }
 
+//admin
+
+type administrationImpl struct {
+	app *Application
+}
+
+func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
+	return s.app.getNudges()
+}
+
+func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
+	return s.app.createNudge(l, ID, name, body, params)
+}
+
+func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
+	return s.app.updateNudge(l, ID, name, body, params)
+}
+
+func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
+	return s.app.deleteNudge(l, ID)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
+
+	LoadAllNudges() ([]model.Nudge, error)
+	InsertNudge(item model.Nudge) error
+	UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error
+	DeleteNudge(ID string) error
+
+	InsertSentNudge(sentNudge model.SentNudge) error
+	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error)
 }
 
 //Provider interface for LMS provider
@@ -75,4 +114,27 @@ type Provider interface {
 	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
+	GetLastLogin(userID string) (*time.Time, error)
+}
+
+//GroupsBB interface for the Groups building block communication
+type GroupsBB interface {
+	GetUsers() ([]GroupsBBUser, error)
+}
+
+//GroupsBBUser entity
+type GroupsBBUser struct {
+	UserID string
+	NetID  string
+}
+
+//NotificationsBB interface for the Notifications building block communication
+type NotificationsBB interface {
+	SendNotifications(recipients []Recipient, text string, body string) error
+}
+
+//Recipient entity
+type Recipient struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
 }

@@ -24,12 +24,15 @@ import (
 	web "lms/driver/web/auth"
 	"log"
 	"net/http"
+
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 // Auth handler
 type Auth struct {
 	internalAuth *InternalAuth
 	coreAuth     *web.CoreAuth
+	logger       *logs.Logger
 }
 
 func (auth *Auth) clientIDCheck(w http.ResponseWriter, r *http.Request) bool {
