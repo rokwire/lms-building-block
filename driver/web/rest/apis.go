@@ -38,6 +38,7 @@ type ApisHandler struct {
 	config *model.Config
 }
 
+//Version gets version
 func (h ApisHandler) Version(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(h.app.Services.GetVersion()))
 }

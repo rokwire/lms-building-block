@@ -86,6 +86,7 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	return l.HttpResponseSuccess()
 }
 
+//DeleteNudge deletes nudge
 func (h AdminApisHandler) DeleteNudge(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	params := mux.Vars(r)
 	nudgeID := params["id"]

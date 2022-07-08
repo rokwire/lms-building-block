@@ -36,6 +36,7 @@ type Services interface {
 	GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error)
 }
 
+// Administration exposes APIs for the driver adapters
 type Administration interface {
 	GetNudges() ([]model.Nudge, error)
 	CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
