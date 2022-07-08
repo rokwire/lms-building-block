@@ -38,7 +38,8 @@ func (app *Application) getNudges() ([]model.Nudge, error) {
 
 func (app *Application) createNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
 	//create and insert nudge
-	err := app.storage.InsertNudge(ID, name, body, params)
+	nudge := model.Nudge{ID: ID, Name: name, Body: body, Params: *params}
+	err := app.storage.InsertNudge(nudge)
 	if err != nil {
 		return err
 	}

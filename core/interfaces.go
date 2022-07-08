@@ -98,7 +98,7 @@ type Storage interface {
 	SetListener(listener storage.CollectionListener)
 
 	LoadAllNudges() ([]model.Nudge, error)
-	InsertNudge(ID string, name string, body string, params *map[string]interface{}) error
+	InsertNudge(item model.Nudge) error
 	UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error
 	DeleteNudge(ID string) error
 }
