@@ -28,10 +28,9 @@ import (
 
 	"github.com/getkin/kin-openapi/routers"
 
-	"github.com/rokwire/core-auth-library-go/tokenauth"
+	"github.com/rokwire/core-auth-library-go/v2/tokenauth"
 	"github.com/rokwire/logging-library-go/logs"
 
-	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -42,7 +41,6 @@ type Adapter struct {
 	lmsServiceURL string
 	port          string
 	auth          *Auth
-	authorization *casbin.Enforcer
 	openAPIRouter routers.Router
 
 	apisHandler         rest.ApisHandler
@@ -99,9 +97,9 @@ func (we Adapter) Start() {
 	adminRouter := subrouter.PathPrefix("/admin").Subrouter()
 
 	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.GetNudges)).Methods("GET")
-	adminRouter.HandleFunc("/nudge", we.adminAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
-	adminRouter.HandleFunc("/nudge/{id}", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudge)).Methods("PUT")
-	adminRouter.HandleFunc("/nudge/{id}", we.adminAuthWrapFunc(we.adminApisHandler.DeleteNudge)).Methods("DELETE")
+	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
+	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudge)).Methods("PUT")
+	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.DeleteNudge)).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
@@ -132,10 +130,14 @@ func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 
 		logObj.RequestReceived()
 
-		coreAuth, claims := we.auth.coreAuth.Check(req)
-		if !(coreAuth && claims != nil && !claims.Anonymous) {
-			//unauthorized
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		claims, err := we.auth.coreAuth.Check(req)
+		if err != nil {
+			if claims == nil {
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 
@@ -172,14 +174,14 @@ func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 
 		logObj.RequestReceived()
 
-		coreAuth, claims := we.auth.coreAuth.Check(req)
-		if claims.Admin != true {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-		if !(coreAuth && claims != nil && !claims.Anonymous) {
-			//unauthorized
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		claims, err := we.auth.coreAuth.AdminCheck(req)
+		if err != nil {
+			if claims == nil {
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 
@@ -227,7 +229,6 @@ func (we Adapter) internalAPIKeyAuthWrapFunc(handler internalAPIKeyAuthFunc) htt
 // NewWebAdapter creates new WebAdapter instance
 func NewWebAdapter(port string, app *core.Application, config *model.Config, logger *logs.Logger) Adapter {
 	auth := NewAuth(app, config)
-	authorization := casbin.NewEnforcer("driver/web/authorization_model.conf", "driver/web/authorization_policy.csv")
 
 	apisHandler := rest.NewApisHandler(app, config)
 	adminApisHandler := rest.NewAdminApisHandler(app, config)
@@ -236,7 +237,6 @@ func NewWebAdapter(port string, app *core.Application, config *model.Config, log
 		lmsServiceURL:       config.LmsServiceURL,
 		port:                port,
 		auth:                auth,
-		authorization:       authorization,
 		apisHandler:         apisHandler,
 		adminApisHandler:    adminApisHandler,
 		internalApisHandler: internalApisHandler,

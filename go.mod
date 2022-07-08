@@ -17,7 +17,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
-	github.com/rokwire/core-auth-library-go v1.0.9
+	github.com/rokwire/core-auth-library-go/v2 v2.0.1
 	github.com/rokwire/logging-library-go v1.0.3
 	github.com/stretchr/testify v1.7.1 // indirect
 	github.com/swaggo/http-swagger v1.2.6
