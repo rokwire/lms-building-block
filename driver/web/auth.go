@@ -25,31 +25,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/rokwire/logging-library-go/errors"
 	"github.com/rokwire/logging-library-go/logs"
-	"github.com/rokwire/logging-library-go/logutils"
-
-	"github.com/rokwire/core-auth-library-go/tokenauth"
 )
 
 // Auth handler
 type Auth struct {
-	admin        *TokenAuthHandlers
 	internalAuth *InternalAuth
 	coreAuth     *web.CoreAuth
 	logger       *logs.Logger
-}
-
-//Authorization is an interface for auth types
-type Authorization interface {
-	check(req *http.Request) (int, *tokenauth.Claims, error)
-	start()
-}
-
-//TokenAuthorization is an interface for auth types
-type TokenAuthorization interface {
-	Authorization
-	getTokenAuth() *tokenauth.TokenAuth
 }
 
 func (auth *Auth) clientIDCheck(w http.ResponseWriter, r *http.Request) bool {
@@ -105,49 +88,4 @@ func (auth *InternalAuth) check(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	return true
-}
-
-//PermissionsAuth entity
-//This enforces that the user has permissions matching the policy
-type PermissionsAuth struct {
-	auth TokenAuthorization
-}
-
-func (a *PermissionsAuth) start() {}
-
-func (a *PermissionsAuth) check(req *http.Request) (int, *tokenauth.Claims, error) {
-	status, claims, err := a.auth.check(req)
-
-	if err == nil && claims != nil {
-		err = a.auth.getTokenAuth().AuthorizeRequestPermissions(claims, req)
-		if err != nil {
-			return http.StatusForbidden, nil, errors.WrapErrorAction("", logutils.TypeRequest, nil, err)
-		}
-	}
-
-	return status, claims, err
-}
-
-func newPermissionsAuth(auth TokenAuthorization) *PermissionsAuth {
-	permissionsAuth := PermissionsAuth{auth: auth}
-	return &permissionsAuth
-}
-
-//TokenAuthHandlers represents token auth handlers
-type TokenAuthHandlers struct {
-	standard    TokenAuthorization
-	permissions *PermissionsAuth
-}
-
-func (auth *TokenAuthHandlers) start() {
-	auth.standard.start()
-	auth.permissions.start()
-}
-
-//newTokenAuthHandlers creates new auth handlers for a
-func newTokenAuthHandlers(auth TokenAuthorization) (*TokenAuthHandlers, error) {
-	permissionsAuth := newPermissionsAuth(auth)
-
-	authWrappers := TokenAuthHandlers{standard: auth, permissions: permissionsAuth}
-	return &authWrappers, nil
 }
