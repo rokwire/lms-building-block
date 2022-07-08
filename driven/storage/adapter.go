@@ -130,6 +130,27 @@ func (sa *Adapter) InsertSentNudge(sentNudge model.SentNudge) error {
 	return nil
 }
 
+//FindSentNudge finds sent nudge entity
+func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error) {
+	filter := bson.D{
+		primitive.E{Key: "nudge_id", Value: nudgeID},
+		primitive.E{Key: "user_id", Value: userID},
+		primitive.E{Key: "net_id", Value: netID},
+		primitive.E{Key: "criteria_hash", Value: criteriaHash}}
+
+	var result []model.SentNudge
+	err := sa.db.sentNudges.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "sent nudge", nil, err)
+	}
+	if len(result) == 0 {
+		//no record
+		return nil, nil
+	}
+	sentNudge := result[0]
+	return &sentNudge, nil
+}
+
 // Event
 
 func (m *database) onDataChanged(changeDoc map[string]interface{}) {
