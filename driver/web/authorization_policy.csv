@@ -1,1 +1,0 @@
-p, all_admin_rewards, /rewards/api/admin/*, (GET)|(POST)|(PUT)|(DELETE)
