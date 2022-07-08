@@ -1,8 +1,10 @@
 vendor/
 bin/
+build/
 .vscode/
 .idea/
 .git
 go.sum
 docker-compose.env
 docker-compose.yml
+run.sh
