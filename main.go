@@ -28,7 +28,6 @@ import (
 	driver "lms/driver/web"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/rokwire/logging-library-go/logs"
 )
@@ -74,7 +73,9 @@ func main() {
 	//groups BB adapter
 	testUserID := getEnvKey("LMS_TEST_USER_ID", true)
 	testNetID := getEnvKey("LMS_TEST_NET_ID", true)
-	groupsBBAdapter := groups.NewGroupsAdapter(testUserID, testNetID)
+	testUserID2 := getEnvKey("LMS_TEST_USER_ID2", true)
+	testNetID2 := getEnvKey("LMS_TEST_NET_ID2", true)
+	groupsBBAdapter := groups.NewGroupsAdapter(testUserID, testNetID, testUserID2, testNetID2)
 
 	//notifications BB adapter
 	notificationsBBAdapter := notifications.NewNotificationsAdapter()
@@ -100,18 +101,6 @@ func main() {
 	webAdapter := driver.NewWebAdapter(port, application, &config, logger)
 
 	webAdapter.Start()
-}
-
-func getEnvKeyAsList(key string, required bool) []string {
-	stringValue := getEnvKey(key, required)
-
-	// it is comma separated format
-	stringListValue := strings.Split(stringValue, ",")
-	if len(stringListValue) == 0 && required {
-		log.Fatalf("missing or empty env var: %s", key)
-	}
-
-	return stringListValue
 }
 
 func getEnvKey(key string, required bool) string {

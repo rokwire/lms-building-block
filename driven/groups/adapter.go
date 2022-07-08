@@ -23,16 +23,21 @@ import "lms/core"
 type Adapter struct {
 	testUserID string
 	testNetID  string
+
+	testUserID2 string
+	testNetID2  string
 }
 
 //GetUsers get user from the groups BB
 func (a *Adapter) GetUsers() ([]core.GroupsBBUser, error) {
 	//TODO
-	users := []core.GroupsBBUser{{UserID: a.testUserID, NetID: a.testNetID}}
+	users := []core.GroupsBBUser{{UserID: a.testUserID, NetID: a.testNetID},
+		{UserID: a.testUserID2, NetID: a.testNetID2}}
 	return users, nil
 }
 
 //NewGroupsAdapter creates a new groups BB adapter
-func NewGroupsAdapter(testUserID string, testNetID string) *Adapter {
-	return &Adapter{testUserID: testUserID, testNetID: testNetID}
+func NewGroupsAdapter(testUserID string, testNetID string, testUserID2 string, testNetID2 string) *Adapter {
+	return &Adapter{testUserID: testUserID, testNetID: testNetID,
+		testUserID2: testUserID2, testNetID2: testNetID2}
 }
