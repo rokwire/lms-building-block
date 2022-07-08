@@ -18,10 +18,13 @@
 package core
 
 import (
+	"fmt"
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
+	"lms/utils"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
@@ -197,8 +200,48 @@ func (app *Application) processLastLoginNudgePerUser(nudge model.Nudge, user Gro
 		return
 	}
 
-	//TODO need to send but first check if it has been send before
+	//need to send but first check if it has been send before
 
+	//check if has been sent before
+	//TODO
+
+	//it has not been sent, so sent it
+	app.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours)
+}
+
+func (app *Application) sendLastLoginNudgeForUser(nudge model.Nudge, user GroupsBBUser,
+	lastLogin time.Time, hours float64) {
+	app.logger.Infof("sendLastLoginNudgeForUser - %s - %s", nudge.ID, user.UserID)
+
+	//send push notification
+	err := app.notificationsBB.SendNotifications()
+	if err != nil {
+		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
+		return
+	}
+
+	//insert sent nudge
+	criteriaHash := app.generateLastLoginHash(lastLogin, hours)
+	sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	err = app.storage.InsertSentNudge(sentNudge)
+	if err != nil {
+		app.logger.Errorf("error saving sent nudge for %s - %s", user.UserID, err)
+		return
+	}
+}
+
+func (app *Application) generateLastLoginHash(lastLogin time.Time, hours float64) uint32 {
+	lastLoginComponent := fmt.Sprintf("%d", lastLogin.Unix())
+	hoursComponent := fmt.Sprintf("%f", hours)
+	component := fmt.Sprintf("%s+%s", lastLoginComponent, hoursComponent)
+	hash := utils.Hash(component)
+	return hash
+}
+
+func (app *Application) createSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) model.SentNudge {
+	id, _ := uuid.NewUUID()
+	return model.SentNudge{ID: id.String(), NudgeID: nudgeID, UserID: userID,
+		NetID: netID, CriteriaHash: criteriaHash, DateSent: time.Now()}
 }
 
 // NewApplication creates new Application

@@ -101,6 +101,8 @@ type Storage interface {
 	InsertNudge(item model.Nudge) error
 	UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error
 	DeleteNudge(ID string) error
+
+	InsertSentNudge(sentNudge model.SentNudge) error
 }
 
 //Provider interface for LMS provider

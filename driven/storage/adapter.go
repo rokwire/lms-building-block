@@ -120,6 +120,16 @@ func (sa *Adapter) DeleteNudge(ID string) error {
 	return nil
 }
 
+//InsertSentNudge inserts sent nudge entity
+func (sa *Adapter) InsertSentNudge(sentNudge model.SentNudge) error {
+	_, err := sa.db.sentNudges.InsertOne(sentNudge)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "sent nudge", nil, err)
+	}
+
+	return nil
+}
+
 // Event
 
 func (m *database) onDataChanged(changeDoc map[string]interface{}) {

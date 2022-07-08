@@ -29,9 +29,10 @@ type Nudge struct {
 
 //SentNudge entity
 type SentNudge struct {
+	ID           string    `bson:"_id"`
 	NudgeID      string    `bson:"nudge_id"`
 	UserID       string    `bson:"user_id"`
 	NetID        string    `bson:"net_id"`
-	CriteriaHash string    `bson:"criteria_hash"`
+	CriteriaHash uint32    `bson:"criteria_hash"`
 	DateSent     time.Time `bson:"date_sent"`
 }
