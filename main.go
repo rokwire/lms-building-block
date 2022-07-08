@@ -47,27 +47,27 @@ func main() {
 	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties("/lms/version")}}
 	logger := logs.NewLogger("core", &loggerOpts)
 
-	port := getEnvKey("PORT", true)
+	port := getEnvKey("LMS_PORT", true)
 
-	internalAPIKey := getEnvKey("INTERNAL_API_KEY", true)
+	internalAPIKey := getEnvKey("LMS_INTERNAL_API_KEY", true)
 
 	//mongoDB adapter
-	mongoDBAuth := getEnvKey("MONGO_AUTH", true)
-	mongoDBName := getEnvKey("MONGO_DATABASE", true)
-	mongoTimeout := getEnvKey("MONGO_TIMEOUT", false)
+	mongoDBAuth := getEnvKey("LMS_MONGO_AUTH", true)
+	mongoDBName := getEnvKey("LMS_MONGO_DATABASE", true)
+	mongoTimeout := getEnvKey("LMS_MONGO_TIMEOUT", false)
 	storageAdapter := storage.NewStorageAdapter(mongoDBAuth, mongoDBName, mongoTimeout, logger)
 	err := storageAdapter.Start()
 	if err != nil {
 		log.Fatal("Cannot start the mongoDB adapter - " + err.Error())
 	}
 
-	defaultCacheExpirationSeconds := getEnvKey("DEFAULT_CACHE_EXPIRATION_SECONDS", false)
+	defaultCacheExpirationSeconds := getEnvKey("LMS_DEFAULT_CACHE_EXPIRATION_SECONDS", false)
 	cacheAdapter := cacheadapter.NewCacheAdapter(defaultCacheExpirationSeconds)
 
 	//provider adapter
-	canvasBaseURL := getEnvKey("CANVAS_BASE_URL", true)
-	canvasTokenType := getEnvKey("CANVAS_TOKEN_TYPE", true)
-	canvasToken := getEnvKey("CANVAS_TOKEN", true)
+	canvasBaseURL := getEnvKey("LMS_CANVAS_BASE_URL", true)
+	canvasTokenType := getEnvKey("LMS_CANVAS_TOKEN_TYPE", true)
+	canvasToken := getEnvKey("LMS_CANVAS_TOKEN", true)
 	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
 
 	//groups BB adapter
@@ -87,7 +87,7 @@ func main() {
 	application.Start()
 
 	// web adapter
-	coreBBHost := getEnvKey("CORE_BB_HOST", true)
+	coreBBHost := getEnvKey("LMS_CORE_BB_HOST", true)
 	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
 
 	config := model.Config{
