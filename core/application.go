@@ -64,31 +64,31 @@ func (app *Application) setupNudgesTimer() {
 		app.timerDone <- true
 		app.dailyNudgesTimer.Stop()
 	}
+	/*
+		//wait until it is the correct moment from the day
+		location, err := time.LoadLocation("America/Chicago")
+		if err != nil {
+			app.logger.Errorf("Error getting location:%s\n", err.Error())
+		}
+		now := time.Now().In(location)
+		app.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-	//wait until it is the correct moment from the day
-	location, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		app.logger.Errorf("Error getting location:%s\n", err.Error())
-	}
-	now := time.Now().In(location)
-	app.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
+		nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+		desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
 
-	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
-
-	var durationInSeconds int
-	app.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
-	if nowSecondsInDay <= desiredMoment {
-		app.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
-		durationInSeconds = desiredMoment - nowSecondsInDay
-	} else {
-		app.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-		leftToday := 86400 - nowSecondsInDay
-		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
-	}
+		var durationInSeconds int
+		app.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
+		if nowSecondsInDay <= desiredMoment {
+			app.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
+			durationInSeconds = desiredMoment - nowSecondsInDay
+		} else {
+			app.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
+			leftToday := 86400 - nowSecondsInDay
+			durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+		} */
 	//app.logger.Infof("%d", durationInSeconds)
-	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
+	duration := time.Second * time.Duration(3)
+	//duration := time.Second * time.Duration(durationInSeconds)
 	app.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
 	app.dailyNudgesTimer = time.NewTimer(duration)
@@ -172,15 +172,33 @@ func (app *Application) processLastLoginNudge(nudge model.Nudge, allUsers []Grou
 }
 
 func (app *Application) processLastLoginNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
-	app.logger.Infof("processLastLoginNudge - %s", nudge.ID)
+	app.logger.Infof("processLastLoginNudgePerUser - %s", nudge.ID)
 
-	//1. get last login
+	//get last login date
 	lastLogin, err := app.provider.GetLastLogin(user.NetID)
 	if err != nil {
 		app.logger.Errorf("error getting last login for - %s", user.NetID)
 	}
 
-	app.logger.Debugf("%s", lastLogin)
+	//if last login is not available we do nothing
+	if lastLogin == nil {
+		app.logger.Debugf("last login is not available for user - %s", user.NetID)
+		return
+	}
+
+	//determine if needs to send notification
+	hours := float64(nudge.Params["hours"].(int32))
+	now := time.Now()
+	difference := now.Sub(*lastLogin) //difference between now and the last login
+	differenceInHours := difference.Hours()
+	if differenceInHours <= hours {
+		//not reached the max hours, so not send notification
+		app.logger.Infof("not reached the max hours, so not send notification - %s", user.NetID)
+		return
+	}
+
+	//TODO need to send but first check if it has been send before
+
 }
 
 // NewApplication creates new Application
