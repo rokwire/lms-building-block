@@ -67,31 +67,31 @@ func (app *Application) setupNudgesTimer() {
 		app.timerDone <- true
 		app.dailyNudgesTimer.Stop()
 	}
+	/*
+		//wait until it is the correct moment from the day
+		location, err := time.LoadLocation("America/Chicago")
+		if err != nil {
+			app.logger.Errorf("Error getting location:%s\n", err.Error())
+		}
+		now := time.Now().In(location)
+		app.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-	//wait until it is the correct moment from the day
-	location, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		app.logger.Errorf("Error getting location:%s\n", err.Error())
-	}
-	now := time.Now().In(location)
-	app.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
+		nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+		desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
 
-	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
-
-	var durationInSeconds int
-	app.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
-	if nowSecondsInDay <= desiredMoment {
-		app.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
-		durationInSeconds = desiredMoment - nowSecondsInDay
-	} else {
-		app.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-		leftToday := 86400 - nowSecondsInDay
-		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
-	}
+		var durationInSeconds int
+		app.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
+		if nowSecondsInDay <= desiredMoment {
+			app.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
+			durationInSeconds = desiredMoment - nowSecondsInDay
+		} else {
+			app.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
+			leftToday := 86400 - nowSecondsInDay
+			durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+		} */
 	//app.logger.Infof("%d", durationInSeconds)
-	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
+	duration := time.Second * time.Duration(3)
+	//åduration := time.Second * time.Duration(durationInSeconds)
 	app.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
 	app.dailyNudgesTimer = time.NewTimer(duration)
@@ -161,10 +161,14 @@ func (app *Application) processNudge(nudge model.Nudge, allUsers []GroupsBBUser)
 	switch nudge.ID {
 	case "last_login":
 		app.processLastLoginNudge(nudge, allUsers)
+	case "missed_assignment":
+		app.processMissedAssignmentNudge(nudge, allUsers)
 	default:
 		app.logger.Infof("Not supported nudge - %s", nudge.ID)
 	}
 }
+
+// last_login nudge
 
 func (app *Application) processLastLoginNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
 	app.logger.Infof("processLastLoginNudge - %s", nudge.ID)
@@ -254,6 +258,26 @@ func (app *Application) createSentNudge(nudgeID string, userID string, netID str
 	return model.SentNudge{ID: id.String(), NudgeID: nudgeID, UserID: userID,
 		NetID: netID, CriteriaHash: criteriaHash, DateSent: time.Now()}
 }
+
+// end last_login nudge
+
+// missed_assignemnt nudge
+
+func (app *Application) processMissedAssignmentNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
+	app.logger.Infof("processMissedAssignmentNudge - %s", nudge.ID)
+
+	for _, user := range allUsers {
+		app.processMissedAssignmentNudgePerUser(nudge, user)
+	}
+}
+
+func (app *Application) processMissedAssignmentNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
+	app.logger.Infof("processMissedAssignmentNudgePerUser - %s", nudge.ID)
+
+	//TODO
+}
+
+// end missed_assignemnt nudge
 
 // NewApplication creates new Application
 func NewApplication(version string, build string, storage Storage, provider Provider,
