@@ -21,16 +21,16 @@ paths:
   #api
   /api/courses:
     $ref: "./resources/api/courses/courses.yaml"
-  /api/courses/{id}:
-    $ref: "./resources/api/courses/coursesID.yaml"
-  /api/courses/{id}/assignment-groups:
-    $ref: "./resources/api/courses/assigment-groups.yaml"
-  /api/courses/{id}/users:
-    $ref: "./resources/api/courses/userID.yaml"
-  /api/users/self:
-    $ref: "./resources/api/user/user.yaml"
+  ##/api/courses/{id}:
+    ##$ref: "./resources/api/courses/coursesID.yaml"
+  ##/api/courses/{id}/assignment-groups:
+    ##$ref: "./resources/api/courses/assigment-groups.yaml"
+  ##/api/courses/{id}/users:
+    ##$ref: "./resources/api/courses/userID.yaml"
+  ##/api/users/self:
+    ##$ref: "./resources/api/user/user.yaml"
 
-#admin
+  #admin
   /admin/nudges:
     $ref: "./resources/admin/nudges/nudges.yaml"
   /admin/nudges/{id}:

@@ -34,10 +34,10 @@ _admin_res_update_nudge:
 _api_req_get_Course:
   $ref: "./apis/api/get-course/request/Request.yaml"
 _api_res_get_Course:
-  $ref: "./apis/api/get-assigment-groups/response/Response.yaml"
-_api_req_get_Assigment-group:
-  $ref: "./apis/api/get-assigment-groups/request/Request.yaml"
-_api_res_get_Assigment-group:
-  $ref: "./apis/api/get-assigment-groups/response/Response.yaml"
+  $ref: "./apis/api/get-course/response/Response.yaml"
+##_api_req_get_Assigment-group:
+  ##$ref: "./apis/api/get-assigment-groups/request/Request.yaml"
+##_api_res_get_Assigment-group:
+  ##$ref: "./apis/api/get-assigment-groups/response/Response.yaml"
 
   ## end ADMIN section
