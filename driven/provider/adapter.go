@@ -223,6 +223,12 @@ func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 	return user.LastLogin, nil
 }
 
+//GetMissedAssignments gives the missed assignments of the user
+func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error) {
+	//TODO
+	return nil, nil
+}
+
 func (a *Adapter) constructQueryParams(items map[string][]string) string {
 	if len(items) == 0 {
 		return ""
