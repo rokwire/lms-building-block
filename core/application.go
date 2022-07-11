@@ -280,10 +280,48 @@ func (app *Application) processMissedAssignmentNudgePerUser(nudge model.Nudge, u
 	if err != nil {
 		app.logger.Errorf("error getting missed assignments for - %s", user.NetID)
 	}
+	if len(missedAssignments) == 0 {
+		//no missed assignments
+		app.logger.Infof("no missed assignments, so not send notifications - %s", user.NetID)
+		return
+	}
 
+	//determine for which of the assignments we need to send notifications
+	hours := float64(nudge.Params["hours"].(int32))
+	now := time.Now()
+	missedAssignments, err = app.findMissedAssignments(hours, now, missedAssignments)
+	if err != nil {
+		app.logger.Errorf("error finding missed assignments for - %s", user.NetID)
+	}
+	if len(missedAssignments) == 0 {
+		//no missed assignments
+		app.logger.Infof("no missed assignments after checking due date, so not send notifications - %s", user.NetID)
+		return
+	}
+
+	//here we have the assignments we need to send notifications for
 	log.Println(missedAssignments)
 
 	//TODO
+}
+
+func (app *Application) findMissedAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
+	app.logger.Info("findMissedAssignments")
+
+	resultList := []model.Assignment{}
+	for _, assignment := range assignments {
+		if assignment.DueAt == nil {
+			continue
+		}
+
+		difference := now.Sub(*assignment.DueAt) //difference between now and the due at date
+		differenceInHours := difference.Hours()
+		if differenceInHours > hours {
+			resultList = append(resultList, assignment)
+		}
+	}
+
+	return resultList, nil
 }
 
 // end missed_assignemnt nudge
