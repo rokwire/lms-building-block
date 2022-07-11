@@ -68,13 +68,13 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionRead, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, false)
 	}
-	var requestData model.Nudge
+	var requestData Def.AdminReqUpdateNudge
 	err = json.Unmarshal(data, &requestData)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	err = h.app.Administration.UpdateNudge(l, ID, requestData.Name, requestData.Body, &requestData.Params)
+	err = h.app.Administration.UpdateNudge(l, ID, requestData.Body, requestData.Name, requestData.Params)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}
