@@ -22,6 +22,7 @@ import (
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
 	"lms/utils"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -273,6 +274,14 @@ func (app *Application) processMissedAssignmentNudge(nudge model.Nudge, allUsers
 
 func (app *Application) processMissedAssignmentNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
 	app.logger.Infof("processMissedAssignmentNudgePerUser - %s", nudge.ID)
+
+	//get missed assignments
+	missedAssignments, err := app.provider.GetMissedAssignments(user.NetID)
+	if err != nil {
+		app.logger.Errorf("error getting missed assignments for - %s", user.NetID)
+	}
+
+	log.Println(missedAssignments)
 
 	//TODO
 }
