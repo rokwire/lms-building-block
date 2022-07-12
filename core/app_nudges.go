@@ -20,42 +20,11 @@ package core
 import (
 	"fmt"
 	"lms/core/model"
-	cacheadapter "lms/driven/cache"
 	"lms/utils"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rokwire/logging-library-go/logs"
 )
-
-//Application represents the core application code based on hexagonal architecture
-type Application struct {
-	version string
-	build   string
-
-	Services       Services       //expose to the drivers adapters
-	Administration Administration //expose to the drivers adapters
-
-	provider        Provider
-	groupsBB        GroupsBB
-	notificationsBB NotificationsBB
-
-	storage      Storage
-	cacheAdapter *cacheadapter.CacheAdapter
-
-	logger *logs.Logger
-
-	//nudges timer
-	dailyNudgesTimer *time.Timer
-	timerDone        chan bool
-}
-
-// Start starts the core part of the application
-func (app *Application) Start() {
-	app.storage.SetListener(app)
-
-	go app.setupNudgesTimer()
-}
 
 func (app *Application) setupNudgesTimer() {
 	app.logger.Info("Setup nudges timer")
@@ -340,15 +309,15 @@ func (app *Application) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user
 		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
 		return
 	} */
-
-	//insert sent nudge
-	criteriaHash := app.generateMissedAssignmentHash(assignmentID, hours)
-	sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
-	err := app.storage.InsertSentNudge(sentNudge)
-	if err != nil {
-		app.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
-		return
-	}
+	/*
+		//insert sent nudge
+		criteriaHash := app.generateMissedAssignmentHash(assignmentID, hours)
+		sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+		err := app.storage.InsertSentNudge(sentNudge)
+		if err != nil {
+			app.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
+			return
+		} */
 }
 
 func (app *Application) generateMissedAssignmentHash(assignemntID int, hours float64) uint32 {
@@ -379,26 +348,3 @@ func (app *Application) findMissedAssignments(hours float64, now time.Time, assi
 }
 
 // end missed_assignemnt nudge
-
-// NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, provider Provider,
-	groupsBB GroupsBB, notificationsBB NotificationsBB,
-	cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
-	timerDone := make(chan bool)
-	application := Application{
-		version:         version,
-		build:           build,
-		provider:        provider,
-		groupsBB:        groupsBB,
-		notificationsBB: notificationsBB,
-		storage:         storage,
-		cacheAdapter:    cacheadapter,
-		logger:          logger,
-		timerDone:       timerDone}
-
-	// add the drivers ports/interfaces
-	application.Services = &servicesImpl{app: &application}
-	application.Administration = &administrationImpl{app: &application}
-
-	return &application
-}
