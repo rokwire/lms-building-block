@@ -20,43 +20,11 @@ package core
 import (
 	"fmt"
 	"lms/core/model"
-	cacheadapter "lms/driven/cache"
 	"lms/utils"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rokwire/logging-library-go/logs"
 )
-
-//Application represents the core application code based on hexagonal architecture
-type Application struct {
-	version string
-	build   string
-
-	Services       Services       //expose to the drivers adapters
-	Administration Administration //expose to the drivers adapters
-
-	provider        Provider
-	groupsBB        GroupsBB
-	notificationsBB NotificationsBB
-
-	storage      Storage
-	cacheAdapter *cacheadapter.CacheAdapter
-
-	logger *logs.Logger
-
-	//nudges timer
-	dailyNudgesTimer *time.Timer
-	timerDone        chan bool
-}
-
-// Start starts the core part of the application
-func (app *Application) Start() {
-	app.storage.SetListener(app)
-
-	go app.setupNudgesTimer()
-}
 
 func (app *Application) setupNudgesTimer() {
 	app.logger.Info("Setup nudges timer")
@@ -300,9 +268,64 @@ func (app *Application) processMissedAssignmentNudgePerUser(nudge model.Nudge, u
 	}
 
 	//here we have the assignments we need to send notifications for
-	log.Println(missedAssignments)
 
-	//TODO
+	//process the missed assignments
+	for _, assignment := range missedAssignments {
+		app.processMissedAssignment(nudge, user, assignment, hours)
+	}
+}
+
+func (app *Application) processMissedAssignment(nudge model.Nudge, user GroupsBBUser, assignment model.Assignment, hours float64) {
+	app.logger.Infof("processMissedAssignment - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
+
+	//need to send but first check if it has been send before
+
+	//check if has been sent before
+	criteriaHash := app.generateMissedAssignmentHash(assignment.ID, hours)
+	sentNudge, err := app.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	if err != nil {
+		//not reached the max hours, so not send notification
+		app.logger.Errorf("error checking if sent nudge exists for missed assignment - %s - %s", nudge.ID, user.NetID)
+		return
+	}
+	if sentNudge != nil {
+		app.logger.Infof("this has been already sent - %s - %s", nudge.ID, user.NetID)
+		return
+	}
+
+	//it has not been sent, so sent it
+	app.sendMissedAssignmentNudgeForUser(nudge, user, assignment, hours)
+}
+
+func (app *Application) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user GroupsBBUser,
+	assignment model.Assignment, hours float64) {
+	app.logger.Infof("sendMissedAssignmentNudgeForUser - %s - %s", nudge.ID, user.UserID)
+
+	//send push notification
+	recipient := Recipient{UserID: user.UserID, Name: ""}
+	body := fmt.Sprintf(nudge.Body, assignment.Name)
+	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body)
+	if err != nil {
+		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
+		return
+	}
+
+	//insert sent nudge
+	criteriaHash := app.generateMissedAssignmentHash(assignment.ID, hours)
+	sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	err = app.storage.InsertSentNudge(sentNudge)
+	if err != nil {
+		app.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
+		return
+	}
+}
+
+func (app *Application) generateMissedAssignmentHash(assignemntID int, hours float64) uint32 {
+	assignmentIDComponent := fmt.Sprintf("%d", assignemntID)
+	hoursComponent := fmt.Sprintf("%f", hours)
+	component := fmt.Sprintf("%s+%s", assignmentIDComponent, hoursComponent)
+	hash := utils.Hash(component)
+	return hash
 }
 
 func (app *Application) findMissedAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
@@ -325,26 +348,3 @@ func (app *Application) findMissedAssignments(hours float64, now time.Time, assi
 }
 
 // end missed_assignemnt nudge
-
-// NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, provider Provider,
-	groupsBB GroupsBB, notificationsBB NotificationsBB,
-	cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
-	timerDone := make(chan bool)
-	application := Application{
-		version:         version,
-		build:           build,
-		provider:        provider,
-		groupsBB:        groupsBB,
-		notificationsBB: notificationsBB,
-		storage:         storage,
-		cacheAdapter:    cacheadapter,
-		logger:          logger,
-		timerDone:       timerDone}
-
-	// add the drivers ports/interfaces
-	application.Services = &servicesImpl{app: &application}
-	application.Administration = &administrationImpl{app: &application}
-
-	return &application
-}
