@@ -1,4 +1,4 @@
-get:
+ get:
   tags:
   - api
   summary: Get assignment-groups by ID
@@ -19,14 +19,15 @@ get:
     in: query
     description: include = enrollments,scores
     schema:
-    type: string
+  type: string
   responses:
     200:
       description: successful operation
       content:
         application/json:
             schema:
-              $ref: "../../../schemas/assigment/AssigmentGroup.yaml"
+              items:
+                $ref: "../../../schemas/assigment/AssigmentGroup.yaml"
     400:
       description: Bad request
     401:

@@ -14,12 +14,31 @@ type Course struct {
 	Name                   *string `json:"name,omitempty"`
 }
 
+// Enrollment defines model for Enrollment.
+type Enrollment struct {
+	Grade *Grade  `json:"grade,omitempty"`
+	Id    *int    `json:"id,omitempty"`
+	Type  *string `json:"type,omitempty"`
+}
+
+// Grade defines model for Grade.
+type Grade struct {
+	CurrentScore *float32 `json:"current_score,omitempty"`
+}
+
 // Nudge defines model for Nudge.
 type Nudge struct {
 	Body   string                  `json:"body"`
 	Id     *string                 `json:"id,omitempty"`
 	Name   string                  `json:"name"`
 	Params *map[string]interface{} `json:"params"`
+}
+
+// User defines model for User.
+type User struct {
+	Enrollments *Enrollment `json:"enrollments,omitempty"`
+	Id          *int        `json:"id,omitempty"`
+	Name        *string     `json:"name,omitempty"`
 }
 
 // AdminReqCreateNudge defines model for _admin_req_create_nudge.
