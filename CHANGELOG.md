@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.4] - 2022-07-12
+### Added
+- Nudges handling [#10](https://github.com/rokwire/lms-building-block/issues/10)
+
 ## [1.1.3] - 2022-07-08
 ### Fixed
 - Fix admin authorization [#16](https://github.com/rokwire/lms-building-block/issues/16)
@@ -17,9 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.1] - 2022-07-08
 ### Fixed
 - Fix docs [#8](https://github.com/rokwire/lms-building-block/issues/8)
-
-### Added
-- Nudges handling [#10](https://github.com/rokwire/lms-building-block/issues/10)
 
 ## [1.1.0] - 2022-07-05
 ### Changed
