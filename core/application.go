@@ -22,7 +22,6 @@ import (
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
 	"lms/utils"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -300,9 +299,42 @@ func (app *Application) processMissedAssignmentNudgePerUser(nudge model.Nudge, u
 	}
 
 	//here we have the assignments we need to send notifications for
-	log.Println(missedAssignments)
+
+	//process the missed assignments
+	for _, assignment := range missedAssignments {
+		app.processMissedAssignment(nudge, user, assignment, hours)
+	}
+}
+
+func (app *Application) processMissedAssignment(nudge model.Nudge, user GroupsBBUser, assignment model.Assignment, hours float64) {
+	app.logger.Infof("processMissedAssignment - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
+
+	//need to send but first check if it has been send before
+
+	//check if has been sent before
+	criteriaHash := app.generateMissedAssignmentHash(assignment.ID, hours)
+	sentNudge, err := app.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	if err != nil {
+		//not reached the max hours, so not send notification
+		app.logger.Errorf("error checking if sent nudge exists for missed assignment - %s - %s", nudge.ID, user.NetID)
+		return
+	}
+	if sentNudge != nil {
+		app.logger.Infof("this has been already sent - %s - %s", nudge.ID, user.NetID)
+		return
+	}
 
 	//TODO
+	/*	//it has not been sent, so sent it
+		app.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours) */
+}
+
+func (app *Application) generateMissedAssignmentHash(assignemntID int, hours float64) uint32 {
+	assignmentIDComponent := fmt.Sprintf("%d", assignemntID)
+	hoursComponent := fmt.Sprintf("%f", hours)
+	component := fmt.Sprintf("%s+%s", assignmentIDComponent, hoursComponent)
+	hash := utils.Hash(component)
+	return hash
 }
 
 func (app *Application) findMissedAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
