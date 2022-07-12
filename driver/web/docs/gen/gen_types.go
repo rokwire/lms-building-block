@@ -7,6 +7,21 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Assigment defines model for Assigment.
+type Assigment struct {
+	CourseId *int    `json:"course_id,omitempty"`
+	HtmlUrl  *string `json:"html_url,omitempty"`
+	Id       *string `json:"id,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	Position *int    `json:"position,omitempty"`
+}
+
+// AssigmentGroup defines model for AssigmentGroup.
+type AssigmentGroup struct {
+	Assigments *Assigment `json:"assigments,omitempty"`
+	Id         *string    `json:"id,omitempty"`
+}
+
 // Course defines model for Course.
 type Course struct {
 	AccessRestrictedByDate *bool   `json:"access_restricted_by_date,omitempty"`
@@ -62,6 +77,24 @@ type PostAdminNudgesJSONBody = AdminReqCreateNudge
 
 // PutAdminNudgesIdJSONBody defines parameters for PutAdminNudgesId.
 type PutAdminNudgesIdJSONBody = AdminReqUpdateNudge
+
+// GetApiCoursesIdParams defines parameters for GetApiCoursesId.
+type GetApiCoursesIdParams struct {
+	// include = enrollments,scores
+	Include string `form:"include" json:"include"`
+}
+
+// GetApiCoursesIdAssignmentGroupsParams defines parameters for GetApiCoursesIdAssignmentGroups.
+type GetApiCoursesIdAssignmentGroupsParams struct {
+	// include = enrollments,scores
+	Include string `form:"include" json:"include"`
+}
+
+// GetApiCoursesIdUsersParams defines parameters for GetApiCoursesIdUsers.
+type GetApiCoursesIdUsersParams struct {
+	// include = enrollments,scores
+	Include string `form:"include" json:"include"`
+}
 
 // PostAdminNudgesJSONRequestBody defines body for PostAdminNudges for application/json ContentType.
 type PostAdminNudgesJSONRequestBody = PostAdminNudgesJSONBody
