@@ -223,6 +223,34 @@ func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 	return user.LastLogin, nil
 }
 
+//GetMissedAssignments gives the missed assignments of the user
+func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/users/self/missing_submissions%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting last login")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var assignments []model.Assignment
+	err = json.Unmarshal(data, &assignments)
+	if err != nil {
+		log.Print("error converting missing assignments")
+		return nil, err
+	}
+
+	return assignments, nil
+}
+
 func (a *Adapter) constructQueryParams(items map[string][]string) string {
 	if len(items) == 0 {
 		return ""
