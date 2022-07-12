@@ -294,30 +294,30 @@ func (app *Application) processMissedAssignment(nudge model.Nudge, user GroupsBB
 	}
 
 	//it has not been sent, so sent it
-	app.sendMissedAssignmentNudgeForUser(nudge, user, assignment.ID, hours)
+	app.sendMissedAssignmentNudgeForUser(nudge, user, assignment, hours)
 }
 
 func (app *Application) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user GroupsBBUser,
-	assignmentID int, hours float64) {
+	assignment model.Assignment, hours float64) {
 	app.logger.Infof("sendMissedAssignmentNudgeForUser - %s - %s", nudge.ID, user.UserID)
 
-	//TODO
-	/*//send push notification
+	//send push notification
 	recipient := Recipient{UserID: user.UserID, Name: ""}
-	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body)
+	body := fmt.Sprintf(nudge.Body, assignment.Name)
+	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body)
 	if err != nil {
 		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
 		return
-	} */
-	/*
-		//insert sent nudge
-		criteriaHash := app.generateMissedAssignmentHash(assignmentID, hours)
-		sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
-		err := app.storage.InsertSentNudge(sentNudge)
-		if err != nil {
-			app.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
-			return
-		} */
+	}
+
+	//insert sent nudge
+	criteriaHash := app.generateMissedAssignmentHash(assignment.ID, hours)
+	sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	err = app.storage.InsertSentNudge(sentNudge)
+	if err != nil {
+		app.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
+		return
+	}
 }
 
 func (app *Application) generateMissedAssignmentHash(assignemntID int, hours float64) uint32 {
