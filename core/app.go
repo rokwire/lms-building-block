@@ -16,6 +16,9 @@ package core
 
 import (
 	cacheadapter "lms/driven/cache"
+	"time"
+
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 //Application represents the core application code based on hexagonal architecture
@@ -23,27 +26,49 @@ type Application struct {
 	version string
 	build   string
 
-	Services Services //expose to the drivers adapters
+	Services       Services       //expose to the drivers adapters
+	Administration Administration //expose to the drivers adapters
+
+	provider        Provider
+	groupsBB        GroupsBB
+	notificationsBB NotificationsBB
 
 	storage      Storage
 	cacheAdapter *cacheadapter.CacheAdapter
+
+	logger *logs.Logger
+
+	//nudges timer
+	dailyNudgesTimer *time.Timer
+	timerDone        chan bool
 }
 
 // Start starts the core part of the application
 func (app *Application) Start() {
 	app.storage.SetListener(app)
+
+	go app.setupNudgesTimer()
 }
 
 // NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, cacheadapter *cacheadapter.CacheAdapter) *Application {
+func NewApplication(version string, build string, storage Storage, provider Provider,
+	groupsBB GroupsBB, notificationsBB NotificationsBB,
+	cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
+	timerDone := make(chan bool)
 	application := Application{
-		version:      version,
-		build:        build,
-		storage:      storage,
-		cacheAdapter: cacheadapter}
+		version:         version,
+		build:           build,
+		provider:        provider,
+		groupsBB:        groupsBB,
+		notificationsBB: notificationsBB,
+		storage:         storage,
+		cacheAdapter:    cacheadapter,
+		logger:          logger,
+		timerDone:       timerDone}
 
 	// add the drivers ports/interfaces
 	application.Services = &servicesImpl{app: &application}
+	application.Administration = &administrationImpl{app: &application}
 
 	return &application
 }

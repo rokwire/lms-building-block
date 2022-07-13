@@ -16,6 +16,7 @@ package utils
 
 import (
 	"fmt"
+	"hash/fnv"
 	"log"
 	"net/http"
 	"sort"
@@ -276,4 +277,25 @@ func IsVersionLess(v1 string, v2 string) bool {
 
 	// they are equals
 	return false
+}
+
+//Exist checks if the items exists in the list
+func Exist(list []string, value string) bool {
+	if len(list) == 0 {
+		return false
+	}
+
+	for _, s := range list {
+		if value == s {
+			return true
+		}
+	}
+	return false
+}
+
+//Hash hashes the s value
+func Hash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
 }

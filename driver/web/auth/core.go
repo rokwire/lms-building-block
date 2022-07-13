@@ -20,9 +20,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/rokwire/core-auth-library-go/authservice"
-	"github.com/rokwire/core-auth-library-go/tokenauth"
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/core-auth-library-go/v2/authorization"
+	"github.com/rokwire/core-auth-library-go/v2/authservice"
+	"github.com/rokwire/core-auth-library-go/v2/tokenauth"
+	"github.com/rokwire/logging-library-go/errors"
+	"github.com/rokwire/logging-library-go/logutils"
 )
 
 // CoreAuth implementation
@@ -33,17 +35,25 @@ type CoreAuth struct {
 
 // NewCoreAuth creates new CoreAuth
 func NewCoreAuth(app *core.Application, config *model.Config) *CoreAuth {
-
-	remoteConfig := authservice.RemoteAuthDataLoaderConfig{
-		AuthServicesHost: config.CoreBBHost,
+	authService := authservice.AuthService{
+		ServiceID:   "lms",
+		ServiceHost: config.LmsServiceURL,
+		FirstParty:  true,
+		AuthBaseURL: config.CoreBBHost,
 	}
 
-	serviceLoader, err := authservice.NewRemoteAuthDataLoader(remoteConfig, []string{"core"}, logs.NewLogger("lms", &logs.LoggerOpts{}))
-	authService, err := authservice.NewAuthService("lms", config.LmsServiceURL, serviceLoader)
+	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{"auth"})
 	if err != nil {
-		log.Fatalf("Error initializing auth service: %v", err)
+		log.Fatalf("Error initializing remote service registration loader: %v", err)
 	}
-	tokenAuth, err := tokenauth.NewTokenAuth(true, authService, nil, nil)
+
+	serviceRegManager, err := authservice.NewServiceRegManager(&authService, serviceRegLoader)
+	if err != nil {
+		log.Fatalf("Error initializing service registration manager: %v", err)
+	}
+
+	permissionAuth := authorization.NewCasbinStringAuthorization("driver/web/authorization_admin_policy.csv")
+	tokenAuth, err := tokenauth.NewTokenAuth(true, serviceRegManager, permissionAuth, nil)
 	if err != nil {
 		log.Fatalf("Error intitializing token auth: %v", err)
 	}
@@ -53,18 +63,41 @@ func NewCoreAuth(app *core.Application, config *model.Config) *CoreAuth {
 }
 
 // Check checks the request contains a valid Core access token
-func (ca CoreAuth) Check(r *http.Request) (bool, *tokenauth.Claims) {
+func (ca CoreAuth) Check(r *http.Request) (*tokenauth.Claims, error) {
 	claims, err := ca.tokenAuth.CheckRequestTokens(r)
-	if err != nil {
+	if err != nil || claims == nil {
+		log.Printf("error validating token: %s", err)
+		return nil, err
+	}
+
+	if claims.Anonymous {
+		err = errors.ErrorData(logutils.StatusInvalid, logutils.TypeClaim, logutils.StringArgs("anonymous"))
+		log.Println(err)
+		return claims, err
+	}
+
+	return claims, nil
+}
+
+// AdminCheck checks the request contains a valid admin Core access token with the appropriate permissions
+func (ca CoreAuth) AdminCheck(r *http.Request) (*tokenauth.Claims, error) {
+	claims, err := ca.tokenAuth.CheckRequestTokens(r)
+	if err != nil || claims == nil {
 		log.Printf("error validate token: %s", err)
-		return false, nil
+		return nil, err
 	}
 
-	if claims != nil {
-		if claims.Valid() == nil {
-			return true, claims
-		}
+	if !claims.Admin {
+		err = errors.ErrorData(logutils.StatusInvalid, logutils.TypeClaim, logutils.StringArgs("admin"))
+		log.Println(err)
+		return claims, err
 	}
 
-	return false, nil
+	err = ca.tokenAuth.AuthorizeRequestPermissions(claims, r)
+	if err != nil {
+		log.Println("invalid permissions:", err)
+		return claims, err
+	}
+
+	return claims, err
 }

@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: Rokwire LMS Building Block API
+  description: LMS Building Block API Documentation
+  version: 1.1.4
+servers:
+  - url: 'https://api.rokwire.illinois.edu/lms'
+    description: Production server
+  - url: 'https://api-test.rokwire.illinois.edu/lms'
+    description: Test server
+  - url: 'https://api-dev.rokwire.illinois.edu/lms'
+    description: Development server
+  - url: 'http://localhost/lms'
+    description: Local server
+tags:
+  - name: Api
+    description: Clients  APIs.
+  - name: Admin
+    description: Clients administration APIs.
+paths:
+  #api
+  /api/courses:
+    $ref: "./resources/api/courses/courses.yaml"
+  /api/courses/{id}:
+    $ref: "./resources/api/courses/coursesID.yaml"
+  /api/courses/{id}/assignment-groups:
+    $ref: "./resources/api/courses/assigment-groups.yaml"
+  /api/courses/{id}/users:
+    $ref: "./resources/api/courses/userID.yaml"
+  /api/users/self:
+    $ref: "./resources/api/user/user.yaml"
+
+#admin
+  /admin/nudges:
+    $ref: "./resources/admin/nudges/nudges.yaml"
+  /admin/nudges/{id}:
+    $ref: "./resources/admin/nudges/nudgesID.yaml"
+
+components:
+  securitySchemes:
+      bearerAuth:            # arbitrary name for the security scheme
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+  schemas:
+    $ref: "./schemas/index.yaml"

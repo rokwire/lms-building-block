@@ -15,18 +15,19 @@
 package rest
 
 import (
-	"fmt"
-	"io/ioutil"
+	"encoding/json"
 	"lms/core"
 	"lms/core/model"
-	"log"
+	"lms/utils"
 	"net/http"
+	"strconv"
 	"strings"
 
-	"github.com/rokwire/core-auth-library-go/tokenauth"
+	"github.com/gorilla/mux"
+	"github.com/rokwire/core-auth-library-go/v2/tokenauth"
+	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/logutils"
 )
-
-const maxUploadSize = 15 * 1024 * 1024 // 15 mb
 
 //ApisHandler handles the rest APIs implementation
 type ApisHandler struct {
@@ -34,66 +35,172 @@ type ApisHandler struct {
 	config *model.Config
 }
 
-//Version gives the service version
-// @Description Gives the service version.
-// @Tags Client
-// @ID Version
-// @Produce plain
-// @Success 200
-// @Router /version [get]
+//Version gets version
 func (h ApisHandler) Version(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(h.app.Services.GetVersion()))
 }
 
-// V1Wrapper Wraps all Canvas V1 api requests
-// @Description Wraps all Canvas V1 api requests
-// @Tags Client
-// @ID V1Wrapper
-// @Produce plain
-// @Success 200
-// @Router /api/v1 [get]
-func (h ApisHandler) V1Wrapper(claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) {
-	requestBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("%s %d %s", r.Method, http.StatusInternalServerError, r.URL.String())
-		log.Printf("V1Wrapper error: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+//GetCourses gets courses
+func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
 	}
 
-	path := strings.ReplaceAll(r.URL.Path, "/lms", "")
-	url := fmt.Sprintf("%s%s?%s", h.config.CanvasBaseURL, path, r.URL.RawQuery)
-
-	client := &http.Client{}
-	req, err := http.NewRequest(r.Method, url, strings.NewReader(string(requestBody)))
+	courses, err := h.app.Services.GetCourses(l, providerUserID)
 	if err != nil {
-		log.Printf("%s %d %s", r.Method, http.StatusInternalServerError, r.URL.String())
-		log.Printf("V1Wrapper error: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
 	}
 
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", h.config.CanvasTokenType, h.config.CanvasToken))
-
-	resp, err := client.Do(req)
+	data, err := json.Marshal(courses)
 	if err != nil {
-		log.Printf("%s %d %s", r.Method, resp.StatusCode, r.URL.String())
-		log.Printf("V1Wrapper error: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "course", nil, err, http.StatusInternalServerError, false)
 	}
-	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("%s %d %s", r.Method, http.StatusInternalServerError, r.URL.String())
-		log.Printf("V1Wrapper error: %s", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	return l.HttpResponseSuccessJSON(data)
+}
+
+//GetCourse gets a course
+func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
 	}
-	log.Printf("%s %d %s", r.Method, resp.StatusCode, r.URL.String())
-	w.WriteHeader(resp.StatusCode)
-	w.Write(data)
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	var include *string
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = &includeParam
+	}
+
+	course, err := h.app.Services.GetCourse(l, providerUserID, courseID, include)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(course)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "course", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+//GetAssignemntGroups gets course assignments
+func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
+	}
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	var include *string
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = &includeParam
+	}
+
+	assignmentGroups, err := h.app.Services.GetAssignmentGroups(l, providerUserID, courseID, include)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "assignment group", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(assignmentGroups)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "assignment group", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+//GetUsers gets course users
+func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
+	}
+
+	//course id
+	params := mux.Vars(r)
+	ID := params["id"]
+	if len(ID) <= 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+	courseID, err := strconv.Atoi(ID)
+	if err != nil {
+		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+	}
+
+	//include
+	include := []string{}
+	includeParam := r.URL.Query().Get("include")
+	if len(includeParam) > 0 {
+		include = strings.Split(includeParam, ",")
+	}
+	includeEnrolments := utils.Exist(include, "enrollments")
+	includeScores := utils.Exist(include, "scores")
+
+	user, err := h.app.Services.GetCourseUser(l, providerUserID, courseID, includeEnrolments, includeScores)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "user", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(user)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "user", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+//GetCurrentUser gets the current user
+func (h ApisHandler) GetCurrentUser(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	providerUserID := h.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return l.HttpResponseErrorData(logutils.StatusMissing, "net_id", nil, nil, http.StatusInternalServerError, false)
+	}
+
+	user, err := h.app.Services.GetCurrentUser(l, providerUserID)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "user", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(user)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "user", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}
+
+func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
+	if claims == nil {
+		return ""
+	}
+	return claims.ExternalIDs["net_id"]
 }
 
 // NewApisHandler creates new rest Handler instance

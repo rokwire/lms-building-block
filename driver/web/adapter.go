@@ -22,27 +22,31 @@ import (
 	"lms/utils"
 	"log"
 	"net/http"
-	"strings"
 
-	"github.com/rokwire/core-auth-library-go/tokenauth"
+	"github.com/getkin/kin-openapi/routers"
 
-	"github.com/casbin/casbin"
+	"github.com/rokwire/core-auth-library-go/v2/tokenauth"
+	"github.com/rokwire/logging-library-go/logs"
+
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 //Adapter entity
 type Adapter struct {
-	host          string
+	env           string
+	lmsServiceURL string
 	port          string
 	auth          *Auth
-	authorization *casbin.Enforcer
+	openAPIRouter routers.Router
 
 	apisHandler         rest.ApisHandler
 	adminApisHandler    rest.AdminApisHandler
 	internalApisHandler rest.InternalApisHandler
 
 	app *core.Application
+
+	logger *logs.Logger
 }
 
 // @title Rewards Building Block API
@@ -79,19 +83,31 @@ func (we Adapter) Start() {
 
 	// handle apis
 	apiRouter := subrouter.PathPrefix("/api").Subrouter()
-	apiRouter.PathPrefix("/v1").Handler(we.userAuthWrapFunc(we.apisHandler.V1Wrapper))
-	//.HandlerFunc(we.userAuthWrapFunc(we.apisHandler.V1Wrapper))
+
+	apiRouter.HandleFunc("/courses", we.userAuthWrapFunc(we.apisHandler.GetCourses)).Methods("GET")
+	apiRouter.HandleFunc("/courses/{id}", we.userAuthWrapFunc(we.apisHandler.GetCourse)).Methods("GET")
+	apiRouter.HandleFunc("/courses/{id}/assignment-groups", we.userAuthWrapFunc(we.apisHandler.GetAssignemntGroups)).Methods("GET")
+	apiRouter.HandleFunc("/courses/{id}/users", we.userAuthWrapFunc(we.apisHandler.GetUsers)).Methods("GET")
+	apiRouter.HandleFunc("/users/self", we.userAuthWrapFunc(we.apisHandler.GetCurrentUser)).Methods("GET")
+
+	///admin ///
+	adminRouter := subrouter.PathPrefix("/admin").Subrouter()
+
+	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.GetNudges)).Methods("GET")
+	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
+	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudge)).Methods("PUT")
+	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.DeleteNudge)).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
 
 func (we Adapter) serveDoc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("access-control-allow-origin", "*")
-	http.ServeFile(w, r, "./docs/swagger.yaml")
+	http.ServeFile(w, r, "./driver/web/docs/gen/def.yaml")
 }
 
 func (we Adapter) serveDocUI() http.Handler {
-	url := fmt.Sprintf("%s/lms/doc", we.host)
+	url := fmt.Sprintf("%s/doc", we.lmsServiceURL)
 	return httpSwagger.Handler(httpSwagger.URL(url))
 }
 
@@ -103,68 +119,91 @@ func (we Adapter) wrapFunc(handler http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-type apiKeysAuthFunc = func(http.ResponseWriter, *http.Request)
-
-func (we Adapter) apiKeyOrTokenWrapFunc(handler apiKeysAuthFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		utils.LogRequest(req)
-
-		// apply core token check
-		coreAuth, _ := we.auth.coreAuth.Check(req)
-		if coreAuth {
-			handler(w, req)
-			return
-		}
-
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-	}
-}
-
-type userAuthFunc = func(*tokenauth.Claims, http.ResponseWriter, *http.Request)
+type userAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
 
 func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		utils.LogRequest(req)
+		logObj := we.logger.NewRequestLog(req)
 
-		coreAuth, claims := we.auth.coreAuth.Check(req)
-		if coreAuth && claims != nil && !claims.Anonymous {
-			handler(claims, w, req)
-			return
-		}
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-	}
-}
+		logObj.RequestReceived()
 
-type adminAuthFunc = func(http.ResponseWriter, *http.Request)
-
-func (we Adapter) adminAuthWrapFunc(handler adminAuthFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		utils.LogRequest(req)
-
-		obj := req.URL.Path // the resource that is going to be accessed.
-		act := req.Method   // the operation that the user performs on the resource.
-
-		coreAuth, claims := we.auth.coreAuth.Check(req)
-		if coreAuth {
-			permissions := strings.Split(claims.Permissions, ",")
-
-			HasAccess := false
-			for _, s := range permissions {
-				HasAccess = we.authorization.Enforce(s, obj, act)
-				if HasAccess {
-					break
-				}
-			}
-			if HasAccess {
-				handler(w, req)
+		claims, err := we.auth.coreAuth.Check(req)
+		if err != nil {
+			if claims == nil {
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
-			log.Printf("Access control error - Core Subject: %s is trying to apply %s operation for %s\n", claims.Subject, act, obj)
+
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		// process the request
+		response := handler(logObj, claims, w, req)
+
+		/// return response
+		// headers
+		if len(response.Headers) > 0 {
+			for key, values := range response.Headers {
+				if len(values) > 0 {
+					for _, value := range values {
+						w.Header().Add(key, value)
+					}
+				}
+			}
+		}
+		// response code
+		w.WriteHeader(response.ResponseCode)
+		// body
+		if len(response.Body) > 0 {
+			w.Write(response.Body)
+		}
+
+		logObj.RequestComplete()
+	}
+}
+
+type adminAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
+
+func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		logObj := we.logger.NewRequestLog(req)
+
+		logObj.RequestReceived()
+
+		claims, err := we.auth.coreAuth.AdminCheck(req)
+		if err != nil {
+			if claims == nil {
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
+
+		// process the request
+		response := handler(logObj, claims, w, req)
+
+		/// return response
+		// headers
+		if len(response.Headers) > 0 {
+			for key, values := range response.Headers {
+				if len(values) > 0 {
+					for _, value := range values {
+						w.Header().Add(key, value)
+					}
+				}
+			}
+		}
+		// response code
+		w.WriteHeader(response.ResponseCode)
+		// body
+		if len(response.Body) > 0 {
+			w.Write(response.Body)
+		}
+
+		logObj.RequestComplete()
 	}
 }
 
@@ -185,22 +224,21 @@ func (we Adapter) internalAPIKeyAuthWrapFunc(handler internalAPIKeyAuthFunc) htt
 }
 
 // NewWebAdapter creates new WebAdapter instance
-func NewWebAdapter(host string, port string, app *core.Application, config *model.Config) Adapter {
+func NewWebAdapter(port string, app *core.Application, config *model.Config, logger *logs.Logger) Adapter {
 	auth := NewAuth(app, config)
-	authorization := casbin.NewEnforcer("driver/web/authorization_model.conf", "driver/web/authorization_policy.csv")
 
 	apisHandler := rest.NewApisHandler(app, config)
 	adminApisHandler := rest.NewAdminApisHandler(app, config)
 	internalApisHandler := rest.NewInternalApisHandler(app, config)
 	return Adapter{
-		host:                host,
+		lmsServiceURL:       config.LmsServiceURL,
 		port:                port,
 		auth:                auth,
-		authorization:       authorization,
 		apisHandler:         apisHandler,
 		adminApisHandler:    adminApisHandler,
 		internalApisHandler: internalApisHandler,
 		app:                 app,
+		logger:              logger,
 	}
 }
 

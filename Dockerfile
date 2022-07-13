@@ -14,10 +14,12 @@ FROM alpine:3.13
 RUN apk --no-cache add tzdata
 
 COPY --from=builder /lms-app/bin/lms /
-COPY --from=builder /lms-app/docs/swagger.yaml /docs/swagger.yaml
+COPY --from=builder /lms-app/driver/web/docs/gen/def.yaml /driver/web/docs/gen/def.yaml
 
-COPY --from=builder /lms-app/driver/web/authorization_model.conf /driver/web/authorization_model.conf
-COPY --from=builder /lms-app/driver/web/authorization_policy.csv /driver/web/authorization_policy.csv
+COPY --from=builder /lms-app/driver/web/authorization_admin_policy.csv /driver/web/authorization_admin_policy.csv
+
+COPY --from=builder /lms-app/vendor/github.com/rokwire/core-auth-library-go/v2/authorization/authorization_model_string.conf /lms-app/vendor/github.com/rokwire/core-auth-library-go/v2/authorization/authorization_model_string.conf
+
 
 #we need timezone database
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo 

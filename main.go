@@ -18,11 +18,15 @@ import (
 	"lms/core"
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
+	"lms/driven/groups"
+	"lms/driven/notifications"
+	"lms/driven/provider"
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
 	"log"
 	"os"
-	"strings"
+
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 var (
@@ -37,35 +41,51 @@ func main() {
 		Version = "dev"
 	}
 
-	port := getEnvKey("PORT", true)
+	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties("/lms/version")}}
+	logger := logs.NewLogger("core", &loggerOpts)
 
-	internalAPIKey := getEnvKey("INTERNAL_API_KEY", true)
+	port := getEnvKey("LMS_PORT", true)
+
+	internalAPIKey := getEnvKey("LMS_INTERNAL_API_KEY", true)
 
 	//mongoDB adapter
-	mongoDBAuth := getEnvKey("MONGO_AUTH", true)
-	mongoDBName := getEnvKey("MONGO_DATABASE", true)
-	mongoTimeout := getEnvKey("MONGO_TIMEOUT", false)
-	storageAdapter := storage.NewStorageAdapter(mongoDBAuth, mongoDBName, mongoTimeout)
+	mongoDBAuth := getEnvKey("LMS_MONGO_AUTH", true)
+	mongoDBName := getEnvKey("LMS_MONGO_DATABASE", true)
+	mongoTimeout := getEnvKey("LMS_MONGO_TIMEOUT", false)
+	storageAdapter := storage.NewStorageAdapter(mongoDBAuth, mongoDBName, mongoTimeout, logger)
 	err := storageAdapter.Start()
 	if err != nil {
 		log.Fatal("Cannot start the mongoDB adapter - " + err.Error())
 	}
 
-	defaultCacheExpirationSeconds := getEnvKey("DEFAULT_CACHE_EXPIRATION_SECONDS", false)
+	defaultCacheExpirationSeconds := getEnvKey("LMS_DEFAULT_CACHE_EXPIRATION_SECONDS", false)
 	cacheAdapter := cacheadapter.NewCacheAdapter(defaultCacheExpirationSeconds)
 
+	//provider adapter
+	canvasBaseURL := getEnvKey("LMS_CANVAS_BASE_URL", true)
+	canvasTokenType := getEnvKey("LMS_CANVAS_TOKEN_TYPE", true)
+	canvasToken := getEnvKey("LMS_CANVAS_TOKEN", true)
+	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
+
+	//groups BB adapter
+	testUserID := getEnvKey("LMS_TEST_USER_ID", true)
+	testNetID := getEnvKey("LMS_TEST_NET_ID", true)
+	testUserID2 := getEnvKey("LMS_TEST_USER_ID2", true)
+	testNetID2 := getEnvKey("LMS_TEST_NET_ID2", true)
+	groupsBBAdapter := groups.NewGroupsAdapter(testUserID, testNetID, testUserID2, testNetID2)
+
+	//notifications BB adapter
+	notificationHost := getEnvKey("LMS_NOTIFICATIONS_BB_HOST", true)
+	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey)
+
 	// application
-	application := core.NewApplication(Version, Build, storageAdapter, cacheAdapter)
+	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
+		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, logger)
 	application.Start()
 
 	// web adapter
-	host := getEnvKey("HOST", true)
-	coreBBHost := getEnvKey("CORE_BB_HOST", true)
+	coreBBHost := getEnvKey("LMS_CORE_BB_HOST", true)
 	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
-
-	canvasBaseURL := getEnvKey("CANVAS_BASE_URL", true)
-	canvasTokenType := getEnvKey("CANVAS_TOKEN_TYPE", true)
-	canvasToken := getEnvKey("CANVAS_TOKEN", true)
 
 	config := model.Config{
 		InternalAPIKey:  internalAPIKey,
@@ -76,21 +96,9 @@ func main() {
 		CanvasToken:     canvasToken,
 	}
 
-	webAdapter := driver.NewWebAdapter(host, port, application, &config)
+	webAdapter := driver.NewWebAdapter(port, application, &config, logger)
 
 	webAdapter.Start()
-}
-
-func getEnvKeyAsList(key string, required bool) []string {
-	stringValue := getEnvKey(key, required)
-
-	// it is comma separated format
-	stringListValue := strings.Split(stringValue, ",")
-	if len(stringListValue) == 0 && required {
-		log.Fatalf("missing or empty env var: %s", key)
-	}
-
-	return stringListValue
 }
 
 func getEnvKey(key string, required bool) string {

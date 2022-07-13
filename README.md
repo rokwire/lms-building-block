@@ -20,18 +20,22 @@ The following Environment variables are supported. The service will not start un
 
 Name|Format|Required|Description
 ---|---|---|---
-PORT | < int > | yes | Port to be used by this application
-INTERNAL_API_KEY | < string > | yes | Internal API key for invocation by other BBs
-MONGO_AUTH | <mongodb://USER:PASSWORD@HOST:PORT/DATABASE NAME> | yes | MongoDB authentication string. The user must have read/write privileges.
-MONGO_DATABASE | < string > | yes | MongoDB database name
-MONGO_TIMEOUT | < int > | no | MongoDB timeout in milliseconds. Defaults to 500.
-DEFAULT_CACHE_EXPIRATION_SECONDS | < int > | false | Default cache expiration time in seconds. Defaults to 120
-HOST | < url > | yes | URL where this application is being hosted
-CORE_BB_HOST | < url > | yes | Core BB host URL
-LMS_SERVICE_URL | < url > | yes | Notifications BB base URL
-CANVAS_BASE_URL | < url > | yes | Canvas base URL for API calls
-CANVAS_TOKEN_TYPE | < string > | yes | Canvas token type (e.g Bearer)
-CANVAS_TOKEN | < string > | yes | Canvas token that will be used for auth with Canvas APIs
+LMS_PORT | < int > | yes | Port to be used by this application
+LMS_INTERNAL_API_KEY | < string > | yes | Internal API key for invocation by other BBs
+LMS_MONGO_AUTH | <mongodb://USER:PASSWORD@HOST:PORT/DATABASE NAME> | yes | MongoDB authentication string. The user must have read/write privileges.
+LMS_MONGO_DATABASE | < string > | yes | MongoDB database name
+LMS_MONGO_TIMEOUT | < int > | no | MongoDB timeout in milliseconds. Defaults to 500.
+LMS_DEFAULT_CACHE_EXPIRATION_SECONDS | < int > | false | Default cache expiration time in seconds. Defaults to 120
+LMS_CANVAS_BASE_URL | < url > | yes | Canvas base URL for API calls
+LMS_CANVAS_TOKEN_TYPE | < string > | yes | Canvas token type (e.g Bearer)
+LMS_CANVAS_TOKEN | < string > | yes | Canvas token that will be used for auth with Canvas APIs
+LMS_TEST_USER_ID | < string > | yes | Account ID of test user
+LMS_TEST_NET_ID | < string > | yes | Net ID of test user
+LMS_TEST_USER_ID2 | < string > | yes | Account ID of second test user
+LMS_TEST_NET_ID2 | < string > | yes | Net ID of second test user
+LMS_NOTIFICATIONS_BB_HOST | < url > | yes | Notifications BB base URL
+LMS_CORE_BB_HOST | < url > | yes | Core BB host URL
+LMS_SERVICE_URL | < url > | yes | URL where this application is being hosted
 
 ### Run Application
 
@@ -106,8 +110,16 @@ $ make help
 ```
 
 ##### Generate Swagger docs
+To run this command, you will need to install [swagger-cli](https://github.com/APIDevTools/swagger-cli)
 ```
-$ make swagger
+$ make oapi-gen-docs
+```
+
+
+##### Generate models from Swagger docs
+To run this command, you will need to install [oapi-codegen](https://github.com/deepmap/oapi-codegen)
+```
+$ make make oapi-gen-types
 ```
 
 ### Test Application APIs
@@ -134,3 +146,4 @@ This repository is configured with a [pre-commit](https://pre-commit.com/) hook 
 $ git pull  # Pull in pre-commit configuration & baseline 
 $ pip install pre-commit 
 $ pre-commit install
+```

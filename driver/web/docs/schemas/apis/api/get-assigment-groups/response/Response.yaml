@@ -1,0 +1,20 @@
+type: object
+properties:
+  id:
+    type: string
+  assigments:
+    type: object
+    properties:
+      id:
+        readOnly: true
+        type: string
+      name:
+        type: string
+      course_id:
+        type: integer
+      html_url:
+        type: string
+      position:
+        type: integer
+
+  

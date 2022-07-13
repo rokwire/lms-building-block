@@ -14,11 +14,31 @@
 
 package core
 
-import "lms/driven/storage"
+import (
+	"lms/core/model"
+	"lms/driven/storage"
+	"time"
+
+	"github.com/rokwire/logging-library-go/logs"
+)
 
 // Services exposes APIs for the driver adapters
 type Services interface {
 	GetVersion() string
+
+	GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error)
+	GetCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error)
+	GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error)
+	GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
+	GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error)
+}
+
+// Administration exposes APIs for the driver adapters
+type Administration interface {
+	GetNudges() ([]model.Nudge, error)
+	CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
+	UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
+	DeleteNudge(l *logs.Log, ID string) error
 }
 
 type servicesImpl struct {
@@ -29,7 +49,90 @@ func (s *servicesImpl) GetVersion() string {
 	return s.app.getVersion()
 }
 
+func (s *servicesImpl) GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error) {
+	return s.app.getCourses(l, providerUserID)
+}
+
+func (s *servicesImpl) GetCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error) {
+	return s.app.getCourse(l, providerUserID, courseID, include)
+}
+
+func (s *servicesImpl) GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
+	return s.app.getAssignmentGroups(l, providerUserID, courseID, include)
+}
+
+func (s *servicesImpl) GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
+	return s.app.getCourseUser(l, providerUserID, courseID, includeEnrolments, includeScores)
+}
+
+func (s *servicesImpl) GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error) {
+	return s.app.getCurrentUser(l, providerUserID)
+}
+
+//admin
+
+type administrationImpl struct {
+	app *Application
+}
+
+func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
+	return s.app.getNudges()
+}
+
+func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
+	return s.app.createNudge(l, ID, name, body, params)
+}
+
+func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
+	return s.app.updateNudge(l, ID, name, body, params)
+}
+
+func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
+	return s.app.deleteNudge(l, ID)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
+
+	LoadAllNudges() ([]model.Nudge, error)
+	InsertNudge(item model.Nudge) error
+	UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error
+	DeleteNudge(ID string) error
+
+	InsertSentNudge(sentNudge model.SentNudge) error
+	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error)
+}
+
+//Provider interface for LMS provider
+type Provider interface {
+	GetCourses(userID string) ([]model.Course, error)
+	GetCourse(userID string, courseID int, include *string) (*model.Course, error)
+	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
+	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
+	GetCurrentUser(userID string) (*model.User, error)
+	GetLastLogin(userID string) (*time.Time, error)
+	GetMissedAssignments(userID string) ([]model.Assignment, error)
+}
+
+//GroupsBB interface for the Groups building block communication
+type GroupsBB interface {
+	GetUsers() ([]GroupsBBUser, error)
+}
+
+//GroupsBBUser entity
+type GroupsBBUser struct {
+	UserID string
+	NetID  string
+}
+
+//NotificationsBB interface for the Notifications building block communication
+type NotificationsBB interface {
+	SendNotifications(recipients []Recipient, text string, body string) error
+}
+
+//Recipient entity
+type Recipient struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
 }

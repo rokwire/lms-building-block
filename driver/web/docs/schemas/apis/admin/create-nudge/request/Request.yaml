@@ -1,0 +1,12 @@
+type: object
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  body:
+    type: string
+  params:
+    type: object
+    nullable: true
+ 
