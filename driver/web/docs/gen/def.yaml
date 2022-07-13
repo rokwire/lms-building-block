@@ -130,7 +130,7 @@ paths:
   '/api/courses/{id}/users':
     get:
       tags:
-        - Api
+        - аpi
       summary: Get user by ID
       description: |
         Get user by ID
