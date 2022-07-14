@@ -372,6 +372,41 @@ func (app *Application) processCalendarEventNudgePerUser(nudge model.Nudge, user
 		return
 	}
 
+	//determine for which of the assignments we need to send notifications
+	hours := float64(nudge.Params["hours"].(int32))
+	now := time.Now()
+	calendarEvents, err = app.findCalendarEvents(hours, now, calendarEvents)
+	if err != nil {
+		app.logger.Errorf("error finding calendar events for - %s", user.NetID)
+	}
+	if len(calendarEvents) == 0 {
+		//no missed assignments
+		app.logger.Infof("no calendar events, so not send notifications - %s", user.NetID)
+		return
+	}
+
+	/*//process the calendar events
+	for _, event := range calendarEvents {
+		app.processCalendarEvent(nudge, user, event, hours)
+	}*/
+}
+func (app *Application) findCalendarEvents(hours float64, now time.Time, events []model.CalendarEvent) ([]model.CalendarEvent, error) {
+	app.logger.Info("findCalendarEvents")
+
+	resultList := []model.CalendarEvent{}
+	for _, calendar := range events {
+		if calendar.EndAt == nil {
+			continue
+		}
+
+		difference := now.Sub(*calendar.EndAt) //difference between now and the due at date
+		differenceInHours := difference.Hours()
+		if differenceInHours > hours {
+			resultList = append(resultList, calendar)
+		}
+	}
+
+	return resultList, nil
 }
 
 // end calendar_event nudge

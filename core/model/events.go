@@ -17,12 +17,14 @@
 
 package model
 
+import "time"
+
 //CalendarEvent entity
 type CalendarEvent struct {
 	ID                   int               `json:"id"`
 	Title                string            `json:"title"`
-	StartAt              string            `json:"start_at"`
-	EndAt                string            `json:"end_at"`
+	StartAt              *time.Time        `json:"start_at"`
+	EndAt                *time.Time        `json:"end_at"`
 	Description          string            `json:"desctiption"`
 	LocationName         string            `json:"location_name"`
 	LocationAddress      string            `json:"location_address"`
