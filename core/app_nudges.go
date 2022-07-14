@@ -364,8 +364,8 @@ func (app *Application) processCompletedAssignmentEarlyNudge(nudge model.Nudge, 
 func (app *Application) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
 	app.logger.Infof("processCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
 
-	//get early completed assignments
-	ecAssignments, err := app.provider.GetCompletedAssignmentsEarly(user.NetID)
+	//get completed assignments
+	ecAssignments, err := app.provider.GetCompletedAssignments(user.NetID)
 	if err != nil {
 		app.logger.Errorf("error getting early completed assignments for - %s", user.NetID)
 	}
