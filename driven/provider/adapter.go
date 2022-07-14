@@ -251,6 +251,11 @@ func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error
 	return assignments, nil
 }
 
+//GetCompletedAssignmentsEarly gives the early completed assignments of the user
+func (a *Adapter) GetCompletedAssignmentsEarly(userID string) ([]model.Assignment, error) {
+	return nil, nil
+}
+
 func (a *Adapter) constructQueryParams(items map[string][]string) string {
 	if len(items) == 0 {
 		return ""

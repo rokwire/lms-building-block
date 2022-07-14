@@ -356,9 +356,44 @@ func (app *Application) findMissedAssignments(hours float64, now time.Time, assi
 func (app *Application) processCompletedAssignmentEarlyNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
 	app.logger.Infof("processCompletedAssignmentEarlyNudge - %s", nudge.ID)
 
-	/*for _, user := range allUsers {
-		app.processMissedAssignmentNudgePerUser(nudge, user)
-	} */
+	for _, user := range allUsers {
+		app.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
+	}
+}
+
+func (app *Application) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
+	app.logger.Infof("processCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
+
+	//get early completed assignments
+	ecAssignments, err := app.provider.GetCompletedAssignmentsEarly(user.NetID)
+	if err != nil {
+		app.logger.Errorf("error getting early completed assignments for - %s", user.NetID)
+	}
+	if len(ecAssignments) == 0 {
+		//no early completed assignments
+		app.logger.Infof("no early completed assignments, so not send notifications - %s", user.NetID)
+		return
+	}
+	/*
+		//determine for which of the assignments we need to send notifications
+		hours := float64(nudge.Params["hours"].(int32))
+		now := time.Now()
+		missedAssignments, err = app.findMissedAssignments(hours, now, missedAssignments)
+		if err != nil {
+			app.logger.Errorf("error finding missed assignments for - %s", user.NetID)
+		}
+		if len(missedAssignments) == 0 {
+			//no missed assignments
+			app.logger.Infof("no missed assignments after checking due date, so not send notifications - %s", user.NetID)
+			return
+		}
+
+		//here we have the assignments we need to send notifications for
+
+		//process the missed assignments
+		for _, assignment := range missedAssignments {
+			app.processMissedAssignment(nudge, user, assignment, hours)
+		} */
 }
 
 // end completed_assignment_early nudge
