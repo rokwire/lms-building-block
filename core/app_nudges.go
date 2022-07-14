@@ -348,3 +348,30 @@ func (app *Application) findMissedAssignments(hours float64, now time.Time, assi
 }
 
 // end missed_assignemnt nudge
+
+// calendar_event nudge
+func (app *Application) processCalendarEventNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
+	app.logger.Infof("processMissedAssignmentNudge - %s", nudge.ID)
+
+	for _, user := range allUsers {
+		app.processCalendarEventNudgePerUser(nudge, user)
+	}
+}
+
+func (app *Application) processCalendarEventNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
+	app.logger.Infof("processMissedAssignmentNudgePerUser - %s", nudge.ID)
+
+	//get calendar events
+	calendarEvents, err := app.provider.GetCalendarEvents(user.NetID)
+	if err != nil {
+		app.logger.Errorf("error getting calendar events for - %s", user.NetID)
+	}
+	if len(calendarEvents) == 0 {
+		//no calendar events
+		app.logger.Infof("no events, so not send notifications - %s", user.NetID)
+		return
+	}
+
+}
+
+// end calendar_event nudge

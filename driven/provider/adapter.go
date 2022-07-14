@@ -313,6 +313,34 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 	return data, nil
 }
 
+//GetCalendarEvents gives the missed assignments of the user
+func (a *Adapter) GetCalendarEvents(userID string) ([]model.CalendarEvent, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("api/v1/calendar_events%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting last login")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var calendarEvents []model.CalendarEvent
+	err = json.Unmarshal(data, &calendarEvents)
+	if err != nil {
+		log.Print("error converting missing calendar events")
+		return nil, err
+	}
+
+	return calendarEvents, nil
+}
+
 //NewProviderAdapter creates a new provider adapter
 func NewProviderAdapter(host string, token string, tokenType string) *Adapter {
 	return &Adapter{host: host, token: token, tokenType: tokenType}
