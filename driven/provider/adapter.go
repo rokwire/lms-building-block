@@ -264,7 +264,7 @@ func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, er
 		return nil, nil
 	}
 
-	//get the assignemnts for every course
+	//2. get the assignemnts for every course
 	result := []model.Assignment{}
 	for _, course := range userCourses {
 		courseAssignments, err := a.getAssignments(course.ID, userID)
@@ -278,8 +278,11 @@ func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, er
 
 		//check submission for every assignment
 		for _, cAssignment := range courseAssignments {
-			//TODO check submissions
-			result = append(result, cAssignment)
+			// get only the submitted ones
+			submission := cAssignment.Submission
+			if submission != nil && submission.SubmittedAt != nil {
+				result = append(result, cAssignment)
+			}
 		}
 	}
 
