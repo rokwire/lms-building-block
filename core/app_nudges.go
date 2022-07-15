@@ -134,6 +134,8 @@ func (app *Application) processNudge(nudge model.Nudge, allUsers []GroupsBBUser)
 		app.processMissedAssignmentNudge(nudge, allUsers)
 	case "calendar_events":
 		app.processCalendarEventNudge(nudge, allUsers)
+	case "completed_assignment_early":
+		app.processCompletedAssignmentEarlyNudge(nudge, allUsers)
 	default:
 		app.logger.Infof("Not supported nudge - %s", nudge.ID)
 	}
@@ -350,6 +352,124 @@ func (app *Application) findMissedAssignments(hours float64, now time.Time, assi
 }
 
 // end missed_assignemnt nudge
+
+// completed_assignment_early nudge
+
+func (app *Application) processCompletedAssignmentEarlyNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
+	app.logger.Infof("processCompletedAssignmentEarlyNudge - %s", nudge.ID)
+
+	for _, user := range allUsers {
+		app.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
+	}
+}
+
+func (app *Application) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
+	app.logger.Infof("processCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
+
+	//get completed assignments
+	ecAssignments, err := app.provider.GetCompletedAssignments(user.NetID)
+	if err != nil {
+		app.logger.Errorf("error getting early completed assignments for - %s", user.NetID)
+	}
+	if len(ecAssignments) == 0 {
+		//no early completed assignments
+		app.logger.Infof("no early completed assignments, so not send notifications - %s", user.NetID)
+		return
+	}
+
+	//determine for which of the submissions we need to send notifications
+	ecAssignments, err = app.findCompletedEarlyAssignments(ecAssignments)
+	if err != nil {
+		app.logger.Errorf("error finding early completed assignments for - %s", user.NetID)
+	}
+	if len(ecAssignments) == 0 {
+		//no early completed assignments
+		app.logger.Infof("no early completed assignments after checking submitted date, so not send notifications - %s", user.NetID)
+		return
+	}
+
+	//here we have the assignments we need to send notifications for
+
+	//process the early completed assignments
+	for _, assignment := range ecAssignments {
+		app.processCompletedAssignmentEarly(nudge, user, assignment)
+	}
+}
+
+func (app *Application) findCompletedEarlyAssignments(assignments []model.Assignment) ([]model.Assignment, error) {
+	app.logger.Info("findCompletedEarlyAssignments")
+
+	resultList := []model.Assignment{}
+	for _, assignment := range assignments {
+
+		if assignment.DueAt == nil || assignment.Submission == nil || assignment.Submission.SubmittedAt == nil {
+			continue
+		}
+		dueAt := assignment.DueAt.Unix()
+		submittedAt := assignment.Submission.SubmittedAt.Unix()
+		//check if submitted is before due
+		if submittedAt < dueAt {
+			resultList = append(resultList, assignment)
+		}
+	}
+
+	return resultList, nil
+}
+
+func (app *Application) processCompletedAssignmentEarly(nudge model.Nudge, user GroupsBBUser, assignment model.Assignment) {
+	app.logger.Infof("processCompletedAssignmentEarly - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
+
+	//need to send but first check if it has been send before
+
+	//check if has been sent before
+	criteriaHash := app.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
+	sentNudge, err := app.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	if err != nil {
+		//not reached the max hours, so not send notification
+		app.logger.Errorf("error checking if sent nudge exists for missed assignment - %s - %s", nudge.ID, user.NetID)
+		return
+	}
+	if sentNudge != nil {
+		app.logger.Infof("this has been already sent - %s - %s", nudge.ID, user.NetID)
+		return
+	}
+
+	//it has not been sent, so sent it
+	app.sendEarlyCompletedAssignmentNudgeForUser(nudge, user, assignment)
+}
+
+func (app *Application) generateEarlyCompletedAssignmentHash(assignmentID int, submissionID int, submittedAt time.Time) uint32 {
+	assignmentIDComponent := fmt.Sprintf("%d", assignmentID)
+	submissionIDComponent := fmt.Sprintf("%d", submissionID)
+	submittedAtComponent := fmt.Sprintf("%d", submittedAt.Unix())
+	component := fmt.Sprintf("%s+%s+%s", assignmentIDComponent, submissionIDComponent, submittedAtComponent)
+	hash := utils.Hash(component)
+	return hash
+}
+
+func (app *Application) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user GroupsBBUser,
+	assignment model.Assignment) {
+	app.logger.Infof("sendEarlyCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.UserID)
+
+	//send push notification
+	recipient := Recipient{UserID: user.UserID, Name: ""}
+	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body)
+	if err != nil {
+		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
+		return
+	}
+
+	//insert sent nudge
+	criteriaHash := app.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
+	sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	err = app.storage.InsertSentNudge(sentNudge)
+	if err != nil {
+		app.logger.Errorf("error saving sent early completed assignment nudge for %s - %s", user.UserID, err)
+		return
+	}
+}
+
+// end completed_assignment_early nudge
 
 // calendar_event nudge
 func (app *Application) processCalendarEventNudge(nudge model.Nudge, allUsers []GroupsBBUser) {

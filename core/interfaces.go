@@ -117,6 +117,7 @@ type Provider interface {
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
 	GetCalendarEvents(userID string) ([]model.CalendarEvent, error)
+	GetCompletedAssignments(userID string) ([]model.Assignment, error)
 }
 
 //GroupsBB interface for the Groups building block communication
