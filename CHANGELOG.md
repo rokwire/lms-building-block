@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Prepare the project to become open source [#5](https://github.com/rokwire/lms-building-block/issues/5)
 
+## [1.1.5] - 2022-07-15
+### Added
+- Completed an assignment early nudge [#21](https://github.com/rokwire/lms-building-block/issues/21)
+
 ## [1.1.4] - 2022-07-12
 ### Added
 - Nudges handling [#10](https://github.com/rokwire/lms-building-block/issues/10)

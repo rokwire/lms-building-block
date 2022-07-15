@@ -28,12 +28,19 @@ type Course struct {
 
 //Assignment entity
 type Assignment struct {
-	ID       int        `json:"id"`
-	Name     string     `json:"name"`
-	CourseID int        `json:"course_id"`
-	HTMLUrl  string     `json:"html_url"`
-	Position *int       `json:"position"`
-	DueAt    *time.Time `json:"due_at"`
+	ID         int         `json:"id"`
+	Name       string      `json:"name"`
+	CourseID   int         `json:"course_id"`
+	HTMLUrl    string      `json:"html_url"`
+	Position   *int        `json:"position"`
+	DueAt      *time.Time  `json:"due_at"`
+	Submission *Submission `json:"submission"`
+}
+
+//Submission entity
+type Submission struct {
+	ID          int        `json:"id"`
+	SubmittedAt *time.Time `json:"submitted_at"`
 }
 
 //AssignmentGroup entity
