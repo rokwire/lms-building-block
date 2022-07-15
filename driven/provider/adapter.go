@@ -313,7 +313,7 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 	return data, nil
 }
 
-//GetCalendarEvents gives the missed assignments of the user
+//GetCalendarEvents gives the events of the user
 func (a *Adapter) GetCalendarEvents(userID string) ([]model.CalendarEvent, error) {
 	//params
 	queryParamsItems := map[string][]string{}
