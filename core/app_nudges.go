@@ -436,14 +436,13 @@ func (app *Application) processCompletedAssignmentEarly(nudge model.Nudge, user 
 	//app.sendMissedAssignmentNudgeForUser(nudge, user, assignment, hours)
 }
 
-func (app *Application) generateEarlyCompletedAssignmentHash(assignemntID int, submissionID int, submittedAt time.Time) uint32 {
-	/*assignmentIDComponent := fmt.Sprintf("%d", assignemntID)
-	hoursComponent := fmt.Sprintf("%f", hours)
-	component := fmt.Sprintf("%s+%s", assignmentIDComponent, hoursComponent)
+func (app *Application) generateEarlyCompletedAssignmentHash(assignmentID int, submissionID int, submittedAt time.Time) uint32 {
+	assignmentIDComponent := fmt.Sprintf("%d", assignmentID)
+	submissionIDComponent := fmt.Sprintf("%d", submissionID)
+	submittedAtComponent := fmt.Sprintf("%d", submittedAt.Unix())
+	component := fmt.Sprintf("%s+%s+%s", assignmentIDComponent, submissionIDComponent, submittedAtComponent)
 	hash := utils.Hash(component)
-	return hash */
-
-	return 1
+	return hash
 }
 
 // end completed_assignment_early nudge
