@@ -251,6 +251,71 @@ func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error
 	return assignments, nil
 }
 
+//GetCompletedAssignments gives the completed assignments of the user
+func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, error) {
+	//1. first we need to find all courses for the user
+	userCourses, err := a.GetCourses(userID)
+	if err != nil {
+		log.Print("error getting user courses for early completed assignments")
+		return nil, err
+	}
+	if len(userCourses) == 0 {
+		//not courses for this user
+		return nil, nil
+	}
+
+	//2. get the assignemnts for every course
+	result := []model.Assignment{}
+	for _, course := range userCourses {
+		courseAssignments, err := a.getAssignments(course.ID, userID)
+		if err != nil {
+			log.Printf("error getting assignments for - %d - %s", course.ID, userID)
+			continue
+		}
+		if len(courseAssignments) == 0 {
+			continue
+		}
+
+		//check submission for every assignment
+		for _, cAssignment := range courseAssignments {
+			// get only the submitted ones
+			submission := cAssignment.Submission
+			if submission != nil && submission.SubmittedAt != nil {
+				result = append(result, cAssignment)
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func (a *Adapter) getAssignments(courseID int, userID string) ([]model.Assignment, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParamsItems["include[]"] = []string{"submission"}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/courses/%d/assignments%s", courseID, queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting assignments")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var assignments []model.Assignment
+	err = json.Unmarshal(data, &assignments)
+	if err != nil {
+		log.Print("error converting assignments")
+		return nil, err
+	}
+	return assignments, nil
+}
+
 func (a *Adapter) constructQueryParams(items map[string][]string) string {
 	if len(items) == 0 {
 		return ""
