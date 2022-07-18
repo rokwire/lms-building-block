@@ -129,7 +129,7 @@ type GroupsBBUser struct {
 
 //NotificationsBB interface for the Notifications building block communication
 type NotificationsBB interface {
-	SendNotifications(recipients []Recipient, text string, body string) error
+	SendNotifications(recipients []Recipient, text string, body string, data map[string]string) error
 }
 
 //Recipient entity
