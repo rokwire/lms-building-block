@@ -21,10 +21,11 @@ import "time"
 
 //Nudge entity
 type Nudge struct {
-	ID     string                 `json:"id" bson:"_id"`        //last_login
-	Name   string                 `json:"name" bson:"name"`     //"Last Canvas use was over 2 weeks"
-	Body   string                 `json:"body" bson:"body"`     //"You have not used the Canvas Application in over 2 weeks."
-	Params map[string]interface{} `json:"params" bson:"params"` //Nudge specific settings
+	ID       string                 `json:"id" bson:"_id"`              //last_login
+	Name     string                 `json:"name" bson:"name"`           //"Last Canvas use was over 2 weeks"
+	Body     string                 `json:"body" bson:"body"`           //"You have not used the Canvas Application in over 2 weeks."
+	DeepLink string                 `json:"deep_link" bson:"deep_link"` //deep link
+	Params   map[string]interface{} `json:"params" bson:"params"`       //Nudge specific settings
 }
 
 //SentNudge entity
