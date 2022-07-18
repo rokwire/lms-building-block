@@ -200,7 +200,7 @@ func (app *Application) sendLastLoginNudgeForUser(nudge model.Nudge, user Groups
 
 	//send push notification
 	recipient := Recipient{UserID: user.UserID, Name: ""}
-	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body)
+	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body, nil)
 	if err != nil {
 		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
 		return
@@ -306,7 +306,8 @@ func (app *Application) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user
 	//send push notification
 	recipient := Recipient{UserID: user.UserID, Name: ""}
 	body := fmt.Sprintf(nudge.Body, assignment.Name)
-	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body)
+	data := app.prepareMissedAssignmentNudgeData(nudge, assignment)
+	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
 	if err != nil {
 		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
 		return
@@ -320,6 +321,18 @@ func (app *Application) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user
 		app.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
 		return
 	}
+}
+
+func (app *Application) prepareMissedAssignmentNudgeData(nudge model.Nudge, assignment model.Assignment) map[string]string {
+	if len(nudge.DeepLink) == 0 {
+		return nil
+	}
+
+	data := map[string]string{}
+	deepLink := fmt.Sprintf(nudge.DeepLink, assignment.CourseID, assignment.ID)
+	data["deep_link"] = deepLink
+
+	return data
 }
 
 func (app *Application) generateMissedAssignmentHash(assignemntID int, hours float64) uint32 {
@@ -451,7 +464,8 @@ func (app *Application) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nud
 
 	//send push notification
 	recipient := Recipient{UserID: user.UserID, Name: ""}
-	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body)
+	data := app.prepareEarlyCompletedAssignmentNudgeData(nudge, assignment)
+	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body, data)
 	if err != nil {
 		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
 		return
@@ -465,6 +479,18 @@ func (app *Application) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nud
 		app.logger.Errorf("error saving sent early completed assignment nudge for %s - %s", user.UserID, err)
 		return
 	}
+}
+
+func (app *Application) prepareEarlyCompletedAssignmentNudgeData(nudge model.Nudge, assignment model.Assignment) map[string]string {
+	if len(nudge.DeepLink) == 0 {
+		return nil
+	}
+
+	data := map[string]string{}
+	deepLink := fmt.Sprintf(nudge.DeepLink, assignment.CourseID, assignment.ID)
+	data["deep_link"] = deepLink
+
+	return data
 }
 
 // end completed_assignment_early nudge
