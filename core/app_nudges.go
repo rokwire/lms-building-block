@@ -391,7 +391,9 @@ func (app *Application) processCompletedAssignmentEarlyNudgePerUser(nudge model.
 	}
 
 	//determine for which of the submissions we need to send notifications
-	ecAssignments, err = app.findCompletedEarlyAssignments(ecAssignments)
+	hours := float64(nudge.Params["hours"].(int32))
+	now := time.Now()
+	ecAssignments, err = app.findCompletedEarlyAssignments(hours, now, ecAssignments)
 	if err != nil {
 		app.logger.Errorf("error finding early completed assignments for - %s", user.NetID)
 	}
@@ -405,13 +407,14 @@ func (app *Application) processCompletedAssignmentEarlyNudgePerUser(nudge model.
 
 	//process the early completed assignments
 	for _, assignment := range ecAssignments {
-		app.processCompletedAssignmentEarly(nudge, user, assignment)
+		app.processCompletedAssignmentEarly(nudge, user, assignment, hours)
 	}
 }
 
-func (app *Application) findCompletedEarlyAssignments(assignments []model.Assignment) ([]model.Assignment, error) {
+func (app *Application) findCompletedEarlyAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
 	app.logger.Info("findCompletedEarlyAssignments")
 
+	hoursInSecs := hours * 60 * 60
 	resultList := []model.Assignment{}
 	for _, assignment := range assignments {
 
@@ -420,8 +423,9 @@ func (app *Application) findCompletedEarlyAssignments(assignments []model.Assign
 		}
 		dueAt := assignment.DueAt.Unix()
 		submittedAt := assignment.Submission.SubmittedAt.Unix()
-		//check if submitted is before due
-		if submittedAt < dueAt {
+		//check if submitted is x hours before due
+		difference := dueAt - submittedAt
+		if difference > int64(hoursInSecs) {
 			resultList = append(resultList, assignment)
 		}
 	}
@@ -429,7 +433,7 @@ func (app *Application) findCompletedEarlyAssignments(assignments []model.Assign
 	return resultList, nil
 }
 
-func (app *Application) processCompletedAssignmentEarly(nudge model.Nudge, user GroupsBBUser, assignment model.Assignment) {
+func (app *Application) processCompletedAssignmentEarly(nudge model.Nudge, user GroupsBBUser, assignment model.Assignment, hours float64) {
 	app.logger.Infof("processCompletedAssignmentEarly - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before
@@ -448,7 +452,7 @@ func (app *Application) processCompletedAssignmentEarly(nudge model.Nudge, user 
 	}
 
 	//it has not been sent, so sent it
-	app.sendEarlyCompletedAssignmentNudgeForUser(nudge, user, assignment)
+	app.sendEarlyCompletedAssignmentNudgeForUser(nudge, user, assignment, hours)
 }
 
 func (app *Application) generateEarlyCompletedAssignmentHash(assignmentID int, submissionID int, submittedAt time.Time) uint32 {
@@ -461,7 +465,7 @@ func (app *Application) generateEarlyCompletedAssignmentHash(assignmentID int, s
 }
 
 func (app *Application) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user GroupsBBUser,
-	assignment model.Assignment) {
+	assignment model.Assignment, hours float64) {
 	app.logger.Infof("sendEarlyCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.UserID)
 
 	//send push notification
