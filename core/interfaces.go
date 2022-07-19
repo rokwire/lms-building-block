@@ -113,7 +113,7 @@ type Provider interface {
 	GetCurrentUser(userID string) (*model.User, error)
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
-	GetCalendarEvents(userID string) ([]model.CalendarEvent, error)
+	GetCalendarEvents(userID string, courseID []int, startAt string, endAt string, perPage int) ([]model.CalendarEvent, error)
 	GetCompletedAssignments(userID string) ([]model.Assignment, error)
 }
 

@@ -379,14 +379,19 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 }
 
 //GetCalendarEvents gives the events of the user
-func (a *Adapter) GetCalendarEvents(userID string) ([]model.CalendarEvent, error) {
+func (a *Adapter) GetCalendarEvents(userID string, courseID []int, startAt string, endAt string, perPage int) ([]model.CalendarEvent, error) {
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParamsItems["course_id"] = []string{fmt.Sprintf("course_id:%s", courseID)}
+	queryParamsItems["start_at"] = []string{fmt.Sprintf("start_at:%s", startAt)}
+	queryParamsItems["end_at"] = []string{fmt.Sprintf("end_at:%s", endAt)}
+	queryParamsItems["per_page"] = []string{fmt.Sprintf("per_page:%s", perPage)}
+
 	queryParams := a.constructQueryParams(queryParamsItems)
 
 	//path + params
-	pathAndParams := fmt.Sprintf("api/v1/calendar_events%s", queryParams)
+	pathAndParams := fmt.Sprintf("api/v1/calendar_events%s", queryParams, courseID, startAt, endAt, perPage)
 
 	//execute query
 	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")

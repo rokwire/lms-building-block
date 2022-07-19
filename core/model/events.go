@@ -25,13 +25,14 @@ type CalendarEvent struct {
 	Title           string     `json:"title"`
 	StartAt         *time.Time `json:"start_at"`
 	EndAt           *time.Time `json:"end_at"`
+	CourseID        []int      `json:"course_id"`
+	PerPage         int        `json:"per_page"`
 	Description     string     `json:"desctiption"`
 	LocationName    string     `json:"location_name"`
 	LocationAddress string     `json:"location_address"`
+	ContextCode     string     `json:"context_code"`
+	ContextName     string     `json:"context_name"`
+	AllContextCodes []string   `json:"all_context_codes"`
 	Url             string     `json:"url"`      // URL for this calendar event (to update, delete, etc.)
 	HTMLUrl         string     `json:"html_url"` // URL for a user to view this event
-	AllDayDate      string     `json:"all_day_date"`
-	AllDay          bool       `json:"all_day"`
-	CreatedAt       string     `json:"created_at"`
-	UpdatedAt       string     `json:"updated_at"`
 }
