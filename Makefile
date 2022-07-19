@@ -140,5 +140,3 @@ log-variables: ; $(info $(M) Log info…) @ ## Log the variables values
 	@echo "VERSION:"$(VERSION)
 
 
-
-

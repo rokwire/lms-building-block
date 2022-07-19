@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Calendar Events nudge [#22](https://github.com/rokwire/lms-building-block/issues/22)
 
+### Added
+- Prepare the project to become open source [#5](https://github.com/rokwire/lms-building-block/issues/5)
+- Deep links in nudges [#26](https://github.com/rokwire/lms-building-block/issues/26)
+
 ## [1.1.5] - 2022-07-15
 ### Added
 - Completed an assignment early nudge [#21](https://github.com/rokwire/lms-building-block/issues/21)
@@ -32,10 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LMS Update [#6](https://github.com/rokwire/lms-building-block/issues/6)
 
 ## [1.0.3] - 2022-04-29
+### Changed
 - Update Core auth library to the latest version and repo [#4](https://github.com/rokwire/lms-building-block/issues/4)
 
 ## [1.0.2] - 2022-04-26
+### Security
 - Update Swagger library due to security issue [#1](https://github.com/rokwire/lms-building-block/issues/1)
 
 ## [1.0.1] - 2022-03-11
+### Added
 - Introduce LMS BB 
