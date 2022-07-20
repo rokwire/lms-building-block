@@ -379,36 +379,38 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 }
 
 //GetCalendarEvents gives the events of the user
-func (a *Adapter) GetCalendarEvents(userID string, courseID []int, startAt string, endAt string, perPage int) ([]model.CalendarEvent, error) {
-	//params
-	queryParamsItems := map[string][]string{}
-	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
-	queryParamsItems["course_id"] = []string{fmt.Sprintf("course_id:%s", courseID)}
-	queryParamsItems["start_at"] = []string{fmt.Sprintf("start_at:%s", startAt)}
-	queryParamsItems["end_at"] = []string{fmt.Sprintf("end_at:%s", endAt)}
-	queryParamsItems["per_page"] = []string{fmt.Sprintf("per_page:%s", perPage)}
+func (a *Adapter) GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error) {
+	//TODO
+	return nil, nil
+	/*	//params
+		queryParamsItems := map[string][]string{}
+		queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+		queryParamsItems["course_id"] = []string{fmt.Sprintf("course_id:%s", courseID)}
+		queryParamsItems["start_at"] = []string{fmt.Sprintf("start_at:%s", startAt)}
+		queryParamsItems["end_at"] = []string{fmt.Sprintf("end_at:%s", endAt)}
+		queryParamsItems["per_page"] = []string{fmt.Sprintf("per_page:%s", perPage)}
 
-	queryParams := a.constructQueryParams(queryParamsItems)
+		queryParams := a.constructQueryParams(queryParamsItems)
 
-	//path + params
-	pathAndParams := fmt.Sprintf("api/v1/calendar_events%s", queryParams, courseID, startAt, endAt, perPage)
+		//path + params
+		pathAndParams := fmt.Sprintf("api/v1/calendar_events%s", queryParams, courseID, startAt, endAt, perPage)
 
-	//execute query
-	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
-	if err != nil {
-		log.Print("error getting last login")
-		return nil, err
-	}
+		//execute query
+		data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+		if err != nil {
+			log.Print("error getting last login")
+			return nil, err
+		}
 
-	//prepare the response and return it
-	var calendarEvents []model.CalendarEvent
-	err = json.Unmarshal(data, &calendarEvents)
-	if err != nil {
-		log.Print("error converting missing calendar events")
-		return nil, err
-	}
+		//prepare the response and return it
+		var calendarEvents []model.CalendarEvent
+		err = json.Unmarshal(data, &calendarEvents)
+		if err != nil {
+			log.Print("error converting missing calendar events")
+			return nil, err
+		}
 
-	return calendarEvents, nil
+		return calendarEvents, nil */
 }
 
 //NewProviderAdapter creates a new provider adapter

@@ -511,7 +511,7 @@ func (app *Application) processCalendarEventNudge(nudge model.Nudge, allUsers []
 }
 
 func (app *Application) processCalendarEventNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
-	app.logger.Infof("processCalendarEventNudge - %s", nudge.ID)
+	/*app.logger.Infof("processCalendarEventNudge - %s", nudge.ID)
 
 	//get calendar events
 	calendarEvents, err := app.provider.GetCalendarEvents(user.NetID, nil, "", "", 0)
@@ -537,7 +537,7 @@ func (app *Application) processCalendarEventNudgePerUser(nudge model.Nudge, user
 	//process the calendar events
 	for _, event := range calendarEvents {
 		app.processCalendarEvent(nudge, user, event)
-	}
+	} */
 }
 
 func (app *Application) processCalendarEvent(nudge model.Nudge, user GroupsBBUser, event model.CalendarEvent) {
