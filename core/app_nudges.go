@@ -587,7 +587,7 @@ func (app *Application) sendCalendareEventNudgeForUser(nudge model.Nudge, user G
 }
 
 func (app *Application) prepareCalendarEventNudgeData(nudge model.Nudge, event model.CalendarEvent) map[string]string {
-	if len(nudge.DeepLink) == 0 {
+	/*if len(nudge.DeepLink) == 0 {
 		return nil
 	}
 
@@ -595,7 +595,9 @@ func (app *Application) prepareCalendarEventNudgeData(nudge model.Nudge, event m
 	deepLink := fmt.Sprintf(nudge.DeepLink, event.ID, event.LocationAddress)
 	data["deep_link"] = deepLink
 
-	return data
+	return data */
+
+	return nil
 }
 
 func (app *Application) generateCalendarEventHash(eventID int) uint32 {
@@ -606,7 +608,7 @@ func (app *Application) generateCalendarEventHash(eventID int) uint32 {
 }
 
 func (app *Application) findCalendarEvents(events []model.CalendarEvent) ([]model.CalendarEvent, error) {
-	app.logger.Info("findCalendarEvents")
+	/*app.logger.Info("findCalendarEvents")
 
 	resultList := []model.CalendarEvent{}
 	for _, calendar := range events {
@@ -615,7 +617,8 @@ func (app *Application) findCalendarEvents(events []model.CalendarEvent) ([]mode
 		}
 	}
 
-	return resultList, nil
+	return resultList, nil */
+	return nil, nil
 }
 
 // end calendar_event nudge
