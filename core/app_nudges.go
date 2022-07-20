@@ -524,55 +524,79 @@ func (app *Application) processTodayCalendarEventsNudgePerUser(nudge model.Nudge
 		app.logger.Infof("no calendar events, so not send notifications - %s", user.NetID)
 		return
 	}
-	/*
-		calendarEvents, err = app.findCalendarEvents(calendarEvents)
-		if err != nil {
-			app.logger.Errorf("error finding calendar events for - %s", user.NetID)
-		}
-		if len(calendarEvents) == 0 {
-			//no events
-			app.logger.Infof("no calendar events, so not send notifications - %s", user.NetID)
-			return
-		}
 
-		//process the calendar events
-		for _, event := range calendarEvents {
-			app.processCalendarEvent(nudge, user, event)
-		} */
+	//we have calendar events, so process them
+	app.processCalendarEvents(nudge, user, calendarEvents)
 }
 
 func (app *Application) prepareTodayCalendarEventsDates() (time.Time, time.Time) {
-	now := time.Now()
+	//now := time.Now()
+	//TODO
+	now := time.Date(2022, time.Month(7), 1, 0, 0, 0, 0, time.UTC)
+
 	start := time.Date(now.Year(), time.Month(now.Month()), now.Day(), 0, 0, 0, 0, time.UTC)
 	end := time.Date(now.Year(), time.Month(now.Month()), now.Day(), 23, 59, 59, 999, time.UTC)
 	return start, end
 }
 
-func (app *Application) processCalendarEvent(nudge model.Nudge, user GroupsBBUser, event model.CalendarEvent) {
-	app.logger.Infof("processCalendarEvent - %s - %s - %s", nudge.ID, user.NetID, event.Title)
+func (app *Application) processCalendarEvents(nudge model.Nudge, user GroupsBBUser, events []model.CalendarEvent) {
+	app.logger.Infof("processCalendarEvents - %s - %s - %s", nudge.ID, user.NetID, len(events))
 
-	//need to send but first check if it has been send before
-
-	//check if has been sent before
-	criteriaHash := app.generateCalendarEventHash(event.ID)
-	sentNudge, err := app.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	//find unset events
+	unsentEvents, err := app.findUnsentEvents(nudge, user, events)
 	if err != nil {
-		//not reached the max hours, so not send notification
-		app.logger.Errorf("error checking if sent nudge exists for missed assignment - %s - %s", nudge.ID, user.NetID)
+		app.logger.Errorf("error finding unset events - %s - %s", nudge.ID, user.NetID)
 		return
 	}
-	if sentNudge != nil {
-		app.logger.Infof("this has been already sent - %s - %s", nudge.ID, user.NetID)
+	if len(unsentEvents) == 0 {
+		app.logger.Infof("unsent events is 0 - %s - %s", nudge.ID, user.NetID)
 		return
 	}
 
-	//it has not been sent, so sent it
-	app.sendCalendareEventNudgeForUser(nudge, user, event)
+	//we have unsent events, so process them for sending
+	app.sendCalendareEventNudgeForUsers(nudge, user, unsentEvents)
 }
 
-func (app *Application) sendCalendareEventNudgeForUser(nudge model.Nudge, user GroupsBBUser,
-	event model.CalendarEvent) {
-	app.logger.Infof("sendCalendareEventNudgeForUser - %s - %s", nudge.ID, user.UserID)
+func (app *Application) findUnsentEvents(nudge model.Nudge, user GroupsBBUser, events []model.CalendarEvent) ([]model.CalendarEvent, error) {
+	//get hashes for all events
+	hashes := []uint32{}
+	for _, event := range events {
+		hash := app.generateCalendarEventHash(event.ID)
+		hashes = append(hashes, hash)
+	}
+
+	//find the sent nudges
+	sentNudges, err := app.storage.FindSentNudges(nudge.ID, user.UserID, user.NetID, hashes)
+	if err != nil {
+		app.logger.Errorf("error checking if sent nudge exists for calendar events - %s - %s", nudge.ID, user.NetID)
+		return nil, err
+	}
+
+	//prepare the result
+	result := []model.CalendarEvent{}
+	for _, event := range events {
+		isSent := app.isEventSent(event, sentNudges)
+		if !isSent {
+			result = append(result, event)
+		}
+	}
+
+	return result, nil
+}
+
+func (app *Application) isEventSent(event model.CalendarEvent, sentEvents []model.SentNudge) bool {
+	cHash := app.generateCalendarEventHash(event.ID)
+	for _, sent := range sentEvents {
+		if cHash == sent.CriteriaHash {
+			return true
+		}
+	}
+	return false
+}
+
+func (app *Application) sendCalendareEventNudgeForUsers(nudge model.Nudge, user GroupsBBUser,
+	events []model.CalendarEvent) {
+	/*app.logger.Infof("sendCalendareEventNudgeForUser - %s - %s", nudge.ID, user.UserID)
 
 	//send push notification
 	recipient := Recipient{UserID: user.UserID, Name: ""}
@@ -591,7 +615,7 @@ func (app *Application) sendCalendareEventNudgeForUser(nudge model.Nudge, user G
 	if err != nil {
 		app.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
 		return
-	}
+	} */
 }
 
 func (app *Application) prepareCalendarEventNudgeData(nudge model.Nudge, event model.CalendarEvent) map[string]string {
@@ -610,23 +634,8 @@ func (app *Application) prepareCalendarEventNudgeData(nudge model.Nudge, event m
 
 func (app *Application) generateCalendarEventHash(eventID int) uint32 {
 	eventIDComponent := fmt.Sprintf("%d", eventID)
-	component := fmt.Sprintf("%s", eventIDComponent)
-	hash := utils.Hash(component)
+	hash := utils.Hash(eventIDComponent)
 	return hash
-}
-
-func (app *Application) findCalendarEvents(events []model.CalendarEvent) ([]model.CalendarEvent, error) {
-	/*app.logger.Info("findCalendarEvents")
-
-	resultList := []model.CalendarEvent{}
-	for _, calendar := range events {
-		if calendar.EndAt == nil {
-			continue
-		}
-	}
-
-	return resultList, nil */
-	return nil, nil
 }
 
 // end calendar_event nudge
