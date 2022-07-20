@@ -18,6 +18,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"lms/core/model"
 	"lms/utils"
@@ -597,16 +598,16 @@ func (app *Application) isEventSent(event model.CalendarEvent, sentEvents []mode
 func (app *Application) sendCalendareEventNudgeForUsers(nudge model.Nudge, user GroupsBBUser,
 	events []model.CalendarEvent) {
 	app.logger.Infof("sendCalendareEventNudgeForUsers - %s - %s", nudge.ID, user.UserID)
-	/*
-		//send push notification
-		recipient := Recipient{UserID: user.UserID, Name: ""}
-		body := fmt.Sprintf(nudge.Body, event.Title)
-		data := app.prepareCalendarEventNudgeData(nudge, event)
-		err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
-		if err != nil {
-			app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
-			return
-		}*/
+
+	//send push notification
+	recipient := Recipient{UserID: user.UserID, Name: ""}
+	body := app.prepareCalendarEventNudgeBody(nudge, events)
+	data := app.prepareCalendarEventNudgeData(nudge)
+	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
+	if err != nil {
+		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
+		return
+	}
 
 	//insert sent nudge
 	sentNudges := make([]model.SentNudge, len(events))
@@ -615,25 +616,31 @@ func (app *Application) sendCalendareEventNudgeForUsers(nudge model.Nudge, user 
 		sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
 		sentNudges[i] = sentNudge
 	}
-	err := app.storage.InsertSentNudges(sentNudges)
+	err = app.storage.InsertSentNudges(sentNudges)
 	if err != nil {
 		app.logger.Errorf("error saving sent calendar events nudge for %s - %s", user.UserID, err)
 		return
 	}
 }
 
-func (app *Application) prepareCalendarEventNudgeData(nudge model.Nudge, event model.CalendarEvent) map[string]string {
-	/*if len(nudge.DeepLink) == 0 {
+func (app *Application) prepareCalendarEventNudgeBody(nudge model.Nudge, events []model.CalendarEvent) string {
+	var eventsNames bytes.Buffer
+	for _, event := range events {
+		eventsNames.WriteString(event.Title)
+		eventsNames.WriteString("\n")
+	}
+	return fmt.Sprintf(nudge.Body, eventsNames.String())
+}
+
+func (app *Application) prepareCalendarEventNudgeData(nudge model.Nudge) map[string]string {
+	if len(nudge.DeepLink) == 0 {
 		return nil
 	}
 
 	data := map[string]string{}
-	deepLink := fmt.Sprintf(nudge.DeepLink, event.ID, event.LocationAddress)
-	data["deep_link"] = deepLink
+	data["deep_link"] = nudge.DeepLink
 
-	return data */
-
-	return nil
+	return data
 }
 
 func (app *Application) generateCalendarEventHash(eventID int) uint32 {
