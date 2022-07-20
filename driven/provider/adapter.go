@@ -381,6 +381,9 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 //GetCalendarEvents gives the events of the user
 func (a *Adapter) GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error) {
 	//TODO
+
+	fmt.Println(startAt.Format(time.RFC3339))
+	fmt.Println(endAt.Format(time.RFC3339))
 	return nil, nil
 	/*	//params
 		queryParamsItems := map[string][]string{}

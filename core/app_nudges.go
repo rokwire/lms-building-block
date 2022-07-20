@@ -36,31 +36,31 @@ func (app *Application) setupNudgesTimer() {
 		app.timerDone <- true
 		app.dailyNudgesTimer.Stop()
 	}
+	/*
+		//wait until it is the correct moment from the day
+		location, err := time.LoadLocation("America/Chicago")
+		if err != nil {
+			app.logger.Errorf("Error getting location:%s\n", err.Error())
+		}
+		now := time.Now().In(location)
+		app.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-	//wait until it is the correct moment from the day
-	location, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		app.logger.Errorf("Error getting location:%s\n", err.Error())
-	}
-	now := time.Now().In(location)
-	app.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
+		nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+		desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
 
-	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
-
-	var durationInSeconds int
-	app.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
-	if nowSecondsInDay <= desiredMoment {
-		app.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
-		durationInSeconds = desiredMoment - nowSecondsInDay
-	} else {
-		app.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-		leftToday := 86400 - nowSecondsInDay
-		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
-	}
-	//app.logger.Infof("%d", durationInSeconds)
-	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
+		var durationInSeconds int
+		app.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
+		if nowSecondsInDay <= desiredMoment {
+			app.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
+			durationInSeconds = desiredMoment - nowSecondsInDay
+		} else {
+			app.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
+			leftToday := 86400 - nowSecondsInDay
+			durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+		}
+		//app.logger.Infof("%d", durationInSeconds)*/
+	duration := time.Second * time.Duration(3)
+	//duration := time.Second * time.Duration(durationInSeconds)
 	app.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
 	app.dailyNudgesTimer = time.NewTimer(duration)
@@ -132,10 +132,10 @@ func (app *Application) processNudge(nudge model.Nudge, allUsers []GroupsBBUser)
 		app.processLastLoginNudge(nudge, allUsers)
 	case "missed_assignment":
 		app.processMissedAssignmentNudge(nudge, allUsers)
-	case "calendar_events":
-		app.processCalendarEventNudge(nudge, allUsers)
 	case "completed_assignment_early":
 		app.processCompletedAssignmentEarlyNudge(nudge, allUsers)
+	case "today_calendar_events":
+		app.processTodayCalendarEventsNudge(nudge, allUsers)
 	default:
 		app.logger.Infof("Not supported nudge - %s", nudge.ID)
 	}
@@ -502,42 +502,50 @@ func (app *Application) prepareEarlyCompletedAssignmentNudgeData(nudge model.Nud
 // end completed_assignment_early nudge
 
 // calendar_event nudge
-func (app *Application) processCalendarEventNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
-	app.logger.Infof("processCalendarEventNudge - %s", nudge.ID)
+func (app *Application) processTodayCalendarEventsNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
+	app.logger.Infof("processTodayCalendarEventsNudge - %s", nudge.ID)
 
 	for _, user := range allUsers {
-		app.processCalendarEventNudgePerUser(nudge, user)
+		app.processTodayCalendarEventsNudgePerUser(nudge, user)
 	}
 }
 
-func (app *Application) processCalendarEventNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
-	/*app.logger.Infof("processCalendarEventNudge - %s", nudge.ID)
+func (app *Application) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
+	app.logger.Infof("processTodayCalendarEventsNudgePerUser - %s", nudge.ID)
 
 	//get calendar events
-	calendarEvents, err := app.provider.GetCalendarEvents(user.NetID, nil, "", "", 0)
+	startDate, endDate := app.prepareTodayCalendarEventsDates()
+	calendarEvents, err := app.provider.GetCalendarEvents(user.NetID, startDate, endDate)
 	if err != nil {
 		app.logger.Errorf("error getting calendar events for - %s", user.NetID)
 	}
 	if len(calendarEvents) == 0 {
 		//no calendar events
-		app.logger.Infof("no events, so not send notifications - %s", user.NetID)
-		return
-	}
-
-	calendarEvents, err = app.findCalendarEvents(calendarEvents)
-	if err != nil {
-		app.logger.Errorf("error finding calendar events for - %s", user.NetID)
-	}
-	if len(calendarEvents) == 0 {
-		//no events
 		app.logger.Infof("no calendar events, so not send notifications - %s", user.NetID)
 		return
 	}
+	/*
+		calendarEvents, err = app.findCalendarEvents(calendarEvents)
+		if err != nil {
+			app.logger.Errorf("error finding calendar events for - %s", user.NetID)
+		}
+		if len(calendarEvents) == 0 {
+			//no events
+			app.logger.Infof("no calendar events, so not send notifications - %s", user.NetID)
+			return
+		}
 
-	//process the calendar events
-	for _, event := range calendarEvents {
-		app.processCalendarEvent(nudge, user, event)
-	} */
+		//process the calendar events
+		for _, event := range calendarEvents {
+			app.processCalendarEvent(nudge, user, event)
+		} */
+}
+
+func (app *Application) prepareTodayCalendarEventsDates() (time.Time, time.Time) {
+	now := time.Now()
+	start := time.Date(now.Year(), time.Month(now.Month()), now.Day(), 0, 0, 0, 0, time.UTC)
+	end := time.Date(now.Year(), time.Month(now.Month()), now.Day(), 23, 59, 59, 999, time.UTC)
+	return start, end
 }
 
 func (app *Application) processCalendarEvent(nudge model.Nudge, user GroupsBBUser, event model.CalendarEvent) {
