@@ -340,7 +340,7 @@ func (a *Adapter) GetCalendarEvents(userID string, startAt time.Time, endAt time
 		return nil, nil
 	}
 
-	//3. load the calanedar events
+	//3. load the calendar events
 
 	//params
 	queryParamsItems := map[string][]string{}
@@ -358,31 +358,25 @@ func (a *Adapter) GetCalendarEvents(userID string, startAt time.Time, endAt time
 
 	queryParams := a.constructQueryParams(queryParamsItems)
 
-	//TODO
-	log.Println(queryParams)
-	/*
-		//path + params
-		pathAndParams := fmt.Sprintf("api/v1/calendar_events%s", queryParams, courseID, startAt, endAt, perPage)
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/calendar_events%s", queryParams)
 
-		//execute query
-		data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
-		if err != nil {
-			log.Print("error getting last login")
-			return nil, err
-		}
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Printf("error getting calendar events - %s", err)
+		return nil, err
+	}
 
-		//prepare the response and return it
-		var calendarEvents []model.CalendarEvent
-		err = json.Unmarshal(data, &calendarEvents)
-		if err != nil {
-			log.Print("error converting missing calendar events")
-			return nil, err
-		}
+	//prepare the response and return it
+	var calendarEvents []model.CalendarEvent
+	err = json.Unmarshal(data, &calendarEvents)
+	if err != nil {
+		log.Print("error converting missing calendar events")
+		return nil, err
+	}
 
-		return calendarEvents, nil */
-
-	return nil, nil
-
+	return calendarEvents, nil
 }
 
 func (a *Adapter) constructQueryParams(items map[string][]string) string {
