@@ -101,7 +101,9 @@ type Storage interface {
 	DeleteNudge(ID string) error
 
 	InsertSentNudge(sentNudge model.SentNudge) error
+	InsertSentNudges(sentNudge []model.SentNudge) error
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error)
+	FindSentNudges(nudgeID string, userID string, netID string, criteriaHash []uint32) ([]model.SentNudge, error)
 }
 
 //Provider interface for LMS provider
@@ -114,6 +116,7 @@ type Provider interface {
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
 	GetCompletedAssignments(userID string) ([]model.Assignment, error)
+	GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
 }
 
 //GroupsBB interface for the Groups building block communication

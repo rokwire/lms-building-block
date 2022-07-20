@@ -127,6 +127,21 @@ func (sa *Adapter) InsertSentNudge(sentNudge model.SentNudge) error {
 	return nil
 }
 
+//InsertSentNudges inserts sent nudges entities
+func (sa *Adapter) InsertSentNudges(sentNudges []model.SentNudge) error {
+	data := make([]interface{}, len(sentNudges))
+	for i, sn := range sentNudges {
+		data[i] = sn
+	}
+
+	_, err := sa.db.sentNudges.InsertMany(data, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "sent nudge", nil, err)
+	}
+
+	return nil
+}
+
 //FindSentNudge finds sent nudge entity
 func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error) {
 	filter := bson.D{
@@ -146,6 +161,22 @@ func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, cr
 	}
 	sentNudge := result[0]
 	return &sentNudge, nil
+}
+
+//FindSentNudges finds sent nudges entities
+func (sa *Adapter) FindSentNudges(nudgeID string, userID string, netID string, criteriaHashes []uint32) ([]model.SentNudge, error) {
+	filter := bson.D{
+		primitive.E{Key: "nudge_id", Value: nudgeID},
+		primitive.E{Key: "user_id", Value: userID},
+		primitive.E{Key: "net_id", Value: netID},
+		primitive.E{Key: "criteria_hash", Value: bson.M{"$in": criteriaHashes}}}
+
+	var result []model.SentNudge
+	err := sa.db.sentNudges.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "sent nudge", nil, err)
+	}
+	return result, nil
 }
 
 // Event

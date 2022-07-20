@@ -68,3 +68,9 @@ type User struct {
 	LastLogin   *time.Time   `json:"last_login"`
 	Enrollments []Enrollment `json:"enrollments"`
 }
+
+//CalendarEvent entity
+type CalendarEvent struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+}

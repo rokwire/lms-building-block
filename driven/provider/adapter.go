@@ -316,6 +316,69 @@ func (a *Adapter) getAssignments(courseID int, userID string) ([]model.Assignmen
 	return assignments, nil
 }
 
+//GetCalendarEvents gives the events of the user
+func (a *Adapter) GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error) {
+	//1. find the user id
+	user, err := a.GetCurrentUser(userID)
+	if err != nil {
+		log.Printf("error getting the user for calendar events - %s", userID)
+		return nil, err
+	}
+	if user == nil {
+		log.Printf("not user for id %s", userID)
+		return nil, nil
+	}
+
+	//2. find the user courses
+	courses, err := a.GetCourses(userID)
+	if err != nil {
+		log.Printf("error getting the user courses for calendar events - %s", userID)
+		return nil, err
+	}
+	if len(courses) == 0 {
+		log.Printf("no courses for user %s", userID)
+		return nil, nil
+	}
+
+	//3. load the calendar events
+
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParamsItems["per_page"] = []string{"50"}
+	queryParamsItems["start_date"] = []string{startAt.Format(time.RFC3339)}
+	queryParamsItems["end_date"] = []string{endAt.Format(time.RFC3339)}
+
+	contextCodes := []string{}
+	contextCodes = append(contextCodes, fmt.Sprintf("user_%d", user.ID))
+	for _, course := range courses {
+		contextCodes = append(contextCodes, fmt.Sprintf("course_%d", course.ID))
+	}
+	queryParamsItems["context_codes[]"] = contextCodes
+
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/calendar_events%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Printf("error getting calendar events - %s", err)
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var calendarEvents []model.CalendarEvent
+	err = json.Unmarshal(data, &calendarEvents)
+	if err != nil {
+		log.Print("error converting missing calendar events")
+		return nil, err
+	}
+
+	return calendarEvents, nil
+}
+
 func (a *Adapter) constructQueryParams(items map[string][]string) string {
 	if len(items) == 0 {
 		return ""
