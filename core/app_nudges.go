@@ -528,7 +528,7 @@ func (app *Application) prepareTodayCalendarEventsDates() (time.Time, time.Time)
 }
 
 func (app *Application) processCalendarEvents(nudge model.Nudge, user GroupsBBUser, events []model.CalendarEvent) {
-	app.logger.Infof("processCalendarEvents - %s - %s - %s", nudge.ID, user.NetID, len(events))
+	app.logger.Infof("processCalendarEvents - %s - %s - %d", nudge.ID, user.NetID, len(events))
 
 	//find unset events
 	unsentEvents, err := app.findUnsentEvents(nudge, user, events)
