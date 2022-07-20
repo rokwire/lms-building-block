@@ -596,26 +596,30 @@ func (app *Application) isEventSent(event model.CalendarEvent, sentEvents []mode
 
 func (app *Application) sendCalendareEventNudgeForUsers(nudge model.Nudge, user GroupsBBUser,
 	events []model.CalendarEvent) {
-	/*app.logger.Infof("sendCalendareEventNudgeForUser - %s - %s", nudge.ID, user.UserID)
-
-	//send push notification
-	recipient := Recipient{UserID: user.UserID, Name: ""}
-	body := fmt.Sprintf(nudge.Body, event.Title)
-	data := app.prepareCalendarEventNudgeData(nudge, event)
-	err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
-	if err != nil {
-		app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
-		return
-	}
+	app.logger.Infof("sendCalendareEventNudgeForUsers - %s - %s", nudge.ID, user.UserID)
+	/*
+		//send push notification
+		recipient := Recipient{UserID: user.UserID, Name: ""}
+		body := fmt.Sprintf(nudge.Body, event.Title)
+		data := app.prepareCalendarEventNudgeData(nudge, event)
+		err := app.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
+		if err != nil {
+			app.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
+			return
+		}*/
 
 	//insert sent nudge
-	criteriaHash := app.generateCalendarEventHash(event.ID)
-	sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
-	err = app.storage.InsertSentNudge(sentNudge)
+	sentNudges := make([]model.SentNudge, len(events))
+	for i, event := range events {
+		criteriaHash := app.generateCalendarEventHash(event.ID)
+		sentNudge := app.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+		sentNudges[i] = sentNudge
+	}
+	err := app.storage.InsertSentNudges(sentNudges)
 	if err != nil {
-		app.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
+		app.logger.Errorf("error saving sent calendar events nudge for %s - %s", user.UserID, err)
 		return
-	} */
+	}
 }
 
 func (app *Application) prepareCalendarEventNudgeData(nudge model.Nudge, event model.CalendarEvent) map[string]string {

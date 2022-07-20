@@ -127,6 +127,21 @@ func (sa *Adapter) InsertSentNudge(sentNudge model.SentNudge) error {
 	return nil
 }
 
+//InsertSentNudges inserts sent nudges entities
+func (sa *Adapter) InsertSentNudges(sentNudges []model.SentNudge) error {
+	data := make([]interface{}, len(sentNudges))
+	for i, sn := range sentNudges {
+		data[i] = sn
+	}
+
+	_, err := sa.db.sentNudges.InsertMany(data, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "sent nudge", nil, err)
+	}
+
+	return nil
+}
+
 //FindSentNudge finds sent nudge entity
 func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error) {
 	filter := bson.D{

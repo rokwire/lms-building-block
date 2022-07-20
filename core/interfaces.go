@@ -101,6 +101,7 @@ type Storage interface {
 	DeleteNudge(ID string) error
 
 	InsertSentNudge(sentNudge model.SentNudge) error
+	InsertSentNudges(sentNudge []model.SentNudge) error
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error)
 	FindSentNudges(nudgeID string, userID string, netID string, criteriaHash []uint32) ([]model.SentNudge, error)
 }
