@@ -178,22 +178,3 @@ func (sa *Adapter) FindSentNudges(nudgeID string, userID string, netID string, c
 	}
 	return result, nil
 }
-
-// Event
-
-func (m *database) onDataChanged(changeDoc map[string]interface{}) {
-	if changeDoc == nil {
-		return
-	}
-	log.Printf("onDataChanged: %+v\n", changeDoc)
-	ns := changeDoc["ns"]
-	if ns == nil {
-		return
-	}
-	nsMap := ns.(map[string]interface{})
-	coll := nsMap["coll"]
-
-	if m.listener != nil {
-		m.listener.OnCollectionUpdated(coll.(string))
-	}
-}
