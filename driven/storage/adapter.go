@@ -38,19 +38,6 @@ func (sa *Adapter) Start() error {
 	return err
 }
 
-// NewStorageAdapter creates a new storage adapter instance
-func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
-	timeout, err := strconv.Atoi(mongoTimeout)
-	if err != nil {
-		log.Println("Set default timeout - 500")
-		timeout = 500
-	}
-	timeoutMS := time.Millisecond * time.Duration(timeout)
-
-	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
-	return &Adapter{db: db}
-}
-
 // SetListener sets the upper layer listener for sending collection changed callbacks
 func (sa *Adapter) SetListener(listener CollectionListener) {
 	sa.db.listener = listener
@@ -177,4 +164,17 @@ func (sa *Adapter) FindSentNudges(nudgeID string, userID string, netID string, c
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "sent nudge", nil, err)
 	}
 	return result, nil
+}
+
+// NewStorageAdapter creates a new storage adapter instance
+func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
+	timeout, err := strconv.Atoi(mongoTimeout)
+	if err != nil {
+		log.Println("Set default timeout - 500")
+		timeout = 500
+	}
+	timeoutMS := time.Millisecond * time.Duration(timeout)
+
+	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
+	return &Adapter{db: db}
 }
