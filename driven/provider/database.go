@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/rokwire/logging-library-go/logs"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -83,10 +85,21 @@ func (m *database) start() error {
 	return nil
 }
 
-func (m *database) applyProviderUsersChecks(nudges *collectionWrapper) error {
+func (m *database) applyProviderUsersChecks(providerUsers *collectionWrapper) error {
 	m.logger.Info("apply provider users checks.....")
 
-	//TODO
+	//add net id index
+	err := providerUsers.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
+	//add user id index
+	err = providerUsers.AddIndex(bson.D{primitive.E{Key: "user.id", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
 	m.logger.Info("provider users check passed")
 	return nil
 }
