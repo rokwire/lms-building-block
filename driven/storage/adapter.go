@@ -43,6 +43,24 @@ func (sa *Adapter) SetListener(listener CollectionListener) {
 	sa.db.listener = listener
 }
 
+// CreateNudgesConfig creates nudges config
+func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
+	//TODO
+	return nil
+}
+
+// FindNudgesConfig finds the nudges config
+func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
+	//TODO
+	return nil, nil
+}
+
+// UpdateNudgesConfig updates the nudges config
+func (sa *Adapter) UpdateNudgesConfig(nudgesConfig model.NudgesConfig) error {
+	//TODO
+	return nil
+}
+
 // LoadAllNudges loads all nudges
 func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 	filter := bson.D{}

@@ -95,6 +95,10 @@ func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
 
+	CreateNudgesConfig(nudgesConfig model.NudgesConfig) error
+	FindNudgesConfig() (*model.NudgesConfig, error)
+	UpdateNudgesConfig(nudgesConfig model.NudgesConfig) error
+
 	LoadAllNudges() ([]model.Nudge, error)
 	LoadActiveNudges() ([]model.Nudge, error)
 	InsertNudge(item model.Nudge) error
