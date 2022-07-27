@@ -32,8 +32,9 @@
     200:
       description: successful operation
       content:
-        application/json:
+       application/json:
             schema:
+              type: array
               items:
                 $ref: "../../../schemas/nudges/SentNudges.yaml"
     400:
@@ -53,9 +54,9 @@
   security:
     - bearerAuth: []
   parameters:
-  - name: id
+  - name: ids
     in: query
-    description: id
+    description: A comma-separated list of sent_nudge IDs
     style: form
     explode: false
     schema:

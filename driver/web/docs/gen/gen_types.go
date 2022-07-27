@@ -84,9 +84,8 @@ type PutAdminNudgesIdJSONBody AdminReqUpdateNudge
 
 // DeleteAdminSentNudgesParams defines parameters for DeleteAdminSentNudges.
 type DeleteAdminSentNudgesParams struct {
-
-	// id
-	Id *string `json:"id,omitempty"`
+	// A comma-separated list of sent_nudge IDs
+	Ids *string `form:"ids,omitempty" json:"ids,omitempty"`
 }
 
 // GetAdminSentNudgesParams defines parameters for GetAdminSentNudges.

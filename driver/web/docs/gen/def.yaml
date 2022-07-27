@@ -345,6 +345,7 @@ paths:
           content:
             application/json:
               schema:
+                type: array
                 items:
                   required:
                     - id
@@ -388,9 +389,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: id
+        - name: ids
           in: query
-          description: id
+          description: A comma-separated list of sent_nudge IDs
           style: form
           explode: false
           schema:
