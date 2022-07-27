@@ -43,7 +43,7 @@ type database struct {
 	db       *mongo.Database
 	dbClient *mongo.Client
 
-	providerUsers *collectionWrapper
+	users *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -70,8 +70,8 @@ func (m *database) start() error {
 	//apply checks
 	db := client.Database(m.mongoDBName)
 
-	providerUsers := &collectionWrapper{database: m, coll: db.Collection("provider_users")}
-	err = m.applyProviderUsersChecks(providerUsers)
+	users := &collectionWrapper{database: m, coll: db.Collection("adapter_pr_users")}
+	err = m.applyUsersChecks(users)
 	if err != nil {
 		return err
 	}
@@ -80,27 +80,27 @@ func (m *database) start() error {
 	m.db = db
 	m.dbClient = client
 
-	m.providerUsers = providerUsers
+	m.users = users
 
 	return nil
 }
 
-func (m *database) applyProviderUsersChecks(providerUsers *collectionWrapper) error {
-	m.logger.Info("apply provider users checks.....")
+func (m *database) applyUsersChecks(users *collectionWrapper) error {
+	m.logger.Info("apply adapter users checks.....")
 
 	//add net id index
-	err := providerUsers.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
+	err := users.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
 	//add user id index
-	err = providerUsers.AddIndex(bson.D{primitive.E{Key: "user.id", Value: 1}}, false)
+	err = users.AddIndex(bson.D{primitive.E{Key: "user.id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
-	m.logger.Info("provider users check passed")
+	m.logger.Info("adapter users check passed")
 	return nil
 }
 
