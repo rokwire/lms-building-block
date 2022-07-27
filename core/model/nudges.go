@@ -19,6 +19,14 @@ package model
 
 import "time"
 
+//Nudges config
+type NudgesConfig struct {
+	Active        bool   `json:"active" bson:"active"` //if the nudges processing is "on" or "off"
+	GroupName     string `json:"group_name" bson:"group_name"`
+	TestGroupName string `json:"test_group_name" bson:"test_group_name"`
+	Mode          string `json:"mode" bson:"mode"` // "normal" or "test"
+}
+
 //Nudge entity
 type Nudge struct {
 	ID       string                 `json:"id" bson:"_id"`              //last_login
