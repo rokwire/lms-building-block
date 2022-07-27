@@ -20,18 +20,14 @@ package core
 import (
 	"lms/core/model"
 
-	"github.com/rokwire/logging-library-go/errors"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
 func (app *Application) getNudges() ([]model.Nudge, error) {
-	// find all the nudges
+	// find all active nudges
 	nudges, err := app.storage.LoadAllNudges()
 	if err != nil {
-		return nil, nil
-	}
-	if nudges == nil {
-		return nil, errors.New("can't find the nudges")
+		return nil, err
 	}
 	return nudges, nil
 }

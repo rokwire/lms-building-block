@@ -26,6 +26,7 @@ type Nudge struct {
 	Body     string                 `json:"body" bson:"body"`           //"You have not used the Canvas Application in over 2 weeks."
 	DeepLink string                 `json:"deep_link" bson:"deep_link"` //deep link
 	Params   map[string]interface{} `json:"params" bson:"params"`       //Nudge specific settings
+	Active   bool                   `json:"active" bson:"active"`       //true or false
 }
 
 //SentNudge entity

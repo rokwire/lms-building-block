@@ -126,8 +126,8 @@ func (n nudgesLogic) processNudges() {
 func (n nudgesLogic) processAllNudges() {
 	n.logger.Info("processAllNudges")
 
-	//1. get all nudges
-	nudges, err := n.storage.LoadAllNudges()
+	//1. get all active nudges
+	nudges, err := n.storage.LoadActiveNudges()
 	if err != nil {
 		n.logger.Errorf("error on processing all nudges - %s", err)
 		return

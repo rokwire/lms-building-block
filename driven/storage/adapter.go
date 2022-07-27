@@ -51,6 +51,23 @@ func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge", nil, err)
 	}
+	if len(result) == 0 {
+		return make([]model.Nudge, 0), nil
+	}
+	return result, nil
+}
+
+// LoadActiveNudges loads all active nudges
+func (sa *Adapter) LoadActiveNudges() ([]model.Nudge, error) {
+	filter := bson.D{primitive.E{Key: "active", Value: true}}
+	var result []model.Nudge
+	err := sa.db.nudges.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge", nil, err)
+	}
+	if len(result) == 0 {
+		return make([]model.Nudge, 0), nil
+	}
 	return result, nil
 }
 
