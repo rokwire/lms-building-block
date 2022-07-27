@@ -44,3 +44,29 @@
       description: Not Found
     500:
       description: Internal error
+ delete:
+  tags:
+  - Admin
+  summary: Delete sent nudge
+  description: |
+    Delete sent nudge by ID
+  security:
+    - bearerAuth: []
+  parameters:
+  - name: id
+    in: query
+    description: id
+    style: form
+    explode: false
+    schema:
+      type: string
+  responses:
+    200:
+      description: Success
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error     
+ 
