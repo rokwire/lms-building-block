@@ -45,4 +45,5 @@ type SentNudge struct {
 	NetID        string    `bson:"net_id"`
 	CriteriaHash uint32    `bson:"criteria_hash"`
 	DateSent     time.Time `bson:"date_sent"`
+	Mode         string    `bson:"mode"`
 }

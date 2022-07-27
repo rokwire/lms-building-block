@@ -151,6 +151,7 @@ func (n nudgesLogic) processAllNudges() {
 		n.logger.Info("the config active is set to false")
 		return
 	}
+	n.logger.Info("the nudges processing is active")
 
 	//2. get all active nudges
 	nudges, err := n.storage.LoadActiveNudges()
@@ -272,7 +273,7 @@ func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user GroupsBBU
 
 	//insert sent nudge
 	criteriaHash := n.generateLastLoginHash(lastLogin, hours)
-	sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
 	err = n.storage.InsertSentNudge(sentNudge)
 	if err != nil {
 		n.logger.Errorf("error saving sent nudge for %s - %s", user.UserID, err)
@@ -288,10 +289,10 @@ func (n nudgesLogic) generateLastLoginHash(lastLogin time.Time, hours float64) u
 	return hash
 }
 
-func (n nudgesLogic) createSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) model.SentNudge {
+func (n nudgesLogic) createSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) model.SentNudge {
 	id, _ := uuid.NewUUID()
 	return model.SentNudge{ID: id.String(), NudgeID: nudgeID, UserID: userID,
-		NetID: netID, CriteriaHash: criteriaHash, DateSent: time.Now()}
+		NetID: netID, CriteriaHash: criteriaHash, DateSent: time.Now(), Mode: mode}
 }
 
 // end last_login nudge
@@ -380,7 +381,7 @@ func (n nudgesLogic) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user Gr
 
 	//insert sent nudge
 	criteriaHash := n.generateMissedAssignmentHash(assignment.ID, hours)
-	sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
 	err = n.storage.InsertSentNudge(sentNudge)
 	if err != nil {
 		n.logger.Errorf("error saving sent missed assignment nudge for %s - %s", user.UserID, err)
@@ -531,7 +532,7 @@ func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge,
 
 	//insert sent nudge
 	criteriaHash := n.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
-	sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
 	err = n.storage.InsertSentNudge(sentNudge)
 	if err != nil {
 		n.logger.Errorf("error saving sent early completed assignment nudge for %s - %s", user.UserID, err)
@@ -650,7 +651,7 @@ func (n nudgesLogic) sendCalendareEventNudgeForUsers(nudge model.Nudge, user Gro
 	sentNudges := make([]model.SentNudge, len(events))
 	for i, event := range events {
 		criteriaHash := n.generateCalendarEventHash(event.ID)
-		sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+		sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
 		sentNudges[i] = sentNudge
 	}
 	err = n.storage.InsertSentNudges(sentNudges)
