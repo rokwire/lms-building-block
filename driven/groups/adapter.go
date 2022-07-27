@@ -21,23 +21,20 @@ import "lms/core"
 
 //Adapter implements the groups BB interface
 type Adapter struct {
-	testUserID string
-	testNetID  string
-
-	testUserID2 string
-	testNetID2  string
+	host   string
+	apiKey string
 }
 
 //GetUsers get user from the groups BB
-func (a *Adapter) GetUsers() ([]core.GroupsBBUser, error) {
-	//TODO
+func (a *Adapter) GetUsers(groupName string) ([]core.GroupsBBUser, error) {
+	/*//TODO
 	users := []core.GroupsBBUser{{UserID: a.testUserID, NetID: a.testNetID},
 		{UserID: a.testUserID2, NetID: a.testNetID2}}
-	return users, nil
+	return users, nil */
+	return nil, nil
 }
 
 //NewGroupsAdapter creates a new groups BB adapter
-func NewGroupsAdapter(testUserID string, testNetID string, testUserID2 string, testNetID2 string) *Adapter {
-	return &Adapter{testUserID: testUserID, testNetID: testNetID,
-		testUserID2: testUserID2, testNetID2: testNetID2}
+func NewGroupsAdapter(host string, apiKey string) *Adapter {
+	return &Adapter{host: host, apiKey: apiKey}
 }

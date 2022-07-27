@@ -132,7 +132,7 @@ type Provider interface {
 
 //GroupsBB interface for the Groups building block communication
 type GroupsBB interface {
-	GetUsers() ([]GroupsBBUser, error)
+	GetUsers(groupName string) ([]GroupsBBUser, error)
 }
 
 //GroupsBBUser entity

@@ -164,7 +164,8 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	//3. get all users
-	users, err := n.groupsBB.GetUsers()
+	groupName := n.getGroupName()
+	users, err := n.groupsBB.GetUsers(groupName)
 	if err != nil {
 		n.logger.Errorf("error getting all users - %s", err)
 		return
@@ -174,6 +175,13 @@ func (n nudgesLogic) processAllNudges() {
 	for _, nudge := range nudges {
 		n.processNudge(nudge, users)
 	}
+}
+
+func (n nudgesLogic) getGroupName() string {
+	if n.config.Mode == "normal" {
+		return n.config.GroupName //normal mode
+	}
+	return n.config.TestGroupName //test mode
 }
 
 func (n nudgesLogic) processNudge(nudge model.Nudge, allUsers []GroupsBBUser) {
