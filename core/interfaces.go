@@ -39,6 +39,8 @@ type Administration interface {
 	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	DeleteNudge(l *logs.Log, ID string) error
+
+	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string) ([]model.SentNudge, error)
 }
 
 type servicesImpl struct {
@@ -89,6 +91,10 @@ func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, bo
 
 func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
 	return s.app.deleteNudge(l, ID)
+}
+
+func (s *administrationImpl) FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string) ([]model.SentNudge, error) {
+	return s.app.findSentNudges(l, nudgeID, userID, netID)
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc

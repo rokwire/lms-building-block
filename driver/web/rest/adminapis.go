@@ -109,3 +109,37 @@ func (h AdminApisHandler) DeleteNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	}
 	return l.HttpResponseSuccess()
 }
+
+//FindSentNudges gets all the sent_nudges
+func (h AdminApisHandler) FindSentNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	//nudgeID
+	var nudgeID *string
+	nudgeIDParam := r.URL.Query().Get("nudge-id")
+	if len(nudgeIDParam) > 0 {
+		nudgeID = &nudgeIDParam
+	}
+	//userID
+	var userID *string
+	userIDParam := r.URL.Query().Get("user-id")
+	if len(userIDParam) > 0 {
+		userID = &userIDParam
+	}
+	//netID
+	var netID *string
+	netIDParam := r.URL.Query().Get("user-id")
+	if len(netIDParam) > 0 {
+		netID = &netIDParam
+	}
+
+	sentNudges, err := h.app.Administration.FindSentNudges(l, nudgeID, userID, netID)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "sent_nudges", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(sentNudges)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "sent_nudges", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
+}

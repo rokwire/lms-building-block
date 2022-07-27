@@ -57,3 +57,8 @@ func (app *Application) deleteNudge(l *logs.Log, ID string) error {
 	}
 	return err
 }
+
+func (app *Application) findSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string) ([]model.SentNudge, error) {
+
+	return nil, nil
+}
