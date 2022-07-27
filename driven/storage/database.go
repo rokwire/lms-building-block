@@ -43,6 +43,7 @@ type database struct {
 	db       *mongo.Database
 	dbClient *mongo.Client
 
+	configs    *collectionWrapper
 	nudges     *collectionWrapper
 	sentNudges *collectionWrapper
 }
@@ -71,6 +72,12 @@ func (m *database) start() error {
 	//apply checks
 	db := client.Database(m.mongoDBName)
 
+	configs := &collectionWrapper{database: m, coll: db.Collection("configs")}
+	err = m.applyConfigsChecks(configs)
+	if err != nil {
+		return err
+	}
+
 	nudges := &collectionWrapper{database: m, coll: db.Collection("nudges")}
 	err = m.applyNudgesChecks(nudges)
 	if err != nil {
@@ -87,9 +94,17 @@ func (m *database) start() error {
 	m.db = db
 	m.dbClient = client
 
+	m.configs = configs
 	m.nudges = nudges
 	m.sentNudges = sentNudges
 
+	return nil
+}
+
+func (m *database) applyConfigsChecks(configs *collectionWrapper) error {
+	m.logger.Info("apply configs checks.....")
+
+	m.logger.Info("configs check passed")
 	return nil
 }
 

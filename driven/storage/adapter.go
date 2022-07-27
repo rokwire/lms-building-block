@@ -27,6 +27,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type configEntity struct {
+	Name   string      `bson:"_id"`
+	Config interface{} `bson:"config"`
+}
+
 // Adapter implements the Storage interface
 type Adapter struct {
 	db *database
@@ -45,7 +50,11 @@ func (sa *Adapter) SetListener(listener CollectionListener) {
 
 // CreateNudgesConfig creates nudges config
 func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
-	//TODO
+	storageConfig := configEntity{Name: "nudges", Config: nudgesConfig}
+	_, err := sa.db.configs.InsertOne(storageConfig)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "config", &logutils.FieldArgs{"name": "nudges"}, err)
+	}
 	return nil
 }
 
