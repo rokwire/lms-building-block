@@ -17,7 +17,15 @@
 
 package groups
 
-import "lms/core"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"lms/core"
+	"log"
+	"net/http"
+)
 
 //Adapter implements the groups BB interface
 type Adapter struct {
@@ -27,11 +35,43 @@ type Adapter struct {
 
 //GetUsers get user from the groups BB
 func (a *Adapter) GetUsers(groupName string) ([]core.GroupsBBUser, error) {
-	/*//TODO
-	users := []core.GroupsBBUser{{UserID: a.testUserID, NetID: a.testNetID},
-		{UserID: a.testUserID2, NetID: a.testNetID2}}
-	return users, nil */
-	return nil, nil
+
+	url := fmt.Sprintf("%s/api/int/group/title/%s/members", a.host, groupName)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Printf("error creating load groups members data request - %s", err)
+		return nil, err
+	}
+	req.Header.Set("INTERNAL-API-KEY", a.apiKey)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("error loading groups members data - %s", err)
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		log.Printf("error with response code - %d", resp.StatusCode)
+		return nil, errors.New("error with response code != 200")
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("error reading the body data for the loading groups members data request - %s", err)
+		return nil, err
+	}
+
+	var result []core.GroupsBBUser
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		log.Printf("error converting data for the loading groups members data request - %s", err)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 //NewGroupsAdapter creates a new groups BB adapter

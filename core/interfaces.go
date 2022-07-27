@@ -137,8 +137,9 @@ type GroupsBB interface {
 
 //GroupsBBUser entity
 type GroupsBBUser struct {
-	UserID string
-	NetID  string
+	UserID string `json:"user_id"`
+	NetID  string `json:"net_id"`
+	Name   string `json:"name"`
 }
 
 //NotificationsBB interface for the Notifications building block communication
