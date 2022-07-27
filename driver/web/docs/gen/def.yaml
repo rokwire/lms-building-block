@@ -365,7 +365,7 @@ paths:
                     net_id:
                       type: string
                     criteria_hash:
-                      type: uint32
+                      type: integer
                     mode:
                       type: string
                       enum:
