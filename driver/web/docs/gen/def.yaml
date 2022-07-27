@@ -318,21 +318,21 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: nudge_id
+        - name: nudge-id
           in: query
           description: nudge_id
           style: form
           explode: false
           schema:
             type: string
-        - name: user_id
+        - name: user-id
           in: query
           description: user_id
           style: form
           explode: false
           schema:
             type: string
-        - name: net_id
+        - name: net-id
           in: query
           description: net_id
           style: form
