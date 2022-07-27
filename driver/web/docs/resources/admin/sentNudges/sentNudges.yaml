@@ -1,0 +1,46 @@
+ get:
+  tags:
+  - Admin
+  summary: Find sent nudges
+  description: |
+    Find sent nudges
+  security:
+    - bearerAuth: []
+  parameters:
+  - name: nudge_id
+    in: query
+    description: nudge_id
+    style: form
+    explode: false
+    schema:
+      type: string
+  - name: user_id
+    in: query
+    description: user_id
+    style: form
+    explode: false
+    schema:
+      type: string
+  - name: net_id
+    in: query
+    description: net_id
+    style: form
+    explode: false
+    schema:
+      type: string
+  responses:
+    200:
+      description: successful operation
+      content:
+        application/json:
+            schema:
+              items:
+                $ref: "../../../schemas/nudges/SentNudges.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    404:
+      description: Not Found
+    500:
+      description: Internal error

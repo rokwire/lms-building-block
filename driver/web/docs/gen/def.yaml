@@ -308,6 +308,77 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+  /admin/sent_nudges:
+    get:
+      tags:
+        - Admin
+      summary: Find sent nudges
+      description: |
+        Find sent nudges
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nudge_id
+          in: query
+          description: nudge_id
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          description: user_id
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: net_id
+          in: query
+          description: net_id
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                items:
+                  required:
+                    - id
+                    - nudge_id
+                    - user_id
+                    - net_id
+                    - criteria_hash
+                    - mode
+                  type: object
+                  properties:
+                    id:
+                      readOnly: true
+                      type: string
+                    nudge_id:
+                      type: string
+                    user_id:
+                      type: string
+                    net_id:
+                      type: string
+                    criteria_hash:
+                      type: uint32
+                    mode:
+                      type: string
+                      enum:
+                        - normal
+                        - test
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal error
 components:
   securitySchemes:
     bearerAuth:
