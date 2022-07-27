@@ -40,11 +40,27 @@ type nudgesLogic struct {
 	//nudges timer
 	dailyNudgesTimer *time.Timer
 	timerDone        chan bool
+
+	config *model.NudgesConfig
 }
 
 func (n nudgesLogic) start() {
-	//TODO - load config
+	//1. find the nudges config
+	nudgesConfig, err := n.storage.FindNudgesConfig()
+	if err != nil {
+		n.logger.Errorf("error finding nudges config - %s", nudgesConfig)
+		return
+	}
+	//2. check if we have nudges config
+	if nudgesConfig == nil {
+		n.logger.Error("nudges config is not set")
+		return
+	}
 
+	//3. here we have a config, so set it
+	n.config = nudgesConfig
+
+	//4. setup nudges timer
 	go n.setupNudgesTimer()
 }
 
@@ -126,21 +142,34 @@ func (n nudgesLogic) processNudges() {
 func (n nudgesLogic) processAllNudges() {
 	n.logger.Info("processAllNudges")
 
-	//1. get all active nudges
+	//1. first check if we have a config and the config is set to active
+	if n.config == nil {
+		n.logger.Error("the config is not set and the nudges will not be processed")
+		return
+	}
+	if !n.config.Active {
+		n.logger.Info("the config active is set to false")
+		return
+	}
+
+	//2. get all active nudges
 	nudges, err := n.storage.LoadActiveNudges()
 	if err != nil {
 		n.logger.Errorf("error on processing all nudges - %s", err)
 		return
 	}
+	if len(nudges) == 0 {
+		n.logger.Info("no active nudges for processing")
+	}
 
-	//2. get all users
+	//3. get all users
 	users, err := n.groupsBB.GetUsers()
 	if err != nil {
 		n.logger.Errorf("error getting all users - %s", err)
 		return
 	}
 
-	//process every nudge
+	//4. process every nudge
 	for _, nudge := range nudges {
 		n.processNudge(nudge, users)
 	}
