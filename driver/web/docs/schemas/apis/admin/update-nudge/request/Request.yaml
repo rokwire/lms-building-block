@@ -1,17 +1,19 @@
 required:
-  - id
   - name
   - body
+  - deep_link
   - params
+  - active
 type: object
 properties:
-  id:
-    readOnly: true
-    type: string
   name:
     type: string
   body:
     type: string
+  deep_link:
+    type: string
   params:
     type: object
     nullable: true
+  active:
+    type: boolean

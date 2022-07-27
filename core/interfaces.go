@@ -36,8 +36,8 @@ type Services interface {
 // Administration exposes APIs for the driver adapters
 type Administration interface {
 	GetNudges() ([]model.Nudge, error)
-	CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
-	UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
+	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
+	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	DeleteNudge(l *logs.Log, ID string) error
 }
 
@@ -79,12 +79,12 @@ func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
 	return s.app.getNudges()
 }
 
-func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
-	return s.app.createNudge(l, ID, name, body, params)
+func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+	return s.app.createNudge(l, ID, name, body, deepLink, params, active)
 }
 
-func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
-	return s.app.updateNudge(l, ID, name, body, params)
+func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+	return s.app.updateNudge(l, ID, name, body, deepLink, params, active)
 }
 
 func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
@@ -98,7 +98,7 @@ type Storage interface {
 	LoadAllNudges() ([]model.Nudge, error)
 	LoadActiveNudges() ([]model.Nudge, error)
 	InsertNudge(item model.Nudge) error
-	UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error
+	UpdateNudge(ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	DeleteNudge(ID string) error
 
 	InsertSentNudge(sentNudge model.SentNudge) error

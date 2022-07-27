@@ -63,7 +63,7 @@ func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	err = h.app.Administration.CreateNudge(l, *requestData.Id, *requestData.Body, *requestData.Name, requestData.Params)
+	err = h.app.Administration.CreateNudge(l, requestData.Id, requestData.Name, requestData.Body, requestData.DeepLink, requestData.Params, requestData.Active)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}
@@ -88,7 +88,7 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	err = h.app.Administration.UpdateNudge(l, ID, requestData.Body, requestData.Name, requestData.Params)
+	err = h.app.Administration.UpdateNudge(l, ID, requestData.Name, requestData.Body, requestData.DeepLink, requestData.Params, requestData.Active)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}

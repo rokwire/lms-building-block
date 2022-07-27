@@ -43,6 +43,7 @@ type Grade struct {
 
 // Nudge defines model for Nudge.
 type Nudge struct {
+	Active *bool                   `json:"active,omitempty"`
 	Body   string                  `json:"body"`
 	Id     string                  `json:"id"`
 	Name   string                  `json:"name"`
@@ -58,18 +59,21 @@ type User struct {
 
 // AdminReqCreateNudge defines model for _admin_req_create_nudge.
 type AdminReqCreateNudge struct {
-	Body   *string                 `json:"body,omitempty"`
-	Id     *string                 `json:"id,omitempty"`
-	Name   *string                 `json:"name,omitempty"`
-	Params *map[string]interface{} `json:"params"`
+	Active   bool                    `json:"active"`
+	Body     string                  `json:"body"`
+	DeepLink string                  `json:"deep_link"`
+	Id       string                  `json:"id"`
+	Name     string                  `json:"name"`
+	Params   *map[string]interface{} `json:"params"`
 }
 
 // AdminReqUpdateNudge defines model for _admin_req_update_nudge.
 type AdminReqUpdateNudge struct {
-	Body   string                  `json:"body"`
-	Id     string                  `json:"id"`
-	Name   string                  `json:"name"`
-	Params *map[string]interface{} `json:"params"`
+	Active   bool                    `json:"active"`
+	Body     string                  `json:"body"`
+	DeepLink string                  `json:"deep_link"`
+	Name     string                  `json:"name"`
+	Params   *map[string]interface{} `json:"params"`
 }
 
 // PostAdminNudgesJSONBody defines parameters for PostAdminNudges.

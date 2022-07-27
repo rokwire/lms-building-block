@@ -387,69 +387,48 @@ components:
         params:
           type: object
           nullable: true
+        active:
+          type: boolean
     _admin_req_create_nudge:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        body:
-          type: string
-        params:
-          type: object
-          nullable: true
-    _admin_res_create_nudge:
       required:
         - id
         - name
         - body
+        - deep_link
         - params
+        - active
       type: object
       properties:
         id:
-          readOnly: true
           type: string
         name:
           type: string
         body:
           type: string
+        deep_link:
+          type: string
         params:
           type: object
           nullable: true
+        active:
+          type: boolean
     _admin_req_update_nudge:
       required:
-        - id
         - name
         - body
+        - deep_link
         - params
+        - active
       type: object
       properties:
-        id:
-          readOnly: true
-          type: string
         name:
           type: string
         body:
           type: string
-        params:
-          type: object
-          nullable: true
-    _admin_res_update_nudge:
-      required:
-        - id
-        - name
-        - body
-        - params
-      type: object
-      properties:
-        id:
-          readOnly: true
-          type: string
-        name:
-          type: string
-        body:
+        deep_link:
           type: string
         params:
           type: object
           nullable: true
+        active:
+          type: boolean
