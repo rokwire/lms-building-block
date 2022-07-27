@@ -31,13 +31,5 @@ _admin_res_update_nudge:
   $ref: "./apis/admin/update-nudge/response/Response.yaml"
 
  ### api
-_api_req_get_Course:
-  $ref: "./apis/api/get-course/request/Request.yaml"
-_api_res_get_Course:
-  $ref: "./apis/api/get-assigment-groups/response/Response.yaml"
-_api_req_get_Assigment-group:
-  $ref: "./apis/api/get-assigment-groups/request/Request.yaml"
-_api_res_get_Assigment-group:
-  $ref: "./apis/api/get-assigment-groups/response/Response.yaml"
 
   ## end ADMIN section

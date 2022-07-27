@@ -30,7 +30,7 @@ paths:
   /api/users/self:
     $ref: "./resources/api/user/user.yaml"
 
-#admin
+  #admin
   /admin/nudges:
     $ref: "./resources/admin/nudges/nudges.yaml"
   /admin/nudges/{id}:
