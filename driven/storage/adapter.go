@@ -73,8 +73,7 @@ func (sa *Adapter) LoadActiveNudges() ([]model.Nudge, error) {
 
 //InsertNudge inserts a new Nudge
 func (sa *Adapter) InsertNudge(item model.Nudge) error {
-	nudge := model.Nudge{ID: item.ID, Name: item.Name, Body: item.Body, Params: item.Params}
-	_, err := sa.db.nudges.InsertOne(nudge)
+	_, err := sa.db.nudges.InsertOne(item)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
 	}
