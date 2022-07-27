@@ -60,8 +60,28 @@ func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
 
 // FindNudgesConfig finds the nudges config
 func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
-	//TODO
-	return nil, nil
+	filter := bson.D{primitive.E{Key: "_id", Value: "nudges"}}
+	var result []configEntity
+	err := sa.db.configs.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "configs", &logutils.FieldArgs{"name": "nudges"}, err)
+	}
+	if len(result) == 0 {
+		return nil, nil
+	}
+	data := result[0].Config
+
+	var nudgesConfig model.NudgesConfig
+	bsonBytes, err := bson.Marshal(data)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionUnmarshal, "configs", &logutils.FieldArgs{"name": "nudges"}, err)
+	}
+
+	err = bson.Unmarshal(bsonBytes, &nudgesConfig)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionUnmarshal, "configs", &logutils.FieldArgs{"name": "nudges"}, err)
+	}
+	return &nudgesConfig, nil
 }
 
 // UpdateNudgesConfig updates the nudges config
