@@ -107,8 +107,8 @@ type Storage interface {
 
 	InsertSentNudge(sentNudge model.SentNudge) error
 	InsertSentNudges(sentNudge []model.SentNudge) error
-	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error)
-	FindSentNudges(nudgeID string, userID string, netID string, criteriaHash []uint32) ([]model.SentNudge, error)
+	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
+	FindSentNudges(nudgeID string, userID string, netID string, criteriaHash []uint32, mode string) ([]model.SentNudge, error)
 }
 
 //Provider interface for LMS provider

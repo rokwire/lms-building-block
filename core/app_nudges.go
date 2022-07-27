@@ -243,7 +243,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Groups
 
 	//check if has been sent before
 	criteriaHash := n.generateLastLoginHash(*lastLogin, hours)
-	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
 	if err != nil {
 		//not reached the max hours, so not send notification
 		n.logger.Errorf("error checking if sent nudge exists - %s - %s", nudge.ID, user.NetID)
@@ -349,7 +349,7 @@ func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user GroupsBBUse
 
 	//check if has been sent before
 	criteriaHash := n.generateMissedAssignmentHash(assignment.ID, hours)
-	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
 	if err != nil {
 		//not reached the max hours, so not send notification
 		n.logger.Errorf("error checking if sent nudge exists for missed assignment - %s - %s", nudge.ID, user.NetID)
@@ -492,7 +492,7 @@ func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user Gro
 
 	//check if has been sent before
 	criteriaHash := n.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
-	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash)
+	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
 	if err != nil {
 		//not reached the max hours, so not send notification
 		n.logger.Errorf("error checking if sent nudge exists for missed assignment - %s - %s", nudge.ID, user.NetID)
@@ -605,7 +605,7 @@ func (n nudgesLogic) findUnsentEvents(nudge model.Nudge, user GroupsBBUser, even
 	}
 
 	//find the sent nudges
-	sentNudges, err := n.storage.FindSentNudges(nudge.ID, user.UserID, user.NetID, hashes)
+	sentNudges, err := n.storage.FindSentNudges(nudge.ID, user.UserID, user.NetID, hashes, n.config.Mode)
 	if err != nil {
 		n.logger.Errorf("error checking if sent nudge exists for calendar events - %s - %s", nudge.ID, user.NetID)
 		return nil, err

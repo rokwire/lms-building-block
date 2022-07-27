@@ -195,12 +195,13 @@ func (sa *Adapter) InsertSentNudges(sentNudges []model.SentNudge) error {
 }
 
 //FindSentNudge finds sent nudge entity
-func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error) {
+func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error) {
 	filter := bson.D{
 		primitive.E{Key: "nudge_id", Value: nudgeID},
 		primitive.E{Key: "user_id", Value: userID},
 		primitive.E{Key: "net_id", Value: netID},
-		primitive.E{Key: "criteria_hash", Value: criteriaHash}}
+		primitive.E{Key: "criteria_hash", Value: criteriaHash},
+		primitive.E{Key: "mode", Value: mode}}
 
 	var result []model.SentNudge
 	err := sa.db.sentNudges.Find(filter, &result, nil)
@@ -216,12 +217,13 @@ func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, cr
 }
 
 //FindSentNudges finds sent nudges entities
-func (sa *Adapter) FindSentNudges(nudgeID string, userID string, netID string, criteriaHashes []uint32) ([]model.SentNudge, error) {
+func (sa *Adapter) FindSentNudges(nudgeID string, userID string, netID string, criteriaHashes []uint32, mode string) ([]model.SentNudge, error) {
 	filter := bson.D{
 		primitive.E{Key: "nudge_id", Value: nudgeID},
 		primitive.E{Key: "user_id", Value: userID},
 		primitive.E{Key: "net_id", Value: netID},
-		primitive.E{Key: "criteria_hash", Value: bson.M{"$in": criteriaHashes}}}
+		primitive.E{Key: "criteria_hash", Value: bson.M{"$in": criteriaHashes}},
+		primitive.E{Key: "mode", Value: mode}}
 
 	var result []model.SentNudge
 	err := sa.db.sentNudges.Find(filter, &result, nil)
