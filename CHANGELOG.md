@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix docs and fix Create Nudge API [#12](https://github.com/rokwire/lms-building-block/issues/12)
 
 ### Changed
-- Nudges performance [#30](https://github.com/rokwire/lms-building-block/issues/30)
+- Nudges performance(not fully completed) [#30](https://github.com/rokwire/lms-building-block/issues/30)
 
 ## [1.1.6] - 2022-07-20
 ### Changed
