@@ -16,7 +16,6 @@ package core
 
 import (
 	cacheadapter "lms/driven/cache"
-	"time"
 
 	"github.com/rokwire/logging-library-go/logs"
 )
@@ -38,23 +37,32 @@ type Application struct {
 
 	logger *logs.Logger
 
-	//nudges timer
-	dailyNudgesTimer *time.Timer
-	timerDone        chan bool
+	//nudges logic
+	nudgesLogic nudgesLogic
 }
 
 // Start starts the core part of the application
 func (app *Application) Start() {
 	app.storage.SetListener(app)
 
-	go app.setupNudgesTimer()
+	app.nudgesLogic.start()
 }
 
 // NewApplication creates new Application
 func NewApplication(version string, build string, storage Storage, provider Provider,
 	groupsBB GroupsBB, notificationsBB NotificationsBB,
 	cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
+
 	timerDone := make(chan bool)
+	nudgesLogic := nudgesLogic{
+		provider:        provider,
+		groupsBB:        groupsBB,
+		notificationsBB: notificationsBB,
+		storage:         storage,
+		logger:          logger,
+		timerDone:       timerDone,
+	}
+
 	application := Application{
 		version:         version,
 		build:           build,
@@ -64,7 +72,8 @@ func NewApplication(version string, build string, storage Storage, provider Prov
 		storage:         storage,
 		cacheAdapter:    cacheadapter,
 		logger:          logger,
-		timerDone:       timerDone}
+		nudgesLogic:     nudgesLogic,
+	}
 
 	// add the drivers ports/interfaces
 	application.Services = &servicesImpl{app: &application}

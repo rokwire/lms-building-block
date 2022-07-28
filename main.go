@@ -65,14 +65,15 @@ func main() {
 	canvasBaseURL := getEnvKey("LMS_CANVAS_BASE_URL", true)
 	canvasTokenType := getEnvKey("LMS_CANVAS_TOKEN_TYPE", true)
 	canvasToken := getEnvKey("LMS_CANVAS_TOKEN", true)
-	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType)
+	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType, mongoDBAuth, mongoDBName, mongoTimeout, logger)
+	err = providerAdapter.Start()
+	if err != nil {
+		log.Fatal("Cannot start the provider adapter - " + err.Error())
+	}
 
 	//groups BB adapter
-	testUserID := getEnvKey("LMS_TEST_USER_ID", true)
-	testNetID := getEnvKey("LMS_TEST_NET_ID", true)
-	testUserID2 := getEnvKey("LMS_TEST_USER_ID2", true)
-	testNetID2 := getEnvKey("LMS_TEST_NET_ID2", true)
-	groupsBBAdapter := groups.NewGroupsAdapter(testUserID, testNetID, testUserID2, testNetID2)
+	groupsHost := getEnvKey("LMS_GROUPS_BB_HOST", true)
+	groupsBBAdapter := groups.NewGroupsAdapter(groupsHost, internalAPIKey)
 
 	//notifications BB adapter
 	notificationHost := getEnvKey("LMS_NOTIFICATIONS_BB_HOST", true)

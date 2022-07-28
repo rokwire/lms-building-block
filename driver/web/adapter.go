@@ -15,6 +15,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"lms/core"
 	"lms/core/model"
@@ -23,10 +24,15 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/getkin/kin-openapi/routers/gorillamux"
+
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers"
 
 	"github.com/rokwire/core-auth-library-go/v2/tokenauth"
 	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/logutils"
 
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -97,6 +103,7 @@ func (we Adapter) Start() {
 	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
 	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudge)).Methods("PUT")
 	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.DeleteNudge)).Methods("DELETE")
+	adminRouter.HandleFunc("/sent_nudges", we.adminAuthWrapFunc(we.adminApisHandler.FindSentNudges)).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
@@ -126,6 +133,13 @@ func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 		logObj := we.logger.NewRequestLog(req)
 
 		logObj.RequestReceived()
+
+		// validate request
+		_, err := we.validateRequest(req)
+		if err != nil {
+			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
+			return
+		}
 
 		claims, err := we.auth.coreAuth.Check(req)
 		if err != nil {
@@ -170,6 +184,13 @@ func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 		logObj := we.logger.NewRequestLog(req)
 
 		logObj.RequestReceived()
+
+		// validate request
+		_, err := we.validateRequest(req)
+		if err != nil {
+			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
+			return
+		}
 
 		claims, err := we.auth.coreAuth.AdminCheck(req)
 		if err != nil {
@@ -223,8 +244,57 @@ func (we Adapter) internalAPIKeyAuthWrapFunc(handler internalAPIKeyAuthFunc) htt
 	}
 }
 
+func (we Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
+	route, pathParams, err := we.openAPIRouter.FindRoute(req)
+	if err != nil {
+		return nil, err
+	}
+
+	dummyAuthFunc := func(c context.Context, input *openapi3filter.AuthenticationInput) error {
+		return nil
+	}
+	options := &openapi3filter.Options{AuthenticationFunc: dummyAuthFunc}
+	requestValidationInput := &openapi3filter.RequestValidationInput{
+		Request:    req,
+		PathParams: pathParams,
+		Route:      route,
+		Options:    options,
+	}
+
+	if err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput); err != nil {
+		return nil, err
+	}
+	return requestValidationInput, nil
+}
+
 // NewWebAdapter creates new WebAdapter instance
 func NewWebAdapter(port string, app *core.Application, config *model.Config, logger *logs.Logger) Adapter {
+	//openAPI doc
+	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
+	doc, err := loader.LoadFromFile("driver/web/docs/gen/def.yaml")
+	if err != nil {
+		logger.Fatalf("error on openapi3 load from file - %s", err.Error())
+	}
+	err = doc.Validate(loader.Context)
+	if err != nil {
+		logger.Fatalf("error on openapi3 validate - %s", err.Error())
+	}
+
+	//Ignore servers. Validating reqeusts against the documented servers can cause issues when routing traffic through proxies/load-balancers.
+	doc.Servers = nil
+
+	//To correctly route traffic to base path, we must add to all paths since servers are ignored
+	paths := make(openapi3.Paths, len(doc.Paths))
+	for path, obj := range doc.Paths {
+		paths["/lms"+path] = obj
+	}
+	doc.Paths = paths
+
+	openAPIRouter, err := gorillamux.NewRouter(doc)
+	if err != nil {
+		logger.Fatalf("error on openapi3 gorillamux router - %s", err.Error())
+	}
+
 	auth := NewAuth(app, config)
 
 	apisHandler := rest.NewApisHandler(app, config)
@@ -239,6 +309,7 @@ func NewWebAdapter(port string, app *core.Application, config *model.Config, log
 		internalApisHandler: internalApisHandler,
 		app:                 app,
 		logger:              logger,
+		openAPIRouter:       openAPIRouter,
 	}
 }
 

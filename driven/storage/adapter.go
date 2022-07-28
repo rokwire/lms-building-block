@@ -27,6 +27,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type configEntity struct {
+	Name   string      `bson:"_id"`
+	Config interface{} `bson:"config"`
+}
+
 // Adapter implements the Storage interface
 type Adapter struct {
 	db *database
@@ -38,22 +43,51 @@ func (sa *Adapter) Start() error {
 	return err
 }
 
-// NewStorageAdapter creates a new storage adapter instance
-func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
-	timeout, err := strconv.Atoi(mongoTimeout)
-	if err != nil {
-		log.Println("Set default timeout - 500")
-		timeout = 500
-	}
-	timeoutMS := time.Millisecond * time.Duration(timeout)
-
-	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
-	return &Adapter{db: db}
-}
-
 // SetListener sets the upper layer listener for sending collection changed callbacks
 func (sa *Adapter) SetListener(listener CollectionListener) {
 	sa.db.listener = listener
+}
+
+// CreateNudgesConfig creates nudges config
+func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
+	storageConfig := configEntity{Name: "nudges", Config: nudgesConfig}
+	_, err := sa.db.configs.InsertOne(storageConfig)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "config", &logutils.FieldArgs{"name": "nudges"}, err)
+	}
+	return nil
+}
+
+// FindNudgesConfig finds the nudges config
+func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
+	filter := bson.D{primitive.E{Key: "_id", Value: "nudges"}}
+	var result []configEntity
+	err := sa.db.configs.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "configs", &logutils.FieldArgs{"name": "nudges"}, err)
+	}
+	if len(result) == 0 {
+		return nil, nil
+	}
+	data := result[0].Config
+
+	var nudgesConfig model.NudgesConfig
+	bsonBytes, err := bson.Marshal(data)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionUnmarshal, "configs", &logutils.FieldArgs{"name": "nudges"}, err)
+	}
+
+	err = bson.Unmarshal(bsonBytes, &nudgesConfig)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionUnmarshal, "configs", &logutils.FieldArgs{"name": "nudges"}, err)
+	}
+	return &nudgesConfig, nil
+}
+
+// UpdateNudgesConfig updates the nudges config
+func (sa *Adapter) UpdateNudgesConfig(nudgesConfig model.NudgesConfig) error {
+	//TODO
+	return nil
 }
 
 // LoadAllNudges loads all nudges
@@ -64,13 +98,29 @@ func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge", nil, err)
 	}
+	if len(result) == 0 {
+		return make([]model.Nudge, 0), nil
+	}
+	return result, nil
+}
+
+// LoadActiveNudges loads all active nudges
+func (sa *Adapter) LoadActiveNudges() ([]model.Nudge, error) {
+	filter := bson.D{primitive.E{Key: "active", Value: true}}
+	var result []model.Nudge
+	err := sa.db.nudges.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge", nil, err)
+	}
+	if len(result) == 0 {
+		return make([]model.Nudge, 0), nil
+	}
 	return result, nil
 }
 
 //InsertNudge inserts a new Nudge
 func (sa *Adapter) InsertNudge(item model.Nudge) error {
-	nudge := model.Nudge{ID: item.ID, Name: item.Name, Body: item.Body, Params: item.Params}
-	_, err := sa.db.nudges.InsertOne(nudge)
+	_, err := sa.db.nudges.InsertOne(item)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
 	}
@@ -78,14 +128,16 @@ func (sa *Adapter) InsertNudge(item model.Nudge) error {
 }
 
 //UpdateNudge updates nudge
-func (sa *Adapter) UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error {
+func (sa *Adapter) UpdateNudge(ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
 
 	nudgeFilter := bson.D{primitive.E{Key: "_id", Value: ID}}
 	updateNudge := bson.D{
 		primitive.E{Key: "$set", Value: bson.D{
 			primitive.E{Key: "name", Value: name},
 			primitive.E{Key: "body", Value: body},
+			primitive.E{Key: "deep_link", Value: deepLink},
 			primitive.E{Key: "params", Value: params},
+			primitive.E{Key: "active", Value: active},
 		}},
 	}
 
@@ -143,12 +195,13 @@ func (sa *Adapter) InsertSentNudges(sentNudges []model.SentNudge) error {
 }
 
 //FindSentNudge finds sent nudge entity
-func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error) {
+func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error) {
 	filter := bson.D{
 		primitive.E{Key: "nudge_id", Value: nudgeID},
 		primitive.E{Key: "user_id", Value: userID},
 		primitive.E{Key: "net_id", Value: netID},
-		primitive.E{Key: "criteria_hash", Value: criteriaHash}}
+		primitive.E{Key: "criteria_hash", Value: criteriaHash},
+		primitive.E{Key: "mode", Value: mode}}
 
 	var result []model.SentNudge
 	err := sa.db.sentNudges.Find(filter, &result, nil)
@@ -164,12 +217,29 @@ func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, cr
 }
 
 //FindSentNudges finds sent nudges entities
-func (sa *Adapter) FindSentNudges(nudgeID string, userID string, netID string, criteriaHashes []uint32) ([]model.SentNudge, error) {
-	filter := bson.D{
-		primitive.E{Key: "nudge_id", Value: nudgeID},
-		primitive.E{Key: "user_id", Value: userID},
-		primitive.E{Key: "net_id", Value: netID},
-		primitive.E{Key: "criteria_hash", Value: bson.M{"$in": criteriaHashes}}}
+func (sa *Adapter) FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHashes *[]uint32, mode *string) ([]model.SentNudge, error) {
+
+	filter := bson.D{}
+
+	if nudgeID != nil {
+		filter = append(filter, primitive.E{Key: "nudge_id", Value: *nudgeID})
+	}
+
+	if userID != nil {
+		filter = append(filter, primitive.E{Key: "user_id", Value: *userID})
+	}
+
+	if netID != nil {
+		filter = append(filter, primitive.E{Key: "net_id", Value: *netID})
+	}
+
+	if criteriaHashes != nil {
+		filter = append(filter, primitive.E{Key: "criteria_hash", Value: bson.M{"$in": *criteriaHashes}})
+	}
+
+	if mode != nil {
+		filter = append(filter, primitive.E{Key: "mode", Value: *mode})
+	}
 
 	var result []model.SentNudge
 	err := sa.db.sentNudges.Find(filter, &result, nil)
@@ -179,21 +249,15 @@ func (sa *Adapter) FindSentNudges(nudgeID string, userID string, netID string, c
 	return result, nil
 }
 
-// Event
+// NewStorageAdapter creates a new storage adapter instance
+func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
+	timeout, err := strconv.Atoi(mongoTimeout)
+	if err != nil {
+		log.Println("Set default timeout - 500")
+		timeout = 500
+	}
+	timeoutMS := time.Millisecond * time.Duration(timeout)
 
-func (m *database) onDataChanged(changeDoc map[string]interface{}) {
-	if changeDoc == nil {
-		return
-	}
-	log.Printf("onDataChanged: %+v\n", changeDoc)
-	ns := changeDoc["ns"]
-	if ns == nil {
-		return
-	}
-	nsMap := ns.(map[string]interface{})
-	coll := nsMap["coll"]
-
-	if m.listener != nil {
-		m.listener.OnCollectionUpdated(coll.(string))
-	}
+	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
+	return &Adapter{db: db}
 }

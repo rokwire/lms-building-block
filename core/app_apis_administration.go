@@ -20,25 +20,21 @@ package core
 import (
 	"lms/core/model"
 
-	"github.com/rokwire/logging-library-go/errors"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
 func (app *Application) getNudges() ([]model.Nudge, error) {
-	// find all the nudges
+	// find all active nudges
 	nudges, err := app.storage.LoadAllNudges()
 	if err != nil {
-		return nil, nil
-	}
-	if nudges == nil {
-		return nil, errors.New("can't find the nudges")
+		return nil, err
 	}
 	return nudges, nil
 }
 
-func (app *Application) createNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
+func (app *Application) createNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
 	//create and insert nudge
-	nudge := model.Nudge{ID: ID, Name: name, Body: body, Params: *params}
+	nudge := model.Nudge{ID: ID, Name: name, Body: body, DeepLink: deepLink, Params: *params, Active: active}
 	err := app.storage.InsertNudge(nudge)
 	if err != nil {
 		return err
@@ -46,8 +42,8 @@ func (app *Application) createNudge(l *logs.Log, ID string, name string, body st
 	return nil
 }
 
-func (app *Application) updateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
-	err := app.storage.UpdateNudge(ID, name, body, params)
+func (app *Application) updateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+	err := app.storage.UpdateNudge(ID, name, body, deepLink, params, active)
 	if err != nil {
 		return nil
 	}
@@ -60,4 +56,12 @@ func (app *Application) deleteNudge(l *logs.Log, ID string) error {
 		return nil
 	}
 	return err
+}
+
+func (app *Application) findSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error) {
+	sentNudges, _ := app.storage.FindSentNudges(nudgeID, userID, netID, criteriaHash, mode)
+	if sentNudges == nil {
+		return nil, nil
+	}
+	return sentNudges, nil
 }

@@ -19,6 +19,14 @@ package model
 
 import "time"
 
+//NudgesConfig entity
+type NudgesConfig struct {
+	Active        bool   `json:"active" bson:"active"` //if the nudges processing is "on" or "off"
+	GroupName     string `json:"group_name" bson:"group_name"`
+	TestGroupName string `json:"test_group_name" bson:"test_group_name"`
+	Mode          string `json:"mode" bson:"mode"` // "normal" or "test"
+}
+
 //Nudge entity
 type Nudge struct {
 	ID       string                 `json:"id" bson:"_id"`              //last_login
@@ -26,6 +34,7 @@ type Nudge struct {
 	Body     string                 `json:"body" bson:"body"`           //"You have not used the Canvas Application in over 2 weeks."
 	DeepLink string                 `json:"deep_link" bson:"deep_link"` //deep link
 	Params   map[string]interface{} `json:"params" bson:"params"`       //Nudge specific settings
+	Active   bool                   `json:"active" bson:"active"`       //true or false
 }
 
 //SentNudge entity
@@ -36,4 +45,5 @@ type SentNudge struct {
 	NetID        string    `bson:"net_id"`
 	CriteriaHash uint32    `bson:"criteria_hash"`
 	DateSent     time.Time `bson:"date_sent"`
+	Mode         string    `bson:"mode"`
 }

@@ -1,0 +1,26 @@
+required:  
+  - id
+  - nudge_id
+  - user_id
+  - net_id
+  - criteria_hash
+  - mode
+type: object
+properties:
+  id:
+    readOnly: true
+    type: string
+  nudge_id:
+    type: string
+  user_id:
+    type: string
+  net_id:
+    type: string
+  criteria_hash:
+    type: integer
+  mode: 
+    type: string
+    enum:
+      - normal
+      - test
+       

@@ -63,7 +63,7 @@ func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	err = h.app.Administration.CreateNudge(l, *requestData.Id, *requestData.Body, *requestData.Name, requestData.Params)
+	err = h.app.Administration.CreateNudge(l, requestData.Id, requestData.Name, requestData.Body, requestData.DeepLink, requestData.Params, requestData.Active)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}
@@ -88,7 +88,7 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	err = h.app.Administration.UpdateNudge(l, ID, requestData.Body, requestData.Name, requestData.Params)
+	err = h.app.Administration.UpdateNudge(l, ID, requestData.Name, requestData.Body, requestData.DeepLink, requestData.Params, requestData.Active)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}
@@ -108,4 +108,45 @@ func (h AdminApisHandler) DeleteNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionDelete, "", nil, err, http.StatusInternalServerError, true)
 	}
 	return l.HttpResponseSuccess()
+}
+
+//FindSentNudges gets all the sent_nudges
+func (h AdminApisHandler) FindSentNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	//nudgeID
+	var nudgeID *string
+	nudgeIDParam := r.URL.Query().Get("nudge-id")
+	if len(nudgeIDParam) > 0 {
+		nudgeID = &nudgeIDParam
+	}
+	//userID
+	var userID *string
+	userIDParam := r.URL.Query().Get("user-id")
+	if len(userIDParam) > 0 {
+		userID = &userIDParam
+	}
+	//netID
+	var netID *string
+	netIDParam := r.URL.Query().Get("net-id")
+	if len(netIDParam) > 0 {
+		netID = &netIDParam
+	}
+
+	//mode
+	var mode *string
+	modeIDParam := r.URL.Query().Get("mode")
+	if len(netIDParam) > 0 {
+		mode = &modeIDParam
+	}
+
+	sentNudges, err := h.app.Administration.FindSentNudges(l, nudgeID, userID, netID, nil, mode)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "sent_nudges", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(sentNudges)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "sent_nudges", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
 }

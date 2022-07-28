@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package provider
 
 import (
 	"context"
@@ -43,9 +43,7 @@ type database struct {
 	db       *mongo.Database
 	dbClient *mongo.Client
 
-	configs    *collectionWrapper
-	nudges     *collectionWrapper
-	sentNudges *collectionWrapper
+	users *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -72,20 +70,8 @@ func (m *database) start() error {
 	//apply checks
 	db := client.Database(m.mongoDBName)
 
-	configs := &collectionWrapper{database: m, coll: db.Collection("configs")}
-	err = m.applyConfigsChecks(configs)
-	if err != nil {
-		return err
-	}
-
-	nudges := &collectionWrapper{database: m, coll: db.Collection("nudges")}
-	err = m.applyNudgesChecks(nudges)
-	if err != nil {
-		return err
-	}
-
-	sentNudges := &collectionWrapper{database: m, coll: db.Collection("sent_nudges")}
-	err = m.applySentNudgesChecks(sentNudges)
+	users := &collectionWrapper{database: m, coll: db.Collection("adapter_pr_users")}
+	err = m.applyUsersChecks(users)
 	if err != nil {
 		return err
 	}
@@ -94,55 +80,27 @@ func (m *database) start() error {
 	m.db = db
 	m.dbClient = client
 
-	m.configs = configs
-	m.nudges = nudges
-	m.sentNudges = sentNudges
+	m.users = users
 
 	return nil
 }
 
-func (m *database) applyConfigsChecks(configs *collectionWrapper) error {
-	m.logger.Info("apply configs checks.....")
+func (m *database) applyUsersChecks(users *collectionWrapper) error {
+	m.logger.Info("apply adapter users checks.....")
 
-	m.logger.Info("configs check passed")
-	return nil
-}
-
-func (m *database) applyNudgesChecks(nudges *collectionWrapper) error {
-	m.logger.Info("apply nudges checks.....")
-
-	m.logger.Info("nudges check passed")
-	return nil
-}
-
-func (m *database) applySentNudgesChecks(sentNudges *collectionWrapper) error {
-	m.logger.Info("apply sent nudges checks.....")
-
-	//add nudge_id index
-	err := sentNudges.AddIndex(bson.D{primitive.E{Key: "nudge_id", Value: 1}}, false)
+	//add net id index
+	err := users.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
-	//add user_id index
-	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "user_id", Value: 1}}, false)
+	//add user id index
+	err = users.AddIndex(bson.D{primitive.E{Key: "user.id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
-	//add net_id index
-	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
-	if err != nil {
-		return err
-	}
-
-	//add criteria_hash index
-	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "criteria_hash", Value: 1}}, false)
-	if err != nil {
-		return err
-	}
-
-	m.logger.Info("sent nudges check passed")
+	m.logger.Info("adapter users check passed")
 	return nil
 }
 

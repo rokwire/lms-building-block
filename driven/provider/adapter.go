@@ -27,8 +27,11 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 //Adapter implements the Provider interface
@@ -36,6 +39,14 @@ type Adapter struct {
 	host      string
 	token     string
 	tokenType string
+
+	db *database
+}
+
+// Start starts the storage
+func (a *Adapter) Start() error {
+	err := a.db.start()
+	return err
 }
 
 //GetCourses gets the user courses
@@ -442,6 +453,16 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 }
 
 //NewProviderAdapter creates a new provider adapter
-func NewProviderAdapter(host string, token string, tokenType string) *Adapter {
-	return &Adapter{host: host, token: token, tokenType: tokenType}
+func NewProviderAdapter(host string, token string, tokenType string,
+	mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
+
+	timeout, err := strconv.Atoi(mongoTimeout)
+	if err != nil {
+		log.Println("Set default timeout - 500")
+		timeout = 500
+	}
+	timeoutMS := time.Millisecond * time.Duration(timeout)
+
+	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
+	return &Adapter{host: host, token: token, tokenType: tokenType, db: db}
 }

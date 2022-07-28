@@ -36,9 +36,11 @@ type Services interface {
 // Administration exposes APIs for the driver adapters
 type Administration interface {
 	GetNudges() ([]model.Nudge, error)
-	CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
-	UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error
+	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
+	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	DeleteNudge(l *logs.Log, ID string) error
+
+	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 }
 
 type servicesImpl struct {
@@ -79,31 +81,40 @@ func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
 	return s.app.getNudges()
 }
 
-func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
-	return s.app.createNudge(l, ID, name, body, params)
+func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+	return s.app.createNudge(l, ID, name, body, deepLink, params, active)
 }
 
-func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, params *map[string]interface{}) error {
-	return s.app.updateNudge(l, ID, name, body, params)
+func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+	return s.app.updateNudge(l, ID, name, body, deepLink, params, active)
 }
 
 func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
 	return s.app.deleteNudge(l, ID)
 }
 
+func (s *administrationImpl) FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error) {
+	return s.app.findSentNudges(l, nudgeID, userID, netID, criteriaHash, mode)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
 
+	CreateNudgesConfig(nudgesConfig model.NudgesConfig) error
+	FindNudgesConfig() (*model.NudgesConfig, error)
+	UpdateNudgesConfig(nudgesConfig model.NudgesConfig) error
+
 	LoadAllNudges() ([]model.Nudge, error)
+	LoadActiveNudges() ([]model.Nudge, error)
 	InsertNudge(item model.Nudge) error
-	UpdateNudge(ID string, name string, body string, params *map[string]interface{}) error
+	UpdateNudge(ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	DeleteNudge(ID string) error
 
 	InsertSentNudge(sentNudge model.SentNudge) error
 	InsertSentNudges(sentNudge []model.SentNudge) error
-	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32) (*model.SentNudge, error)
-	FindSentNudges(nudgeID string, userID string, netID string, criteriaHash []uint32) ([]model.SentNudge, error)
+	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
+	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 }
 
 //Provider interface for LMS provider
@@ -121,13 +132,14 @@ type Provider interface {
 
 //GroupsBB interface for the Groups building block communication
 type GroupsBB interface {
-	GetUsers() ([]GroupsBBUser, error)
+	GetUsers(groupName string) ([]GroupsBBUser, error)
 }
 
 //GroupsBBUser entity
 type GroupsBBUser struct {
-	UserID string
-	NetID  string
+	UserID string `json:"user_id"`
+	NetID  string `json:"net_id"`
+	Name   string `json:"name"`
 }
 
 //NotificationsBB interface for the Notifications building block communication

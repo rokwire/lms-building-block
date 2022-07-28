@@ -1,0 +1,80 @@
+ get:
+  tags:
+  - Admin
+  summary: Find sent nudges
+  description: |
+    Find sent nudges
+  security:
+    - bearerAuth: []
+  parameters:
+  - name: nudge-id
+    in: query
+    description: nudge_id
+    style: form
+    explode: false
+    schema:
+      type: string
+  - name: user-id
+    in: query
+    description: user_id
+    style: form
+    explode: false
+    schema:
+      type: string
+  - name: net-id
+    in: query
+    description: net_id
+    style: form
+    explode: false
+    schema:
+      type: string
+  - name: mode
+    in: query
+    description: mode
+    style: form
+    explode: false
+    schema:
+      type: string
+  responses:
+    200:
+      description: successful operation
+      content:
+       application/json:
+            schema:
+              type: array
+              items:
+                $ref: "../../../schemas/nudges/SentNudges.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    404:
+      description: Not Found
+    500:
+      description: Internal error
+ delete:
+  tags:
+  - Admin
+  summary: Delete sent nudge
+  description: |
+    Delete sent nudge by ID
+  security:
+    - bearerAuth: []
+  parameters:
+  - name: ids
+    in: query
+    description: A comma-separated list of sent_nudge IDs
+    style: form
+    explode: false
+    schema:
+      type: string
+  responses:
+    200:
+      description: Success
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error     
+ 

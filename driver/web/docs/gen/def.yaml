@@ -308,6 +308,110 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+  /admin/sent_nudges:
+    get:
+      tags:
+        - Admin
+      summary: Find sent nudges
+      description: |
+        Find sent nudges
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nudge-id
+          in: query
+          description: nudge_id
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: user-id
+          in: query
+          description: user_id
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: net-id
+          in: query
+          description: net_id
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: mode
+          in: query
+          description: mode
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  required:
+                    - id
+                    - nudge_id
+                    - user_id
+                    - net_id
+                    - criteria_hash
+                    - mode
+                  type: object
+                  properties:
+                    id:
+                      readOnly: true
+                      type: string
+                    nudge_id:
+                      type: string
+                    user_id:
+                      type: string
+                    net_id:
+                      type: string
+                    criteria_hash:
+                      type: integer
+                    mode:
+                      type: string
+                      enum:
+                        - normal
+                        - test
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal error
+    delete:
+      tags:
+        - Admin
+      summary: Delete sent nudge
+      description: |
+        Delete sent nudge by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ids
+          in: query
+          description: A comma-separated list of sent_nudge IDs
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
 components:
   securitySchemes:
     bearerAuth:
@@ -387,69 +491,48 @@ components:
         params:
           type: object
           nullable: true
+        active:
+          type: boolean
     _admin_req_create_nudge:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        body:
-          type: string
-        params:
-          type: object
-          nullable: true
-    _admin_res_create_nudge:
       required:
         - id
         - name
         - body
+        - deep_link
         - params
+        - active
       type: object
       properties:
         id:
-          readOnly: true
           type: string
         name:
           type: string
         body:
           type: string
+        deep_link:
+          type: string
         params:
           type: object
           nullable: true
+        active:
+          type: boolean
     _admin_req_update_nudge:
       required:
-        - id
         - name
         - body
+        - deep_link
         - params
+        - active
       type: object
       properties:
-        id:
-          readOnly: true
-          type: string
         name:
           type: string
         body:
           type: string
-        params:
-          type: object
-          nullable: true
-    _admin_res_update_nudge:
-      required:
-        - id
-        - name
-        - body
-        - params
-      type: object
-      properties:
-        id:
-          readOnly: true
-          type: string
-        name:
-          type: string
-        body:
+        deep_link:
           type: string
         params:
           type: object
           nullable: true
+        active:
+          type: boolean
