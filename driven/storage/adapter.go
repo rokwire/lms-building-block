@@ -249,6 +249,25 @@ func (sa *Adapter) FindSentNudges(nudgeID *string, userID *string, netID *string
 	return result, nil
 }
 
+//DeleteSentNudges deletes sent nudge
+func (sa *Adapter) DeleteSentNudges(ids []string) error {
+
+	filter := bson.D{primitive.E{Key: "_id", Value: bson.M{"$in": ids}}}
+
+	result, err := sa.db.sentNudges.DeleteMany(filter, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": ids}, err)
+	}
+	if result == nil {
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": ids}, err)
+	}
+	deletedCount := result.DeletedCount
+	if deletedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": ids}, err)
+	}
+	return nil
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)

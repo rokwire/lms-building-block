@@ -20,6 +20,7 @@ import (
 	"lms/core"
 	"lms/core/model"
 	"net/http"
+	"strings"
 
 	Def "lms/driver/web/docs/gen"
 
@@ -149,4 +150,21 @@ func (h AdminApisHandler) FindSentNudges(l *logs.Log, claims *tokenauth.Claims, 
 	}
 
 	return l.HttpResponseSuccessJSON(data)
+}
+
+//DeleteSentNudges deletes sent nudge
+func (h AdminApisHandler) DeleteSentNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	//sent nudge ID
+	sentNudgesIDsParam := r.URL.Query().Get("ids")
+	if sentNudgesIDsParam == "" {
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("ids"), nil, http.StatusBadRequest, false)
+	}
+
+	ids := strings.Split(sentNudgesIDsParam, ",")
+
+	err := h.app.Administration.DeleteSentNudges(l, ids)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionDelete, "", nil, err, http.StatusInternalServerError, true)
+	}
+	return l.HttpResponseSuccess()
 }
