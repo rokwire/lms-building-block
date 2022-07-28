@@ -613,7 +613,7 @@ func (n nudgesLogic) findUnsentEvents(nudge model.Nudge, user GroupsBBUser, even
 	}
 
 	//find the sent nudges
-	sentNudges, err := n.storage.FindSentNudges(nudge.ID, user.UserID, user.NetID, hashes, n.config.Mode)
+	sentNudges, err := n.storage.FindSentNudges(&nudge.ID, &user.UserID, &user.NetID, &hashes, &n.config.Mode)
 	if err != nil {
 		n.logger.Errorf("error checking if sent nudge exists for calendar events - %s - %s", nudge.ID, user.NetID)
 		return nil, err

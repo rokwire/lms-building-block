@@ -40,7 +40,7 @@ type Administration interface {
 	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	DeleteNudge(l *logs.Log, ID string) error
 
-	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string) ([]model.SentNudge, error)
+	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 }
 
 type servicesImpl struct {
@@ -93,8 +93,8 @@ func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
 	return s.app.deleteNudge(l, ID)
 }
 
-func (s *administrationImpl) FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string) ([]model.SentNudge, error) {
-	return s.app.findSentNudges(l, nudgeID, userID, netID)
+func (s *administrationImpl) FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error) {
+	return s.app.findSentNudges(l, nudgeID, userID, netID, criteriaHash, mode)
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
@@ -114,7 +114,7 @@ type Storage interface {
 	InsertSentNudge(sentNudge model.SentNudge) error
 	InsertSentNudges(sentNudge []model.SentNudge) error
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
-	FindSentNudges(nudgeID string, userID string, netID string, criteriaHash []uint32, mode string) ([]model.SentNudge, error)
+	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 }
 
 //Provider interface for LMS provider

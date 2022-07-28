@@ -126,12 +126,19 @@ func (h AdminApisHandler) FindSentNudges(l *logs.Log, claims *tokenauth.Claims, 
 	}
 	//netID
 	var netID *string
-	netIDParam := r.URL.Query().Get("user-id")
+	netIDParam := r.URL.Query().Get("net-id")
 	if len(netIDParam) > 0 {
 		netID = &netIDParam
 	}
 
-	sentNudges, err := h.app.Administration.FindSentNudges(l, nudgeID, userID, netID)
+	//mode
+	var mode *string
+	modeIDParam := r.URL.Query().Get("mode")
+	if len(netIDParam) > 0 {
+		mode = &modeIDParam
+	}
+
+	sentNudges, err := h.app.Administration.FindSentNudges(l, nudgeID, userID, netID, nil, mode)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "sent_nudges", nil, err, http.StatusInternalServerError, true)
 	}

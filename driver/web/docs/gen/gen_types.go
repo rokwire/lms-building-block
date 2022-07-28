@@ -98,6 +98,9 @@ type GetAdminSentNudgesParams struct {
 
 	// net_id
 	NetId *string `form:"net-id,omitempty" json:"net-id,omitempty"`
+
+	// mode
+	Mode *string `form:"mode,omitempty" json:"mode,omitempty"`
 }
 
 // GetApiCoursesIdParams defines parameters for GetApiCoursesId.

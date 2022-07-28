@@ -58,7 +58,10 @@ func (app *Application) deleteNudge(l *logs.Log, ID string) error {
 	return err
 }
 
-func (app *Application) findSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string) ([]model.SentNudge, error) {
-
-	return nil, nil
+func (app *Application) findSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error) {
+	sentNudges, _ := app.storage.FindSentNudges(nudgeID, userID, netID, criteriaHash, mode)
+	if sentNudges == nil {
+		return nil, nil
+	}
+	return sentNudges, nil
 }

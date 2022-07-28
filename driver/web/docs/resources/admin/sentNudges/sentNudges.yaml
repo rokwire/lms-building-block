@@ -28,6 +28,13 @@
     explode: false
     schema:
       type: string
+  - name: mode
+    in: query
+    description: mode
+    style: form
+    explode: false
+    schema:
+      type: string
   responses:
     200:
       description: successful operation
