@@ -48,7 +48,7 @@ func (n nudgesLogic) start() {
 	//1. find the nudges config
 	nudgesConfig, err := n.storage.FindNudgesConfig()
 	if err != nil {
-		n.logger.Errorf("error finding nudges config - %s", nudgesConfig)
+		n.logger.Errorf("error finding nudges config - %s", err)
 		return
 	}
 	//2. check if we have nudges config
