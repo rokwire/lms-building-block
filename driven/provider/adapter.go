@@ -44,8 +44,8 @@ type Adapter struct {
 }
 
 // Start starts the storage
-func (sa *Adapter) Start() error {
-	err := sa.db.start()
+func (a *Adapter) Start() error {
+	err := a.db.start()
 	return err
 }
 

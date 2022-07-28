@@ -19,7 +19,7 @@ package model
 
 import "time"
 
-//Nudges config
+//NudgesConfig entity
 type NudgesConfig struct {
 	Active        bool   `json:"active" bson:"active"` //if the nudges processing is "on" or "off"
 	GroupName     string `json:"group_name" bson:"group_name"`
