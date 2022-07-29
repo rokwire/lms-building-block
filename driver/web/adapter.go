@@ -99,6 +99,8 @@ func (we Adapter) Start() {
 	///admin ///
 	adminRouter := subrouter.PathPrefix("/admin").Subrouter()
 
+	adminRouter.HandleFunc("/nudges-config", we.adminAuthWrapFunc(we.adminApisHandler.GetNudgesConfig)).Methods("GET")
+	adminRouter.HandleFunc("/nudges-config", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudgesConfig)).Methods("PUT")
 	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.GetNudges)).Methods("GET")
 	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
 	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudge)).Methods("PUT")

@@ -1,0 +1,15 @@
+required:
+  - active
+  - group_name
+  - test_group_name
+  - mode
+type: object
+properties:
+  active:
+    type: boolean
+  group_name:
+    type: string
+  test_group_name:
+    type: string
+  mode:
+    type: string

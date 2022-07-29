@@ -50,6 +50,14 @@ type Nudge struct {
 	Params *map[string]interface{} `json:"params"`
 }
 
+// NudgesConfig defines model for NudgesConfig.
+type NudgesConfig struct {
+	Active        bool   `json:"active"`
+	GroupName     string `json:"group_name"`
+	Mode          string `json:"mode"`
+	TestGroupName string `json:"test_group_name"`
+}
+
 // User defines model for User.
 type User struct {
 	Enrollments *Enrollment `json:"enrollments,omitempty"`

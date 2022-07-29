@@ -192,6 +192,30 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+  /admin/nudges-config:
+    get:
+      tags:
+        - Admin
+      summary: Get nudges config
+      description: |
+        Get nudges
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NudgesConfig'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
   /admin/nudges:
     get:
       tags:
@@ -493,6 +517,22 @@ components:
           nullable: true
         active:
           type: boolean
+    NudgesConfig:
+      required:
+        - active
+        - group_name
+        - test_group_name
+        - mode
+      type: object
+      properties:
+        active:
+          type: boolean
+        group_name:
+          type: string
+        test_group_name:
+          type: string
+        mode:
+          type: string
     _admin_req_create_nudge:
       required:
         - id

@@ -36,6 +36,42 @@ type AdminApisHandler struct {
 	config *model.Config
 }
 
+//GetNudgesConfig gets the nudges config
+func (h AdminApisHandler) GetNudgesConfig(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+
+	/*nudges, err := h.app.Administration.GetNudges()
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "nudge", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(nudges)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "nudge", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data) */
+
+	return l.HttpResponseSuccess()
+}
+
+//UpdateNudgesConfig updates the nudges config
+func (h AdminApisHandler) UpdateNudgesConfig(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+
+	/*nudges, err := h.app.Administration.GetNudges()
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "nudge", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(nudges)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "nudge", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data) */
+
+	return l.HttpResponseSuccess()
+}
+
 //GetNudges gets all the nudges
 func (h AdminApisHandler) GetNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 
