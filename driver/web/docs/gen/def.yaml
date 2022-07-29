@@ -308,7 +308,7 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
-  /admin/sent_nudges:
+  /admin/sent-nudges:
     get:
       tags:
         - Admin
