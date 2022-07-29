@@ -7,6 +7,13 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for NudgesConfigMode.
+const (
+	NudgesConfigModeNormal NudgesConfigMode = "normal"
+
+	NudgesConfigModeTest NudgesConfigMode = "test"
+)
+
 // Assigment defines model for Assigment.
 type Assigment struct {
 	CourseId *int    `json:"course_id,omitempty"`
@@ -50,6 +57,17 @@ type Nudge struct {
 	Params *map[string]interface{} `json:"params"`
 }
 
+// NudgesConfig defines model for NudgesConfig.
+type NudgesConfig struct {
+	Active        bool             `json:"active"`
+	GroupName     string           `json:"group_name"`
+	Mode          NudgesConfigMode `json:"mode"`
+	TestGroupName string           `json:"test_group_name"`
+}
+
+// NudgesConfigMode defines model for NudgesConfig.Mode.
+type NudgesConfigMode string
+
 // User defines model for User.
 type User struct {
 	Enrollments *Enrollment `json:"enrollments,omitempty"`
@@ -78,6 +96,9 @@ type AdminReqUpdateNudge struct {
 
 // PostAdminNudgesJSONBody defines parameters for PostAdminNudges.
 type PostAdminNudgesJSONBody AdminReqCreateNudge
+
+// PutAdminNudgesConfigJSONBody defines parameters for PutAdminNudgesConfig.
+type PutAdminNudgesConfigJSONBody NudgesConfig
 
 // PutAdminNudgesIdJSONBody defines parameters for PutAdminNudgesId.
 type PutAdminNudgesIdJSONBody AdminReqUpdateNudge
@@ -128,6 +149,9 @@ type GetApiCoursesIdUsersParams struct {
 
 // PostAdminNudgesJSONRequestBody defines body for PostAdminNudges for application/json ContentType.
 type PostAdminNudgesJSONRequestBody PostAdminNudgesJSONBody
+
+// PutAdminNudgesConfigJSONRequestBody defines body for PutAdminNudgesConfig for application/json ContentType.
+type PutAdminNudgesConfigJSONRequestBody PutAdminNudgesConfigJSONBody
 
 // PutAdminNudgesIdJSONRequestBody defines body for PutAdminNudgesId for application/json ContentType.
 type PutAdminNudgesIdJSONRequestBody PutAdminNudgesIdJSONBody

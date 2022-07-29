@@ -19,6 +19,8 @@ Grade:
 # nudge
 Nudge:
   $ref: "./nudges/Nudge.yaml"
+NudgesConfig:
+  $ref: "./nudges/nudges-config.yaml"
 
  ###nudges api
 _admin_req_create_nudge:

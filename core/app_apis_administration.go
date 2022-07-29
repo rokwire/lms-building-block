@@ -23,6 +23,24 @@ import (
 	"github.com/rokwire/logging-library-go/logs"
 )
 
+func (app *Application) getNudgesConfig(l *logs.Log) (*model.NudgesConfig, error) {
+	// find the nudges config
+	nudgesConfig, err := app.storage.FindNudgesConfig()
+	if err != nil {
+		return nil, err
+	}
+	return nudgesConfig, nil
+}
+
+func (app *Application) updateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string) error {
+	nudgesConfig := model.NudgesConfig{Active: active, GroupName: groupName, TestGroupName: testGroupName, Mode: mode}
+	err := app.storage.UpdateNudgesConfig(nudgesConfig)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (app *Application) getNudges() ([]model.Nudge, error) {
 	// find all active nudges
 	nudges, err := app.storage.LoadAllNudges()
@@ -59,9 +77,17 @@ func (app *Application) deleteNudge(l *logs.Log, ID string) error {
 }
 
 func (app *Application) findSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error) {
-	sentNudges, _ := app.storage.FindSentNudges(nudgeID, userID, netID, criteriaHash, mode)
-	if sentNudges == nil {
-		return nil, nil
+	sentNudges, err := app.storage.FindSentNudges(nudgeID, userID, netID, criteriaHash, mode)
+	if err != nil {
+		return nil, err
 	}
 	return sentNudges, nil
+}
+
+func (app *Application) deleteSentNudges(l *logs.Log, ids []string) error {
+	err := app.storage.DeleteSentNudges(ids)
+	if err != nil {
+		return err
+	}
+	return nil
 }

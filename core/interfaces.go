@@ -35,12 +35,16 @@ type Services interface {
 
 // Administration exposes APIs for the driver adapters
 type Administration interface {
+	GetNudgesConfig(l *logs.Log) (*model.NudgesConfig, error)
+	UpdateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string) error
+
 	GetNudges() ([]model.Nudge, error)
 	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	DeleteNudge(l *logs.Log, ID string) error
 
-	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
+	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, mode *string) ([]model.SentNudge, error)
+	DeleteSentNudges(l *logs.Log, ids []string) error
 }
 
 type servicesImpl struct {
@@ -77,6 +81,14 @@ type administrationImpl struct {
 	app *Application
 }
 
+func (s *administrationImpl) GetNudgesConfig(l *logs.Log) (*model.NudgesConfig, error) {
+	return s.app.getNudgesConfig(l)
+}
+
+func (s *administrationImpl) UpdateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string) error {
+	return s.app.updateNudgesConfig(l, active, groupName, testGroupName, mode)
+}
+
 func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
 	return s.app.getNudges()
 }
@@ -93,8 +105,12 @@ func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
 	return s.app.deleteNudge(l, ID)
 }
 
-func (s *administrationImpl) FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error) {
-	return s.app.findSentNudges(l, nudgeID, userID, netID, criteriaHash, mode)
+func (s *administrationImpl) FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, mode *string) ([]model.SentNudge, error) {
+	return s.app.findSentNudges(l, nudgeID, userID, netID, nil, mode)
+}
+
+func (s *administrationImpl) DeleteSentNudges(l *logs.Log, ids []string) error {
+	return s.app.deleteSentNudges(l, ids)
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
@@ -115,6 +131,7 @@ type Storage interface {
 	InsertSentNudges(sentNudge []model.SentNudge) error
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
 	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
+	DeleteSentNudges(ids []string) error
 }
 
 //Provider interface for LMS provider

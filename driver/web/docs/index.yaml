@@ -31,11 +31,13 @@ paths:
     $ref: "./resources/api/user/user.yaml"
 
   #admin
+  /admin/nudges-config:
+    $ref: "./resources/admin/nudges-config.yaml"
   /admin/nudges:
     $ref: "./resources/admin/nudges/nudges.yaml"
   /admin/nudges/{id}:
     $ref: "./resources/admin/nudges/nudgesID.yaml"
-  /admin/sent_nudges:
+  /admin/sent-nudges:
     $ref: "./resources/admin/sentNudges/sentNudges.yaml"
 
 components:

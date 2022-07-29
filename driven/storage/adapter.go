@@ -86,7 +86,21 @@ func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
 
 // UpdateNudgesConfig updates the nudges config
 func (sa *Adapter) UpdateNudgesConfig(nudgesConfig model.NudgesConfig) error {
-	//TODO
+	filter := bson.D{primitive.E{Key: "_id", Value: "nudges"}}
+	update := bson.D{
+		primitive.E{Key: "$set", Value: bson.D{
+			primitive.E{Key: "config", Value: nudgesConfig},
+		}},
+	}
+
+	result, err := sa.db.configs.UpdateOne(filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": "nudges"}, err)
+	}
+	if result.MatchedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": "nudges"}, err)
+	}
+
 	return nil
 }
 
@@ -247,6 +261,25 @@ func (sa *Adapter) FindSentNudges(nudgeID *string, userID *string, netID *string
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "sent nudge", nil, err)
 	}
 	return result, nil
+}
+
+//DeleteSentNudges deletes sent nudge
+func (sa *Adapter) DeleteSentNudges(ids []string) error {
+
+	filter := bson.D{primitive.E{Key: "_id", Value: bson.M{"$in": ids}}}
+
+	result, err := sa.db.sentNudges.DeleteMany(filter, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": ids}, err)
+	}
+	if result == nil {
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": ids}, err)
+	}
+	deletedCount := result.DeletedCount
+	if deletedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": ids}, err)
+	}
+	return nil
 }
 
 // NewStorageAdapter creates a new storage adapter instance
