@@ -86,7 +86,21 @@ func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
 
 // UpdateNudgesConfig updates the nudges config
 func (sa *Adapter) UpdateNudgesConfig(nudgesConfig model.NudgesConfig) error {
-	//TODO
+	filter := bson.D{primitive.E{Key: "_id", Value: "nudges"}}
+	update := bson.D{
+		primitive.E{Key: "$set", Value: bson.D{
+			primitive.E{Key: "config", Value: nudgesConfig},
+		}},
+	}
+
+	result, err := sa.db.configs.UpdateOne(filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": "nudges"}, err)
+	}
+	if result.MatchedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": "nudges"}, err)
+	}
+
 	return nil
 }
 

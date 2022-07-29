@@ -33,6 +33,11 @@ func (app *Application) getNudgesConfig(l *logs.Log) (*model.NudgesConfig, error
 }
 
 func (app *Application) updateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string) error {
+	nudgesConfig := model.NudgesConfig{Active: active, GroupName: groupName, TestGroupName: testGroupName, Mode: mode}
+	err := app.storage.UpdateNudgesConfig(nudgesConfig)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

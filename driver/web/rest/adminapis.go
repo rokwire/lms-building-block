@@ -54,19 +54,22 @@ func (h AdminApisHandler) GetNudgesConfig(l *logs.Log, claims *tokenauth.Claims,
 
 //UpdateNudgesConfig updates the nudges config
 func (h AdminApisHandler) UpdateNudgesConfig(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
-
-	/*nudges, err := h.app.Administration.GetNudges()
+	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return l.HttpResponseErrorAction(logutils.ActionGet, "nudge", nil, err, http.StatusInternalServerError, true)
+		return l.HttpResponseErrorAction(logutils.ActionRead, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, false)
 	}
 
-	data, err := json.Marshal(nudges)
+	var requestData Def.NudgesConfig
+	err = json.Unmarshal(data, &requestData)
 	if err != nil {
-		return l.HttpResponseErrorAction(logutils.ActionMarshal, "nudge", nil, err, http.StatusInternalServerError, false)
+		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "nudges config", nil, err, http.StatusBadRequest, true)
 	}
 
-	return l.HttpResponseSuccessJSON(data) */
-
+	err = h.app.Administration.UpdateNudgesConfig(l, requestData.Active, requestData.GroupName,
+		requestData.TestGroupName, string(requestData.Mode))
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "nudges config", nil, err, http.StatusInternalServerError, true)
+	}
 	return l.HttpResponseSuccess()
 }
 
