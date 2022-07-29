@@ -23,6 +23,19 @@ import (
 	"github.com/rokwire/logging-library-go/logs"
 )
 
+func (app *Application) getNudgesConfig(l *logs.Log) (*model.NudgesConfig, error) {
+	// find the nudges config
+	nudgesConfig, err := app.storage.FindNudgesConfig()
+	if err != nil {
+		return nil, err
+	}
+	return nudgesConfig, nil
+}
+
+func (app *Application) updateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string) error {
+	return nil
+}
+
 func (app *Application) getNudges() ([]model.Nudge, error) {
 	// find all active nudges
 	nudges, err := app.storage.LoadAllNudges()

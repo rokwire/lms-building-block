@@ -39,19 +39,17 @@ type AdminApisHandler struct {
 //GetNudgesConfig gets the nudges config
 func (h AdminApisHandler) GetNudgesConfig(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 
-	/*nudges, err := h.app.Administration.GetNudges()
+	nudges, err := h.app.Administration.GetNudgesConfig(l)
 	if err != nil {
-		return l.HttpResponseErrorAction(logutils.ActionGet, "nudge", nil, err, http.StatusInternalServerError, true)
+		return l.HttpResponseErrorAction(logutils.ActionGet, "nudges config", nil, err, http.StatusInternalServerError, true)
 	}
 
 	data, err := json.Marshal(nudges)
 	if err != nil {
-		return l.HttpResponseErrorAction(logutils.ActionMarshal, "nudge", nil, err, http.StatusInternalServerError, false)
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "nudge config", nil, err, http.StatusInternalServerError, false)
 	}
 
-	return l.HttpResponseSuccessJSON(data) */
-
-	return l.HttpResponseSuccess()
+	return l.HttpResponseSuccessJSON(data)
 }
 
 //UpdateNudgesConfig updates the nudges config

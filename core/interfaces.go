@@ -35,6 +35,9 @@ type Services interface {
 
 // Administration exposes APIs for the driver adapters
 type Administration interface {
+	GetNudgesConfig(l *logs.Log) (*model.NudgesConfig, error)
+	UpdateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string) error
+
 	GetNudges() ([]model.Nudge, error)
 	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
@@ -76,6 +79,14 @@ func (s *servicesImpl) GetCurrentUser(l *logs.Log, providerUserID string) (*mode
 
 type administrationImpl struct {
 	app *Application
+}
+
+func (s *administrationImpl) GetNudgesConfig(l *logs.Log) (*model.NudgesConfig, error) {
+	return s.app.getNudgesConfig(l)
+}
+
+func (s *administrationImpl) UpdateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string) error {
+	return s.app.updateNudgesConfig(l, active, groupName, testGroupName, mode)
 }
 
 func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
