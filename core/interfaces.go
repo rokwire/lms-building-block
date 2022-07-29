@@ -40,7 +40,7 @@ type Administration interface {
 	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
 	DeleteNudge(l *logs.Log, ID string) error
 
-	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
+	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(l *logs.Log, ids []string) error
 }
 
@@ -94,8 +94,8 @@ func (s *administrationImpl) DeleteNudge(l *logs.Log, ID string) error {
 	return s.app.deleteNudge(l, ID)
 }
 
-func (s *administrationImpl) FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error) {
-	return s.app.findSentNudges(l, nudgeID, userID, netID, criteriaHash, mode)
+func (s *administrationImpl) FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, mode *string) ([]model.SentNudge, error) {
+	return s.app.findSentNudges(l, nudgeID, userID, netID, nil, mode)
 }
 
 func (s *administrationImpl) DeleteSentNudges(l *logs.Log, ids []string) error {
