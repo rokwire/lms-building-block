@@ -59,9 +59,9 @@ func (app *Application) deleteNudge(l *logs.Log, ID string) error {
 }
 
 func (app *Application) findSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error) {
-	sentNudges, _ := app.storage.FindSentNudges(nudgeID, userID, netID, criteriaHash, mode)
-	if sentNudges == nil {
-		return nil, nil
+	sentNudges, err := app.storage.FindSentNudges(nudgeID, userID, netID, criteriaHash, mode)
+	if err != nil {
+		return nil, err
 	}
 	return sentNudges, nil
 }
@@ -69,7 +69,7 @@ func (app *Application) findSentNudges(l *logs.Log, nudgeID *string, userID *str
 func (app *Application) deleteSentNudges(l *logs.Log, ids []string) error {
 	err := app.storage.DeleteSentNudges(ids)
 	if err != nil {
-		return nil
+		return err
 	}
-	return err
+	return nil
 }
