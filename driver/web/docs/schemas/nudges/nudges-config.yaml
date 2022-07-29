@@ -13,3 +13,4 @@ properties:
     type: string
   mode:
     type: string
+    enum: [normal, test]
