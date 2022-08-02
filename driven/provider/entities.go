@@ -26,5 +26,5 @@ type providerUser struct {
 	ID       string     `bson:"_id"`    //core BB account id
 	NetID    string     `bson:"net_id"` //core BB external system id
 	User     model.User `bson:"user"`
-	SyncDate time.Time  `json:"sync_date"`
+	SyncDate time.Time  `bson:"sync_date"`
 }

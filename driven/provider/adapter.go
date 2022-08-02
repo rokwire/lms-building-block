@@ -231,18 +231,18 @@ func (a *Adapter) cacheUser(netID string, userID string) error {
 	a.logger.Infof("cache user - %s", netID)
 
 	// check if the user exist
-	user, err := a.db.findUser(netID)
+	exists, err := a.db.userExist(netID)
 	if err != nil {
-		a.logger.Errorf("error finding user - %s", netID)
+		a.logger.Errorf("error checking if the user exists - %s", netID)
 		return err
 	}
 
-	if user != nil {
+	if *exists {
 		a.logger.Infof("%s exists, so not cache it", netID)
 		return nil
 	}
 
-	a.logger.Infof("%s needs to be cached")
+	a.logger.Infof("%s needs to be cached", netID)
 	//load it from the provider
 	loadedUser, err := a.loadUser(netID)
 	if err != nil {

@@ -19,7 +19,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/rokwire/logging-library-go/errors"
 	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/logutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -125,10 +127,27 @@ func (m *database) onDataChanged(changeDoc map[string]interface{}) {
 
 // Data managment
 
-func (m *database) findUser(userID string) (*providerUser, error) {
-	return nil, nil
+func (m *database) userExist(netID string) (*bool, error) {
+	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
+
+	count, err := m.users.CountDocuments(filter)
+	if err != nil {
+		return nil, errors.WrapErrorAction("error counting user for net id", "", &logutils.FieldArgs{"net_id": netID}, err)
+	}
+
+	var result bool
+	if count == 1 {
+		result = true
+	} else {
+		result = false
+	}
+	return &result, nil
 }
 
 func (m *database) insertUser(user providerUser) error {
+	_, err := m.users.InsertOne(user)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "provider user", &logutils.FieldArgs{"net_id": user.NetID}, err)
+	}
 	return nil
 }
