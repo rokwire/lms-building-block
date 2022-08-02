@@ -141,6 +141,7 @@ type Provider interface {
 	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
+
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
 	GetCompletedAssignments(userID string) ([]model.Assignment, error)
