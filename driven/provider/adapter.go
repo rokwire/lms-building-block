@@ -201,6 +201,13 @@ func (a *Adapter) GetCurrentUser(userID string) (*model.User, error) {
 	return user, nil
 }
 
+//CacheCommonData caches users and courses data
+func (a *Adapter) CacheCommonData(usersIDs []string) error {
+	//1. cache users
+
+	return nil
+}
+
 //GetLastLogin gives the last login date for the user
 func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 	//params

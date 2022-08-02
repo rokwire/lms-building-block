@@ -153,14 +153,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 	n.logger.Info("the nudges processing is active")
 
-	//2. prepare(cache/optimise) the provider data
-	err := n.prepareProviderData()
-	if err != nil {
-		n.logger.Errorf("error on preparing the provider data - %s", err)
-		return
-	}
-
-	//3. get all active nudges
+	//2. get all active nudges
 	nudges, err := n.storage.LoadActiveNudges()
 	if err != nil {
 		n.logger.Errorf("error on processing all nudges - %s", err)
@@ -170,11 +163,18 @@ func (n nudgesLogic) processAllNudges() {
 		n.logger.Info("no active nudges for processing")
 	}
 
-	//4. get all users
+	//3. get all users
 	groupName := n.getGroupName()
 	users, err := n.groupsBB.GetUsers(groupName)
 	if err != nil {
 		n.logger.Errorf("error getting all users - %s", err)
+		return
+	}
+
+	//4. prepare(cache/optimise) the provider data
+	err = n.prepareProviderData(users)
+	if err != nil {
+		n.logger.Errorf("error on preparing the provider data - %s", err)
 		return
 	}
 
@@ -184,10 +184,35 @@ func (n nudgesLogic) processAllNudges() {
 	}
 }
 
-func (n nudgesLogic) prepareProviderData() error {
+func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {
 	n.logger.Info("prepareProviderData")
 
+	//get the net ids from the users
+	usersIDs := n.prepareUsers(users)
+	if len(usersIDs) == 0 {
+		n.logger.Info("no users for processing")
+		return nil
+	}
+
+	//process caching
+	err := n.provider.CacheCommonData(usersIDs)
+	if err != nil {
+		n.logger.Errorf("error caching common data- %s", err)
+		return err
+	}
+
 	return nil
+}
+
+//returns the net ids for all user who have it
+func (n nudgesLogic) prepareUsers(users []GroupsBBUser) []string {
+	result := []string{}
+	for _, user := range users {
+		if len(user.NetID) > 0 {
+			result = append(result, user.NetID)
+		}
+	}
+	return result
 }
 
 func (n nudgesLogic) getGroupName() string {
