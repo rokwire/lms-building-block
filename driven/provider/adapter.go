@@ -53,29 +53,7 @@ func (a *Adapter) Start() error {
 
 //GetCourses gets the user courses
 func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
-	//params
-	queryParamsItems := map[string][]string{}
-	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
-	queryParams := a.constructQueryParams(queryParamsItems)
-
-	//path + params
-	pathAndParams := fmt.Sprintf("/api/v1/courses%s", queryParams)
-
-	//execute query
-	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
-	if err != nil {
-		log.Print("error getting courses")
-		return nil, err
-	}
-
-	//prepare the response and return it
-	var courses []model.Course
-	err = json.Unmarshal(data, &courses)
-	if err != nil {
-		log.Print("error converting courses")
-		return nil, err
-	}
-	return courses, nil
+	return a.loadCourses(userID)
 }
 
 //GetCourse gives the the course for the provided id
@@ -211,6 +189,12 @@ func (a *Adapter) CacheCommonData(usersIDs map[string]string) error {
 		return err
 	}
 
+	//2. cache users courses and courses assignments
+	err = a.cacheUsersCoursesAndCoursesAssignments(usersIDs)
+	if err != nil {
+		return err
+	}
+
 	//TODO count documents??
 	//TODO process users + groups?
 
@@ -286,6 +270,72 @@ func (a *Adapter) loadUser(netID string) (*model.User, error) {
 	}
 
 	return user, nil
+}
+
+func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]string) error {
+	a.logger.Info("start processing cacheUsersCoursesAndCoursesAssignments")
+
+	var err error
+
+	//We do not ask the provider for every user. The courses and the assignemnts are the same as entities for the different users
+	// and we use already what we have found
+	allCourses := []userCourses{}
+
+	for netID, _ := range usersIDs {
+		allCourses, err = a.cacheUserCoursesAndCoursesAssignments(netID, allCourses)
+		if err != nil {
+			a.logger.Errorf("error on caching user courses for - %s", netID)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses []userCourses) ([]userCourses, error) {
+	a.logger.Infof("cache user courses and courses assignments - %s", netID)
+
+	//check if we need to update the courses for the user from the provider - use config variable
+	//TODO
+
+	///let's say we need to update it
+
+	// load the user courses
+	courses, err := a.loadCourses(netID)
+	if err != nil {
+		a.logger.Errorf("error loading courses for - %s", netID)
+		return nil, err
+	}
+
+	log.Println(courses)
+
+	return allCourses, nil
+}
+
+func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/courses%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting courses")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var courses []model.Course
+	err = json.Unmarshal(data, &courses)
+	if err != nil {
+		log.Print("error converting courses")
+		return nil, err
+	}
+	return courses, nil
 }
 
 //GetLastLogin gives the last login date for the user
