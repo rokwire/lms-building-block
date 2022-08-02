@@ -122,3 +122,13 @@ func (m *database) onDataChanged(changeDoc map[string]interface{}) {
 		m.listener.OnCollectionUpdated(coll.(string))
 	}
 }
+
+// Data managment
+
+func (m *database) findUser(userID string) (*providerUser, error) {
+	return nil, nil
+}
+
+func (m *database) insertUser(user providerUser) error {
+	return nil
+}

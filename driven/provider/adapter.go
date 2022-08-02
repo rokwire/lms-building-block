@@ -41,6 +41,8 @@ type Adapter struct {
 	tokenType string
 
 	db *database
+
+	logger *logs.Logger
 }
 
 // Start starts the storage
@@ -202,14 +204,93 @@ func (a *Adapter) GetCurrentUser(userID string) (*model.User, error) {
 }
 
 //CacheCommonData caches users and courses data
-func (a *Adapter) CacheCommonData(usersIDs []string) error {
+func (a *Adapter) CacheCommonData(usersIDs map[string]string) error {
 	//1. cache users
+	err := a.cacheUsers(usersIDs)
+	if err != nil {
+		return err
+	}
+
+	//TODO count documents??
+	//TODO process users + groups?
 
 	return nil
 }
 
+func (a *Adapter) cacheUsers(usersIDs map[string]string) error {
+	a.logger.Info("start processing cacheUsers")
+
+	for netID, userID := range usersIDs {
+		a.cacheUser(netID, userID)
+	}
+
+	return nil
+}
+
+func (a *Adapter) cacheUser(netID string, userID string) error {
+	a.logger.Infof("cache user - %s", netID)
+
+	// check if the user exist
+	user, err := a.db.findUser(netID)
+	if err != nil {
+		a.logger.Errorf("error finding user - %s", netID)
+		return err
+	}
+
+	if user != nil {
+		a.logger.Infof("%s exists, so not cache it", netID)
+		return nil
+	}
+
+	a.logger.Infof("%s needs to be cached")
+	//load it from the provider
+	loadedUser, err := a.loadUser(netID)
+	if err != nil {
+		a.logger.Errorf("error loading user - %s", netID)
+		return err
+	}
+	//store it
+	providerUser := providerUser{ID: userID, NetID: netID, User: *loadedUser, SyncDate: time.Now()}
+	err = a.db.insertUser(providerUser)
+	if err != nil {
+		a.logger.Errorf("error inserting user - %s", netID)
+		return err
+	}
+
+	return nil
+}
+
+func (a *Adapter) loadUser(netID string) (*model.User, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", netID)}
+	queryParamsItems["include[]"] = []string{"last_login"}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/users/self%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting last login")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var user *model.User
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		log.Print("error converting user")
+		return nil, err
+	}
+
+	return user, nil
+}
+
 //GetLastLogin gives the last login date for the user
 func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
+	//TODO remove this function
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
@@ -471,5 +552,5 @@ func NewProviderAdapter(host string, token string, tokenType string,
 	timeoutMS := time.Millisecond * time.Duration(timeout)
 
 	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
-	return &Adapter{host: host, token: token, tokenType: tokenType, db: db}
+	return &Adapter{host: host, token: token, tokenType: tokenType, db: db, logger: logger}
 }

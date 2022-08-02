@@ -142,6 +142,8 @@ func (n nudgesLogic) processNudges() {
 func (n nudgesLogic) processAllNudges() {
 	n.logger.Info("processAllNudges")
 
+	//TODO loop by users
+
 	//1. first check if we have a config and the config is set to active
 	if n.config == nil {
 		n.logger.Error("the config is not set and the nudges will not be processed")
@@ -205,11 +207,11 @@ func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {
 }
 
 //returns the net ids for all user who have it
-func (n nudgesLogic) prepareUsers(users []GroupsBBUser) []string {
-	result := []string{}
+func (n nudgesLogic) prepareUsers(users []GroupsBBUser) map[string]string {
+	result := map[string]string{}
 	for _, user := range users {
 		if len(user.NetID) > 0 {
-			result = append(result, user.NetID)
+			result[user.NetID] = user.UserID
 		}
 	}
 	return result

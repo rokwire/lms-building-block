@@ -142,7 +142,7 @@ type Provider interface {
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
 
-	CacheCommonData(usersIDs []string) error
+	CacheCommonData(usersIDs map[string]string) error
 
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
