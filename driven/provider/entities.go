@@ -32,8 +32,8 @@ type providerUser struct {
 }
 
 type userCourses struct {
-	Data     userCourse `bson:"data"`
-	SyncDate time.Time  `bson:"sync_date"`
+	Data     []userCourse `bson:"data"`
+	SyncDate time.Time    `bson:"sync_date"`
 }
 
 type userCourse struct {
