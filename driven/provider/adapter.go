@@ -281,7 +281,7 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 
 	//We do not ask the provider for every user. The courses and the assignemnts are the same as entities for the different users
 	// and we use already what we have found
-	allCourses := map[string]userCourse{}
+	allCourses := map[int]userCourse{}
 
 	for netID, _ := range usersIDs {
 		allCourses, err = a.cacheUserCoursesAndCoursesAssignments(netID, allCourses)
@@ -294,7 +294,7 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 	return nil
 }
 
-func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[string]userCourse) (map[string]userCourse, error) {
+func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[int]userCourse) (map[int]userCourse, error) {
 	a.logger.Infof("cache user courses and courses assignments - %s", netID)
 
 	//get the user from the cache
@@ -309,7 +309,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 
 	//check if the user has courses data
 	if cachedUser.Courses == nil {
-		a.logger.Infof("there is no cached courses for %s, so loading them")
+		a.logger.Infof("there is no cached courses for %s, so loading them", netID)
 
 		var userCourses *userCourses
 		userCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
@@ -318,8 +318,15 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 			return nil, err
 		}
 
-		//TODO store it
-		log.Println(userCourses)
+		//add the courses data to the user
+		cachedUser.Courses = userCourses
+
+		//cache the user
+		err = a.db.saveUser(*cachedUser)
+		if err != nil {
+			a.logger.Errorf("error saving user - %s", netID)
+			return nil, err
+		}
 	} else {
 		a.logger.Infof("there is cached courses for %s, so need to decide if we haveto to refresh it")
 		//TODO
@@ -344,15 +351,69 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 }
 
 //check if the courses are available in allCourses otherwise load them
-func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[string]userCourse) (*userCourses, map[string]userCourse, error) {
-	//1. first load the courses for the id
+func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]userCourse) (*userCourses, map[int]userCourse, error) {
+	//prepare the result variable
+	now := time.Now()
+	loadedUserCourses := userCourses{SyncDate: now}
+	data := []userCourse{} //to be loaded in the function
+
+	// first load the courses for the id
 	courses, err := a.loadCourses(netID)
 	if err != nil {
 		a.logger.Errorf("error loading user courses from the provider for - %s", netID)
 		return nil, nil, err
 	}
 
-	return nil, nil, nil
+	//loop through all user courses and determine if they are already loaded or need to be loaded from the provider
+	for _, course := range courses {
+		//check if already exists
+		value, ok := allCourses[course.ID]
+		if ok {
+			a.logger.Infof("we have course %d in the memory, so use it", course.ID)
+			data = append(data, value)
+		} else {
+			a.logger.Infof("we do NOT have course %d in the memory, so need to load the data for it", course.ID)
+			courseData, err := a.loadCourseData(netID, course, now)
+			if err != nil {
+				a.logger.Errorf("error loading course data for course and user - %d - %s - %s", course.ID, netID)
+				return nil, nil, err
+			}
+			if courseData == nil {
+				return nil, nil, errors.Newf("there is no course data for - %d - %s", course.ID, netID)
+			}
+			data = append(data, *courseData)
+
+			//keep the loaded data in the memory
+			allCourses[course.ID] = *courseData
+		}
+	}
+
+	//set the loaded user courses
+	loadedUserCourses.Data = data
+
+	return &loadedUserCourses, allCourses, nil
+}
+
+func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate time.Time) (*userCourse, error) {
+	now := time.Now()
+	userCourse := userCourse{Data: course, Assignments: nil, SyncDate: now}
+	//to load the assignments
+
+	loadedAssignments, err := a.getAssignments(course.ID, netID, false)
+	if err != nil {
+		a.logger.Errorf("error getting assignments for course and user - %d - %s", course.ID, netID)
+		return nil, err
+	}
+
+	assignments := make([]courseAssignment, len(loadedAssignments))
+	for i, assignment := range loadedAssignments {
+		assignments[i] = courseAssignment{Data: assignment, Submission: nil, SyncDate: syncDate}
+	}
+
+	//add the loaded assignments
+	userCourse.Assignments = assignments
+
+	return &userCourse, nil
 }
 
 func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
@@ -459,7 +520,7 @@ func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, er
 	//2. get the assignemnts for every course
 	result := []model.Assignment{}
 	for _, course := range userCourses {
-		courseAssignments, err := a.getAssignments(course.ID, userID)
+		courseAssignments, err := a.getAssignments(course.ID, userID, true)
 		if err != nil {
 			log.Printf("error getting assignments for - %d - %s", course.ID, userID)
 			continue
@@ -481,11 +542,13 @@ func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, er
 	return result, nil
 }
 
-func (a *Adapter) getAssignments(courseID int, userID string) ([]model.Assignment, error) {
+func (a *Adapter) getAssignments(courseID int, userID string, includeSubmission bool) ([]model.Assignment, error) {
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
-	queryParamsItems["include[]"] = []string{"submission"}
+	if includeSubmission {
+		queryParamsItems["include[]"] = []string{"submission"}
+	}
 	queryParams := a.constructQueryParams(queryParamsItems)
 
 	//path + params

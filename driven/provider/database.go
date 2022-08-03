@@ -167,3 +167,13 @@ func (m *database) findUser(netID string) (*providerUser, error) {
 	user := result[0]
 	return &user, nil
 }
+
+func (m *database) saveUser(providerUser providerUser) error {
+	filter := bson.M{"_id": providerUser.ID}
+	err := m.users.ReplaceOne(filter, providerUser, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionSave, "provider user", &logutils.FieldArgs{"_id": providerUser.ID}, err)
+	}
+
+	return nil
+}
