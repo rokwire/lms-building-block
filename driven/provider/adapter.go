@@ -328,26 +328,89 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 			return nil, err
 		}
 	} else {
-		a.logger.Infof("there is cached courses for %s, so need to decide if we haveto to refresh it")
-		//TODO
+		a.logger.Infof("there is cached courses for %s, so need to decide if we have to to refresh it", netID)
+
+		currentUserCourses := cachedUser.Courses
+		passedTimeInSecconds := time.Now().Unix() - currentUserCourses.SyncDate.Unix()
+
+		//432000 seconds  = 5 days - to put it in the config
+		if passedTimeInSecconds > 432000 {
+			//if passedTimeInSecconds > 1 {
+			a.logger.Infof("we need to refresh courses for - %s", netID)
+
+			var loadedUserCourses *userCourses
+			loadedUserCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
+			if err != nil {
+				a.logger.Errorf("error loading user courses for - %s on refresh", netID)
+				return nil, err
+			}
+
+			//do not loose the submissions when we refresh the courses data/submissions are not part of it/
+			readyUserCourses := a.getSubmissionsFromCurrent(*currentUserCourses, *loadedUserCourses)
+
+			//add the courses data to the user
+			cachedUser.Courses = &readyUserCourses
+
+			//cache the user
+			err = a.db.saveUser(*cachedUser)
+			if err != nil {
+				a.logger.Errorf("error saving user - %s", netID)
+				return nil, err
+			}
+		} else {
+			a.logger.Infof("no need to refresh courses for - %s", netID)
+		}
 	}
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	//check if we need to update the courses for the user from the provider - use config variable
-	//TODO
+	return allCourses, nil
+}
 
-	///let's say we need to update it
-	/*
-		// load the user courses
-		courses, err := a.loadCourses(netID)
-		if err != nil {
-			a.logger.Errorf("error loading courses for - %s", netID)
-			return nil, err
+//puts the submissions data from the current to the new one. The new one does not have submissions in it, so we do not want to loose it.
+func (a *Adapter) getSubmissionsFromCurrent(current userCourses, new userCourses) userCourses {
+	//TODO
+	userCourses := new.Data
+	if len(userCourses) == 0 {
+		//no courses
+		return new
+	}
+
+	for _, course := range userCourses {
+		assignments := course.Assignments
+
+		if len(assignments) == 0 {
+			continue
 		}
 
-		log.Println(courses) */
+		for _, assignment := range assignments {
+			assignment.Submission = a.findSubmission(assignment.Data.ID, current)
 
-	return allCourses, nil
+		}
+	}
+
+	return new
+}
+
+func (a *Adapter) findSubmission(assignmentID int, current userCourses) *submission {
+	userCourses := current.Data
+	if len(userCourses) == 0 {
+		return nil
+	}
+
+	for _, course := range userCourses {
+		assignments := course.Assignments
+
+		if len(assignments) == 0 {
+			continue
+		}
+
+		for _, assignment := range assignments {
+			if assignment.Data.ID == assignmentID {
+				return assignment.Submission
+			}
+		}
+	}
+
+	return nil
 }
 
 //check if the courses are available in allCourses otherwise load them
