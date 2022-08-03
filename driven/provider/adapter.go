@@ -19,7 +19,6 @@ package provider
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -31,6 +30,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rokwire/logging-library-go/errors"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
@@ -275,11 +275,13 @@ func (a *Adapter) loadUser(netID string) (*model.User, error) {
 func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]string) error {
 	a.logger.Info("start processing cacheUsersCoursesAndCoursesAssignments")
 
+	//for now process record by record..
+
 	var err error
 
 	//We do not ask the provider for every user. The courses and the assignemnts are the same as entities for the different users
 	// and we use already what we have found
-	allCourses := []userCourses{}
+	allCourses := map[string]userCourse{}
 
 	for netID, _ := range usersIDs {
 		allCourses, err = a.cacheUserCoursesAndCoursesAssignments(netID, allCourses)
@@ -292,24 +294,65 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 	return nil
 }
 
-func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses []userCourses) ([]userCourses, error) {
+func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[string]userCourse) (map[string]userCourse, error) {
 	a.logger.Infof("cache user courses and courses assignments - %s", netID)
 
+	//get the user from the cache
+	cachedUser, err := a.db.findUser(netID)
+	if err != nil {
+		a.logger.Errorf("error finding user for - %s", netID)
+		return nil, err
+	}
+	if cachedUser == nil {
+		return nil, errors.Newf("there is no cached record for - %s", netID)
+	}
+
+	//check if the user has courses data
+	if cachedUser.Courses == nil {
+		a.logger.Infof("there is no cached courses for %s, so loading them")
+
+		var userCourses *userCourses
+		userCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
+		if err != nil {
+			a.logger.Errorf("error loading user courses for - %s", netID)
+			return nil, err
+		}
+
+		//TODO store it
+		log.Println(userCourses)
+	} else {
+		a.logger.Infof("there is cached courses for %s, so need to decide if we haveto to refresh it")
+		//TODO
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////
 	//check if we need to update the courses for the user from the provider - use config variable
 	//TODO
 
 	///let's say we need to update it
+	/*
+		// load the user courses
+		courses, err := a.loadCourses(netID)
+		if err != nil {
+			a.logger.Errorf("error loading courses for - %s", netID)
+			return nil, err
+		}
 
-	// load the user courses
-	courses, err := a.loadCourses(netID)
-	if err != nil {
-		a.logger.Errorf("error loading courses for - %s", netID)
-		return nil, err
-	}
-
-	log.Println(courses)
+		log.Println(courses) */
 
 	return allCourses, nil
+}
+
+//check if the courses are available in allCourses otherwise load them
+func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[string]userCourse) (*userCourses, map[string]userCourse, error) {
+	//1. first load the courses for the id
+	courses, err := a.loadCourses(netID)
+	if err != nil {
+		a.logger.Errorf("error loading user courses from the provider for - %s", netID)
+		return nil, nil, err
+	}
+
+	return nil, nil, nil
 }
 
 func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {

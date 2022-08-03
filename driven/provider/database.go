@@ -151,3 +151,19 @@ func (m *database) insertUser(user providerUser) error {
 	}
 	return nil
 }
+
+func (m *database) findUser(netID string) (*providerUser, error) {
+	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
+	var result []providerUser
+	err := m.users.Find(filter, &result, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		//no data
+		return nil, nil
+	}
+
+	user := result[0]
+	return &user, nil
+}
