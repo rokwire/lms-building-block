@@ -367,26 +367,27 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 
 //puts the submissions data from the current to the new one. The new one does not have submissions in it, so we do not want to loose it.
 func (a *Adapter) getSubmissionsFromCurrent(current userCourses, new userCourses) userCourses {
-	//TODO
 	userCourses := new.Data
 	if len(userCourses) == 0 {
 		//no courses
 		return new
 	}
 
-	for _, course := range userCourses {
+	resultUserCourses := make([]userCourse, len(userCourses))
+	for i, course := range userCourses {
+
 		assignments := course.Assignments
 
-		if len(assignments) == 0 {
-			continue
-		}
-
-		for _, assignment := range assignments {
+		resultAssignments := make([]courseAssignment, len(assignments))
+		for j, assignment := range assignments {
 			assignment.Submission = a.findSubmission(assignment.Data.ID, current)
-
+			resultAssignments[j] = assignment
 		}
+		course.Assignments = resultAssignments
+		resultUserCourses[i] = course
 	}
 
+	new.Data = resultUserCourses
 	return new
 }
 
