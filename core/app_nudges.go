@@ -138,7 +138,6 @@ func (n nudgesLogic) processNudges() {
 	}
 }
 
-//TODO - decide if we need to loop through nudges or through all users(are the users the same for the nudges?)
 func (n nudgesLogic) processAllNudges() {
 	n.logger.Info("START nudges processing")
 
@@ -153,39 +152,66 @@ func (n nudgesLogic) processAllNudges() {
 	}
 	n.logger.Info("the nudges processing is active")
 
-	//2. get all users
-	groupName := n.getGroupName()
-	users, err := n.groupsBB.GetUsers(groupName)
+	//TODO start process
+
+	//2. process phase 1
+	err := n.processPhase1()
 	if err != nil {
-		n.logger.Errorf("error getting all users - %s", err)
-		return
-	}
-	if len(users) == 0 {
-		n.logger.Info("no users for processing")
+		n.logger.Errorf("error on processing phase 1 - %s", err)
 		return
 	}
 
-	//3. prepare(cache/optimise) the provider data
-	err = n.prepareProviderData(users)
-	if err != nil {
-		n.logger.Errorf("error on preparing the provider data - %s", err)
-		return
-	}
+	/*
+		//4. get all active nudges
+		nudges, err := n.storage.LoadActiveNudges()
+		if err != nil {
+			n.logger.Errorf("error on processing all nudges - %s", err)
+			return
+		}
+		if len(nudges) == 0 {
+			n.logger.Info("no active nudges for processing")
+		}
 
-	//4. get all active nudges
-	nudges, err := n.storage.LoadActiveNudges()
-	if err != nil {
-		n.logger.Errorf("error on processing all nudges - %s", err)
-		return
-	}
-	if len(nudges) == 0 {
-		n.logger.Info("no active nudges for processing")
-	}
+		//5. process every user
+		for _, user := range users {
+			n.processUser(user, nudges)
+		} */
+}
 
-	//5. process every user
-	for _, user := range users {
-		n.processUser(user, nudges)
-	}
+//as a result of phase 1 we have into our service a cached provider data for:
+// all users
+// users courses
+// courses assignments
+// - with acceptable sync date
+func (n nudgesLogic) processPhase1() error {
+	n.logger.Info("START Phase1")
+	/*
+		//2. get all users
+		groupName := n.getGroupName()
+		users, err := n.groupsBB.GetUsers(groupName)
+		if err != nil {
+			n.logger.Errorf("error getting all users - %s", err)
+			return
+		}
+		if len(users) == 0 {
+			n.logger.Info("no users for processing")
+			return
+		}
+
+		//3. prepare(cache/optimise) the provider data
+		err = n.prepareProviderData(users)
+		if err != nil {
+			n.logger.Errorf("error on preparing the provider data - %s", err)
+			return
+		} */
+
+	n.logger.Info("END Phase1")
+	return nil
+}
+
+//phase2 operates over the data prepared in phase1 and apply the nudges for every user
+func (n nudgesLogic) processPhase2() error {
+	return nil
 }
 
 func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {
