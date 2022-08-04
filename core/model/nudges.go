@@ -24,7 +24,8 @@ type NudgesConfig struct {
 	Active        bool   `json:"active" bson:"active"` //if the nudges processing is "on" or "off"
 	GroupName     string `json:"group_name" bson:"group_name"`
 	TestGroupName string `json:"test_group_name" bson:"test_group_name"`
-	Mode          string `json:"mode" bson:"mode"` // "normal" or "test"
+	ProcessTime   *int   `json:"process_time" bson:"process_time"` //seconds since midnight CT at which to process nudges
+	Mode          string `json:"mode" bson:"mode"`                 // "normal" or "test"
 }
 
 //Nudge entity

@@ -84,7 +84,10 @@ func (n nudgesLogic) setupNudgesTimer() {
 	n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
 	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
+	desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
+	if n.config != nil && n.config.ProcessTime != nil {
+		desiredMoment = *n.config.ProcessTime
+	}
 
 	var durationInSeconds int
 	n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
