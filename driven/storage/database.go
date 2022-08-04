@@ -28,7 +28,7 @@ import (
 
 // CollectionListener listens for collection updates
 type CollectionListener interface {
-	OnCollectionUpdated(name string)
+	OnConfigsUpdated()
 }
 
 type database struct {
@@ -98,6 +98,8 @@ func (m *database) start() error {
 	m.nudges = nudges
 	m.sentNudges = sentNudges
 
+	go m.configs.Watch(nil)
+
 	return nil
 }
 
@@ -160,7 +162,12 @@ func (m *database) onDataChanged(changeDoc map[string]interface{}) {
 	nsMap := ns.(map[string]interface{})
 	coll := nsMap["coll"]
 
-	if m.listener != nil {
-		m.listener.OnCollectionUpdated(coll.(string))
+	switch coll {
+	case "configs":
+		log.Println("configs collection changed")
+
+		if m.listener != nil {
+			m.listener.OnConfigsUpdated()
+		}
 	}
 }

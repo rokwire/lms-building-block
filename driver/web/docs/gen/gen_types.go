@@ -62,6 +62,7 @@ type NudgesConfig struct {
 	Active        bool             `json:"active"`
 	GroupName     string           `json:"group_name"`
 	Mode          NudgesConfigMode `json:"mode"`
+	ProcessTime   *int             `json:"process_time,omitempty"`
 	TestGroupName string           `json:"test_group_name"`
 }
 

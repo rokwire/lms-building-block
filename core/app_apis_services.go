@@ -72,7 +72,18 @@ func (app *Application) getCurrentUser(l *logs.Log, providerUserID string) (*mod
 	return user, nil
 }
 
-// OnCollectionUpdated callback that indicates the reward types collection is changed
-func (app *Application) OnCollectionUpdated(name string) {
+// OnConfigsUpdated is called when the config collection is updates
+func (app *Application) OnConfigsUpdated() {
+	config, err := app.storage.FindNudgesConfig()
+	if err != nil {
+		app.logger.Error("error finding nudge configs on configs changed")
+	}
 
+	oldConfig := app.nudgesLogic.config
+	app.nudgesLogic.config = config
+	if config.ProcessTime != nil {
+		if oldConfig == nil || oldConfig.ProcessTime == nil || *oldConfig.ProcessTime != *config.ProcessTime {
+			app.nudgesLogic.setupNudgesTimer()
+		}
+	}
 }
