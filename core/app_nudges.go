@@ -140,7 +140,7 @@ func (n nudgesLogic) processNudges() {
 
 //TODO - decide if we need to loop through nudges or through all users(are the users the same for the nudges?)
 func (n nudgesLogic) processAllNudges() {
-	n.logger.Info("processAllNudges")
+	n.logger.Info("START nudges processing")
 
 	//1. first check if we have a config and the config is set to active
 	if n.config == nil {
@@ -189,12 +189,12 @@ func (n nudgesLogic) processAllNudges() {
 }
 
 func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {
-	n.logger.Info("prepareProviderData")
+	n.logger.Info("\tprepareProviderData")
 
 	//get the net ids from the users
 	usersIDs := n.prepareUsers(users)
 	if len(usersIDs) == 0 {
-		n.logger.Info("no users for processing")
+		n.logger.Info("\t\tno users for processing")
 		return nil
 	}
 
