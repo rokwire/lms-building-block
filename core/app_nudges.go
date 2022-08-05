@@ -74,34 +74,34 @@ func (n nudgesLogic) setupNudgesTimer() {
 		n.timerDone <- true
 		n.dailyNudgesTimer.Stop()
 	}
+	/*
+		//wait until it is the correct moment from the day
+		location, err := time.LoadLocation("America/Chicago")
+		if err != nil {
+			n.logger.Errorf("Error getting location:%s\n", err.Error())
+		}
+		now := time.Now().In(location)
+		n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-	//wait until it is the correct moment from the day
-	location, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		n.logger.Errorf("Error getting location:%s\n", err.Error())
-	}
-	now := time.Now().In(location)
-	n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
+		nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+		desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
+		if n.config != nil && n.config.ProcessTime != nil {
+			desiredMoment = *n.config.ProcessTime
+		}
 
-	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
-	if n.config != nil && n.config.ProcessTime != nil {
-		desiredMoment = *n.config.ProcessTime
-	}
-
-	var durationInSeconds int
-	n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
-	if nowSecondsInDay <= desiredMoment {
-		n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
-		durationInSeconds = desiredMoment - nowSecondsInDay
-	} else {
-		n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-		leftToday := 86400 - nowSecondsInDay
-		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
-	}
+		var durationInSeconds int
+		n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
+		if nowSecondsInDay <= desiredMoment {
+			n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
+			durationInSeconds = desiredMoment - nowSecondsInDay
+		} else {
+			n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
+			leftToday := 86400 - nowSecondsInDay
+			durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+		} */
 	//app.logger.Infof("%d", durationInSeconds)
-	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
+	duration := time.Second * time.Duration(3)
+	//duration := time.Second * time.Duration(durationInSeconds)
 	n.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
 	n.dailyNudgesTimer = time.NewTimer(duration)
@@ -144,7 +144,7 @@ func (n nudgesLogic) processNudges() {
 func (n nudgesLogic) processAllNudges() {
 	n.logger.Info("START nudges processing")
 
-	//1. first check if we have a config and the config is set to active
+	// first check if we have a config and the config is set to active
 	if n.config == nil {
 		n.logger.Error("the config is not set and the nudges will not be processed")
 		return
@@ -153,32 +153,67 @@ func (n nudgesLogic) processAllNudges() {
 		n.logger.Info("the config active is set to false")
 		return
 	}
-	n.logger.Info("the nudges processing is active")
 
-	//TODO start process and keep the users for processing on pieces
-
-	//2. process phase 1
-	err := n.processPhase1()
+	// check if we already have a running nudges process
+	hasProcess, err := n.hasRunningProcess()
 	if err != nil {
-		n.logger.Errorf("error on processing phase 1 - %s", err)
+		n.logger.Errorf("error on checking if has a running process - %s", err)
+		return
+	}
+	if *hasProcess {
+		n.logger.Info("cannot start as already has a running process")
 		return
 	}
 
-	/*
-		//4. get all active nudges
-		nudges, err := n.storage.LoadActiveNudges()
-		if err != nil {
-			n.logger.Errorf("error on processing all nudges - %s", err)
-			return
-		}
-		if len(nudges) == 0 {
-			n.logger.Info("no active nudges for processing")
-		}
+	n.logger.Info("we are ready to start a process")
 
-		//5. process every user
-		for _, user := range users {
-			n.processUser(user, nudges)
-		} */
+	//start process
+	processID, err := n.startProcess()
+	if err != nil {
+		n.logger.Errorf("error on starting a process - %s", err)
+		return
+	}
+
+	// process phase 1
+	err = n.processPhase1()
+	if err != nil {
+		n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
+		n.completeProcessFailed(*processID, err.Error())
+		return
+	}
+
+	// process phase 2
+	err = n.processPhase2()
+	if err != nil {
+		n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
+		n.completeProcessFailed(*processID, err.Error())
+		return
+	}
+
+	//end process
+	err = n.completeProcessSuccess(*processID)
+	if err != nil {
+		n.logger.Errorf("error on completing a process - %s", err)
+		return
+	}
+}
+
+func (n nudgesLogic) hasRunningProcess() (*bool, error) {
+	res := false
+	return &res, nil
+}
+
+func (n nudgesLogic) startProcess() (*string, error) {
+	processID := "5588"
+	return &processID, nil
+}
+
+func (n nudgesLogic) completeProcessSuccess(processID string) error {
+	return nil
+}
+
+func (n nudgesLogic) completeProcessFailed(processID string, err string) error {
+	return nil
 }
 
 //as a result of phase 1 we have into our service a cached provider data for:
@@ -214,6 +249,24 @@ func (n nudgesLogic) processPhase1() error {
 
 //phase2 operates over the data prepared in phase1 and apply the nudges for every user
 func (n nudgesLogic) processPhase2() error {
+	n.logger.Info("START Phase2")
+	/*
+		//4. get all active nudges
+		nudges, err := n.storage.LoadActiveNudges()
+		if err != nil {
+			n.logger.Errorf("error on processing all nudges - %s", err)
+			return
+		}
+		if len(nudges) == 0 {
+			n.logger.Info("no active nudges for processing")
+		}
+
+		//5. process every user
+		for _, user := range users {
+			n.processUser(user, nudges)
+		} */
+
+	n.logger.Info("END Phase2")
 	return nil
 }
 
