@@ -84,7 +84,10 @@ func (n nudgesLogic) setupNudgesTimer() {
 	n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
 	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
+	desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
+	if n.config != nil && n.config.ProcessTime != nil {
+		desiredMoment = *n.config.ProcessTime
+	}
 
 	var durationInSeconds int
 	n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
@@ -303,7 +306,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Groups
 	}
 
 	//determine if needs to send notification
-	hours := float64(nudge.Params["hours"].(int32))
+	hours := nudge.Params["hours"].(float64)
 	now := time.Now()
 	difference := now.Sub(*lastLogin) //difference between now and the last login
 	differenceInHours := difference.Hours()
@@ -388,7 +391,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 	}
 
 	//determine for which of the assignments we need to send notifications
-	hours := float64(nudge.Params["hours"].(int32))
+	hours := nudge.Params["hours"].(float64)
 	now := time.Now()
 	missedAssignments, err = n.findMissedAssignments(hours, now, missedAssignments)
 	if err != nil {
@@ -501,7 +504,7 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 	}
 
 	//determine for which of the submissions we need to send notifications
-	hours := float64(nudge.Params["hours"].(int32))
+	hours := nudge.Params["hours"].(float64)
 	now := time.Now()
 	ecAssignments, err = n.findCompletedEarlyAssignments(hours, now, ecAssignments)
 	if err != nil {

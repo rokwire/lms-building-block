@@ -47,7 +47,7 @@ func NewCoreAuth(app *core.Application, config *model.Config) *CoreAuth {
 		log.Fatalf("Error initializing remote service registration loader: %v", err)
 	}
 
-	serviceRegManager, err := authservice.NewServiceRegManager(&authService, serviceRegLoader)
+	serviceRegManager, err := authservice.NewTestServiceRegManager(&authService, serviceRegLoader)
 	if err != nil {
 		log.Fatalf("Error initializing service registration manager: %v", err)
 	}
