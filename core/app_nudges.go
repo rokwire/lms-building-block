@@ -199,8 +199,17 @@ func (n nudgesLogic) processAllNudges() {
 }
 
 func (n nudgesLogic) hasRunningProcess() (*bool, error) {
-	res := false
-	return &res, nil
+	//check count
+	count, err := n.storage.CountNudgesProcesses("processing")
+	if err != nil {
+		return nil, err
+	}
+
+	has := false
+	if *count > 0 {
+		has = true
+	}
+	return &has, nil
 }
 
 func (n nudgesLogic) startProcess() (*string, error) {

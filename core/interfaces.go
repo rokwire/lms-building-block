@@ -134,6 +134,7 @@ type Storage interface {
 	DeleteSentNudges(ids []string) error
 
 	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
+	CountNudgesProcesses(status string) (*int64, error)
 }
 
 //Provider interface for LMS provider

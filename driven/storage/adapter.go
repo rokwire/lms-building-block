@@ -291,6 +291,17 @@ func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error 
 	return nil
 }
 
+//CountNudgesProcesses counts the nudges process by status
+func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
+	filter := bson.D{primitive.E{Key: "status", Value: status}}
+
+	count, err := sa.db.nudgesProcesses.CountDocuments(filter)
+	if err != nil {
+		return nil, errors.WrapErrorAction("error counting nudges processes", "", nil, err)
+	}
+	return &count, nil
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)
