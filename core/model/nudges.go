@@ -55,6 +55,6 @@ type NudgesProcess struct {
 	Mode        string    `bson:"mode"`
 	CreatedAt   time.Time `bson:"created_at"`
 	CompletedAt time.Time `bson:"completed_at"`
-	Status      string    `bson:"status"` //processing, finished, failed
+	Status      string    `bson:"status"` //processing, success, failed
 	Error       *string   `bson:"error"`
 }
