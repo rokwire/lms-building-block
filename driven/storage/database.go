@@ -43,9 +43,10 @@ type database struct {
 	db       *mongo.Database
 	dbClient *mongo.Client
 
-	configs    *collectionWrapper
-	nudges     *collectionWrapper
-	sentNudges *collectionWrapper
+	configs         *collectionWrapper
+	nudges          *collectionWrapper
+	sentNudges      *collectionWrapper
+	nudgesProcesses *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -90,6 +91,12 @@ func (m *database) start() error {
 		return err
 	}
 
+	nudgesProcesses := &collectionWrapper{database: m, coll: db.Collection("nudges_processes")}
+	err = m.applyNudgesProcessesChecks(nudgesProcesses)
+	if err != nil {
+		return err
+	}
+
 	//asign the db, db client and the collections
 	m.db = db
 	m.dbClient = client
@@ -97,6 +104,7 @@ func (m *database) start() error {
 	m.configs = configs
 	m.nudges = nudges
 	m.sentNudges = sentNudges
+	m.nudgesProcesses = nudgesProcesses
 
 	go m.configs.Watch(nil, m.logger)
 
@@ -145,6 +153,13 @@ func (m *database) applySentNudgesChecks(sentNudges *collectionWrapper) error {
 	}
 
 	m.logger.Info("sent nudges check passed")
+	return nil
+}
+
+func (m *database) applyNudgesProcessesChecks(sentNudges *collectionWrapper) error {
+	m.logger.Info("apply nudges processes checks.....")
+
+	m.logger.Info("nudges processes check passed")
 	return nil
 }
 
