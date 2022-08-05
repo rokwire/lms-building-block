@@ -48,3 +48,13 @@ type SentNudge struct {
 	DateSent     time.Time `json:"date_sent" bson:"date_sent"`
 	Mode         string    `json:"mode" bson:"mode"`
 }
+
+//NudgesProcess entity
+type NudgesProcess struct {
+	ID          string    `bson:"_id"`
+	Mode        string    `bson:"mode"`
+	CreatedAt   time.Time `bson:"created_at"`
+	CompletedAt time.Time `bson:"completed_at"`
+	Status      string    `bson:"status"` //processing, finished, failed
+	Error       *string   `bson:"error"`
+}
