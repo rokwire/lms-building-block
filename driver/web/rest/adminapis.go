@@ -205,3 +205,12 @@ func (h AdminApisHandler) DeleteSentNudges(l *logs.Log, claims *tokenauth.Claims
 	}
 	return l.HttpResponseSuccess()
 }
+
+//ClearTestSentNudges clears all sent nudges with the test mode
+func (h AdminApisHandler) ClearTestSentNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	err := h.app.Administration.ClearTestSentNudges(l)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionDelete, "test sent nudges", nil, err, http.StatusInternalServerError, true)
+	}
+	return l.HttpResponseSuccess()
+}

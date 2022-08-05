@@ -107,6 +107,7 @@ func (we Adapter) Start() {
 	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.DeleteNudge)).Methods("DELETE")
 	adminRouter.HandleFunc("/sent-nudges", we.adminAuthWrapFunc(we.adminApisHandler.FindSentNudges)).Methods("GET")
 	adminRouter.HandleFunc("/sent-nudges", we.adminAuthWrapFunc(we.adminApisHandler.DeleteSentNudges)).Methods("DELETE")
+	adminRouter.HandleFunc("/test-sent-nudges", we.adminAuthWrapFunc(we.adminApisHandler.ClearTestSentNudges)).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
