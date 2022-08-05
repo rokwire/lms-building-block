@@ -141,6 +141,9 @@ type Provider interface {
 	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
+
+	CacheCommonData(usersIDs map[string]string) error
+
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
 	GetCompletedAssignments(userID string) ([]model.Assignment, error)
@@ -149,7 +152,7 @@ type Provider interface {
 
 //GroupsBB interface for the Groups building block communication
 type GroupsBB interface {
-	GetUsers(groupName string) ([]GroupsBBUser, error)
+	GetUsers(groupName string, offset int, limit int) ([]GroupsBBUser, error)
 }
 
 //GroupsBBUser entity

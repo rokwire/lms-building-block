@@ -19,7 +19,6 @@ package provider
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -31,6 +30,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rokwire/logging-library-go/errors"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
@@ -41,6 +41,8 @@ type Adapter struct {
 	tokenType string
 
 	db *database
+
+	logger *logs.Logger
 }
 
 // Start starts the storage
@@ -51,29 +53,7 @@ func (a *Adapter) Start() error {
 
 //GetCourses gets the user courses
 func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
-	//params
-	queryParamsItems := map[string][]string{}
-	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
-	queryParams := a.constructQueryParams(queryParamsItems)
-
-	//path + params
-	pathAndParams := fmt.Sprintf("/api/v1/courses%s", queryParams)
-
-	//execute query
-	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
-	if err != nil {
-		log.Print("error getting courses")
-		return nil, err
-	}
-
-	//prepare the response and return it
-	var courses []model.Course
-	err = json.Unmarshal(data, &courses)
-	if err != nil {
-		log.Print("error converting courses")
-		return nil, err
-	}
-	return courses, nil
+	return a.loadCourses(userID)
 }
 
 //GetCourse gives the the course for the provided id
@@ -201,8 +181,334 @@ func (a *Adapter) GetCurrentUser(userID string) (*model.User, error) {
 	return user, nil
 }
 
+//CacheCommonData caches users and courses data
+func (a *Adapter) CacheCommonData(usersIDs map[string]string) error {
+	//1. cache users
+	err := a.cacheUsers(usersIDs)
+	if err != nil {
+		return err
+	}
+
+	//2. cache users courses and courses assignments
+	err = a.cacheUsersCoursesAndCoursesAssignments(usersIDs)
+	if err != nil {
+		return err
+	}
+
+	//3. cache courses events
+	//TODO
+
+	return nil
+}
+
+func (a *Adapter) cacheUsers(usersIDs map[string]string) error {
+	a.logger.Info("start processing cacheUsers")
+
+	for netID, userID := range usersIDs {
+		a.cacheUser(netID, userID)
+	}
+
+	return nil
+}
+
+func (a *Adapter) cacheUser(netID string, userID string) error {
+	a.logger.Infof("cache user - %s", netID)
+
+	// check if the user exist
+	exists, err := a.db.userExist(netID)
+	if err != nil {
+		a.logger.Errorf("error checking if the user exists - %s", netID)
+		return err
+	}
+
+	if *exists {
+		a.logger.Infof("%s exists, so not cache it", netID)
+		return nil
+	}
+
+	a.logger.Infof("%s needs to be cached", netID)
+	//load it from the provider
+	loadedUser, err := a.loadUser(netID)
+	if err != nil {
+		a.logger.Errorf("error loading user - %s", netID)
+		return err
+	}
+	//store it
+	providerUser := providerUser{ID: userID, NetID: netID, User: *loadedUser, SyncDate: time.Now()}
+	err = a.db.insertUser(providerUser)
+	if err != nil {
+		a.logger.Errorf("error inserting user - %s", netID)
+		return err
+	}
+
+	return nil
+}
+
+func (a *Adapter) loadUser(netID string) (*model.User, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", netID)}
+	queryParamsItems["include[]"] = []string{"last_login"}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/users/self%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting last login")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var user *model.User
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		log.Print("error converting user")
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]string) error {
+	a.logger.Info("start processing cacheUsersCoursesAndCoursesAssignments")
+
+	//for now process record by record..
+
+	var err error
+
+	//We do not ask the provider for every user. The courses and the assignemnts are the same as entities for the different users
+	// and we use already what we have found
+	allCourses := map[int]userCourse{}
+
+	for netID, _ := range usersIDs {
+		allCourses, err = a.cacheUserCoursesAndCoursesAssignments(netID, allCourses)
+		if err != nil {
+			a.logger.Errorf("error on caching user courses for - %s", netID)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[int]userCourse) (map[int]userCourse, error) {
+	a.logger.Infof("cache user courses and courses assignments - %s", netID)
+
+	//get the user from the cache
+	cachedUser, err := a.db.findUser(netID)
+	if err != nil {
+		a.logger.Errorf("error finding user for - %s", netID)
+		return nil, err
+	}
+	if cachedUser == nil {
+		return nil, errors.Newf("there is no cached record for - %s", netID)
+	}
+
+	//check if the user has courses data
+	if cachedUser.Courses == nil {
+		a.logger.Infof("there is no cached courses for %s, so loading them", netID)
+
+		var userCourses *userCourses
+		userCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
+		if err != nil {
+			a.logger.Errorf("error loading user courses for - %s", netID)
+			return nil, err
+		}
+
+		//add the courses data to the user
+		cachedUser.Courses = userCourses
+
+		//cache the user
+		err = a.db.saveUser(*cachedUser)
+		if err != nil {
+			a.logger.Errorf("error saving user - %s", netID)
+			return nil, err
+		}
+	} else {
+		a.logger.Infof("there is cached courses for %s, so need to decide if we have to to refresh it", netID)
+
+		currentUserCourses := cachedUser.Courses
+		passedTimeInSecconds := time.Now().Unix() - currentUserCourses.SyncDate.Unix()
+
+		//432000 seconds  = 5 days - to put it in the config
+		if passedTimeInSecconds > 432000 {
+			//if passedTimeInSecconds > 1 {
+			a.logger.Infof("we need to refresh courses for - %s", netID)
+
+			var loadedUserCourses *userCourses
+			loadedUserCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
+			if err != nil {
+				a.logger.Errorf("error loading user courses for - %s on refresh", netID)
+				return nil, err
+			}
+
+			//do not loose the submissions when we refresh the courses data/submissions are not part of it/
+			readyUserCourses := a.getSubmissionsFromCurrent(*currentUserCourses, *loadedUserCourses)
+
+			//add the courses data to the user
+			cachedUser.Courses = &readyUserCourses
+
+			//cache the user
+			err = a.db.saveUser(*cachedUser)
+			if err != nil {
+				a.logger.Errorf("error saving user - %s", netID)
+				return nil, err
+			}
+		} else {
+			a.logger.Infof("no need to refresh courses for - %s", netID)
+		}
+	}
+
+	return allCourses, nil
+}
+
+//puts the submissions data from the current to the new one. The new one does not have submissions in it, so we do not want to loose it.
+func (a *Adapter) getSubmissionsFromCurrent(current userCourses, new userCourses) userCourses {
+	userCourses := new.Data
+	if len(userCourses) == 0 {
+		//no courses
+		return new
+	}
+
+	resultUserCourses := make([]userCourse, len(userCourses))
+	for i, course := range userCourses {
+
+		assignments := course.Assignments
+
+		resultAssignments := make([]courseAssignment, len(assignments))
+		for j, assignment := range assignments {
+			assignment.Submission = a.findSubmission(assignment.Data.ID, current)
+			resultAssignments[j] = assignment
+		}
+		course.Assignments = resultAssignments
+		resultUserCourses[i] = course
+	}
+
+	new.Data = resultUserCourses
+	return new
+}
+
+func (a *Adapter) findSubmission(assignmentID int, current userCourses) *submission {
+	userCourses := current.Data
+	if len(userCourses) == 0 {
+		return nil
+	}
+
+	for _, course := range userCourses {
+		assignments := course.Assignments
+
+		if len(assignments) == 0 {
+			continue
+		}
+
+		for _, assignment := range assignments {
+			if assignment.Data.ID == assignmentID {
+				return assignment.Submission
+			}
+		}
+	}
+
+	return nil
+}
+
+//check if the courses are available in allCourses otherwise load them
+func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]userCourse) (*userCourses, map[int]userCourse, error) {
+	//prepare the result variable
+	now := time.Now()
+	loadedUserCourses := userCourses{SyncDate: now}
+	data := []userCourse{} //to be loaded in the function
+
+	// first load the courses for the id
+	courses, err := a.loadCourses(netID)
+	if err != nil {
+		a.logger.Errorf("error loading user courses from the provider for - %s", netID)
+		return nil, nil, err
+	}
+
+	//loop through all user courses and determine if they are already loaded or need to be loaded from the provider
+	for _, course := range courses {
+		//check if already exists
+		value, ok := allCourses[course.ID]
+		if ok {
+			a.logger.Infof("we have course %d in the memory, so use it", course.ID)
+			data = append(data, value)
+		} else {
+			a.logger.Infof("we do NOT have course %d in the memory, so need to load the data for it", course.ID)
+			courseData, err := a.loadCourseData(netID, course, now)
+			if err != nil {
+				a.logger.Errorf("error loading course data for course and user - %d - %s - %s", course.ID, netID)
+				return nil, nil, err
+			}
+			if courseData == nil {
+				return nil, nil, errors.Newf("there is no course data for - %d - %s", course.ID, netID)
+			}
+			data = append(data, *courseData)
+
+			//keep the loaded data in the memory
+			allCourses[course.ID] = *courseData
+		}
+	}
+
+	//set the loaded user courses
+	loadedUserCourses.Data = data
+
+	return &loadedUserCourses, allCourses, nil
+}
+
+func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate time.Time) (*userCourse, error) {
+	now := time.Now()
+	userCourse := userCourse{Data: course, Assignments: nil, SyncDate: now}
+	//to load the assignments
+
+	loadedAssignments, err := a.getAssignments(course.ID, netID, false)
+	if err != nil {
+		a.logger.Errorf("error getting assignments for course and user - %d - %s", course.ID, netID)
+		return nil, err
+	}
+
+	assignments := make([]courseAssignment, len(loadedAssignments))
+	for i, assignment := range loadedAssignments {
+		assignments[i] = courseAssignment{Data: assignment, Submission: nil, SyncDate: syncDate}
+	}
+
+	//add the loaded assignments
+	userCourse.Assignments = assignments
+
+	return &userCourse, nil
+}
+
+func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
+	//params
+	queryParamsItems := map[string][]string{}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParams := a.constructQueryParams(queryParamsItems)
+
+	//path + params
+	pathAndParams := fmt.Sprintf("/api/v1/courses%s", queryParams)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting courses")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var courses []model.Course
+	err = json.Unmarshal(data, &courses)
+	if err != nil {
+		log.Print("error converting courses")
+		return nil, err
+	}
+	return courses, nil
+}
+
 //GetLastLogin gives the last login date for the user
 func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
+	//TODO remove this function
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
@@ -278,7 +584,7 @@ func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, er
 	//2. get the assignemnts for every course
 	result := []model.Assignment{}
 	for _, course := range userCourses {
-		courseAssignments, err := a.getAssignments(course.ID, userID)
+		courseAssignments, err := a.getAssignments(course.ID, userID, true)
 		if err != nil {
 			log.Printf("error getting assignments for - %d - %s", course.ID, userID)
 			continue
@@ -300,11 +606,13 @@ func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, er
 	return result, nil
 }
 
-func (a *Adapter) getAssignments(courseID int, userID string) ([]model.Assignment, error) {
+func (a *Adapter) getAssignments(courseID int, userID string, includeSubmission bool) ([]model.Assignment, error) {
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
-	queryParamsItems["include[]"] = []string{"submission"}
+	if includeSubmission {
+		queryParamsItems["include[]"] = []string{"submission"}
+	}
 	queryParams := a.constructQueryParams(queryParamsItems)
 
 	//path + params
@@ -464,5 +772,5 @@ func NewProviderAdapter(host string, token string, tokenType string,
 	timeoutMS := time.Millisecond * time.Duration(timeout)
 
 	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
-	return &Adapter{host: host, token: token, tokenType: tokenType, db: db}
+	return &Adapter{host: host, token: token, tokenType: tokenType, db: db, logger: logger}
 }
