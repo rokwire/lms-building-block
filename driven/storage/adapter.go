@@ -25,6 +25,7 @@ import (
 	"github.com/rokwire/logging-library-go/logutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type configEntity struct {
@@ -84,8 +85,8 @@ func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
 	return &nudgesConfig, nil
 }
 
-// UpdateNudgesConfig updates the nudges config
-func (sa *Adapter) UpdateNudgesConfig(nudgesConfig model.NudgesConfig) error {
+// SaveNudgesConfig updates the nudges config
+func (sa *Adapter) SaveNudgesConfig(nudgesConfig model.NudgesConfig) error {
 	filter := bson.D{primitive.E{Key: "_id", Value: "nudges"}}
 	update := bson.D{
 		primitive.E{Key: "$set", Value: bson.D{
@@ -93,12 +94,11 @@ func (sa *Adapter) UpdateNudgesConfig(nudgesConfig model.NudgesConfig) error {
 		}},
 	}
 
-	result, err := sa.db.configs.UpdateOne(filter, update, nil)
+	upsert := true
+	opts := options.UpdateOptions{Upsert: &upsert}
+	_, err := sa.db.configs.UpdateOne(filter, update, &opts)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": "nudges"}, err)
-	}
-	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": "nudges"}, err)
 	}
 
 	return nil

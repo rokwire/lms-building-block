@@ -34,7 +34,7 @@ type Adapter struct {
 }
 
 //GetUsers get user from the groups BB
-func (a *Adapter) GetUsers(groupName string) ([]core.GroupsBBUser, error) {
+func (a *Adapter) GetUsers(groupName string, offset int, limit int) ([]core.GroupsBBUser, error) {
 
 	url := fmt.Sprintf("%s/api/int/group/title/%s/members", a.host, groupName)
 
