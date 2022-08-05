@@ -98,7 +98,7 @@ func (m *database) start() error {
 	m.nudges = nudges
 	m.sentNudges = sentNudges
 
-	go m.configs.Watch(nil)
+	go m.configs.Watch(nil, m.logger)
 
 	return nil
 }

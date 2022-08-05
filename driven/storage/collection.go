@@ -17,9 +17,11 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
+	"github.com/rokwire/logging-library-go/logs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -203,37 +205,51 @@ func (collWrapper *collectionWrapper) CountDocuments(filter interface{}) (int64,
 	return count, nil
 }
 
-func (collWrapper *collectionWrapper) Watch(pipeline interface{}) error {
+func (collWrapper *collectionWrapper) Watch(pipeline interface{}, l *logs.Logger) {
+	var rt bson.Raw
+	var err error
+	for {
+		rt, err = collWrapper.watch(pipeline, rt, l)
+		if err != nil {
+			l.Errorf("mongo watch error: %s\n", err.Error())
+		}
+	}
+}
+
+//Helper function for Watch
+func (collWrapper *collectionWrapper) watch(pipeline interface{}, resumeToken bson.Raw, l *logs.Logger) (bson.Raw, error) {
 	if pipeline == nil {
 		pipeline = []bson.M{}
 	}
 
-	var opts *options.ChangeStreamOptions
-	opts = options.ChangeStream()
+	opts := options.ChangeStream()
 	opts.SetFullDocument(options.UpdateLookup)
+	if resumeToken != nil {
+		opts.SetResumeAfter(resumeToken)
+	}
 
 	ctx := context.Background()
 	cur, err := collWrapper.coll.Watch(ctx, pipeline, opts)
 	if err != nil {
-		log.Printf("error watching: %s\n", err)
-		return err
+		time.Sleep(time.Second * 3)
+		return nil, fmt.Errorf("error watching: %s", err)
 	}
 	defer cur.Close(ctx)
 
 	var changeDoc map[string]interface{}
-	log.Println("waiting for changes")
+	l.Infof("%s: waiting for changes\n", collWrapper.coll.Name())
 	for cur.Next(ctx) {
 		if e := cur.Decode(&changeDoc); e != nil {
-			log.Printf("error decoding: %s\n", e)
+			l.Errorf("error decoding: %s\n", e)
 		}
 		collWrapper.database.onDataChanged(changeDoc)
 	}
 
 	if err := cur.Err(); err != nil {
-		log.Printf("error cur.Err(): %s\n", err)
-		return err
+		return cur.ResumeToken(), fmt.Errorf("error cur.Err(): %s", err)
 	}
-	return nil
+
+	return cur.ResumeToken(), errors.New("unknown error occurred")
 }
 
 func (collWrapper *collectionWrapper) ListIndexes() ([]bson.M, error) {
