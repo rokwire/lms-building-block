@@ -51,7 +51,7 @@ func (app *Application) Start() {
 // NewApplication creates new Application
 func NewApplication(version string, build string, storage Storage, provider Provider,
 	groupsBB GroupsBB, notificationsBB NotificationsBB,
-	cacheadapter *cacheadapter.CacheAdapter, logger *logs.Logger) *Application {
+	cacheadapter *cacheadapter.CacheAdapter, nudgesEnabled bool, logger *logs.Logger) *Application {
 
 	timerDone := make(chan bool)
 	nudgesLogic := nudgesLogic{
@@ -60,6 +60,7 @@ func NewApplication(version string, build string, storage Storage, provider Prov
 		notificationsBB: notificationsBB,
 		storage:         storage,
 		logger:          logger,
+		nudgesEnabled:   nudgesEnabled,
 		timerDone:       timerDone,
 	}
 

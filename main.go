@@ -25,6 +25,7 @@ import (
 	driver "lms/driver/web"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/rokwire/logging-library-go/logs"
 )
@@ -79,9 +80,12 @@ func main() {
 	notificationHost := getEnvKey("LMS_NOTIFICATIONS_BB_HOST", true)
 	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey)
 
+	//nudges process
+	nudgesEnabled, _ := strconv.ParseBool(getEnvKey("LMS_NUDGES_PROCESS", true))
+
 	// application
 	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
-		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, logger)
+		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, nudgesEnabled, logger)
 	application.Start()
 
 	// web adapter

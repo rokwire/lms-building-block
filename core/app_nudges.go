@@ -40,11 +40,17 @@ type nudgesLogic struct {
 	//nudges timer
 	dailyNudgesTimer *time.Timer
 	timerDone        chan bool
+	nudgesEnabled    bool
 
 	config *model.NudgesConfig
 }
 
 func (n nudgesLogic) start() {
+	if n.nudgesEnabled != true {
+		n.logger.Error("nudges are not enabled")
+		return
+	}
+
 	//1. find the nudges config
 	nudgesConfig, err := n.storage.FindNudgesConfig()
 	if err != nil {
