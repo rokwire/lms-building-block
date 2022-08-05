@@ -240,7 +240,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Groups
 	}
 
 	//determine if needs to send notification
-	hours := float64(nudge.Params["hours"].(int32))
+	hours := nudge.Params["hours"].(float64)
 	now := time.Now()
 	difference := now.Sub(*lastLogin) //difference between now and the last login
 	differenceInHours := difference.Hours()
@@ -333,7 +333,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 	}
 
 	//determine for which of the assignments we need to send notifications
-	hours := float64(nudge.Params["hours"].(int32))
+	hours := nudge.Params["hours"].(float64)
 	now := time.Now()
 	missedAssignments, err = n.findMissedAssignments(hours, now, missedAssignments)
 	if err != nil {
@@ -454,7 +454,7 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 	}
 
 	//determine for which of the submissions we need to send notifications
-	hours := float64(nudge.Params["hours"].(int32))
+	hours := nudge.Params["hours"].(float64)
 	now := time.Now()
 	ecAssignments, err = n.findCompletedEarlyAssignments(hours, now, ecAssignments)
 	if err != nil {
