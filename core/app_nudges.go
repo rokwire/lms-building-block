@@ -74,31 +74,31 @@ func (n nudgesLogic) setupNudgesTimer() {
 		n.timerDone <- true
 		n.dailyNudgesTimer.Stop()
 	}
-	/*
-		//wait until it is the correct moment from the day
-		location, err := time.LoadLocation("America/Chicago")
-		if err != nil {
-			n.logger.Errorf("Error getting location:%s\n", err.Error())
-		}
-		now := time.Now().In(location)
-		n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-		nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-		desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
+	//wait until it is the correct moment from the day
+	location, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		n.logger.Errorf("Error getting location:%s\n", err.Error())
+	}
+	now := time.Now().In(location)
+	n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-		var durationInSeconds int
-		n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
-		if nowSecondsInDay <= desiredMoment {
-			n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
-			durationInSeconds = desiredMoment - nowSecondsInDay
-		} else {
-			n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-			leftToday := 86400 - nowSecondsInDay
-			durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
-		} */
+	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	desiredMoment := 39600 //desired moment in the day in seconds, i.e. 11:00 AM
+
+	var durationInSeconds int
+	n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
+	if nowSecondsInDay <= desiredMoment {
+		n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
+		durationInSeconds = desiredMoment - nowSecondsInDay
+	} else {
+		n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
+		leftToday := 86400 - nowSecondsInDay
+		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+	}
 	//app.logger.Infof("%d", durationInSeconds)
-	duration := time.Second * time.Duration(3)
-	//duration := time.Second * time.Duration(durationInSeconds)
+	//duration := time.Second * time.Duration(3)
+	duration := time.Second * time.Duration(durationInSeconds)
 	n.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
 	n.dailyNudgesTimer = time.NewTimer(duration)
@@ -152,7 +152,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 	n.logger.Info("the nudges processing is active")
 
-	//TODO start process
+	//TODO start process and keep the users for processing on pieces
 
 	//2. process phase 1
 	err := n.processPhase1()
