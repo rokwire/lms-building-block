@@ -134,6 +134,7 @@ type Storage interface {
 	DeleteSentNudges(ids []string) error
 
 	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
+	UpdateNudgesProcess(ID string, completedAt time.Time, status string, err *string) error
 	CountNudgesProcesses(status string) (*int64, error)
 }
 

@@ -291,6 +291,28 @@ func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error 
 	return nil
 }
 
+//UpdateNudgesProcess updates a nudges process
+func (sa *Adapter) UpdateNudgesProcess(ID string, completedAt time.Time, status string, errStr *string) error {
+	filter := bson.D{primitive.E{Key: "_id", Value: ID}}
+	update := bson.D{
+		primitive.E{Key: "$set", Value: bson.D{
+			primitive.E{Key: "completed_at", Value: completedAt},
+			primitive.E{Key: "status", Value: status},
+			primitive.E{Key: "error", Value: errStr},
+		}},
+	}
+
+	result, err := sa.db.nudgesProcesses.UpdateOne(filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "nudges process", &logutils.FieldArgs{"id": ID}, err)
+	}
+	if result.MatchedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "nudges process", &logutils.FieldArgs{"id": ID}, err)
+	}
+
+	return nil
+}
+
 //CountNudgesProcesses counts the nudges process by status
 func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 	filter := bson.D{primitive.E{Key: "status", Value: status}}

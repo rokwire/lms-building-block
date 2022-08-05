@@ -231,10 +231,22 @@ func (n nudgesLogic) startProcess() (*string, error) {
 }
 
 func (n nudgesLogic) completeProcessSuccess(processID string) error {
+	completedAt := time.Now()
+	status := "success"
+	err := n.storage.UpdateNudgesProcess(processID, completedAt, status, nil)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (n nudgesLogic) completeProcessFailed(processID string, err string) error {
+func (n nudgesLogic) completeProcessFailed(processID string, errStr string) error {
+	completedAt := time.Now()
+	status := "failed"
+	err := n.storage.UpdateNudgesProcess(processID, completedAt, status, &errStr)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
