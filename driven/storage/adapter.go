@@ -282,6 +282,15 @@ func (sa *Adapter) DeleteSentNudges(ids []string) error {
 	return nil
 }
 
+//InsertNudgesProcess inserts nudges process
+func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error {
+	_, err := sa.db.nudgesProcesses.InsertOne(nudgesProcess)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "nudges process", nil, err)
+	}
+	return nil
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)

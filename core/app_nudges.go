@@ -204,8 +204,21 @@ func (n nudgesLogic) hasRunningProcess() (*bool, error) {
 }
 
 func (n nudgesLogic) startProcess() (*string, error) {
-	processID := "5588"
-	return &processID, nil
+	//create object
+	uuidID, _ := uuid.NewUUID()
+	id := uuidID.String()
+	mode := n.config.Mode
+	createdAt := time.Now()
+	status := "processing"
+	process := model.NudgesProcess{ID: id, Mode: mode, CreatedAt: createdAt, Status: status}
+
+	//store it
+	err := n.storage.InsertNudgesProcess(process)
+	if err != nil {
+		return nil, err
+	}
+
+	return &id, nil
 }
 
 func (n nudgesLogic) completeProcessSuccess(processID string) error {

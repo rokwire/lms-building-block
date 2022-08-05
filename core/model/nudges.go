@@ -51,10 +51,10 @@ type SentNudge struct {
 
 //NudgesProcess entity
 type NudgesProcess struct {
-	ID          string    `bson:"_id"`
-	Mode        string    `bson:"mode"`
-	CreatedAt   time.Time `bson:"created_at"`
-	CompletedAt time.Time `bson:"completed_at"`
-	Status      string    `bson:"status"` //processing, success, failed
-	Error       *string   `bson:"error"`
+	ID          string     `bson:"_id"`
+	Mode        string     `bson:"mode"`
+	CreatedAt   time.Time  `bson:"created_at"`
+	CompletedAt *time.Time `bson:"completed_at"`
+	Status      string     `bson:"status"` //processing, success, failed
+	Error       *string    `bson:"error"`
 }

@@ -132,6 +132,8 @@ type Storage interface {
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
 	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(ids []string) error
+
+	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
 }
 
 //Provider interface for LMS provider
