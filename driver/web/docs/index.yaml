@@ -39,6 +39,8 @@ paths:
     $ref: "./resources/admin/nudges/nudgesID.yaml"
   /admin/sent-nudges:
     $ref: "./resources/admin/sentNudges/sentNudges.yaml"
+  /admin/test-sent-nudges:
+    $ref: "./resources/admin/sentNudges/testSentNudges.yaml"
 
 components:
   securitySchemes:

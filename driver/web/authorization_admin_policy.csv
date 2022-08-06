@@ -16,3 +16,6 @@ p, update_nudges, /lms/admin/nudges-config, (GET)|(PUT)
 p, delete_nudges, /lms/admin/nudges, (GET), Get and delete nudges
 p, delete_nudges, /lms/admin/nudges/*, (DELETE),
 p, delete_nudges, /lms/admin/sent-nudges, (GET)|(DELETE),
+p, delete_nudges, /lms/admin/test-sent-nudges, (DELETE),
+
+p, delete_test-nudges, /lms/admin/test-sent-nudges, (DELETE), Clear test sent nudges

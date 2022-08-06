@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Clear sent nudges in test mode [#40](https://github.com/rokwire/lms-building-block/issues/40)
+
 ## [1.1.10] - 2022-08-04
 ### Fixed
 - Nudge hours params casting error [#35](https://github.com/rokwire/lms-building-block/issues/35)

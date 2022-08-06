@@ -264,9 +264,14 @@ func (sa *Adapter) FindSentNudges(nudgeID *string, userID *string, netID *string
 }
 
 //DeleteSentNudges deletes sent nudge
-func (sa *Adapter) DeleteSentNudges(ids []string) error {
-
-	filter := bson.D{primitive.E{Key: "_id", Value: bson.M{"$in": ids}}}
+func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
+	filter := bson.M{}
+	if ids != nil {
+		filter["_id"] = bson.M{"$in": ids}
+	}
+	if mode != "" {
+		filter["mode"] = mode
+	}
 
 	result, err := sa.db.sentNudges.DeleteMany(filter, nil)
 	if err != nil {
