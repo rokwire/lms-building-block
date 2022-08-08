@@ -45,6 +45,7 @@ type Administration interface {
 
 	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(l *logs.Log, ids []string) error
+	ClearTestSentNudges(l *logs.Log) error
 }
 
 type servicesImpl struct {
@@ -113,6 +114,10 @@ func (s *administrationImpl) DeleteSentNudges(l *logs.Log, ids []string) error {
 	return s.app.deleteSentNudges(l, ids)
 }
 
+func (s *administrationImpl) ClearTestSentNudges(l *logs.Log) error {
+	return s.app.clearTestSentNudges(l)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
@@ -131,7 +136,7 @@ type Storage interface {
 	InsertSentNudges(sentNudge []model.SentNudge) error
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
 	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
-	DeleteSentNudges(ids []string) error
+	DeleteSentNudges(ids []string, mode string) error
 
 	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
 	UpdateNudgesProcess(ID string, completedAt time.Time, status string, err *string) error
