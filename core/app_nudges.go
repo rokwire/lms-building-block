@@ -175,7 +175,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	// process phase 1
-	err = n.processPhase1()
+	err = n.processPhase1(*processID)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -219,7 +219,8 @@ func (n nudgesLogic) startProcess() (*string, error) {
 	mode := n.config.Mode
 	createdAt := time.Now()
 	status := "processing"
-	process := model.NudgesProcess{ID: id, Mode: mode, CreatedAt: createdAt, Status: status}
+	blocks := []model.Block{} //empty
+	process := model.NudgesProcess{ID: id, Mode: mode, CreatedAt: createdAt, Status: status, Blocks: blocks}
 
 	//store it
 	err := n.storage.InsertNudgesProcess(process)
@@ -255,30 +256,69 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 // users courses
 // courses assignments
 // - with acceptable sync date
-func (n nudgesLogic) processPhase1() error {
+func (n nudgesLogic) processPhase1(processID string) error {
 	n.logger.Info("START Phase1")
-	/*
-		//2. get all users
-		groupName := n.getGroupName()
-		users, err := n.groupsBB.GetUsers(groupName)
+
+	/// get the users from the groups bb adapter on blocks
+	groupName := n.getGroupName()
+	offset := 0
+	limit := n.config.BlockSize
+	currentBlock := 0
+	for {
+		//get the block users from the groups bb adapter
+		users, err := n.groupsBB.GetUsers(groupName, offset, limit)
 		if err != nil {
 			n.logger.Errorf("error getting all users - %s", err)
-			return
-		}
-		if len(users) == 0 {
-			n.logger.Info("no users for processing")
-			return
+			return err
 		}
 
-		//3. prepare(cache/optimise) the provider data
-		err = n.prepareProviderData(users)
+		if len(users) == 0 {
+			//finish if there is no more users
+			break
+		}
+
+		//process the block
+		err = n.processPhase1Block(processID, currentBlock, users)
 		if err != nil {
-			n.logger.Errorf("error on preparing the provider data - %s", err)
-			return
-		} */
+			n.logger.Errorf("error processing block - %s", err)
+			return err
+		}
+
+		//move offset
+		offset += limit
+		currentBlock += 1
+	}
 
 	n.logger.Info("END Phase1")
 	return nil
+}
+
+func (n nudgesLogic) processPhase1Block(processID string, curentBlock int, users []GroupsBBUser) error {
+	//add the block to the process
+	block := n.createBlock(curentBlock, users)
+	err := n.storage.AddBlockToNudgesProcess(processID, block)
+	if err != nil {
+		n.logger.Errorf("error on adding block %d to process %s - %s", block.Number, processID, err)
+		return err
+	}
+
+	//prepare the provider data for the block
+	err = n.prepareProviderData(users)
+	if err != nil {
+		n.logger.Errorf("error on preparing the provider data - %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Block {
+	items := make([]model.BlockItem, len(users))
+	for i, user := range users {
+		blockItem := model.BlockItem{NetID: user.NetID, UserID: user.UserID}
+		items[i] = blockItem
+	}
+	return model.Block{Number: curentBlock, Items: items}
 }
 
 //phase2 operates over the data prepared in phase1 and apply the nudges for every user

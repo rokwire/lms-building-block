@@ -329,6 +329,24 @@ func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 	return &count, nil
 }
 
+//AddBlockToNudgesProcess adds a block to a nudges process
+func (sa *Adapter) AddBlockToNudgesProcess(processID string, block model.Block) error {
+	filter := bson.M{"_id": processID}
+	update := bson.D{
+		primitive.E{Key: "$push", Value: bson.D{
+			primitive.E{Key: "blocks", Value: block},
+		}},
+	}
+	res, err := sa.db.nudgesProcesses.UpdateOne(filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "nudges process", logutils.StringArgs("inserting block"), err)
+	}
+	if res.ModifiedCount != 1 {
+		return errors.ErrorAction(logutils.ActionUpdate, "nudges process", &logutils.FieldArgs{"unexpected modified count": res.ModifiedCount})
+	}
+	return nil
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)

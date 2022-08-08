@@ -141,6 +141,7 @@ type Storage interface {
 	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
 	UpdateNudgesProcess(ID string, completedAt time.Time, status string, err *string) error
 	CountNudgesProcesses(status string) (*int64, error)
+	AddBlockToNudgesProcess(processID string, block model.Block) error
 }
 
 //Provider interface for LMS provider

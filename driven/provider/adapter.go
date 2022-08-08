@@ -195,9 +195,6 @@ func (a *Adapter) CacheCommonData(usersIDs map[string]string) error {
 		return err
 	}
 
-	//3. cache courses events
-	//TODO
-
 	return nil
 }
 

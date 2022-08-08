@@ -25,7 +25,8 @@ type NudgesConfig struct {
 	GroupName     string `json:"group_name" bson:"group_name"`
 	TestGroupName string `json:"test_group_name" bson:"test_group_name"`
 	ProcessTime   *int   `json:"process_time" bson:"process_time"` //seconds since midnight CT at which to process nudges
-	Mode          string `json:"mode" bson:"mode"`                 // "normal" or "test"
+	BlockSize     int    `json:"block_size" bson:"block_size"`
+	Mode          string `json:"mode" bson:"mode"` // "normal" or "test"
 }
 
 //Nudge entity
@@ -57,4 +58,18 @@ type NudgesProcess struct {
 	CompletedAt *time.Time `bson:"completed_at"`
 	Status      string     `bson:"status"` //processing, success, failed
 	Error       *string    `bson:"error"`
+
+	Blocks []Block `bson:"blocks"` //users into blocks
+}
+
+//Block entity
+type Block struct {
+	Number int         `bson:"number"`
+	Items  []BlockItem `bson:"items"`
+}
+
+//BlockItem entity
+type BlockItem struct {
+	NetID  string `bson:"net_id"`
+	UserID string `bson:"user_id"`
 }

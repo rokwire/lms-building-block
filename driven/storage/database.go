@@ -156,8 +156,14 @@ func (m *database) applySentNudgesChecks(sentNudges *collectionWrapper) error {
 	return nil
 }
 
-func (m *database) applyNudgesProcessesChecks(sentNudges *collectionWrapper) error {
+func (m *database) applyNudgesProcessesChecks(nudgesProcesses *collectionWrapper) error {
 	m.logger.Info("apply nudges processes checks.....")
+
+	//add blocks number index
+	err := nudgesProcesses.AddIndex(bson.D{primitive.E{Key: "blocks.number", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
 
 	m.logger.Info("nudges processes check passed")
 	return nil
