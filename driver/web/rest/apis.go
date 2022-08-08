@@ -78,14 +78,7 @@ func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.Res
 		return l.HttpResponseErrorData(logutils.StatusInvalid, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
 	}
 
-	//include
-	var include *string
-	includeParam := r.URL.Query().Get("include")
-	if len(includeParam) > 0 {
-		include = &includeParam
-	}
-
-	course, err := h.app.Services.GetCourse(l, providerUserID, courseID, include)
+	course, err := h.app.Services.GetCourse(l, providerUserID, courseID)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "course", nil, err, http.StatusInternalServerError, true)
 	}
