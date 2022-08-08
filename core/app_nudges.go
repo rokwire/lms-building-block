@@ -175,7 +175,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	// process phase 1
-	err = n.processPhase1()
+	err = n.processPhase1(*processID)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -255,29 +255,52 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 // users courses
 // courses assignments
 // - with acceptable sync date
-func (n nudgesLogic) processPhase1() error {
+func (n nudgesLogic) processPhase1(processID string) error {
 	n.logger.Info("START Phase1")
-	/*
-		//2. get all users
-		groupName := n.getGroupName()
-		users, err := n.groupsBB.GetUsers(groupName)
+
+	/// get the users from the groups bb adapter on blocks
+	groupName := n.getGroupName()
+	offset := 0
+	limit := n.config.Phase1BlockSize
+	for {
+		//get the block users from the groups bb adapter
+		users, err := n.groupsBB.GetUsers(groupName, offset, limit)
 		if err != nil {
 			n.logger.Errorf("error getting all users - %s", err)
-			return
-		}
-		if len(users) == 0 {
-			n.logger.Info("no users for processing")
-			return
+			return err
 		}
 
-		//3. prepare(cache/optimise) the provider data
-		err = n.prepareProviderData(users)
+		if len(users) == 0 {
+			//finish if there is no more users
+			break
+		}
+
+		//process the block
+		err = n.processPhase1Block(processID, users)
 		if err != nil {
-			n.logger.Errorf("error on preparing the provider data - %s", err)
-			return
-		} */
+			n.logger.Errorf("error processing block - %s", err)
+			return err
+		}
+
+		//move offset
+		offset += limit
+	}
 
 	n.logger.Info("END Phase1")
+	return nil
+}
+
+func (n nudgesLogic) processPhase1Block(processID string, users []GroupsBBUser) error {
+	//add the block to the process
+	//TODO
+
+	//prepare the provider data for the block
+	err := n.prepareProviderData(users)
+	if err != nil {
+		n.logger.Errorf("error on preparing the provider data - %s", err)
+		return err
+	}
+
 	return nil
 }
 
