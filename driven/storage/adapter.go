@@ -329,6 +329,11 @@ func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 	return &count, nil
 }
 
+//AddBlockToNudgesProcess adds a block to a nudges process
+func (sa *Adapter) AddBlockToNudgesProcess(processID string, block model.Block) error {
+	return nil
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)

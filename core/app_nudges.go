@@ -262,6 +262,7 @@ func (n nudgesLogic) processPhase1(processID string) error {
 	groupName := n.getGroupName()
 	offset := 0
 	limit := n.config.Phase1BlockSize
+	currentBlock := 0
 	for {
 		//get the block users from the groups bb adapter
 		users, err := n.groupsBB.GetUsers(groupName, offset, limit)
@@ -276,7 +277,7 @@ func (n nudgesLogic) processPhase1(processID string) error {
 		}
 
 		//process the block
-		err = n.processPhase1Block(processID, users)
+		err = n.processPhase1Block(processID, currentBlock, users)
 		if err != nil {
 			n.logger.Errorf("error processing block - %s", err)
 			return err
@@ -284,24 +285,39 @@ func (n nudgesLogic) processPhase1(processID string) error {
 
 		//move offset
 		offset += limit
+		currentBlock += 1
 	}
 
 	n.logger.Info("END Phase1")
 	return nil
 }
 
-func (n nudgesLogic) processPhase1Block(processID string, users []GroupsBBUser) error {
+func (n nudgesLogic) processPhase1Block(processID string, curentBlock int, users []GroupsBBUser) error {
 	//add the block to the process
-	//TODO
+	block := n.createBlock(curentBlock, users)
+	err := n.storage.AddBlockToNudgesProcess(processID, block)
+	if err != nil {
+		n.logger.Errorf("error on adding block %d to process %s - %s", block.Number, processID, err)
+		return err
+	}
 
 	//prepare the provider data for the block
-	err := n.prepareProviderData(users)
+	err = n.prepareProviderData(users)
 	if err != nil {
 		n.logger.Errorf("error on preparing the provider data - %s", err)
 		return err
 	}
 
 	return nil
+}
+
+func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Block {
+	items := make([]model.BlockItem, len(users))
+	for i, user := range users {
+		blockItem := model.BlockItem{NetID: user.NetID, UserID: user.UserID}
+		items[i] = blockItem
+	}
+	return model.Block{Number: curentBlock, Items: items}
 }
 
 //phase2 operates over the data prepared in phase1 and apply the nudges for every user

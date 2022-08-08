@@ -59,4 +59,18 @@ type NudgesProcess struct {
 	CompletedAt *time.Time `bson:"completed_at"`
 	Status      string     `bson:"status"` //processing, success, failed
 	Error       *string    `bson:"error"`
+
+	Blocks []Block `bson:"blocks"` //users into blocks
+}
+
+//Block entity
+type Block struct {
+	Number int         `bson:"number"`
+	Items  []BlockItem `bson:"items"`
+}
+
+//BlockItem entity
+type BlockItem struct {
+	NetID  string `bson:"net_id"`
+	UserID string `bson:"user_id"`
 }
