@@ -175,7 +175,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	// process phase 1
-	err = n.processPhase1(*processID)
+	blocksSize, err := n.processPhase1(*processID)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -183,7 +183,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	// process phase 2
-	err = n.processPhase2()
+	err = n.processPhase2(*blocksSize)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -256,7 +256,7 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 // users courses
 // courses assignments
 // - with acceptable sync date
-func (n nudgesLogic) processPhase1(processID string) error {
+func (n nudgesLogic) processPhase1(processID string) (*int, error) {
 	n.logger.Info("START Phase1")
 
 	/// get the users from the groups bb adapter on blocks
@@ -269,7 +269,7 @@ func (n nudgesLogic) processPhase1(processID string) error {
 		users, err := n.groupsBB.GetUsers(groupName, offset, limit)
 		if err != nil {
 			n.logger.Errorf("error getting all users - %s", err)
-			return err
+			return nil, err
 		}
 
 		if len(users) == 0 {
@@ -281,7 +281,7 @@ func (n nudgesLogic) processPhase1(processID string) error {
 		err = n.processPhase1Block(processID, currentBlock, users)
 		if err != nil {
 			n.logger.Errorf("error processing block - %s", err)
-			return err
+			return nil, err
 		}
 
 		//move offset
@@ -290,7 +290,7 @@ func (n nudgesLogic) processPhase1(processID string) error {
 	}
 
 	n.logger.Info("END Phase1")
-	return nil
+	return &currentBlock, nil
 }
 
 func (n nudgesLogic) processPhase1Block(processID string, curentBlock int, users []GroupsBBUser) error {
@@ -322,8 +322,12 @@ func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Bl
 }
 
 //phase2 operates over the data prepared in phase1 and apply the nudges for every user
-func (n nudgesLogic) processPhase2() error {
+func (n nudgesLogic) processPhase2(blocksSize int) error {
 	n.logger.Info("START Phase2")
+
+	for i := 0; i < blocksSize; i++ {
+		n.logger.Infof("phase:2 block:%d", i)
+	}
 	/*
 		//4. get all active nudges
 		nudges, err := n.storage.LoadActiveNudges()
