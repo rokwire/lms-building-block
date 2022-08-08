@@ -219,7 +219,8 @@ func (n nudgesLogic) startProcess() (*string, error) {
 	mode := n.config.Mode
 	createdAt := time.Now()
 	status := "processing"
-	process := model.NudgesProcess{ID: id, Mode: mode, CreatedAt: createdAt, Status: status}
+	blocks := []model.Block{} //empty
+	process := model.NudgesProcess{ID: id, Mode: mode, CreatedAt: createdAt, Status: status, Blocks: blocks}
 
 	//store it
 	err := n.storage.InsertNudgesProcess(process)
