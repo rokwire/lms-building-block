@@ -262,7 +262,7 @@ func (n nudgesLogic) processPhase1(processID string) error {
 	/// get the users from the groups bb adapter on blocks
 	groupName := n.getGroupName()
 	offset := 0
-	limit := n.config.Phase1BlockSize
+	limit := n.config.BlockSize
 	currentBlock := 0
 	for {
 		//get the block users from the groups bb adapter

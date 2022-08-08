@@ -21,13 +21,12 @@ import "time"
 
 //NudgesConfig entity
 type NudgesConfig struct {
-	Active          bool   `json:"active" bson:"active"` //if the nudges processing is "on" or "off"
-	GroupName       string `json:"group_name" bson:"group_name"`
-	TestGroupName   string `json:"test_group_name" bson:"test_group_name"`
-	ProcessTime     *int   `json:"process_time" bson:"process_time"` //seconds since midnight CT at which to process nudges
-	Phase1BlockSize int    `json:"phase1_block_size" bson:"phase1_block_size"`
-	Phase2BlockSize int    `json:"phase2_block_size" bson:"phase2_block_size"`
-	Mode            string `json:"mode" bson:"mode"` // "normal" or "test"
+	Active        bool   `json:"active" bson:"active"` //if the nudges processing is "on" or "off"
+	GroupName     string `json:"group_name" bson:"group_name"`
+	TestGroupName string `json:"test_group_name" bson:"test_group_name"`
+	ProcessTime   *int   `json:"process_time" bson:"process_time"` //seconds since midnight CT at which to process nudges
+	BlockSize     int    `json:"block_size" bson:"block_size"`
+	Mode          string `json:"mode" bson:"mode"` // "normal" or "test"
 }
 
 //Nudge entity
