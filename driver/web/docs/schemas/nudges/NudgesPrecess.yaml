@@ -1,0 +1,18 @@
+required:
+  - id
+  - mode
+  - status
+  - error
+type: object
+properties:
+  id:
+    readOnly: true
+    type: string
+  mode:
+    type: string
+  status:
+    type: string
+  error:
+    type: boolean
+
+
