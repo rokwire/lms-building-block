@@ -14,5 +14,10 @@ properties:
     type: string
   error:
     type: boolean
+  blocks:
+    type: object
+  items: 
+    type: object
+
 
 
