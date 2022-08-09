@@ -103,3 +103,11 @@ func (app *Application) clearTestSentNudges(l *logs.Log) error {
 	}
 	return nil
 }
+
+func (app *Application) findNudgesProcess(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error) {
+	nudgesProcess, err := app.storage.FindNudgesProcess(limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	return nudgesProcess, nil
+}

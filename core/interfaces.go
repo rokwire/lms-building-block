@@ -46,6 +46,8 @@ type Administration interface {
 	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(l *logs.Log, ids []string) error
 	ClearTestSentNudges(l *logs.Log) error
+
+	FindNudgesProcess(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error)
 }
 
 type servicesImpl struct {
@@ -118,6 +120,10 @@ func (s *administrationImpl) ClearTestSentNudges(l *logs.Log) error {
 	return s.app.clearTestSentNudges(l)
 }
 
+func (s *administrationImpl) FindNudgesProcess(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error) {
+	return s.app.findNudgesProcess(l, limit, offset)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
@@ -137,6 +143,7 @@ type Storage interface {
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
 	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(ids []string, mode string) error
+	FindNudgesProcess(limit int, offset int) ([]model.NudgesProcess, error)
 
 	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
 	UpdateNudgesProcess(ID string, completedAt time.Time, status string, err *string) error
