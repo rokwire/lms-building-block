@@ -216,7 +216,7 @@ func (h AdminApisHandler) ClearTestSentNudges(l *logs.Log, claims *tokenauth.Cla
 	return l.HttpResponseSuccess()
 }
 
-//FindSentNudges gets all the sent_nudges
+//FindNudgesProcess gets all the nudges-process
 func (h AdminApisHandler) FindNudgesProcess(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	var err error
 
