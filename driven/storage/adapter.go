@@ -287,6 +287,23 @@ func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
 	return nil
 }
 
+//FindNudgesProcess finds all nudges-process
+func (sa *Adapter) FindNudgesProcess(limit int, offset int) ([]model.NudgesProcess, error) {
+	filter := bson.D{}
+	var result []model.NudgesProcess
+	options := options.Find()
+	options.SetLimit(int64(limit))
+	options.SetSkip(int64(offset))
+	err := sa.db.nudgesProcesses.Find(filter, &result, options)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudges_process", nil, err)
+	}
+	if len(result) == 0 {
+		return make([]model.NudgesProcess, 0), nil
+	}
+	return result, nil
+}
+
 //InsertNudgesProcess inserts nudges process
 func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error {
 	_, err := sa.db.nudgesProcesses.InsertOne(nudgesProcess)
