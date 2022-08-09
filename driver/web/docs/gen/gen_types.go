@@ -100,8 +100,8 @@ type PostAdminNudgesJSONBody = AdminReqCreateNudge
 // PutAdminNudgesConfigJSONBody defines parameters for PutAdminNudgesConfig.
 type PutAdminNudgesConfigJSONBody = NudgesConfig
 
-// GetAdminNudgesProcessParams defines parameters for GetAdminNudgesProcess.
-type GetAdminNudgesProcessParams struct {
+// GetAdminNudgesProcessesParams defines parameters for GetAdminNudgesProcesses.
+type GetAdminNudgesProcessesParams struct {
 	// The maximum number  to return
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 
@@ -131,12 +131,6 @@ type GetAdminSentNudgesParams struct {
 
 	// mode
 	Mode *string `form:"mode,omitempty" json:"mode,omitempty"`
-}
-
-// GetApiCoursesIdParams defines parameters for GetApiCoursesId.
-type GetApiCoursesIdParams struct {
-	// include = enrollments,scores
-	Include string `form:"include" json:"include"`
 }
 
 // GetApiCoursesIdAssignmentGroupsParams defines parameters for GetApiCoursesIdAssignmentGroups.

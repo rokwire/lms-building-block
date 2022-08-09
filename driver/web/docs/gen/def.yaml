@@ -475,7 +475,7 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
-  /admin/nudges-process:
+  /admin/nudges-processes:
     get:
       tags:
         - Admin

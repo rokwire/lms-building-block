@@ -41,7 +41,7 @@ paths:
     $ref: "./resources/admin/sentNudges/sentNudges.yaml"
   /admin/test-sent-nudges:
     $ref: "./resources/admin/sentNudges/testSentNudges.yaml"
-  /admin/nudges-process:
+  /admin/nudges-processes:
     $ref: "./resources/admin/nudgesProcess/nudges-process.yaml"
 
 components:
