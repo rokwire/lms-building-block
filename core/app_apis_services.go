@@ -36,8 +36,8 @@ func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.
 	return courses, nil
 }
 
-func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error) {
-	course, err := app.provider.GetCourse(providerUserID, courseID, include)
+func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID int) (*model.Course, error) {
+	course, err := app.provider.GetCourse(providerUserID, courseID)
 	if err != nil {
 		l.Debugf("error getting course - %s", err)
 		return nil, err

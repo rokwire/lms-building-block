@@ -27,7 +27,7 @@ type Services interface {
 	GetVersion() string
 
 	GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error)
-	GetCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error)
+	GetCourse(l *logs.Log, providerUserID string, courseID int) (*model.Course, error)
 	GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error)
@@ -62,8 +62,8 @@ func (s *servicesImpl) GetCourses(l *logs.Log, providerUserID string) ([]model.C
 	return s.app.getCourses(l, providerUserID)
 }
 
-func (s *servicesImpl) GetCourse(l *logs.Log, providerUserID string, courseID int, include *string) (*model.Course, error) {
-	return s.app.getCourse(l, providerUserID, courseID, include)
+func (s *servicesImpl) GetCourse(l *logs.Log, providerUserID string, courseID int) (*model.Course, error) {
+	return s.app.getCourse(l, providerUserID, courseID)
 }
 
 func (s *servicesImpl) GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
@@ -154,7 +154,7 @@ type Storage interface {
 //Provider interface for LMS provider
 type Provider interface {
 	GetCourses(userID string) ([]model.Course, error)
-	GetCourse(userID string, courseID int, include *string) (*model.Course, error)
+	GetCourse(userID string, courseID int) (*model.Course, error)
 	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)

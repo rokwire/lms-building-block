@@ -1,6 +1,6 @@
  get:
   tags:
-  - аpi
+  - Api
   summary: Get user by ID 
   description: |
      Get user by ID

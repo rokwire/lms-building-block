@@ -1,6 +1,6 @@
  get:
   tags:
-  - api
+  - Api
   summary: Get courses
   description: |
     Get courses

@@ -90,14 +90,14 @@ func (ca CoreAuth) AdminCheck(r *http.Request) (*tokenauth.Claims, error) {
 	if !claims.Admin {
 		err = errors.ErrorData(logutils.StatusInvalid, logutils.TypeClaim, logutils.StringArgs("admin"))
 		log.Println(err)
-		return claims, err
+		return nil, err
 	}
 
 	err = ca.tokenAuth.AuthorizeRequestPermissions(claims, r)
 	if err != nil {
 		log.Println("invalid permissions:", err)
-		return claims, err
+		return nil, err
 	}
 
-	return claims, err
+	return claims, nil
 }

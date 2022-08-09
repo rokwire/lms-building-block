@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Nudges performance [#30](https://github.com/rokwire/lms-building-block/issues/30)
 
+## [1.1.12] - 2022-08-09
+### Fixed
+- Fix Get Course API [#43](https://github.com/rokwire/lms-building-block/issues/43)
+
 ## [1.1.11] - 2022-08-06
 ### Added
 - Clear sent nudges in test mode [#40](https://github.com/rokwire/lms-building-block/issues/40)

@@ -325,8 +325,14 @@ func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Bl
 func (n nudgesLogic) processPhase2(blocksSize int) error {
 	n.logger.Info("START Phase2")
 
-	for i := 0; i < blocksSize; i++ {
-		n.logger.Infof("phase:2 block:%d", i)
+	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
+		n.logger.Infof("phase:2 block:%d", blockNumber)
+
+		err := n.processPhase2Block(blockNumber)
+		if err != nil {
+			n.logger.Errorf("error on process block %d - %s", blockNumber, err)
+			return err
+		}
 	}
 	/*
 		//4. get all active nudges
@@ -345,6 +351,11 @@ func (n nudgesLogic) processPhase2(blocksSize int) error {
 		} */
 
 	n.logger.Info("END Phase2")
+	return nil
+}
+
+func (n nudgesLogic) processPhase2Block(blocksNumber int) error {
+	//TODO
 	return nil
 }
 
