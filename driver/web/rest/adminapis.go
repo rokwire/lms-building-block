@@ -216,8 +216,8 @@ func (h AdminApisHandler) ClearTestSentNudges(l *logs.Log, claims *tokenauth.Cla
 	return l.HttpResponseSuccess()
 }
 
-//FindNudgesProcess gets all the nudges-process
-func (h AdminApisHandler) FindNudgesProcess(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+//FindNudgesProcesses gets all the nudges-process
+func (h AdminApisHandler) FindNudgesProcesses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	var err error
 
 	//limit and offset
@@ -237,12 +237,12 @@ func (h AdminApisHandler) FindNudgesProcess(l *logs.Log, claims *tokenauth.Claim
 			return l.HttpResponseErrorAction(logutils.ActionParse, logutils.TypeArg, logutils.StringArgs("offset"), err, http.StatusBadRequest, false)
 		}
 	}
-	sentNudges, err := h.app.Administration.FindNudgesProcess(l, limit, offset)
+	nudgesProcesses, err := h.app.Administration.FindNudgesProcesses(l, limit, offset)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "nudges_processes", nil, err, http.StatusInternalServerError, true)
 	}
 
-	data, err := json.Marshal(sentNudges)
+	data, err := json.Marshal(nudgesProcesses)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionMarshal, "sent_nudges", nil, err, http.StatusInternalServerError, false)
 	}

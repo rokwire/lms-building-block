@@ -287,8 +287,8 @@ func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
 	return nil
 }
 
-//FindNudgesProcess finds all nudges-process
-func (sa *Adapter) FindNudgesProcess(limit int, offset int) ([]model.NudgesProcess, error) {
+//FindNudgesProcesses finds all nudges-process
+func (sa *Adapter) FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error) {
 	filter := bson.D{}
 	var result []model.NudgesProcess
 	options := options.Find()
