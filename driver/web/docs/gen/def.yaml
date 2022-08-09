@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rokwire LMS Building Block API
   description: LMS Building Block API Documentation
-  version: 1.1.11
+  version: 1.1.12
 servers:
   - url: 'https://api.rokwire.illinois.edu/lms'
     description: Production server
@@ -21,7 +21,7 @@ paths:
   /api/courses:
     get:
       tags:
-        - api
+        - Api
       summary: Get courses
       description: |
         Get courses
@@ -45,7 +45,7 @@ paths:
   '/api/courses/{id}':
     get:
       tags:
-        - api
+        - Api
       summary: Get course by ID
       description: |
         Gets course by ID
@@ -57,14 +57,6 @@ paths:
           description: ID of the course
           required: true
           style: simple
-          explode: false
-          schema:
-            type: string
-        - name: include
-          in: query
-          description: 'include = enrollments,scores'
-          required: true
-          style: form
           explode: false
           schema:
             type: string
@@ -88,7 +80,7 @@ paths:
   '/api/courses/{id}/assignment-groups':
     get:
       tags:
-        - api
+        - Api
       summary: Get assignment-groups by ID
       description: |
         Gets assignment-groups by ID
@@ -130,7 +122,7 @@ paths:
   '/api/courses/{id}/users':
     get:
       tags:
-        - аpi
+        - Api
       summary: Get user by ID
       description: |
         Get user by ID
@@ -171,7 +163,7 @@ paths:
   /api/users/self:
     get:
       tags:
-        - api
+        - Api
       summary: Get current user
       description: |
         Get current user

@@ -127,13 +127,6 @@ type GetAdminSentNudgesParams struct {
 	Mode *string `json:"mode,omitempty"`
 }
 
-// GetApiCoursesIdParams defines parameters for GetApiCoursesId.
-type GetApiCoursesIdParams struct {
-
-	// include = enrollments,scores
-	Include string `json:"include"`
-}
-
 // GetApiCoursesIdAssignmentGroupsParams defines parameters for GetApiCoursesIdAssignmentGroups.
 type GetApiCoursesIdAssignmentGroupsParams struct {
 
