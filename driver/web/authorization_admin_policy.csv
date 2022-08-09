@@ -19,3 +19,5 @@ p, delete_nudges, /lms/admin/sent-nudges, (GET)|(DELETE),
 p, delete_nudges, /lms/admin/test-sent-nudges, (DELETE),
 
 p, delete_test-nudges, /lms/admin/test-sent-nudges, (DELETE), Clear test sent nudges
+
+p, get_nudges-processes, /lms/admin/nudges-processes, (GET), Gets nudges processes
