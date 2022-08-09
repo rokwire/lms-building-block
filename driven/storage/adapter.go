@@ -17,6 +17,7 @@ package storage
 import (
 	"lms/core/model"
 	"log"
+	"sort"
 	"strconv"
 	"time"
 
@@ -301,6 +302,11 @@ func (sa *Adapter) FindNudgesProcesses(limit int, offset int) ([]model.NudgesPro
 	if len(result) == 0 {
 		return make([]model.NudgesProcess, 0), nil
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+
 	return result, nil
 }
 
