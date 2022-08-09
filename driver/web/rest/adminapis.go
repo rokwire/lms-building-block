@@ -221,13 +221,15 @@ func (h AdminApisHandler) FindNudgesProcesses(l *logs.Log, claims *tokenauth.Cla
 	var err error
 
 	//limit and offset
-	limit := 0
+	limit := 5
 	limitArg := r.URL.Query().Get("limit")
-	if limitArg != "" {
+	if limitArg <= "5" {
 		limit, err = strconv.Atoi(limitArg)
 		if err != nil {
 			return l.HttpResponseErrorAction(logutils.ActionParse, logutils.TypeArg, logutils.StringArgs("limit"), err, http.StatusBadRequest, false)
 		}
+	} else {
+		return l.HttpResponseErrorAction(logutils.ActionCount, ".The limit of nudges processes is 5", nil, err, http.StatusInternalServerError, true)
 	}
 	offset := 0
 	offsetArg := r.URL.Query().Get("offset")
