@@ -52,24 +52,24 @@ type SentNudge struct {
 
 //NudgesProcess entity
 type NudgesProcess struct {
-	ID          string     `bson:"_id"`
-	Mode        string     `bson:"mode"`
-	CreatedAt   time.Time  `bson:"created_at"`
-	CompletedAt *time.Time `bson:"completed_at"`
-	Status      string     `bson:"status"` //processing, success, failed
-	Error       *string    `bson:"error"`
+	ID          string     `json:"id" bson:"_id"`
+	Mode        string     `json:"mode" bson:"mode"`
+	CreatedAt   time.Time  `json:"created_at" bson:"created_at"`
+	CompletedAt *time.Time `json:"completed_at" bson:"completed_at"`
+	Status      string     `json:"status" bson:"status"` //processing, success, failed
+	Error       *string    `json:"error" bson:"error"`
 
-	Blocks []Block `bson:"blocks"` //users into blocks
+	Blocks []Block `json:"blocks" bson:"blocks"` //users into blocks
 }
 
 //Block entity
 type Block struct {
-	Number int         `bson:"number"`
-	Items  []BlockItem `bson:"items"`
+	Number int         `json:"number" bson:"number"`
+	Items  []BlockItem `json:"items" bson:"items"`
 }
 
 //BlockItem entity
 type BlockItem struct {
-	NetID  string `bson:"net_id"`
-	UserID string `bson:"user_id"`
+	NetID  string `json:"net_id" bson:"net_id"`
+	UserID string `json:"user_id" bson:"user_id"`
 }
