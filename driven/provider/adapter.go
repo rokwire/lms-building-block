@@ -77,13 +77,10 @@ func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
 }
 
 //GetCourse gives the the course for the provided id
-func (a *Adapter) GetCourse(userID string, courseID int, include *string) (*model.Course, error) {
+func (a *Adapter) GetCourse(userID string, courseID int) (*model.Course, error) {
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
-	if include != nil {
-		queryParamsItems["include[]"] = []string{*include}
-	}
 	queryParams := a.constructQueryParams(queryParamsItems)
 
 	//path + params

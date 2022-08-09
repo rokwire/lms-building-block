@@ -1,6 +1,6 @@
  get:
   tags:
-  - api
+  - Api
   summary: Get course by ID
   description: |
     Gets course by ID
@@ -12,14 +12,6 @@
     description: ID of the course
     required: true
     style: simple
-    explode: false
-    schema:
-      type: string
-  - name: include
-    in: query
-    description: include = enrollments,scores
-    required: true
-    style: form
     explode: false
     schema:
       type: string

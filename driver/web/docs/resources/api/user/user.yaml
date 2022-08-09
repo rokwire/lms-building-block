@@ -1,6 +1,6 @@
  get:
   tags:
-  - api
+  - Api
   summary: Get current user
   description: |
     Get current user
