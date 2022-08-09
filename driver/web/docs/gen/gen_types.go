@@ -100,6 +100,15 @@ type PostAdminNudgesJSONBody = AdminReqCreateNudge
 // PutAdminNudgesConfigJSONBody defines parameters for PutAdminNudgesConfig.
 type PutAdminNudgesConfigJSONBody = NudgesConfig
 
+// GetAdminNudgesProcessParams defines parameters for GetAdminNudgesProcess.
+type GetAdminNudgesProcessParams struct {
+	// The maximum number  to return
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// The index of the first nudges process to return
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
 // PutAdminNudgesIdJSONBody defines parameters for PutAdminNudgesId.
 type PutAdminNudgesIdJSONBody = AdminReqUpdateNudge
 
