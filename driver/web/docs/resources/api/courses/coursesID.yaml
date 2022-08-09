@@ -1,6 +1,6 @@
  get:
   tags:
-  - api
+  - Api
   summary: Get course by ID
   description: |
     Gets course by ID

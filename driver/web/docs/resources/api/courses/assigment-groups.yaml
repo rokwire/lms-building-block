@@ -1,6 +1,6 @@
  get:
   tags:
-  - api
+  - Api
   summary: Get assignment-groups by ID
   description: |
     Gets assignment-groups by ID
