@@ -155,6 +155,7 @@ type Provider interface {
 
 	CacheCommonData(usersIDs map[string]string) error
 	FindCachedData(usersIDs []string) ([]ProviderUser, error)
+	CacheUserData(user ProviderUser) (*ProviderUser, error)
 
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)

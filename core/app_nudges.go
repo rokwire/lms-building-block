@@ -550,8 +550,15 @@ func (n nudgesLogic) lastLoginNeedsToSend(hours float64, now time.Time, lastLogi
 }
 
 func (n nudgesLogic) lastLoginRefreshCache(user ProviderUser) (*time.Time, error) {
-	//TODO
-	return user.User.LastLogin, nil
+	//cache the user data
+	updatedUser, err := n.provider.CacheUserData(user)
+	if err != nil {
+		n.logger.Debugf("error caching user data %s - %s", user.NetID, err)
+		return nil, err
+	}
+
+	//return the loaded value
+	return updatedUser.User.LastLogin, nil
 }
 
 func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user GroupsBBUser,

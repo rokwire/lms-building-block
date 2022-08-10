@@ -540,6 +540,11 @@ func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 	return user.LastLogin, nil
 }
 
+//CacheUserData caches the user object
+func (a *Adapter) CacheUserData(user core.ProviderUser) (*core.ProviderUser, error) {
+	return nil, nil
+}
+
 //GetMissedAssignments gives the missed assignments of the user
 func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error) {
 	//params
