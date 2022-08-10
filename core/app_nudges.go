@@ -297,7 +297,7 @@ func (n nudgesLogic) processPhase1(processID string) (*int, error) {
 
 		//move offset
 		offset += limit
-		currentBlock += 1
+		currentBlock++
 	}
 
 	n.logger.Info("END Phase1")

@@ -172,6 +172,7 @@ type Provider interface {
 
 //Cache entities
 
+//ProviderUser cache entity
 type ProviderUser struct {
 	ID       string     `bson:"_id"`    //core BB account id
 	NetID    string     `bson:"net_id"` //core BB external system id
@@ -181,23 +182,27 @@ type ProviderUser struct {
 	Courses *UserCourses `bson:"courses"`
 }
 
+//UserCourses cache entity
 type UserCourses struct {
 	Data     []UserCourse `bson:"data"`
 	SyncDate time.Time    `bson:"sync_date"`
 }
 
+//UserCourse cache entity
 type UserCourse struct {
 	Data        model.Course       `bson:"data"`
 	Assignments []CourseAssignment `bson:"assignments"`
 	SyncDate    time.Time          `bson:"sync_date"`
 }
 
+//CourseAssignment cache entity
 type CourseAssignment struct {
 	Data       model.Assignment `bson:"data"`
 	Submission *Submission      `bson:"submission"`
 	SyncDate   time.Time        `bson:"sync_date"`
 }
 
+//Submission cache entity
 type Submission struct {
 	Data     model.Submission `bson:"data"`
 	SyncDate time.Time        `bson:"sync_date"`

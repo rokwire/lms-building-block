@@ -278,7 +278,7 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 	// and we use already what we have found
 	allCourses := map[int]core.UserCourse{}
 
-	for netID, _ := range usersIDs {
+	for netID := range usersIDs {
 		allCourses, err = a.cacheUserCoursesAndCoursesAssignments(netID, allCourses)
 		if err != nil {
 			a.logger.Errorf("error on caching user courses for - %s", netID)
@@ -434,7 +434,7 @@ func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]cor
 			a.logger.Infof("we do NOT have course %d in the memory, so need to load the data for it", course.ID)
 			courseData, err := a.loadCourseData(netID, course, now)
 			if err != nil {
-				a.logger.Errorf("error loading course data for course and user - %d - %s - %s", course.ID, netID)
+				a.logger.Errorf("error loading course data for course and user - %d - %s", course.ID, netID)
 				return nil, nil, err
 			}
 			if courseData == nil {
