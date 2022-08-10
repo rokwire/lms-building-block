@@ -542,7 +542,21 @@ func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 
 //CacheUserData caches the user object
 func (a *Adapter) CacheUserData(user core.ProviderUser) (*core.ProviderUser, error) {
-	return nil, nil
+	//1. load the user from the provider
+	loadedUser, err := a.loadUser(user.NetID)
+	if err != nil {
+		return nil, err
+	}
+
+	//2 update the new user and store it
+	user.User = *loadedUser
+	user.SyncDate = time.Now()
+	err = a.db.saveUser(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 //GetMissedAssignments gives the missed assignments of the user

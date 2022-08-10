@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"lms/core/model"
 	"lms/utils"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -538,7 +539,11 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Provid
 	}
 
 	//it has not been sent, so sent it
-	//	n.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours)
+	err = n.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours)
+	if err != nil {
+		n.logger.Errorf("\t\t\t\terror send last login nudge - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
 
 	return nil
 }
@@ -561,27 +566,34 @@ func (n nudgesLogic) lastLoginRefreshCache(user ProviderUser) (*time.Time, error
 	return updatedUser.User.LastLogin, nil
 }
 
-func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user GroupsBBUser,
-	lastLogin time.Time, hours float64) {
-	n.logger.Infof("sendLastLoginNudgeForUser - %s - %s", nudge.ID, user.UserID)
-
-	//send push notification
-	recipient := Recipient{UserID: user.UserID, Name: ""}
-	data := n.prepareNotificationData(nudge.DeepLink)
-	err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body, data)
-	if err != nil {
-		n.logger.Debugf("error sending notification for %s - %s", user.UserID, err)
-		return
-	}
+func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user ProviderUser,
+	lastLogin time.Time, hours float64) error {
+	n.logger.Infof("\t\t\t\tsendLastLoginNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
 	//insert sent nudge
 	criteriaHash := n.generateLastLoginHash(lastLogin, hours)
-	sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
-	err = n.storage.InsertSentNudge(sentNudge)
+	sentNudge := n.createSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
+	err := n.storage.InsertSentNudge(sentNudge)
 	if err != nil {
-		n.logger.Errorf("error saving sent nudge for %s - %s", user.UserID, err)
-		return
+		n.logger.Errorf("\t\t\t\terror saving sent nudge for %s - %s", user.ID, err)
+		return err
 	}
+
+	//sending in another thread as it happen very slowly
+	go func(user ProviderUser) {
+		//send push notification
+		recipient := Recipient{UserID: user.ID, Name: ""}
+		data := n.prepareNotificationData(nudge.DeepLink)
+		err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body, data)
+		if err != nil {
+			log.Printf("\t\t\t\terror sending notification for %s - %s", user.NetID, err)
+			return
+		}
+		//the logger doe snot work in another thread
+		log.Printf("\t\t\t\tsuccess sending notification for %s", user.NetID)
+	}(user)
+
+	return nil
 }
 
 func (n nudgesLogic) generateLastLoginHash(lastLogin time.Time, hours float64) uint32 {
