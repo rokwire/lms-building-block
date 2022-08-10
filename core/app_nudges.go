@@ -165,6 +165,16 @@ func (n nudgesLogic) processAllNudges() {
 		return
 	}
 
+	// check if we have active nudges
+	nudges, err := n.storage.LoadActiveNudges()
+	if err != nil {
+		n.logger.Errorf("error on processing all nudges - %s", err)
+		return
+	}
+	if len(nudges) == 0 {
+		n.logger.Info("no active nudges for processing")
+	}
+
 	n.logger.Info("we are ready to start a process")
 
 	//start process
@@ -183,7 +193,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	// process phase 2
-	err = n.processPhase2(*processID, *blocksSize)
+	err = n.processPhase2(*processID, *blocksSize, nudges)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -322,13 +332,13 @@ func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Bl
 }
 
 //phase2 operates over the data prepared in phase1 and apply the nudges for every user
-func (n nudgesLogic) processPhase2(processID string, blocksSize int) error {
+func (n nudgesLogic) processPhase2(processID string, blocksSize int, nudges []model.Nudge) error {
 	n.logger.Info("START Phase2")
 
 	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
 		n.logger.Infof("block:%d", blockNumber)
 
-		err := n.processPhase2Block(processID, blockNumber)
+		err := n.processPhase2Block(processID, blockNumber, nudges)
 		if err != nil {
 			n.logger.Errorf("error on process block %d - %s", blockNumber, err)
 			return err
@@ -339,7 +349,7 @@ func (n nudgesLogic) processPhase2(processID string, blocksSize int) error {
 	return nil
 }
 
-func (n nudgesLogic) processPhase2Block(processID string, blockNumber int) error {
+func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudges []model.Nudge) error {
 	// load block data
 	cachedData, err := n.getBlockData(processID, blockNumber)
 	if err != nil {
@@ -349,7 +359,7 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int) error
 
 	// process every user
 	for _, providerUser := range cachedData {
-		err := n.processProviderUser(providerUser)
+		err := n.processUser(providerUser, nudges)
 		if err != nil {
 			n.logger.Errorf("process provider user %s - %s", providerUser.NetID, err)
 			return err
@@ -357,29 +367,6 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int) error
 	}
 	return nil
 }
-
-func (n nudgesLogic) processProviderUser(providerUser ProviderUser) error {
-	n.logger.Infof("\tprocess %s", providerUser.NetID)
-
-	//TODO
-	return nil
-}
-
-/*
-	//4. get all active nudges
-	nudges, err := n.storage.LoadActiveNudges()
-	if err != nil {
-		n.logger.Errorf("error on processing all nudges - %s", err)
-		return
-	}
-	if len(nudges) == 0 {
-		n.logger.Info("no active nudges for processing")
-	}
-
-	//5. process every user
-	for _, user := range users {
-		n.processUser(user, nudges)
-	} */
 
 func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, error) {
 	//get data
@@ -445,27 +432,37 @@ func (n nudgesLogic) getGroupName() string {
 	return n.config.TestGroupName //test mode
 }
 
-func (n nudgesLogic) processUser(user GroupsBBUser, nudges []model.Nudge) {
+func (n nudgesLogic) processUser(user ProviderUser, nudges []model.Nudge) error {
+	n.logger.Infof("\tprocess %s", user.NetID)
+
 	for _, nudge := range nudges {
-		n.processNudge(nudge, user)
+		err := n.processNudge(nudge, user)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (n nudgesLogic) processNudge(nudge model.Nudge, user GroupsBBUser) {
-	n.logger.Infof("processNudge - %s - %s", user.NetID, nudge.ID)
+func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser) error {
+	n.logger.Infof("\t\tprocessNudge - %s - %s", user.NetID, nudge.ID)
 
 	switch nudge.ID {
 	case "last_login":
-		n.processLastLoginNudgePerUser(nudge, user)
-	case "missed_assignment":
-		n.processMissedAssignmentNudgePerUser(nudge, user)
-	case "completed_assignment_early":
-		n.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
-	case "today_calendar_events":
-		n.processTodayCalendarEventsNudgePerUser(nudge, user)
-	default:
-		n.logger.Infof("Not supported nudge - %s", nudge.ID)
+		err := n.processLastLoginNudgePerUser(nudge, user)
+		if err != nil {
+			return err
+		}
+		/*case "missed_assignment":
+			n.processMissedAssignmentNudgePerUser(nudge, user)
+		case "completed_assignment_early":
+			n.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
+		case "today_calendar_events":
+			n.processTodayCalendarEventsNudgePerUser(nudge, user)
+		default:
+			n.logger.Infof("\t\tnot supported nudge - %s", nudge.ID)*/
 	}
+	return nil
 }
 
 func (n nudgesLogic) prepareNotificationData(deepLink string) map[string]string {
@@ -480,49 +477,50 @@ func (n nudgesLogic) prepareNotificationData(deepLink string) map[string]string 
 
 // last_login nudge
 
-func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
-	n.logger.Infof("\tprocessLastLoginNudgePerUser - %s", nudge.ID)
+func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user ProviderUser) error {
+	n.logger.Infof("\t\t\tprocessLastLoginNudgePerUser - %s", nudge.ID)
+	return nil
+	/*
+		//get last login date
+		lastLogin, err := n.provider.GetLastLogin(user.NetID)
+		if err != nil {
+			n.logger.Errorf("error getting last login for - %s", user.NetID)
+		}
 
-	//get last login date
-	lastLogin, err := n.provider.GetLastLogin(user.NetID)
-	if err != nil {
-		n.logger.Errorf("error getting last login for - %s", user.NetID)
-	}
+		//if last login is not available we do nothing
+		if lastLogin == nil {
+			n.logger.Debugf("last login is not available for user - %s", user.NetID)
+			return
+		}
 
-	//if last login is not available we do nothing
-	if lastLogin == nil {
-		n.logger.Debugf("last login is not available for user - %s", user.NetID)
-		return
-	}
+		//determine if needs to send notification
+		hours := nudge.Params["hours"].(float64)
+		now := time.Now()
+		difference := now.Sub(*lastLogin) //difference between now and the last login
+		differenceInHours := difference.Hours()
+		if differenceInHours <= hours {
+			//not reached the max hours, so not send notification
+			n.logger.Infof("not reached the max hours, so not send notification - %s", user.NetID)
+			return
+		}
 
-	//determine if needs to send notification
-	hours := nudge.Params["hours"].(float64)
-	now := time.Now()
-	difference := now.Sub(*lastLogin) //difference between now and the last login
-	differenceInHours := difference.Hours()
-	if differenceInHours <= hours {
-		//not reached the max hours, so not send notification
-		n.logger.Infof("not reached the max hours, so not send notification - %s", user.NetID)
-		return
-	}
+		//need to send but first check if it has been send before
 
-	//need to send but first check if it has been send before
+		//check if has been sent before
+		criteriaHash := n.generateLastLoginHash(*lastLogin, hours)
+		sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
+		if err != nil {
+			//not reached the max hours, so not send notification
+			n.logger.Errorf("error checking if sent nudge exists - %s - %s", nudge.ID, user.NetID)
+			return
+		}
+		if sentNudge != nil {
+			n.logger.Infof("this has been already sent - %s - %s", nudge.ID, user.NetID)
+			return
+		}
 
-	//check if has been sent before
-	criteriaHash := n.generateLastLoginHash(*lastLogin, hours)
-	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
-	if err != nil {
-		//not reached the max hours, so not send notification
-		n.logger.Errorf("error checking if sent nudge exists - %s - %s", nudge.ID, user.NetID)
-		return
-	}
-	if sentNudge != nil {
-		n.logger.Infof("this has been already sent - %s - %s", nudge.ID, user.NetID)
-		return
-	}
-
-	//it has not been sent, so sent it
-	n.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours)
+		//it has not been sent, so sent it
+		n.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours) */
 }
 
 func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user GroupsBBUser,
