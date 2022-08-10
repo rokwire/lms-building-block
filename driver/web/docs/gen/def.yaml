@@ -533,8 +533,16 @@ paths:
                       type: string
                     blocks:
                       type: object
-                    items:
-                      type: object
+                      properties:
+                        number:
+                          type: integer
+                        items:
+                          type: object
+                          properties:
+                            netID:
+                              type: string
+                            userID:
+                              type: string
         '400':
           description: Bad request
         '401':
