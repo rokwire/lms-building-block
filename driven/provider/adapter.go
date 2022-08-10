@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"lms/core"
 	"lms/core/model"
 	"log"
 	"net/http"
@@ -228,7 +229,7 @@ func (a *Adapter) cacheUser(netID string, userID string) error {
 		return err
 	}
 	//store it
-	providerUser := providerUser{ID: userID, NetID: netID, User: *loadedUser, SyncDate: time.Now()}
+	providerUser := core.ProviderUser{ID: userID, NetID: netID, User: *loadedUser, SyncDate: time.Now()}
 	err = a.db.insertUser(providerUser)
 	if err != nil {
 		a.logger.Errorf("error inserting user - %s", netID)
@@ -275,7 +276,7 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 
 	//We do not ask the provider for every user. The courses and the assignemnts are the same as entities for the different users
 	// and we use already what we have found
-	allCourses := map[int]userCourse{}
+	allCourses := map[int]core.UserCourse{}
 
 	for netID, _ := range usersIDs {
 		allCourses, err = a.cacheUserCoursesAndCoursesAssignments(netID, allCourses)
@@ -288,7 +289,7 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 	return nil
 }
 
-func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[int]userCourse) (map[int]userCourse, error) {
+func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[int]core.UserCourse) (map[int]core.UserCourse, error) {
 	a.logger.Infof("cache user courses and courses assignments - %s", netID)
 
 	//get the user from the cache
@@ -305,7 +306,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 	if cachedUser.Courses == nil {
 		a.logger.Infof("there is no cached courses for %s, so loading them", netID)
 
-		var userCourses *userCourses
+		var userCourses *core.UserCourses
 		userCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
 		if err != nil {
 			a.logger.Errorf("error loading user courses for - %s", netID)
@@ -332,7 +333,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 			//if passedTimeInSecconds > 1 {
 			a.logger.Infof("we need to refresh courses for - %s", netID)
 
-			var loadedUserCourses *userCourses
+			var loadedUserCourses *core.UserCourses
 			loadedUserCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
 			if err != nil {
 				a.logger.Errorf("error loading user courses for - %s on refresh", netID)
@@ -360,19 +361,19 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 }
 
 //puts the submissions data from the current to the new one. The new one does not have submissions in it, so we do not want to loose it.
-func (a *Adapter) getSubmissionsFromCurrent(current userCourses, new userCourses) userCourses {
+func (a *Adapter) getSubmissionsFromCurrent(current core.UserCourses, new core.UserCourses) core.UserCourses {
 	userCourses := new.Data
 	if len(userCourses) == 0 {
 		//no courses
 		return new
 	}
 
-	resultUserCourses := make([]userCourse, len(userCourses))
+	resultUserCourses := make([]core.UserCourse, len(userCourses))
 	for i, course := range userCourses {
 
 		assignments := course.Assignments
 
-		resultAssignments := make([]courseAssignment, len(assignments))
+		resultAssignments := make([]core.CourseAssignment, len(assignments))
 		for j, assignment := range assignments {
 			assignment.Submission = a.findSubmission(assignment.Data.ID, current)
 			resultAssignments[j] = assignment
@@ -385,7 +386,7 @@ func (a *Adapter) getSubmissionsFromCurrent(current userCourses, new userCourses
 	return new
 }
 
-func (a *Adapter) findSubmission(assignmentID int, current userCourses) *submission {
+func (a *Adapter) findSubmission(assignmentID int, current core.UserCourses) *core.Submission {
 	userCourses := current.Data
 	if len(userCourses) == 0 {
 		return nil
@@ -409,11 +410,11 @@ func (a *Adapter) findSubmission(assignmentID int, current userCourses) *submiss
 }
 
 //check if the courses are available in allCourses otherwise load them
-func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]userCourse) (*userCourses, map[int]userCourse, error) {
+func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]core.UserCourse) (*core.UserCourses, map[int]core.UserCourse, error) {
 	//prepare the result variable
 	now := time.Now()
-	loadedUserCourses := userCourses{SyncDate: now}
-	data := []userCourse{} //to be loaded in the function
+	loadedUserCourses := core.UserCourses{SyncDate: now}
+	data := []core.UserCourse{} //to be loaded in the function
 
 	// first load the courses for the id
 	courses, err := a.loadCourses(netID)
@@ -452,9 +453,9 @@ func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]use
 	return &loadedUserCourses, allCourses, nil
 }
 
-func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate time.Time) (*userCourse, error) {
+func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate time.Time) (*core.UserCourse, error) {
 	now := time.Now()
-	userCourse := userCourse{Data: course, Assignments: nil, SyncDate: now}
+	userCourse := core.UserCourse{Data: course, Assignments: nil, SyncDate: now}
 	//to load the assignments
 
 	loadedAssignments, err := a.getAssignments(course.ID, netID, false)
@@ -463,9 +464,9 @@ func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate tim
 		return nil, err
 	}
 
-	assignments := make([]courseAssignment, len(loadedAssignments))
+	assignments := make([]core.CourseAssignment, len(loadedAssignments))
 	for i, assignment := range loadedAssignments {
-		assignments[i] = courseAssignment{Data: assignment, Submission: nil, SyncDate: syncDate}
+		assignments[i] = core.CourseAssignment{Data: assignment, Submission: nil, SyncDate: syncDate}
 	}
 
 	//add the loaded assignments
@@ -498,6 +499,11 @@ func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
 		return nil, err
 	}
 	return courses, nil
+}
+
+//FindCachedData finds a cached data
+func (a *Adapter) FindCachedData(usersIDs []string) ([]core.ProviderUser, error) {
+	return a.db.findUsers(usersIDs)
 }
 
 //GetLastLogin gives the last login date for the user

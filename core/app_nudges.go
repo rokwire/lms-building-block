@@ -183,7 +183,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	// process phase 2
-	err = n.processPhase2(*blocksSize)
+	err = n.processPhase2(*processID, *blocksSize)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -322,41 +322,89 @@ func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Bl
 }
 
 //phase2 operates over the data prepared in phase1 and apply the nudges for every user
-func (n nudgesLogic) processPhase2(blocksSize int) error {
+func (n nudgesLogic) processPhase2(processID string, blocksSize int) error {
 	n.logger.Info("START Phase2")
 
 	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
-		n.logger.Infof("phase:2 block:%d", blockNumber)
+		n.logger.Infof("block:%d", blockNumber)
 
-		err := n.processPhase2Block(blockNumber)
+		err := n.processPhase2Block(processID, blockNumber)
 		if err != nil {
 			n.logger.Errorf("error on process block %d - %s", blockNumber, err)
 			return err
 		}
 	}
-	/*
-		//4. get all active nudges
-		nudges, err := n.storage.LoadActiveNudges()
-		if err != nil {
-			n.logger.Errorf("error on processing all nudges - %s", err)
-			return
-		}
-		if len(nudges) == 0 {
-			n.logger.Info("no active nudges for processing")
-		}
-
-		//5. process every user
-		for _, user := range users {
-			n.processUser(user, nudges)
-		} */
 
 	n.logger.Info("END Phase2")
 	return nil
 }
 
-func (n nudgesLogic) processPhase2Block(blocksNumber int) error {
+func (n nudgesLogic) processPhase2Block(processID string, blockNumber int) error {
+	// load block data
+	cachedData, err := n.getBlockData(processID, blockNumber)
+	if err != nil {
+		n.logger.Errorf("error on getting block data %s - %d - %s", processID, blockNumber, err)
+		return err
+	}
+
+	// process every user
+	for _, providerUser := range cachedData {
+		err := n.processProviderUser(providerUser)
+		if err != nil {
+			n.logger.Errorf("process provider user %s - %s", providerUser.NetID, err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (n nudgesLogic) processProviderUser(providerUser ProviderUser) error {
+	n.logger.Infof("\tprocess %s", providerUser.NetID)
+
 	//TODO
 	return nil
+}
+
+/*
+	//4. get all active nudges
+	nudges, err := n.storage.LoadActiveNudges()
+	if err != nil {
+		n.logger.Errorf("error on processing all nudges - %s", err)
+		return
+	}
+	if len(nudges) == 0 {
+		n.logger.Info("no active nudges for processing")
+	}
+
+	//5. process every user
+	for _, user := range users {
+		n.processUser(user, nudges)
+	} */
+
+func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, error) {
+	//get data
+	block, err := n.storage.GetBlockFromNudgesProcess(processID, blockNumber)
+	if err != nil {
+		n.logger.Errorf("error on getting block data from the storage %s - %d - %s", processID, blockNumber, err)
+		return nil, err
+	}
+	items := block.Items
+	if len(items) == 0 {
+		return []ProviderUser{}, nil
+	}
+
+	//get the cached data from the block
+	usersIDs := make([]string, len(items))
+	for i, item := range items {
+		usersIDs[i] = item.NetID
+	}
+	cachedData, err := n.provider.FindCachedData(usersIDs)
+	if err != nil {
+		n.logger.Errorf("error on getting cached data %s - %d - %s", processID, blockNumber, err)
+		return nil, err
+	}
+
+	return cachedData, nil
 }
 
 func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {

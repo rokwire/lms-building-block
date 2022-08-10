@@ -149,6 +149,7 @@ type Storage interface {
 	CountNudgesProcesses(status string) (*int64, error)
 	AddBlockToNudgesProcess(processID string, block model.Block) error
 	FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error)
+	GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error)
 }
 
 //Provider interface for LMS provider
@@ -160,11 +161,45 @@ type Provider interface {
 	GetCurrentUser(userID string) (*model.User, error)
 
 	CacheCommonData(usersIDs map[string]string) error
+	FindCachedData(usersIDs []string) ([]ProviderUser, error)
 
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
 	GetCompletedAssignments(userID string) ([]model.Assignment, error)
 	GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
+}
+
+//Cache entities
+
+type ProviderUser struct {
+	ID       string     `bson:"_id"`    //core BB account id
+	NetID    string     `bson:"net_id"` //core BB external system id
+	User     model.User `bson:"user"`
+	SyncDate time.Time  `bson:"sync_date"`
+
+	Courses *UserCourses `bson:"courses"`
+}
+
+type UserCourses struct {
+	Data     []UserCourse `bson:"data"`
+	SyncDate time.Time    `bson:"sync_date"`
+}
+
+type UserCourse struct {
+	Data        model.Course       `bson:"data"`
+	Assignments []CourseAssignment `bson:"assignments"`
+	SyncDate    time.Time          `bson:"sync_date"`
+}
+
+type CourseAssignment struct {
+	Data       model.Assignment `bson:"data"`
+	Submission *Submission      `bson:"submission"`
+	SyncDate   time.Time        `bson:"sync_date"`
+}
+
+type Submission struct {
+	Data     model.Submission `bson:"data"`
+	SyncDate time.Time        `bson:"sync_date"`
 }
 
 //GroupsBB interface for the Groups building block communication
