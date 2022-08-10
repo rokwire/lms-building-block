@@ -16,6 +16,7 @@ package provider
 
 import (
 	"context"
+	"lms/core"
 	"log"
 	"time"
 
@@ -144,7 +145,7 @@ func (m *database) userExist(netID string) (*bool, error) {
 	return &result, nil
 }
 
-func (m *database) insertUser(user providerUser) error {
+func (m *database) insertUser(user core.ProviderUser) error {
 	_, err := m.users.InsertOne(user)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "provider user", &logutils.FieldArgs{"net_id": user.NetID}, err)
@@ -152,9 +153,9 @@ func (m *database) insertUser(user providerUser) error {
 	return nil
 }
 
-func (m *database) findUser(netID string) (*providerUser, error) {
+func (m *database) findUser(netID string) (*core.ProviderUser, error) {
 	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
-	var result []providerUser
+	var result []core.ProviderUser
 	err := m.users.Find(filter, &result, nil)
 	if err != nil {
 		return nil, err
@@ -168,7 +169,7 @@ func (m *database) findUser(netID string) (*providerUser, error) {
 	return &user, nil
 }
 
-func (m *database) saveUser(providerUser providerUser) error {
+func (m *database) saveUser(providerUser core.ProviderUser) error {
 	filter := bson.M{"_id": providerUser.ID}
 	err := m.users.ReplaceOne(filter, providerUser, nil)
 	if err != nil {

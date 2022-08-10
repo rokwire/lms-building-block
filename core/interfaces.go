@@ -160,6 +160,39 @@ type Provider interface {
 	GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
 }
 
+//Cache entities
+
+type ProviderUser struct {
+	ID       string     `bson:"_id"`    //core BB account id
+	NetID    string     `bson:"net_id"` //core BB external system id
+	User     model.User `bson:"user"`
+	SyncDate time.Time  `bson:"sync_date"`
+
+	Courses *UserCourses `bson:"courses"`
+}
+
+type UserCourses struct {
+	Data     []UserCourse `bson:"data"`
+	SyncDate time.Time    `bson:"sync_date"`
+}
+
+type UserCourse struct {
+	Data        model.Course       `bson:"data"`
+	Assignments []CourseAssignment `bson:"assignments"`
+	SyncDate    time.Time          `bson:"sync_date"`
+}
+
+type CourseAssignment struct {
+	Data       model.Assignment `bson:"data"`
+	Submission *Submission      `bson:"submission"`
+	SyncDate   time.Time        `bson:"sync_date"`
+}
+
+type Submission struct {
+	Data     model.Submission `bson:"data"`
+	SyncDate time.Time        `bson:"sync_date"`
+}
+
 //GroupsBB interface for the Groups building block communication
 type GroupsBB interface {
 	GetUsers(groupName string, offset int, limit int) ([]GroupsBBUser, error)

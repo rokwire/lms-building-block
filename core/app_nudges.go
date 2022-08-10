@@ -183,7 +183,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	// process phase 2
-	err = n.processPhase2(*blocksSize)
+	err = n.processPhase2(*processID, *blocksSize)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -322,42 +322,49 @@ func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Bl
 }
 
 //phase2 operates over the data prepared in phase1 and apply the nudges for every user
-func (n nudgesLogic) processPhase2(blocksSize int) error {
+func (n nudgesLogic) processPhase2(processID string, blocksSize int) error {
 	n.logger.Info("START Phase2")
 
 	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
 		n.logger.Infof("phase:2 block:%d", blockNumber)
 
-		err := n.processPhase2Block(blockNumber)
+		err := n.processPhase2Block(processID, blockNumber)
 		if err != nil {
 			n.logger.Errorf("error on process block %d - %s", blockNumber, err)
 			return err
 		}
 	}
-	/*
-		//4. get all active nudges
-		nudges, err := n.storage.LoadActiveNudges()
-		if err != nil {
-			n.logger.Errorf("error on processing all nudges - %s", err)
-			return
-		}
-		if len(nudges) == 0 {
-			n.logger.Info("no active nudges for processing")
-		}
-
-		//5. process every user
-		for _, user := range users {
-			n.processUser(user, nudges)
-		} */
 
 	n.logger.Info("END Phase2")
 	return nil
 }
 
-func (n nudgesLogic) processPhase2Block(blocksNumber int) error {
+func (n nudgesLogic) processPhase2Block(processID string, blocksNumber int) error {
+	// load block data
+
+	return nil
+}
+
+func (n nudgesLogic) getBlockData(processID string, blocksNumber int) error {
 	//TODO
 	return nil
 }
+
+/*
+	//4. get all active nudges
+	nudges, err := n.storage.LoadActiveNudges()
+	if err != nil {
+		n.logger.Errorf("error on processing all nudges - %s", err)
+		return
+	}
+	if len(nudges) == 0 {
+		n.logger.Info("no active nudges for processing")
+	}
+
+	//5. process every user
+	for _, user := range users {
+		n.processUser(user, nudges)
+	} */
 
 func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {
 	n.logger.Info("\tprepareProviderData")
