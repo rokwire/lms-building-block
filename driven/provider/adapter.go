@@ -503,7 +503,7 @@ func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
 
 //FindCachedData finds a cached data
 func (a *Adapter) FindCachedData(usersIDs []string) ([]core.ProviderUser, error) {
-	return nil, nil
+	return a.db.findUsers(usersIDs)
 }
 
 //GetLastLogin gives the last login date for the user

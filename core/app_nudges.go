@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"lms/core/model"
 	"lms/utils"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -327,7 +326,7 @@ func (n nudgesLogic) processPhase2(processID string, blocksSize int) error {
 	n.logger.Info("START Phase2")
 
 	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
-		n.logger.Infof("phase:2 block:%d", blockNumber)
+		n.logger.Infof("block:%d", blockNumber)
 
 		err := n.processPhase2Block(processID, blockNumber)
 		if err != nil {
@@ -348,10 +347,39 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int) error
 		return err
 	}
 
-	//TODO
-	log.Println(cachedData)
+	// process every user
+	for _, providerUser := range cachedData {
+		err := n.processProviderUser(providerUser)
+		if err != nil {
+			n.logger.Errorf("process provider user %s - %s", providerUser.NetID, err)
+			return err
+		}
+	}
 	return nil
 }
+
+func (n nudgesLogic) processProviderUser(providerUser ProviderUser) error {
+	n.logger.Infof("\tprocess %s", providerUser.NetID)
+
+	//TODO
+	return nil
+}
+
+/*
+	//4. get all active nudges
+	nudges, err := n.storage.LoadActiveNudges()
+	if err != nil {
+		n.logger.Errorf("error on processing all nudges - %s", err)
+		return
+	}
+	if len(nudges) == 0 {
+		n.logger.Info("no active nudges for processing")
+	}
+
+	//5. process every user
+	for _, user := range users {
+		n.processUser(user, nudges)
+	} */
 
 func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, error) {
 	//get data
@@ -378,22 +406,6 @@ func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]Provider
 
 	return cachedData, nil
 }
-
-/*
-	//4. get all active nudges
-	nudges, err := n.storage.LoadActiveNudges()
-	if err != nil {
-		n.logger.Errorf("error on processing all nudges - %s", err)
-		return
-	}
-	if len(nudges) == 0 {
-		n.logger.Info("no active nudges for processing")
-	}
-
-	//5. process every user
-	for _, user := range users {
-		n.processUser(user, nudges)
-	} */
 
 func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {
 	n.logger.Info("\tprepareProviderData")
