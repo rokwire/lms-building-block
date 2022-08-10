@@ -20,6 +20,7 @@ import (
 	"lms/core"
 	"lms/core/model"
 	"net/http"
+	"strconv"
 	"strings"
 
 	Def "lms/driver/web/docs/gen"
@@ -213,4 +214,38 @@ func (h AdminApisHandler) ClearTestSentNudges(l *logs.Log, claims *tokenauth.Cla
 		return l.HttpResponseErrorAction(logutils.ActionDelete, "test sent nudges", nil, err, http.StatusInternalServerError, true)
 	}
 	return l.HttpResponseSuccess()
+}
+
+//FindNudgesProcesses gets all the nudges-process
+func (h AdminApisHandler) FindNudgesProcesses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+	var err error
+
+	//limit and offset
+	limit := 5
+	limitArg := r.URL.Query().Get("limit")
+	if limitArg != "" {
+		limit, err = strconv.Atoi(limitArg)
+		if err != nil {
+			return l.HttpResponseErrorAction(logutils.ActionParse, logutils.TypeArg, logutils.StringArgs("limit"), err, http.StatusBadRequest, false)
+		}
+	}
+	offset := 0
+	offsetArg := r.URL.Query().Get("offset")
+	if offsetArg != "" {
+		offset, err = strconv.Atoi(offsetArg)
+		if err != nil {
+			return l.HttpResponseErrorAction(logutils.ActionParse, logutils.TypeArg, logutils.StringArgs("offset"), err, http.StatusBadRequest, false)
+		}
+	}
+	nudgesProcesses, err := h.app.Administration.FindNudgesProcesses(l, limit, offset)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionGet, "nudges_processes", nil, err, http.StatusInternalServerError, true)
+	}
+
+	data, err := json.Marshal(nudgesProcesses)
+	if err != nil {
+		return l.HttpResponseErrorAction(logutils.ActionMarshal, "sent_nudges", nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HttpResponseSuccessJSON(data)
 }

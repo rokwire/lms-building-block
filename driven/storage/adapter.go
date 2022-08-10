@@ -17,6 +17,7 @@ package storage
 import (
 	"lms/core/model"
 	"log"
+	"sort"
 	"strconv"
 	"time"
 
@@ -285,6 +286,115 @@ func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
 		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": ids}, err)
 	}
 	return nil
+}
+
+//FindNudgesProcesses finds all nudges-process
+func (sa *Adapter) FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error) {
+	filter := bson.D{}
+	var result []model.NudgesProcess
+	options := options.Find()
+	options.SetLimit(int64(limit))
+	options.SetSkip(int64(offset))
+	err := sa.db.nudgesProcesses.Find(filter, &result, options)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudges_process", nil, err)
+	}
+	if len(result) == 0 {
+		return make([]model.NudgesProcess, 0), nil
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+
+	return result, nil
+}
+
+//InsertNudgesProcess inserts nudges process
+func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error {
+	_, err := sa.db.nudgesProcesses.InsertOne(nudgesProcess)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "nudges process", nil, err)
+	}
+	return nil
+}
+
+//UpdateNudgesProcess updates a nudges process
+func (sa *Adapter) UpdateNudgesProcess(ID string, completedAt time.Time, status string, errStr *string) error {
+	filter := bson.D{primitive.E{Key: "_id", Value: ID}}
+	update := bson.D{
+		primitive.E{Key: "$set", Value: bson.D{
+			primitive.E{Key: "completed_at", Value: completedAt},
+			primitive.E{Key: "status", Value: status},
+			primitive.E{Key: "error", Value: errStr},
+		}},
+	}
+
+	result, err := sa.db.nudgesProcesses.UpdateOne(filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "nudges process", &logutils.FieldArgs{"id": ID}, err)
+	}
+	if result.MatchedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "nudges process", &logutils.FieldArgs{"id": ID}, err)
+	}
+
+	return nil
+}
+
+//CountNudgesProcesses counts the nudges process by status
+func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
+	filter := bson.D{primitive.E{Key: "status", Value: status}}
+
+	count, err := sa.db.nudgesProcesses.CountDocuments(filter)
+	if err != nil {
+		return nil, errors.WrapErrorAction("error counting nudges processes", "", nil, err)
+	}
+	return &count, nil
+}
+
+//AddBlockToNudgesProcess adds a block to a nudges process
+func (sa *Adapter) AddBlockToNudgesProcess(processID string, block model.Block) error {
+	filter := bson.M{"_id": processID}
+	update := bson.D{
+		primitive.E{Key: "$push", Value: bson.D{
+			primitive.E{Key: "blocks", Value: block},
+		}},
+	}
+	res, err := sa.db.nudgesProcesses.UpdateOne(filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "nudges process", logutils.StringArgs("inserting block"), err)
+	}
+	if res.ModifiedCount != 1 {
+		return errors.ErrorAction(logutils.ActionUpdate, "nudges process", &logutils.FieldArgs{"unexpected modified count": res.ModifiedCount})
+	}
+	return nil
+}
+
+//GetBlockFromNudgesProcess gets a block from a nudges process
+func (sa *Adapter) GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error) {
+	filter := bson.M{"_id": processID}
+	var result []model.NudgesProcess
+	err := sa.db.nudgesProcesses.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudges process", nil, err)
+	}
+	if len(result) == 0 {
+		//no such process
+		return nil, nil
+	}
+	process := result[0]
+
+	processBlocks := process.Blocks
+	if len(processBlocks) == 0 {
+		return nil, errors.Newf("not blocks for process - %s", processID)
+	}
+
+	for _, block := range processBlocks {
+		if block.Number == blockNumber {
+			return &block, nil
+		}
+	}
+	return nil, errors.Newf("%s does not have a block with number %d", processID, blockNumber)
 }
 
 // NewStorageAdapter creates a new storage adapter instance

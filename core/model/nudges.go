@@ -25,7 +25,8 @@ type NudgesConfig struct {
 	GroupName     string `json:"group_name" bson:"group_name"`
 	TestGroupName string `json:"test_group_name" bson:"test_group_name"`
 	ProcessTime   *int   `json:"process_time" bson:"process_time"` //seconds since midnight CT at which to process nudges
-	Mode          string `json:"mode" bson:"mode"`                 // "normal" or "test"
+	BlockSize     int    `json:"block_size" bson:"block_size"`
+	Mode          string `json:"mode" bson:"mode"` // "normal" or "test"
 }
 
 //Nudge entity
@@ -47,4 +48,28 @@ type SentNudge struct {
 	CriteriaHash uint32    `json:"criteria_hash" bson:"criteria_hash"`
 	DateSent     time.Time `json:"date_sent" bson:"date_sent"`
 	Mode         string    `json:"mode" bson:"mode"`
+}
+
+//NudgesProcess entity
+type NudgesProcess struct {
+	ID          string     `json:"id" bson:"_id"`
+	Mode        string     `json:"mode" bson:"mode"`
+	CreatedAt   time.Time  `json:"created_at" bson:"created_at"`
+	CompletedAt *time.Time `json:"completed_at" bson:"completed_at"`
+	Status      string     `json:"status" bson:"status"` //processing, success, failed
+	Error       *string    `json:"error" bson:"error"`
+
+	Blocks []Block `json:"blocks" bson:"blocks"` //users into blocks
+}
+
+//Block entity
+type Block struct {
+	Number int         `json:"number" bson:"number"`
+	Items  []BlockItem `json:"items" bson:"items"`
+}
+
+//BlockItem entity
+type BlockItem struct {
+	NetID  string `json:"net_id" bson:"net_id"`
+	UserID string `json:"user_id" bson:"user_id"`
 }

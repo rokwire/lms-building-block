@@ -16,10 +16,13 @@ package provider
 
 import (
 	"context"
+	"lms/core"
 	"log"
 	"time"
 
+	"github.com/rokwire/logging-library-go/errors"
 	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/logutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -121,4 +124,71 @@ func (m *database) onDataChanged(changeDoc map[string]interface{}) {
 	if m.listener != nil {
 		m.listener.OnCollectionUpdated(coll.(string))
 	}
+}
+
+// Data managment
+
+func (m *database) userExist(netID string) (*bool, error) {
+	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
+
+	count, err := m.users.CountDocuments(filter)
+	if err != nil {
+		return nil, errors.WrapErrorAction("error counting user for net id", "", &logutils.FieldArgs{"net_id": netID}, err)
+	}
+
+	var result bool
+	if count == 1 {
+		result = true
+	} else {
+		result = false
+	}
+	return &result, nil
+}
+
+func (m *database) insertUser(user core.ProviderUser) error {
+	_, err := m.users.InsertOne(user)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "provider user", &logutils.FieldArgs{"net_id": user.NetID}, err)
+	}
+	return nil
+}
+
+func (m *database) findUser(netID string) (*core.ProviderUser, error) {
+	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
+	var result []core.ProviderUser
+	err := m.users.Find(filter, &result, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		//no data
+		return nil, nil
+	}
+
+	user := result[0]
+	return &user, nil
+}
+
+func (m *database) findUsers(netIDs []string) ([]core.ProviderUser, error) {
+	filter := bson.D{primitive.E{Key: "net_id", Value: bson.M{"$in": netIDs}}}
+	var result []core.ProviderUser
+	err := m.users.Find(filter, &result, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		//no data
+		return nil, nil
+	}
+	return result, nil
+}
+
+func (m *database) saveUser(providerUser core.ProviderUser) error {
+	filter := bson.M{"_id": providerUser.ID}
+	err := m.users.ReplaceOne(filter, providerUser, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionSave, "provider user", &logutils.FieldArgs{"_id": providerUser.ID}, err)
+	}
+
+	return nil
 }

@@ -46,6 +46,8 @@ type Administration interface {
 	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(l *logs.Log, ids []string) error
 	ClearTestSentNudges(l *logs.Log) error
+
+	FindNudgesProcesses(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error)
 }
 
 type servicesImpl struct {
@@ -118,6 +120,10 @@ func (s *administrationImpl) ClearTestSentNudges(l *logs.Log) error {
 	return s.app.clearTestSentNudges(l)
 }
 
+func (s *administrationImpl) FindNudgesProcesses(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error) {
+	return s.app.findNudgesProcesses(l, limit, offset)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
@@ -137,6 +143,13 @@ type Storage interface {
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
 	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(ids []string, mode string) error
+
+	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
+	UpdateNudgesProcess(ID string, completedAt time.Time, status string, err *string) error
+	CountNudgesProcesses(status string) (*int64, error)
+	AddBlockToNudgesProcess(processID string, block model.Block) error
+	FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error)
+	GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error)
 }
 
 //Provider interface for LMS provider
@@ -146,15 +159,58 @@ type Provider interface {
 	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
+
+	CacheCommonData(usersIDs map[string]string) error
+	FindCachedData(usersIDs []string) ([]ProviderUser, error)
+	CacheUserData(user ProviderUser) (*ProviderUser, error)
+
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
 	GetCompletedAssignments(userID string) ([]model.Assignment, error)
 	GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
 }
 
+//Cache entities
+
+//ProviderUser cache entity
+type ProviderUser struct {
+	ID       string     `bson:"_id"`    //core BB account id
+	NetID    string     `bson:"net_id"` //core BB external system id
+	User     model.User `bson:"user"`
+	SyncDate time.Time  `bson:"sync_date"`
+
+	Courses *UserCourses `bson:"courses"`
+}
+
+//UserCourses cache entity
+type UserCourses struct {
+	Data     []UserCourse `bson:"data"`
+	SyncDate time.Time    `bson:"sync_date"`
+}
+
+//UserCourse cache entity
+type UserCourse struct {
+	Data        model.Course       `bson:"data"`
+	Assignments []CourseAssignment `bson:"assignments"`
+	SyncDate    time.Time          `bson:"sync_date"`
+}
+
+//CourseAssignment cache entity
+type CourseAssignment struct {
+	Data       model.Assignment `bson:"data"`
+	Submission *Submission      `bson:"submission"`
+	SyncDate   time.Time        `bson:"sync_date"`
+}
+
+//Submission cache entity
+type Submission struct {
+	Data     model.Submission `bson:"data"`
+	SyncDate time.Time        `bson:"sync_date"`
+}
+
 //GroupsBB interface for the Groups building block communication
 type GroupsBB interface {
-	GetUsers(groupName string) ([]GroupsBBUser, error)
+	GetUsers(groupName string, offset int, limit int) ([]GroupsBBUser, error)
 }
 
 //GroupsBBUser entity
