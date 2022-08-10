@@ -17,6 +17,7 @@ package storage
 import (
 	"lms/core/model"
 	"log"
+	"sort"
 	"strconv"
 	"time"
 
@@ -285,6 +286,28 @@ func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
 		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": ids}, err)
 	}
 	return nil
+}
+
+//FindNudgesProcesses finds all nudges-process
+func (sa *Adapter) FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error) {
+	filter := bson.D{}
+	var result []model.NudgesProcess
+	options := options.Find()
+	options.SetLimit(int64(limit))
+	options.SetSkip(int64(offset))
+	err := sa.db.nudgesProcesses.Find(filter, &result, options)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudges_process", nil, err)
+	}
+	if len(result) == 0 {
+		return make([]model.NudgesProcess, 0), nil
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+
+	return result, nil
 }
 
 //InsertNudgesProcess inserts nudges process
