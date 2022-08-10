@@ -512,6 +512,8 @@ paths:
                   required:
                     - id
                     - mode
+                    - createdAt
+                    - completedAt
                     - status
                     - error
                   type: object
@@ -521,10 +523,14 @@ paths:
                       type: string
                     mode:
                       type: string
+                    createdAt:
+                      type: string
+                    completedAt:
+                      type: string
                     status:
                       type: string
                     error:
-                      type: boolean
+                      type: string
                     blocks:
                       type: object
                     items:
