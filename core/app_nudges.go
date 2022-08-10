@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"lms/core/model"
 	"lms/utils"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -339,15 +340,43 @@ func (n nudgesLogic) processPhase2(processID string, blocksSize int) error {
 	return nil
 }
 
-func (n nudgesLogic) processPhase2Block(processID string, blocksNumber int) error {
+func (n nudgesLogic) processPhase2Block(processID string, blockNumber int) error {
 	// load block data
+	cachedData, err := n.getBlockData(processID, blockNumber)
+	if err != nil {
+		n.logger.Errorf("error on getting block data %s - %d - %s", processID, blockNumber, err)
+		return err
+	}
 
+	//TODO
+	log.Println(cachedData)
 	return nil
 }
 
-func (n nudgesLogic) getBlockData(processID string, blocksNumber int) error {
-	//TODO
-	return nil
+func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, error) {
+	//get data
+	block, err := n.storage.GetBlockFromNudgesProcess(processID, blockNumber)
+	if err != nil {
+		n.logger.Errorf("error on getting block data from the storage %s - %d - %s", processID, blockNumber, err)
+		return nil, err
+	}
+	items := block.Items
+	if len(items) == 0 {
+		return []ProviderUser{}, nil
+	}
+
+	//get the cached data from the block
+	usersIDs := make([]string, len(items))
+	for i, item := range items {
+		usersIDs[i] = item.NetID
+	}
+	cachedData, err := n.provider.FindCachedData(usersIDs)
+	if err != nil {
+		n.logger.Errorf("error on getting cached data %s - %d - %s", processID, blockNumber, err)
+		return nil, err
+	}
+
+	return cachedData, nil
 }
 
 /*

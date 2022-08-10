@@ -142,6 +142,7 @@ type Storage interface {
 	UpdateNudgesProcess(ID string, completedAt time.Time, status string, err *string) error
 	CountNudgesProcesses(status string) (*int64, error)
 	AddBlockToNudgesProcess(processID string, block model.Block) error
+	GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error)
 }
 
 //Provider interface for LMS provider
@@ -153,6 +154,7 @@ type Provider interface {
 	GetCurrentUser(userID string) (*model.User, error)
 
 	CacheCommonData(usersIDs map[string]string) error
+	FindCachedData(usersIDs []string) ([]ProviderUser, error)
 
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)

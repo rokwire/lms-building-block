@@ -501,6 +501,11 @@ func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
 	return courses, nil
 }
 
+//FindCachedData finds a cached data
+func (a *Adapter) FindCachedData(usersIDs []string) ([]core.ProviderUser, error) {
+	return nil, nil
+}
+
 //GetLastLogin gives the last login date for the user
 func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 	//TODO remove this function

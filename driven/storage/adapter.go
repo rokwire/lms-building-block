@@ -347,6 +347,33 @@ func (sa *Adapter) AddBlockToNudgesProcess(processID string, block model.Block) 
 	return nil
 }
 
+//GetBlockFromNudgesProcess gets a block from a nudges process
+func (sa *Adapter) GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error) {
+	filter := bson.M{"_id": processID}
+	var result []model.NudgesProcess
+	err := sa.db.nudgesProcesses.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudges process", nil, err)
+	}
+	if len(result) == 0 {
+		//no such process
+		return nil, nil
+	}
+	process := result[0]
+
+	processBlocks := process.Blocks
+	if len(processBlocks) == 0 {
+		return nil, errors.Newf("not blocks for process - %s", processID)
+	}
+
+	for _, block := range processBlocks {
+		if block.Number == blockNumber {
+			return &block, nil
+		}
+	}
+	return nil, errors.Newf("%s does not have a block with number %d", processID, blockNumber)
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)
