@@ -6,8 +6,8 @@ Patches for **LMS Building Blocks** in this repository will only be applied to t
 
 | Version | Supported          |
 |---------| ------------------ |
-| 1.1.12   | :white_check_mark: |
-| <1.1.12  | :x: |
+| 1.1.13   | :white_check_mark: |
+| <1.1.13  | :x: |
 
 ## Reporting a Bug or Vulnerability
 
