@@ -479,48 +479,79 @@ func (n nudgesLogic) prepareNotificationData(deepLink string) map[string]string 
 
 func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user ProviderUser) error {
 	n.logger.Infof("\t\t\tprocessLastLoginNudgePerUser - %s", nudge.ID)
+
+	var err error
+
+	//get last login date from the cache data
+	lastLogin := user.User.LastLogin
+	//if last login is not available we do nothing
+	if lastLogin == nil {
+		n.logger.Debugf("\t\t\t\tlast login is not available for user - %s", user.NetID)
+		return nil
+	}
+
+	//prepare another needed data
+	hours := nudge.Params["hours"].(float64)
+	now := time.Now()
+
+	//determine if needs to send notification - using the cached data
+	needsSend := n.lastLoginNeedsToSend(hours, now, *lastLogin)
+	if !needsSend {
+		//not reached the max hours, so not send notification
+		n.logger.Infof("\t\t\t\tnot reached the max hours, so not send notification - %s (cache)", user.NetID)
+		return nil
+	}
+
+	//based on the cached data we need to send it
+	//in this case we must refresh the login time with up to date data to determine if we really need to send it.
+	lastLogin, err = n.lastLoginRefreshCache(user)
+	if err != nil {
+		n.logger.Errorf("\t\t\t\terror refreshing cache last login for - %s", user.NetID)
+		return err
+	}
+	if lastLogin == nil {
+		n.logger.Debugf("\t\t\t\tlast login is not available for user after refresh - %s", user.NetID)
+		return nil
+	}
+
+	//determine if needs to send notification - using up to date login time
+	needsSend = n.lastLoginNeedsToSend(hours, now, *lastLogin)
+	if !needsSend {
+		//not reached the max hours, so not send notification
+		n.logger.Infof("\t\t\t\tnot reached the max hours, so not send notification - %s (up to date)", user.NetID)
+		return nil
+	}
+
+	//need to send but first check if it has been send before
+
+	//check if has been sent before
+	criteriaHash := n.generateLastLoginHash(*lastLogin, hours)
+	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
+	if err != nil {
+		//not reached the max hours, so not send notification
+		n.logger.Errorf("\t\t\t\terror checking if sent nudge exists - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+	if sentNudge != nil {
+		n.logger.Infof("\t\t\t\tthis has been already sent - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+
+	//it has not been sent, so sent it
+	//	n.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours)
+
 	return nil
-	/*
-		//get last login date
-		lastLogin, err := n.provider.GetLastLogin(user.NetID)
-		if err != nil {
-			n.logger.Errorf("error getting last login for - %s", user.NetID)
-		}
+}
 
-		//if last login is not available we do nothing
-		if lastLogin == nil {
-			n.logger.Debugf("last login is not available for user - %s", user.NetID)
-			return
-		}
+func (n nudgesLogic) lastLoginNeedsToSend(hours float64, now time.Time, lastLogin time.Time) bool {
+	difference := now.Sub(lastLogin) //difference between now and the last login
+	differenceInHours := difference.Hours()
+	return differenceInHours > hours
+}
 
-		//determine if needs to send notification
-		hours := nudge.Params["hours"].(float64)
-		now := time.Now()
-		difference := now.Sub(*lastLogin) //difference between now and the last login
-		differenceInHours := difference.Hours()
-		if differenceInHours <= hours {
-			//not reached the max hours, so not send notification
-			n.logger.Infof("not reached the max hours, so not send notification - %s", user.NetID)
-			return
-		}
-
-		//need to send but first check if it has been send before
-
-		//check if has been sent before
-		criteriaHash := n.generateLastLoginHash(*lastLogin, hours)
-		sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
-		if err != nil {
-			//not reached the max hours, so not send notification
-			n.logger.Errorf("error checking if sent nudge exists - %s - %s", nudge.ID, user.NetID)
-			return
-		}
-		if sentNudge != nil {
-			n.logger.Infof("this has been already sent - %s - %s", nudge.ID, user.NetID)
-			return
-		}
-
-		//it has not been sent, so sent it
-		n.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours) */
+func (n nudgesLogic) lastLoginRefreshCache(user ProviderUser) (*time.Time, error) {
+	//TODO
+	return user.User.LastLogin, nil
 }
 
 func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user GroupsBBUser,
