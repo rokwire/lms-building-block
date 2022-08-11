@@ -16,5 +16,5 @@ properties:
     enum: [normal, test]
   process_time:
     type: integer
-  blocK_size:
+  block_size:
     type: integer

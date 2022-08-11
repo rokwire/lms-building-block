@@ -637,7 +637,7 @@ components:
             - test
         process_time:
           type: integer
-        blocK_size:
+        block_size:
           type: integer
     _admin_req_create_nudge:
       required:

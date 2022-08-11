@@ -60,7 +60,7 @@ type Nudge struct {
 // NudgesConfig defines model for NudgesConfig.
 type NudgesConfig struct {
 	Active        bool             `json:"active"`
-	BlocKSize     *int             `json:"blocK_size,omitempty"`
+	BlockSize     *int             `json:"block_size,omitempty"`
 	GroupName     string           `json:"group_name"`
 	Mode          NudgesConfigMode `json:"mode"`
 	ProcessTime   *int             `json:"process_time,omitempty"`
