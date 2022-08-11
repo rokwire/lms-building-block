@@ -628,6 +628,40 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 	}
 	user = *userData
 
+	//in this moment we have ensured that we have cached data for the submissions
+
+	//get the missed assignments based on the cache data
+	missedAssignments := n.getMissedAssignmentsData(user, nil)
+
+	if len(missedAssignments) == 0 {
+		n.logger.Infof("\t\t\tno missed assignments, so not send notifications - %s", user.NetID)
+		return nil
+	}
+
+	//at this moment we have identified missed assignments but based on the cached data
+	//now we have to determine for which courses we have to update the data and for which
+	//we can use the cache data
+	notValid, valid := n.maCheckDataValidity(missedAssignments)
+
+	refreshedData := []CourseAssignment{}
+	if len(notValid) > 0 {
+		n.logger.Infof("\t\t\twe have old data, so need to refresh it - %s", user.NetID)
+		updatedData, err := n.provider.CacheUserCoursesData(user, notValid)
+		if err != nil {
+			n.logger.Debugf("\t\t\terror getting not valid data [ma] %s - %s", user.NetID, err)
+			return err
+		}
+		user = *updatedData
+
+		//once we have loaded the not valid data then we have to cehck if it is really missed assignments
+		refreshedData = n.getMissedAssignmentsData(user, nil)
+	}
+
+	//merge valid and unvalid
+	readyData := n.maMergeData(refreshedData, valid)
+
+	log.Println(readyData)
+
 	//TODO
 	return nil
 	/*
@@ -661,6 +695,90 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 		for _, assignment := range missedAssignments {
 			n.processMissedAssignment(nudge, user, assignment, hours)
 		} */
+}
+
+func (n nudgesLogic) maMergeData(part1 []CourseAssignment, part2 []CourseAssignment) []model.Assignment {
+	result := []model.Assignment{}
+
+	for _, c := range part1 {
+		result = append(result, c.Data)
+	}
+
+	for _, c := range part2 {
+		result = append(result, c.Data)
+	}
+
+	return result
+}
+
+func (n nudgesLogic) maCheckDataValidity(missedAssignments []CourseAssignment) ([]int, []CourseAssignment) {
+	notValidMap := map[int]bool{}
+	valid := []CourseAssignment{}
+
+	now := time.Now()
+	for _, ma := range missedAssignments {
+		syncDate := ma.SyncDate
+		if utils.DateEqual(now, syncDate) {
+			//valid when in the same calendar day
+			valid = append(valid, ma)
+		} else {
+			//not valid
+			notValidMap[ma.Data.CourseID] = true
+		}
+	}
+
+	//prepare not valid
+	notValid := make([]int, len(notValidMap))
+	i := 0
+	for k := range notValidMap {
+		notValid[i] = k
+		i++
+	}
+
+	return notValid, valid
+}
+
+//if coursesIDs is empty then check for all courses
+func (n nudgesLogic) getMissedAssignmentsData(user ProviderUser, coursesIDs []int) []CourseAssignment {
+	userCourses := user.Courses
+	if userCourses == nil || len(userCourses.Data) == 0 {
+		return []CourseAssignment{}
+	}
+
+	result := []CourseAssignment{}
+	for _, uc := range userCourses.Data {
+
+		if len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID) {
+
+			assignments := uc.Assignments
+			if len(assignments) > 0 {
+				for _, assignment := range assignments {
+					if n.isAssignmentMissed(assignment) {
+						result = append(result, assignment)
+					}
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+func (n nudgesLogic) isAssignmentMissed(ca CourseAssignment) bool {
+	assignmentData := ca.Data
+	assignmentDueAt := assignmentData.DueAt
+	if assignmentDueAt == nil {
+		n.logger.Debugf("\t\t\tthere is no due_at for assignment %s", assignmentData.Name)
+		return false
+	}
+
+	submissionData := ca.Submission.Data
+	now := time.Now()
+
+	return now.After(*assignmentDueAt) &&
+		((submissionData == nil) ||
+			(submissionData.SubmittedAt == nil) ||
+			(submissionData != nil && submissionData.SubmittedAt != nil && submissionData.SubmittedAt.After(*assignmentData.DueAt)))
 }
 
 func (n nudgesLogic) maFillCacheIfEmpty(user ProviderUser) (*ProviderUser, error) {
