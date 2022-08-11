@@ -26,13 +26,13 @@ import (
 	"net/http"
 )
 
-//Adapter implements the notifications BB interface
+// Adapter implements the notifications BB interface
 type Adapter struct {
 	host           string
 	internalAPIKey string
 }
 
-//SendNotifications sends notifications via the Notifications BB
+// SendNotifications sends notifications via the Notifications BB
 func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, body string, data map[string]string) error {
 	if len(recipients) > 0 {
 		url := fmt.Sprintf("%s/api/int/message", a.host)
@@ -75,7 +75,7 @@ func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, bo
 	return nil
 }
 
-//NewNotificationsAdapter creates a new notifications BB adapter
+// NewNotificationsAdapter creates a new notifications BB adapter
 func NewNotificationsAdapter(notificationHost string, internalAPIKey string) *Adapter {
 	return &Adapter{host: notificationHost, internalAPIKey: internalAPIKey}
 }

@@ -152,7 +152,7 @@ type Storage interface {
 	GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error)
 }
 
-//Provider interface for LMS provider
+// Provider interface for LMS provider
 type Provider interface {
 	GetCourses(userID string) ([]model.Course, error)
 	GetCourse(userID string, courseID int) (*model.Course, error)
@@ -172,7 +172,7 @@ type Provider interface {
 
 //Cache entities
 
-//ProviderUser cache entity
+// ProviderUser cache entity
 type ProviderUser struct {
 	ID       string     `bson:"_id"`    //core BB account id
 	NetID    string     `bson:"net_id"` //core BB external system id
@@ -182,50 +182,50 @@ type ProviderUser struct {
 	Courses *UserCourses `bson:"courses"`
 }
 
-//UserCourses cache entity
+// UserCourses cache entity
 type UserCourses struct {
 	Data     []UserCourse `bson:"data"`
 	SyncDate time.Time    `bson:"sync_date"`
 }
 
-//UserCourse cache entity
+// UserCourse cache entity
 type UserCourse struct {
 	Data        model.Course       `bson:"data"`
 	Assignments []CourseAssignment `bson:"assignments"`
 	SyncDate    time.Time          `bson:"sync_date"`
 }
 
-//CourseAssignment cache entity
+// CourseAssignment cache entity
 type CourseAssignment struct {
 	Data       model.Assignment `bson:"data"`
 	Submission *Submission      `bson:"submission"`
 	SyncDate   time.Time        `bson:"sync_date"`
 }
 
-//Submission cache entity
+// Submission cache entity
 type Submission struct {
 	Data     model.Submission `bson:"data"`
 	SyncDate time.Time        `bson:"sync_date"`
 }
 
-//GroupsBB interface for the Groups building block communication
+// GroupsBB interface for the Groups building block communication
 type GroupsBB interface {
 	GetUsers(groupName string, offset int, limit int) ([]GroupsBBUser, error)
 }
 
-//GroupsBBUser entity
+// GroupsBBUser entity
 type GroupsBBUser struct {
 	UserID string `json:"user_id"`
 	NetID  string `json:"net_id"`
 	Name   string `json:"name"`
 }
 
-//NotificationsBB interface for the Notifications building block communication
+// NotificationsBB interface for the Notifications building block communication
 type NotificationsBB interface {
 	SendNotifications(recipients []Recipient, text string, body string, data map[string]string) error
 }
 
-//Recipient entity
+// Recipient entity
 type Recipient struct {
 	UserID string `json:"user_id"`
 	Name   string `json:"name"`

@@ -35,7 +35,7 @@ import (
 	"github.com/rokwire/logging-library-go/logs"
 )
 
-//Adapter implements the Provider interface
+// Adapter implements the Provider interface
 type Adapter struct {
 	host      string
 	token     string
@@ -52,12 +52,12 @@ func (a *Adapter) Start() error {
 	return err
 }
 
-//GetCourses gets the user courses
+// GetCourses gets the user courses
 func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
 	return a.loadCourses(userID)
 }
 
-//GetCourse gives the the course for the provided id
+// GetCourse gives the the course for the provided id
 func (a *Adapter) GetCourse(userID string, courseID int) (*model.Course, error) {
 	//params
 	queryParamsItems := map[string][]string{}
@@ -84,7 +84,7 @@ func (a *Adapter) GetCourse(userID string, courseID int) (*model.Course, error) 
 	return course, nil
 }
 
-//GetAssignmentGroups gives the the course assignment groups for the user
+// GetAssignmentGroups gives the the course assignment groups for the user
 func (a *Adapter) GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
 	//params
 	queryParamsItems := map[string][]string{}
@@ -114,7 +114,7 @@ func (a *Adapter) GetAssignmentGroups(userID string, courseID int, include *stri
 	return assignmentGroups, nil
 }
 
-//GetCourseUser gives the course user
+// GetCourseUser gives the course user
 func (a *Adapter) GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
 	//params
 	queryParamsItems := map[string][]string{}
@@ -152,7 +152,7 @@ func (a *Adapter) GetCourseUser(userID string, courseID int, includeEnrolments b
 	return user, nil
 }
 
-//GetCurrentUser gives the current user
+// GetCurrentUser gives the current user
 func (a *Adapter) GetCurrentUser(userID string) (*model.User, error) {
 	//params
 	queryParamsItems := map[string][]string{}
@@ -179,7 +179,7 @@ func (a *Adapter) GetCurrentUser(userID string) (*model.User, error) {
 	return user, nil
 }
 
-//CacheCommonData caches users and courses data
+// CacheCommonData caches users and courses data
 func (a *Adapter) CacheCommonData(usersIDs map[string]string) error {
 	//1. cache users
 	err := a.cacheUsers(usersIDs)
@@ -360,7 +360,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 	return allCourses, nil
 }
 
-//puts the submissions data from the current to the new one. The new one does not have submissions in it, so we do not want to loose it.
+// puts the submissions data from the current to the new one. The new one does not have submissions in it, so we do not want to loose it.
 func (a *Adapter) getSubmissionsFromCurrent(current core.UserCourses, new core.UserCourses) core.UserCourses {
 	userCourses := new.Data
 	if len(userCourses) == 0 {
@@ -409,7 +409,7 @@ func (a *Adapter) findSubmission(assignmentID int, current core.UserCourses) *co
 	return nil
 }
 
-//check if the courses are available in allCourses otherwise load them
+// check if the courses are available in allCourses otherwise load them
 func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]core.UserCourse) (*core.UserCourses, map[int]core.UserCourse, error) {
 	//prepare the result variable
 	now := time.Now()
@@ -501,12 +501,12 @@ func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
 	return courses, nil
 }
 
-//FindCachedData finds a cached data
+// FindCachedData finds a cached data
 func (a *Adapter) FindCachedData(usersIDs []string) ([]core.ProviderUser, error) {
 	return a.db.findUsers(usersIDs)
 }
 
-//GetLastLogin gives the last login date for the user
+// GetLastLogin gives the last login date for the user
 func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 	//TODO remove this function
 	//params
@@ -540,7 +540,7 @@ func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 	return user.LastLogin, nil
 }
 
-//CacheUserData caches the user object
+// CacheUserData caches the user object
 func (a *Adapter) CacheUserData(user core.ProviderUser) (*core.ProviderUser, error) {
 	//1. load the user from the provider
 	loadedUser, err := a.loadUser(user.NetID)
@@ -559,7 +559,7 @@ func (a *Adapter) CacheUserData(user core.ProviderUser) (*core.ProviderUser, err
 	return &user, nil
 }
 
-//GetMissedAssignments gives the missed assignments of the user
+// GetMissedAssignments gives the missed assignments of the user
 func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error) {
 	//params
 	queryParamsItems := map[string][]string{}
@@ -587,7 +587,7 @@ func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error
 	return assignments, nil
 }
 
-//GetCompletedAssignments gives the completed assignments of the user
+// GetCompletedAssignments gives the completed assignments of the user
 func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, error) {
 	//1. first we need to find all courses for the user
 	userCourses, err := a.GetCourses(userID)
@@ -654,7 +654,7 @@ func (a *Adapter) getAssignments(courseID int, userID string, includeSubmission 
 	return assignments, nil
 }
 
-//GetCalendarEvents gives the events of the user
+// GetCalendarEvents gives the events of the user
 func (a *Adapter) GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error) {
 	//1. find the user id
 	user, err := a.GetCurrentUser(userID)
@@ -779,7 +779,7 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 	return data, nil
 }
 
-//NewProviderAdapter creates a new provider adapter
+// NewProviderAdapter creates a new provider adapter
 func NewProviderAdapter(host string, token string, tokenType string,
 	mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 

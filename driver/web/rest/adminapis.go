@@ -37,7 +37,7 @@ type AdminApisHandler struct {
 	config *model.Config
 }
 
-//GetNudgesConfig gets the nudges config
+// GetNudgesConfig gets the nudges config
 func (h AdminApisHandler) GetNudgesConfig(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 
 	nudges, err := h.app.Administration.GetNudgesConfig(l)
@@ -53,7 +53,7 @@ func (h AdminApisHandler) GetNudgesConfig(l *logs.Log, claims *tokenauth.Claims,
 	return l.HttpResponseSuccessJSON(data)
 }
 
-//UpdateNudgesConfig updates the nudges config
+// UpdateNudgesConfig updates the nudges config
 func (h AdminApisHandler) UpdateNudgesConfig(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -74,7 +74,7 @@ func (h AdminApisHandler) UpdateNudgesConfig(l *logs.Log, claims *tokenauth.Clai
 	return l.HttpResponseSuccess()
 }
 
-//GetNudges gets all the nudges
+// GetNudges gets all the nudges
 func (h AdminApisHandler) GetNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 
 	nudges, err := h.app.Administration.GetNudges()
@@ -90,7 +90,7 @@ func (h AdminApisHandler) GetNudges(l *logs.Log, claims *tokenauth.Claims, w htt
 	return l.HttpResponseSuccessJSON(data)
 }
 
-//CreateNudge creates nudge
+// CreateNudge creates nudge
 func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -109,7 +109,7 @@ func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	return l.HttpResponseSuccess()
 }
 
-//UpdateNudge updates nudge
+// UpdateNudge updates nudge
 func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	params := mux.Vars(r)
 	ID := params["id"]
@@ -134,7 +134,7 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	return l.HttpResponseSuccess()
 }
 
-//DeleteNudge deletes nudge
+// DeleteNudge deletes nudge
 func (h AdminApisHandler) DeleteNudge(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	params := mux.Vars(r)
 	nudgeID := params["id"]
@@ -149,7 +149,7 @@ func (h AdminApisHandler) DeleteNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	return l.HttpResponseSuccess()
 }
 
-//FindSentNudges gets all the sent_nudges
+// FindSentNudges gets all the sent_nudges
 func (h AdminApisHandler) FindSentNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	//nudgeID
 	var nudgeID *string
@@ -190,7 +190,7 @@ func (h AdminApisHandler) FindSentNudges(l *logs.Log, claims *tokenauth.Claims, 
 	return l.HttpResponseSuccessJSON(data)
 }
 
-//DeleteSentNudges deletes sent nudge
+// DeleteSentNudges deletes sent nudge
 func (h AdminApisHandler) DeleteSentNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	//sent nudge ID
 	sentNudgesIDsParam := r.URL.Query().Get("ids")
@@ -207,7 +207,7 @@ func (h AdminApisHandler) DeleteSentNudges(l *logs.Log, claims *tokenauth.Claims
 	return l.HttpResponseSuccess()
 }
 
-//ClearTestSentNudges clears all sent nudges with the test mode
+// ClearTestSentNudges clears all sent nudges with the test mode
 func (h AdminApisHandler) ClearTestSentNudges(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	err := h.app.Administration.ClearTestSentNudges(l)
 	if err != nil {
@@ -216,7 +216,7 @@ func (h AdminApisHandler) ClearTestSentNudges(l *logs.Log, claims *tokenauth.Cla
 	return l.HttpResponseSuccess()
 }
 
-//FindNudgesProcesses gets all the nudges-process
+// FindNudgesProcesses gets all the nudges-process
 func (h AdminApisHandler) FindNudgesProcesses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	var err error
 
