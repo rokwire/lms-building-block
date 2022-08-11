@@ -539,9 +539,9 @@ paths:
                         items:
                           type: object
                           properties:
-                            netID:
+                            net_id:
                               type: string
-                            userID:
+                            user_id:
                               type: string
         '400':
           description: Bad request
