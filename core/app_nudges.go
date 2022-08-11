@@ -654,7 +654,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 		user = *updatedData
 
 		//once we have loaded the not valid data then we have to cehck if it is really missed assignments
-		refreshedData = n.getMissedAssignmentsData(user, nil)
+		refreshedData = n.getMissedAssignmentsData(user, notValid)
 	}
 
 	//merge valid and unvalid
