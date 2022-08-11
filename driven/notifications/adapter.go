@@ -68,7 +68,7 @@ func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, bo
 		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
-			log.Printf("error with response code - %d", resp.StatusCode)
+			log.Printf("notifications error with response code - %d", resp.StatusCode)
 			return fmt.Errorf("error with response code != 200")
 		}
 	}
