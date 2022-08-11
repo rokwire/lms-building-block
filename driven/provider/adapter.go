@@ -559,6 +559,11 @@ func (a *Adapter) CacheUserData(user core.ProviderUser) (*core.ProviderUser, err
 	return &user, nil
 }
 
+//CacheUserCoursesData caches the user courses data
+func (a *Adapter) CacheUserCoursesData(user core.ProviderUser, coursesIDs []int) (*core.ProviderUser, error) {
+	return nil, nil
+}
+
 //GetMissedAssignments gives the missed assignments of the user
 func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error) {
 	//params
