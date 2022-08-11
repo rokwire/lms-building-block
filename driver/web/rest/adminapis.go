@@ -67,7 +67,7 @@ func (h AdminApisHandler) UpdateNudgesConfig(l *logs.Log, claims *tokenauth.Clai
 	}
 
 	err = h.app.Administration.UpdateNudgesConfig(l, requestData.Active, requestData.GroupName,
-		requestData.TestGroupName, string(requestData.Mode), requestData.ProcessTime)
+		requestData.TestGroupName, string(requestData.Mode), requestData.ProcessTime, requestData.BlockSize)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "nudges config", nil, err, http.StatusInternalServerError, true)
 	}
