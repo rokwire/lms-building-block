@@ -205,8 +205,8 @@ type CourseAssignment struct {
 
 //Submission cache entity
 type Submission struct {
-	Data     model.Submission `bson:"data"`
-	SyncDate time.Time        `bson:"sync_date"`
+	Data     *model.Submission `bson:"data"`
+	SyncDate time.Time         `bson:"sync_date"`
 }
 
 //GroupsBB interface for the Groups building block communication

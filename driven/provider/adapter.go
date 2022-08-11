@@ -561,7 +561,56 @@ func (a *Adapter) CacheUserData(user core.ProviderUser) (*core.ProviderUser, err
 
 //CacheUserCoursesData caches the user courses data
 func (a *Adapter) CacheUserCoursesData(user core.ProviderUser, coursesIDs []int) (*core.ProviderUser, error) {
-	return nil, nil
+	if len(coursesIDs) == 0 {
+		return &user, nil
+	}
+
+	// load the assignments(+submissions) data for all courses
+	newData := map[int][]model.Assignment{}
+	for _, courseID := range coursesIDs {
+		assignments, err := a.getAssignments(courseID, user.NetID, true)
+		if err != nil {
+			return nil, err
+		}
+		newData[courseID] = assignments
+	}
+
+	//add the new data to the user object
+	currentUserCourses := user.Courses.Data
+	newUserCoursesData := []core.UserCourse{}
+	for _, uc := range currentUserCourses {
+		//get the data from the loaded ones
+		loadedAssignments, has := newData[uc.Data.ID]
+		if has {
+			//use the new data
+
+			now := time.Now()
+			newCAs := make([]core.CourseAssignment, len(loadedAssignments))
+			for j, assignment := range loadedAssignments {
+
+				submission := core.Submission{Data: assignment.Submission, SyncDate: now}
+
+				newCA := core.CourseAssignment{Data: assignment, Submission: &submission, SyncDate: now}
+				newCAs[j] = newCA
+			}
+
+			nuc := core.UserCourse{Data: uc.Data, Assignments: newCAs, SyncDate: now}
+			newUserCoursesData = append(newUserCoursesData, nuc)
+		} else {
+			//use the old one
+			newUserCoursesData = append(newUserCoursesData, uc)
+		}
+
+	}
+	user.Courses.Data = newUserCoursesData
+
+	//save the updated user data
+	err := a.db.saveUser(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 //GetMissedAssignments gives the missed assignments of the user

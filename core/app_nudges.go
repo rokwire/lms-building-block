@@ -690,9 +690,14 @@ func (n nudgesLogic) maFillCacheIfEmpty(user ProviderUser) (*ProviderUser, error
 		return &user, nil
 	}
 
-	//we need to load the data
+	//we need to load the data for the empty ones
+	updatedData, err := n.provider.CacheUserCoursesData(user, coursesIDs)
+	if err != nil {
+		n.logger.Debugf("\t\t\terror caching user courses data [ma] %s - %s", user.NetID, err)
+		return nil, err
+	}
 
-	return nil, nil
+	return updatedData, nil
 }
 
 func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user GroupsBBUser, assignment model.Assignment, hours float64) {
