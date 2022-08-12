@@ -930,40 +930,49 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 	user = *updatedUser
 
 	// determine which of the assignments are early completed
-	log.Println(updatedCandidateAssignments)
+	ecAssignments := []model.Assignment{}
+	hours := nudge.Params["hours"].(float64)
+	for _, assignment := range updatedCandidateAssignments {
+		if n.ecIsEarlyCompleted(assignment, hours) {
+			ecAssignments = append(ecAssignments, assignment.Data)
+		}
+	}
+
+	//here we have the assignments we need to send notifications for
+
+	//process the early completed assignments
+	for _, assignment := range ecAssignments {
+		err = n.processCompletedAssignmentEarly(nudge, user, assignment, hours)
+		if err != nil {
+			n.logger.Errorf("\t\t\terror process early complete assignment for - %s - %s", user.NetID, assignment.Name)
+			return nil, err
+		}
+	}
 
 	return &user, nil
-	/*
-		//get completed assignments
-		ecAssignments, err := n.provider.GetCompletedAssignments(user.NetID)
-		if err != nil {
-			n.logger.Errorf("\t\t\terror getting early completed assignments for - %s", user.NetID)
-		}
-		if len(ecAssignments) == 0 {
-			//no early completed assignments
-			n.logger.Infof("\t\t\tno early completed assignments, so not send notifications - %s", user.NetID)
-			return
-		}
+}
 
-		//determine for which of the submissions we need to send notifications
-		hours := nudge.Params["hours"].(float64)
-		now := time.Now()
-		ecAssignments, err = n.findCompletedEarlyAssignments(hours, now, ecAssignments)
-		if err != nil {
-			n.logger.Errorf("\t\t\terror finding early completed assignments for - %s", user.NetID)
-		}
-		if len(ecAssignments) == 0 {
-			//no early completed assignments
-			n.logger.Infof("\t\t\tno early completed assignments after checking submitted date, so not send notifications - %s", user.NetID)
-			return
-		}
+func (n nudgesLogic) ecIsEarlyCompleted(assignment CourseAssignment, hours float64) bool {
+	submission := assignment.Submission
+	if submission == nil {
+		return false
+	}
+	submissionData := submission.Data
+	if submissionData == nil {
+		return false
+	}
+	submittedAt := submissionData.SubmittedAt
+	if submittedAt == nil {
+		return false
+	}
 
-		//here we have the assignments we need to send notifications for
+	dueAtSeconds := assignment.Data.DueAt.Unix()
+	submittedAtSeconds := submittedAt.Unix()
+	hoursInSecs := hours * 60 * 60
+	//check if submitted is x hours before due
+	difference := dueAtSeconds - submittedAtSeconds
 
-		//process the early completed assignments
-		for _, assignment := range ecAssignments {
-			n.processCompletedAssignmentEarly(nudge, user, assignment, hours)
-		} */
+	return difference > int64(hoursInSecs)
 }
 
 func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssignment {
@@ -1087,48 +1096,31 @@ func (n nudgesLogic) ecFindAssignments(user ProviderUser, assignmentsIDs []int) 
 	return result
 }
 
-func (n nudgesLogic) findCompletedEarlyAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
-	n.logger.Info("\t\t\tfindCompletedEarlyAssignments")
-
-	hoursInSecs := hours * 60 * 60
-	resultList := []model.Assignment{}
-	for _, assignment := range assignments {
-
-		if assignment.DueAt == nil || assignment.Submission == nil || assignment.Submission.SubmittedAt == nil {
-			continue
-		}
-		dueAt := assignment.DueAt.Unix()
-		submittedAt := assignment.Submission.SubmittedAt.Unix()
-		//check if submitted is x hours before due
-		difference := dueAt - submittedAt
-		if difference > int64(hoursInSecs) {
-			resultList = append(resultList, assignment)
-		}
-	}
-
-	return resultList, nil
-}
-
-func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user GroupsBBUser, assignment model.Assignment, hours float64) {
+func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user ProviderUser, assignment model.Assignment, hours float64) error {
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarly - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before
 
 	//check if has been sent before
 	criteriaHash := n.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
-	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
+	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
 	if err != nil {
 		//not reached the max hours, so not send notification
 		n.logger.Errorf("\t\t\terror checking if sent nudge exists for missed assignment - %s - %s", nudge.ID, user.NetID)
-		return
+		return err
 	}
 	if sentNudge != nil {
 		n.logger.Infof("\t\t\tthis has been already sent - %s - %s", nudge.ID, user.NetID)
-		return
+		return err
 	}
 
 	//it has not been sent, so sent it
-	n.sendEarlyCompletedAssignmentNudgeForUser(nudge, user, assignment, hours)
+	err = n.sendEarlyCompletedAssignmentNudgeForUser(nudge, user, assignment, hours)
+	if err != nil {
+		n.logger.Errorf("\t\t\terror send early completed assignment - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+	return nil
 }
 
 func (n nudgesLogic) generateEarlyCompletedAssignmentHash(assignmentID int, submissionID int, submittedAt time.Time) uint32 {
@@ -1140,28 +1132,36 @@ func (n nudgesLogic) generateEarlyCompletedAssignmentHash(assignmentID int, subm
 	return hash
 }
 
-func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user GroupsBBUser,
-	assignment model.Assignment, hours float64) {
-	n.logger.Infof("\t\t\tsendEarlyCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.UserID)
-
-	//send push notification
-	recipient := Recipient{UserID: user.UserID, Name: ""}
-	deepLink := fmt.Sprintf(nudge.DeepLink, assignment.CourseID, assignment.ID)
-	data := n.prepareNotificationData(deepLink)
-	err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body, data)
-	if err != nil {
-		n.logger.Debugf("\t\t\terror sending notification for %s - %s", user.UserID, err)
-		return
-	}
+func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
+	assignment model.Assignment, hours float64) error {
+	n.logger.Infof("\t\t\tsendEarlyCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
 	//insert sent nudge
 	criteriaHash := n.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
-	sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
-	err = n.storage.InsertSentNudge(sentNudge)
+	sentNudge := n.createSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
+	err := n.storage.InsertSentNudge(sentNudge)
 	if err != nil {
-		n.logger.Errorf("\t\t\terror saving sent early completed assignment nudge for %s - %s", user.UserID, err)
-		return
+		n.logger.Errorf("\t\t\terror saving sent early completed assignment nudge for %s - %s", user.NetID, err)
+		return err
 	}
+
+	//sending in another thread as it happen very slowly
+	go func(user ProviderUser) {
+		//send push notification
+		recipient := Recipient{UserID: user.ID, Name: ""}
+		deepLink := fmt.Sprintf(nudge.DeepLink, assignment.CourseID, assignment.ID)
+		data := n.prepareNotificationData(deepLink)
+		err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body, data)
+		if err != nil {
+			n.logger.Debugf("\t\t\terror sending notification for %s - %s", user.ID, err)
+			return
+		}
+
+		//the logger doe snot work in another thread
+		log.Printf("\t\t\t\tsuccess sending notification for %s", user.NetID)
+	}(user)
+
+	return nil
 }
 
 // end completed_assignment_early nudge
