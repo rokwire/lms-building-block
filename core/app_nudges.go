@@ -914,25 +914,34 @@ func (n nudgesLogic) findMissedAssignments(hours float64, now time.Time, assignm
 func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user ProviderUser) (*ProviderUser, error) {
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
 
-	// find the early completion candidat assignments
+	// find the early completion candidate assignments
 	candidateAssignments := n.ecFindCandidateAssignments(user)
 	if len(candidateAssignments) == 0 {
-		n.logger.Infof("there is no candidate assignments - %s", user.NetID)
+		n.logger.Infof("\t\t\tthere is no candidate assignments - %s", user.NetID)
 		return &user, nil
 	}
 
-	log.Println(candidateAssignments)
+	// load data if necessary
+	updatedUser, updatedCandidateAssignments, err := n.ecLoadDataIfNecessary(user, candidateAssignments)
+	if err != nil {
+		n.logger.Debugf("\t\t\terror loading data if necessary [ec] %s - %s", user.ID, err)
+		return nil, err
+	}
+	user = *updatedUser
+
+	// determine which of the assignments are early completed
+	log.Println(updatedCandidateAssignments)
 
 	return &user, nil
 	/*
 		//get completed assignments
 		ecAssignments, err := n.provider.GetCompletedAssignments(user.NetID)
 		if err != nil {
-			n.logger.Errorf("error getting early completed assignments for - %s", user.NetID)
+			n.logger.Errorf("\t\t\terror getting early completed assignments for - %s", user.NetID)
 		}
 		if len(ecAssignments) == 0 {
 			//no early completed assignments
-			n.logger.Infof("no early completed assignments, so not send notifications - %s", user.NetID)
+			n.logger.Infof("\t\t\tno early completed assignments, so not send notifications - %s", user.NetID)
 			return
 		}
 
@@ -941,11 +950,11 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 		now := time.Now()
 		ecAssignments, err = n.findCompletedEarlyAssignments(hours, now, ecAssignments)
 		if err != nil {
-			n.logger.Errorf("error finding early completed assignments for - %s", user.NetID)
+			n.logger.Errorf("\t\t\terror finding early completed assignments for - %s", user.NetID)
 		}
 		if len(ecAssignments) == 0 {
 			//no early completed assignments
-			n.logger.Infof("no early completed assignments after checking submitted date, so not send notifications - %s", user.NetID)
+			n.logger.Infof("\t\t\tno early completed assignments after checking submitted date, so not send notifications - %s", user.NetID)
 			return
 		}
 
@@ -965,7 +974,7 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssig
 	userCoursesData := userCourses.Data
 
 	result := []CourseAssignment{}
-	now := time.Now()
+	//now := time.Now()
 	for _, uc := range userCoursesData {
 		assignments := uc.Assignments
 		if len(assignments) > 0 {
@@ -975,14 +984,89 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssig
 					//we rely on due at date
 					continue
 				}
-				if now.Before(*dueAt) {
-					result = append(result, assignment)
-				}
+				//TODO revert
+				//if now.Before(*dueAt) {
+				result = append(result, assignment)
+				//}
 			}
 		}
 	}
 
 	return result
+}
+
+func (n nudgesLogic) ecLoadDataIfNecessary(user ProviderUser, assignments []CourseAssignment) (*ProviderUser, []CourseAssignment, error) {
+	result := []CourseAssignment{}
+	forLoading := map[int][]int{}
+
+	now := time.Now()
+	for _, assignment := range assignments {
+		submission := assignment.Submission
+
+		if submission != nil {
+			n.logger.Infof("\t\t\tsubmission has been loaded before - %s", assignment.Data.Name)
+			syncDate := submission.SyncDate
+
+			if utils.DateEqual(now, syncDate) {
+				n.logger.Info("\t\t\t\tit is from today, no need to load")
+				result = append(result, assignment)
+			} else {
+				n.logger.Info("\t\t\t\tit has been loaded before")
+
+				submissionData := submission.Data
+				if submissionData != nil {
+					n.logger.Info("\t\t\t\t\tthere is a submission, no need to load")
+					result = append(result, assignment)
+				} else {
+					n.logger.Info("\t\t\t\t\tthere is no submission yet")
+
+					//add for loading
+					value := forLoading[assignment.Data.CourseID]
+					value = append(value, assignment.Data.ID)
+					forLoading[assignment.Data.CourseID] = value
+				}
+			}
+		} else {
+			n.logger.Infof("\t\t\tsubmission has NOT been loaded before - %s", assignment.Data.Name)
+
+			//add for loading
+			value := forLoading[assignment.Data.CourseID]
+			value = append(value, assignment.Data.ID)
+			forLoading[assignment.Data.CourseID] = value
+		}
+	}
+
+	if len(forLoading) > 0 {
+		n.logger.Infof("\t\t\twe need to load assignments for %d courses", len(forLoading))
+
+		coursesIDs := make([]int, len(forLoading))
+		assignmentsIDs := []int{}
+		i := 0
+		for k, v := range forLoading {
+			coursesIDs[i] = k
+			assignmentsIDs = append(assignmentsIDs, v...)
+			i++
+		}
+		updatedUser, err := n.provider.CacheUserCoursesData(user, coursesIDs)
+		if err != nil {
+			n.logger.Debugf("\t\t\terror caching user courses data [ma] %s - %s", user.NetID, err)
+			return nil, nil, err
+		}
+		user = *updatedUser
+
+		loadedAssignments := n.ecFindAssignments(user, assignmentsIDs)
+
+		//add the loaded assignemnts to the rest
+		result = append(result, loadedAssignments...)
+	} else {
+		n.logger.Info("\t\t\tno need to load assingments")
+	}
+
+	return &user, result, nil
+}
+
+func (n nudgesLogic) ecFindAssignments(user ProviderUser, assignmentsIDs []int) []CourseAssignment {
+	return nil
 }
 
 func (n nudgesLogic) findCompletedEarlyAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
