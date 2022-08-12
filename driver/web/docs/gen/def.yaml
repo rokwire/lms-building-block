@@ -512,8 +512,8 @@ paths:
                   required:
                     - id
                     - mode
-                    - createdAt
-                    - completedAt
+                    - created_at
+                    - completed_at
                     - status
                     - error
                   type: object
@@ -523,9 +523,9 @@ paths:
                       type: string
                     mode:
                       type: string
-                    createdAt:
+                    created_at:
                       type: string
-                    completedAt:
+                    completed_at:
                       type: string
                     status:
                       type: string
