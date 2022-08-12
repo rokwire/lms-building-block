@@ -99,7 +99,7 @@ func (m *database) start() error {
 	}
 
 	block := &collectionWrapper{database: m, coll: db.Collection("block")}
-	err = m.applyBlockChecks(nudgesProcesses)
+	err = m.applyBlockChecks(block)
 	if err != nil {
 		return err
 	}

@@ -397,6 +397,24 @@ func (sa *Adapter) GetBlockFromNudgesProcess(processID string, blockNumber int) 
 	return nil, errors.Newf("%s does not have a block with number %d", processID, blockNumber)
 }
 
+//FindBlock gets a block from
+func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, error) {
+	filter := bson.D{
+		primitive.E{Key: "_id", Value: processID},
+		primitive.E{Key: "number", Value: blockNumber}}
+	var result []model.Block
+	err := sa.db.block.Find(filter, &result, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "block", nil, err)
+	}
+	if len(result) == 0 {
+		//no such process
+		return nil, nil
+	}
+	process := result[0]
+	return &process, nil
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)
