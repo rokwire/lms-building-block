@@ -293,9 +293,30 @@ func Exist(list []string, value string) bool {
 	return false
 }
 
+//ExistInt checks if the items exists in the list
+func ExistInt(list []int, value int) bool {
+	if len(list) == 0 {
+		return false
+	}
+
+	for _, s := range list {
+		if value == s {
+			return true
+		}
+	}
+	return false
+}
+
 // Hash hashes the s value
 func Hash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return h.Sum32()
+}
+
+// DateEqual checks if date1 is the same as date2
+func DateEqual(date1, date2 time.Time) bool {
+	y1, m1, d1 := date1.Date()
+	y2, m2, d2 := date2.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
 }
