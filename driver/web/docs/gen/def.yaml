@@ -512,6 +512,8 @@ paths:
                   required:
                     - id
                     - mode
+                    - created_at
+                    - completed_at
                     - status
                     - error
                   type: object
@@ -521,14 +523,26 @@ paths:
                       type: string
                     mode:
                       type: string
+                    created_at:
+                      type: string
+                    completed_at:
+                      type: string
                     status:
                       type: string
                     error:
-                      type: boolean
+                      type: string
                     blocks:
                       type: object
-                    items:
-                      type: object
+                      properties:
+                        number:
+                          type: integer
+                        items:
+                          type: object
+                          properties:
+                            net_id:
+                              type: string
+                            user_id:
+                              type: string
         '400':
           description: Bad request
         '401':
