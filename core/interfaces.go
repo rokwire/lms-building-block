@@ -163,11 +163,12 @@ type Provider interface {
 	CacheCommonData(usersIDs map[string]string) error
 	FindCachedData(usersIDs []string) ([]ProviderUser, error)
 	CacheUserData(user ProviderUser) (*ProviderUser, error)
+	CacheUserCoursesData(user ProviderUser, coursesIDs []int) (*ProviderUser, error)
 
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
 	GetCompletedAssignments(userID string) ([]model.Assignment, error)
-	GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
+	GetCalendarEvents(netID string, providerUserID int, courseID int, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
 }
 
 //Cache entities
@@ -204,8 +205,8 @@ type CourseAssignment struct {
 
 // Submission cache entity
 type Submission struct {
-	Data     model.Submission `bson:"data"`
-	SyncDate time.Time        `bson:"sync_date"`
+	Data     *model.Submission `bson:"data"`
+	SyncDate time.Time         `bson:"sync_date"`
 }
 
 // GroupsBB interface for the Groups building block communication

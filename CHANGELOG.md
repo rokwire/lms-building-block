@@ -5,15 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Fixed
--  Fix update nudge config API [#49](https://github.com/rokwire/lms-building-block/issues/49)
-
-## [1.1.13] - 2022-08-10
 ### Added
 - Expose Nudges Process [#42](https://github.com/rokwire/lms-building-block/issues/42)
 
+### Fixed
+-  Fix update nudge config API [#49](https://github.com/rokwire/lms-building-block/issues/49)
+
 ### Changed
 - Nudges performance [#30](https://github.com/rokwire/lms-building-block/issues/30)
+
+## [1.1.13] - 2022-08-10
+### Added
+- Expose Nudges Process (partly) [#42](https://github.com/rokwire/lms-building-block/issues/42)
 
 ## [1.1.12] - 2022-08-09
 ### Fixed
