@@ -983,7 +983,7 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssig
 	userCoursesData := userCourses.Data
 
 	result := []CourseAssignment{}
-	//now := time.Now()
+	now := time.Now()
 	for _, uc := range userCoursesData {
 		assignments := uc.Assignments
 		if len(assignments) > 0 {
@@ -993,10 +993,9 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssig
 					//we rely on due at date
 					continue
 				}
-				//TODO revert
-				//if now.Before(*dueAt) {
-				result = append(result, assignment)
-				//}
+				if now.Before(*dueAt) {
+					result = append(result, assignment)
+				}
 			}
 		}
 	}
