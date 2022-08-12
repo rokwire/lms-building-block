@@ -19,14 +19,14 @@ package model
 
 import "time"
 
-//Course entity
+// Course entity
 type Course struct {
 	ID                     int    `json:"id"  bson:"id"`
 	Name                   string `json:"name" bson:"name"`
 	AccessRestrictedByDate bool   `json:"access_restricted_by_date" bson:"access_restricted_by_date"`
 }
 
-//Assignment entity
+// Assignment entity
 type Assignment struct {
 	ID         int         `json:"id" bson:"id"`
 	Name       string      `json:"name" bson:"name"`
@@ -37,31 +37,31 @@ type Assignment struct {
 	Submission *Submission `json:"submission" bson:"submission"`
 }
 
-//Submission entity
+// Submission entity
 type Submission struct {
 	ID          int        `json:"id" bson:"id"`
 	SubmittedAt *time.Time `json:"submitted_at" bson:"submitted_at"`
 }
 
-//AssignmentGroup entity
+// AssignmentGroup entity
 type AssignmentGroup struct {
 	ID          int          `json:"id" bson:"id"`
 	Assignments []Assignment `json:"assignments" bson:"assignments"`
 }
 
-//Grade entity
+// Grade entity
 type Grade struct {
 	CurrentScore *float64 `json:"current_score" bson:"current_score"`
 }
 
-//Enrollment entity
+// Enrollment entity
 type Enrollment struct {
 	ID    int    `json:"id" bson:"id"`
 	Type  string `json:"type" bson:"type"`
 	Grade *Grade `json:"grade" bson:"grade"`
 }
 
-//User entity
+// User entity
 type User struct {
 	ID          int          `json:"id" bson:"id"`
 	Name        string       `json:"name" bson:"name"`
@@ -69,7 +69,7 @@ type User struct {
 	Enrollments []Enrollment `json:"enrollments" bson:"enrollments"`
 }
 
-//CalendarEvent entity
+// CalendarEvent entity
 type CalendarEvent struct {
 	ID    int    `json:"id" bson:"id"`
 	Title string `json:"title" bson:"title"`

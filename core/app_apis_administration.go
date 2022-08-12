@@ -32,8 +32,12 @@ func (app *Application) getNudgesConfig(l *logs.Log) (*model.NudgesConfig, error
 	return nudgesConfig, nil
 }
 
-func (app *Application) updateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string, processTime *int) error {
-	nudgesConfig := model.NudgesConfig{Active: active, GroupName: groupName, TestGroupName: testGroupName, Mode: mode, ProcessTime: processTime}
+func (app *Application) updateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string, processTime *int, blockSize *int) error {
+	blockSizeVal := 50
+	if blockSize != nil {
+		blockSizeVal = *blockSize
+	}
+	nudgesConfig := model.NudgesConfig{Active: active, GroupName: groupName, TestGroupName: testGroupName, Mode: mode, ProcessTime: processTime, BlockSize: blockSizeVal}
 
 	err := app.storage.SaveNudgesConfig(nudgesConfig)
 	if err != nil {

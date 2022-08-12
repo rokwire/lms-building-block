@@ -20,7 +20,7 @@ import (
 	"github.com/rokwire/logging-library-go/logs"
 )
 
-//Application represents the core application code based on hexagonal architecture
+// Application represents the core application code based on hexagonal architecture
 type Application struct {
 	version string
 	build   string

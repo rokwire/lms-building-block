@@ -19,7 +19,7 @@ package model
 
 import "time"
 
-//NudgesConfig entity
+// NudgesConfig entity
 type NudgesConfig struct {
 	Active        bool   `json:"active" bson:"active"` //if the nudges processing is "on" or "off"
 	GroupName     string `json:"group_name" bson:"group_name"`
@@ -29,7 +29,7 @@ type NudgesConfig struct {
 	Mode          string `json:"mode" bson:"mode"` // "normal" or "test"
 }
 
-//Nudge entity
+// Nudge entity
 type Nudge struct {
 	ID       string                 `json:"id" bson:"_id"`              //last_login
 	Name     string                 `json:"name" bson:"name"`           //"Last Canvas use was over 2 weeks"
@@ -39,7 +39,7 @@ type Nudge struct {
 	Active   bool                   `json:"active" bson:"active"`       //true or false
 }
 
-//SentNudge entity
+// SentNudge entity
 type SentNudge struct {
 	ID           string    `json:"id" bson:"_id"`
 	NudgeID      string    `json:"nudge_id" bson:"nudge_id"`
@@ -50,7 +50,7 @@ type SentNudge struct {
 	Mode         string    `json:"mode" bson:"mode"`
 }
 
-//NudgesProcess entity
+// NudgesProcess entity
 type NudgesProcess struct {
 	ID          string     `json:"id" bson:"_id"`
 	Mode        string     `json:"mode" bson:"mode"`
@@ -62,13 +62,13 @@ type NudgesProcess struct {
 	Blocks []Block `json:"blocks" bson:"blocks"` //users into blocks
 }
 
-//Block entity
+// Block entity
 type Block struct {
 	Number int         `json:"number" bson:"number"`
 	Items  []BlockItem `json:"items" bson:"items"`
 }
 
-//BlockItem entity
+// BlockItem entity
 type BlockItem struct {
 	NetID  string `json:"net_id" bson:"net_id"`
 	UserID string `json:"user_id" bson:"user_id"`

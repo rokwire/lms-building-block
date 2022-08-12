@@ -27,13 +27,13 @@ import (
 	"net/http"
 )
 
-//Adapter implements the groups BB interface
+// Adapter implements the groups BB interface
 type Adapter struct {
 	host   string
 	apiKey string
 }
 
-//GetUsers get user from the groups BB
+// GetUsers get user from the groups BB
 func (a *Adapter) GetUsers(groupName string, offset int, limit int) ([]core.GroupsBBUser, error) {
 
 	url := fmt.Sprintf("%s/api/int/group/title/%s/members?offset=%d&limit=%d", a.host, groupName, offset, limit)
@@ -74,7 +74,7 @@ func (a *Adapter) GetUsers(groupName string, offset int, limit int) ([]core.Grou
 	return result, nil
 }
 
-//NewGroupsAdapter creates a new groups BB adapter
+// NewGroupsAdapter creates a new groups BB adapter
 func NewGroupsAdapter(host string, apiKey string) *Adapter {
 	return &Adapter{host: host, apiKey: apiKey}
 }
