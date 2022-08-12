@@ -336,10 +336,11 @@ func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Bl
 func (n nudgesLogic) processPhase2(processID string, blocksSize int, nudges []model.Nudge) error {
 	n.logger.Info("START Phase2")
 
+	memoryData := map[int][]model.CalendarEvent{}
 	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
 		n.logger.Infof("block:%d", blockNumber)
 
-		err := n.processPhase2Block(processID, blockNumber, nudges)
+		err := n.processPhase2Block(processID, blockNumber, nudges, memoryData)
 		if err != nil {
 			n.logger.Errorf("error on process block %d - %s", blockNumber, err)
 			return err
@@ -350,7 +351,7 @@ func (n nudgesLogic) processPhase2(processID string, blocksSize int, nudges []mo
 	return nil
 }
 
-func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudges []model.Nudge) error {
+func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) error {
 	// load block data
 	cachedData, err := n.getBlockData(processID, blockNumber)
 	if err != nil {
@@ -360,7 +361,7 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudge
 
 	// process every user
 	for _, providerUser := range cachedData {
-		err := n.processUser(providerUser, nudges)
+		memoryData, err = n.processUser(providerUser, nudges, memoryData)
 		if err != nil {
 			n.logger.Errorf("process provider user %s - %s", providerUser.NetID, err)
 			return err
@@ -433,52 +434,54 @@ func (n nudgesLogic) getGroupName() string {
 	return n.config.TestGroupName //test mode
 }
 
-func (n nudgesLogic) processUser(user ProviderUser, nudges []model.Nudge) error {
+func (n nudgesLogic) processUser(user ProviderUser, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
 	n.logger.Infof("\tprocess %s", user.NetID)
 
 	for _, nudge := range nudges {
-		processedUser, err := n.processNudge(nudge, user)
+		updateMemoryData, processedUser, err := n.processNudge(nudge, user, memoryData)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		//in some nudges processment we could load a new data in the user, so pass all this object to the next nudge
 		user = *processedUser
+		memoryData = updateMemoryData
 	}
-	return nil
+	return memoryData, nil
 }
 
-func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser) (*ProviderUser, error) {
+func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, *ProviderUser, error) {
 	n.logger.Infof("\t\tprocessNudge - %s - %s", user.NetID, nudge.ID)
 
 	switch nudge.ID {
 	case "last_login":
 		err := n.processLastLoginNudgePerUser(nudge, user)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return &user, nil
+		return memoryData, &user, nil
 	case "missed_assignment":
 		processedUser, err := n.processMissedAssignmentNudgePerUser(nudge, user)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return processedUser, nil
+		return memoryData, processedUser, nil
 	case "completed_assignment_early":
 		processedUser, err := n.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return processedUser, nil
+		return memoryData, processedUser, nil
 	case "today_calendar_events":
-		err := n.processTodayCalendarEventsNudgePerUser(nudge, user)
+		var err error
+		memoryData, err = n.processTodayCalendarEventsNudgePerUser(nudge, user, memoryData)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return &user, nil
+		return memoryData, &user, nil
 	default:
 		n.logger.Infof("\t\tnot supported nudge - %s", nudge.ID)
-		return &user, nil
+		return memoryData, &user, nil
 	}
 }
 
@@ -1171,30 +1174,70 @@ func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge,
 
 // calendar_event nudge
 
-func (n nudgesLogic) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, user ProviderUser) error {
+func (n nudgesLogic) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
 	n.logger.Infof("\t\t\tprocessTodayCalendarEventsNudgePerUser - %s", nudge.ID)
 
 	//get calendar events
-	startDate, endDate := n.prepareTodayCalendarEventsDates()
-	calendarEvents, err := n.provider.GetCalendarEvents(user.NetID, startDate, endDate)
+	memoryData, calendarEvents, err := n.getCalendarEvents(user, memoryData)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror getting calendar events for - %s", user.NetID)
-		return err
+		return nil, err
 	}
 	if len(calendarEvents) == 0 {
 		//no calendar events
 		n.logger.Infof("\t\t\tno calendar events, so not send notifications - %s", user.NetID)
-		return err
+		return memoryData, nil
 	}
 
 	//we have calendar events, so process
 	err = n.processCalendarEvents(nudge, user, calendarEvents)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror processing calendar events - %s", user.NetID)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return memoryData, nil
+}
+
+func (n nudgesLogic) getCalendarEvents(user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, []model.CalendarEvent, error) {
+
+	userCourses := user.Courses
+	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
+		return memoryData, []model.CalendarEvent{}, nil
+	}
+	userCoursesData := userCourses.Data
+
+	startDate, endDate := n.prepareTodayCalendarEventsDates()
+
+	result := []model.CalendarEvent{}
+	for _, uc := range userCoursesData {
+		courseID := uc.Data.ID
+
+		//check if we have it in the memory
+		memoryCourseEvents, ok := memoryData[courseID]
+		if ok {
+			n.logger.Infof("\t\t\tthere is in the memory - %d", courseID)
+			result = append(result, memoryCourseEvents...)
+		} else {
+			n.logger.Infof("\t\t\tthere is NO in the memory, so we need to load it - %d", courseID)
+
+			//load it
+			loadedCalendarEvents, err := n.provider.GetCalendarEvents(user.NetID, user.User.ID, courseID, startDate, endDate)
+			if err != nil {
+				n.logger.Errorf("\t\t\terror loading calendar events - %s", user.NetID)
+				return nil, nil, err
+			}
+
+			//set it in the memory
+			memoryData[courseID] = loadedCalendarEvents
+
+			//add it to the result
+			result = append(result, loadedCalendarEvents...)
+		}
+	}
+
+	return memoryData, result, nil
+
 }
 
 func (n nudgesLogic) prepareTodayCalendarEventsDates() (time.Time, time.Time) {

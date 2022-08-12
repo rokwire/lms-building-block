@@ -709,43 +709,19 @@ func (a *Adapter) getAssignments(courseID int, userID string, includeSubmission 
 }
 
 // GetCalendarEvents gives the events of the user
-func (a *Adapter) GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error) {
-	//1. find the user id
-	user, err := a.GetCurrentUser(userID)
-	if err != nil {
-		log.Printf("error getting the user for calendar events - %s", userID)
-		return nil, err
-	}
-	if user == nil {
-		log.Printf("not user for id %s", userID)
-		return nil, nil
-	}
-
-	//2. find the user courses
-	courses, err := a.GetCourses(userID)
-	if err != nil {
-		log.Printf("error getting the user courses for calendar events - %s", userID)
-		return nil, err
-	}
-	if len(courses) == 0 {
-		log.Printf("no courses for user %s", userID)
-		return nil, nil
-	}
-
-	//3. load the calendar events
+func (a *Adapter) GetCalendarEvents(netID string, providerUserID int, courseID int, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error) {
+	// load the calendar events
 
 	//params
 	queryParamsItems := map[string][]string{}
-	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
+	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", netID)}
 	queryParamsItems["per_page"] = []string{"50"}
 	queryParamsItems["start_date"] = []string{startAt.Format(time.RFC3339)}
 	queryParamsItems["end_date"] = []string{endAt.Format(time.RFC3339)}
 
 	contextCodes := []string{}
-	contextCodes = append(contextCodes, fmt.Sprintf("user_%d", user.ID))
-	for _, course := range courses {
-		contextCodes = append(contextCodes, fmt.Sprintf("course_%d", course.ID))
-	}
+	contextCodes = append(contextCodes, fmt.Sprintf("user_%d", providerUserID))
+	contextCodes = append(contextCodes, fmt.Sprintf("course_%d", courseID))
 	queryParamsItems["context_codes[]"] = contextCodes
 
 	queryParams := a.constructQueryParams(queryParamsItems)

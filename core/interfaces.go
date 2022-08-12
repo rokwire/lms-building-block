@@ -168,7 +168,7 @@ type Provider interface {
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
 	GetCompletedAssignments(userID string) ([]model.Assignment, error)
-	GetCalendarEvents(userID string, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
+	GetCalendarEvents(netID string, providerUserID int, courseID int, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
 }
 
 //Cache entities
