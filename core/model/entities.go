@@ -33,6 +33,7 @@ type Assignment struct {
 	CourseID   int         `json:"course_id" bson:"course_id"`
 	HTMLUrl    string      `json:"html_url" bson:"html_url"`
 	Position   *int        `json:"position" bson:"position"`
+	CreatedAt  *time.Time  `json:"created_at" bson:"created_at"`
 	DueAt      *time.Time  `json:"due_at" bson:"due_at"`
 	Submission *Submission `json:"submission" bson:"submission"`
 }
