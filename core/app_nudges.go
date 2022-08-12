@@ -262,7 +262,7 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 	return nil
 }
 
-//as a result of phase 1 we have into our service a cached provider data for:
+// as a result of phase 1 we have into our service a cached provider data for:
 // all users
 // users courses
 // courses assignments
@@ -332,7 +332,7 @@ func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Bl
 	return model.Block{Number: curentBlock, Items: items}
 }
 
-//phase2 operates over the data prepared in phase1 and apply the nudges for every user
+// phase2 operates over the data prepared in phase1 and apply the nudges for every user
 func (n nudgesLogic) processPhase2(processID string, blocksSize int, nudges []model.Nudge) error {
 	n.logger.Info("START Phase2")
 
@@ -415,7 +415,7 @@ func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {
 	return nil
 }
 
-//returns the net ids for all user who have it
+// returns the net ids for all user who have it
 func (n nudgesLogic) prepareUsers(users []GroupsBBUser) map[string]string {
 	result := map[string]string{}
 	for _, user := range users {

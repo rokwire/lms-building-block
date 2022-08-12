@@ -29,18 +29,18 @@ import (
 	"github.com/rokwire/logging-library-go/logutils"
 )
 
-//ApisHandler handles the rest APIs implementation
+// ApisHandler handles the rest APIs implementation
 type ApisHandler struct {
 	app    *core.Application
 	config *model.Config
 }
 
-//Version gets version
+// Version gets version
 func (h ApisHandler) Version(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(h.app.Services.GetVersion()))
 }
 
-//GetCourses gets courses
+// GetCourses gets courses
 func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
 	if len(providerUserID) == 0 {
@@ -60,7 +60,7 @@ func (h ApisHandler) GetCourses(l *logs.Log, claims *tokenauth.Claims, w http.Re
 	return l.HttpResponseSuccessJSON(data)
 }
 
-//GetCourse gets a course
+// GetCourse gets a course
 func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
 	if len(providerUserID) == 0 {
@@ -91,7 +91,7 @@ func (h ApisHandler) GetCourse(l *logs.Log, claims *tokenauth.Claims, w http.Res
 	return l.HttpResponseSuccessJSON(data)
 }
 
-//GetAssignemntGroups gets course assignments
+// GetAssignemntGroups gets course assignments
 func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
 	if len(providerUserID) == 0 {
@@ -129,7 +129,7 @@ func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, 
 	return l.HttpResponseSuccessJSON(data)
 }
 
-//GetUsers gets course users
+// GetUsers gets course users
 func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
 	if len(providerUserID) == 0 {
@@ -169,7 +169,7 @@ func (h ApisHandler) GetUsers(l *logs.Log, claims *tokenauth.Claims, w http.Resp
 	return l.HttpResponseSuccessJSON(data)
 }
 
-//GetCurrentUser gets the current user
+// GetCurrentUser gets the current user
 func (h ApisHandler) GetCurrentUser(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	providerUserID := h.getProviderUserID(claims)
 	if len(providerUserID) == 0 {

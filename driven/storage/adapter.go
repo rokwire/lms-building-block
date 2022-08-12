@@ -133,7 +133,7 @@ func (sa *Adapter) LoadActiveNudges() ([]model.Nudge, error) {
 	return result, nil
 }
 
-//InsertNudge inserts a new Nudge
+// InsertNudge inserts a new Nudge
 func (sa *Adapter) InsertNudge(item model.Nudge) error {
 	_, err := sa.db.nudges.InsertOne(item)
 	if err != nil {
@@ -142,7 +142,7 @@ func (sa *Adapter) InsertNudge(item model.Nudge) error {
 	return nil
 }
 
-//UpdateNudge updates nudge
+// UpdateNudge updates nudge
 func (sa *Adapter) UpdateNudge(ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
 
 	nudgeFilter := bson.D{primitive.E{Key: "_id", Value: ID}}
@@ -167,7 +167,7 @@ func (sa *Adapter) UpdateNudge(ID string, name string, body string, deepLink str
 	return nil
 }
 
-//DeleteNudge deletes nudge
+// DeleteNudge deletes nudge
 func (sa *Adapter) DeleteNudge(ID string) error {
 	filter := bson.M{"_id": ID}
 	result, err := sa.db.nudges.DeleteOne(filter, nil)
@@ -184,7 +184,7 @@ func (sa *Adapter) DeleteNudge(ID string) error {
 	return nil
 }
 
-//InsertSentNudge inserts sent nudge entity
+// InsertSentNudge inserts sent nudge entity
 func (sa *Adapter) InsertSentNudge(sentNudge model.SentNudge) error {
 	_, err := sa.db.sentNudges.InsertOne(sentNudge)
 	if err != nil {
@@ -194,7 +194,7 @@ func (sa *Adapter) InsertSentNudge(sentNudge model.SentNudge) error {
 	return nil
 }
 
-//InsertSentNudges inserts sent nudges entities
+// InsertSentNudges inserts sent nudges entities
 func (sa *Adapter) InsertSentNudges(sentNudges []model.SentNudge) error {
 	data := make([]interface{}, len(sentNudges))
 	for i, sn := range sentNudges {
@@ -209,7 +209,7 @@ func (sa *Adapter) InsertSentNudges(sentNudges []model.SentNudge) error {
 	return nil
 }
 
-//FindSentNudge finds sent nudge entity
+// FindSentNudge finds sent nudge entity
 func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error) {
 	filter := bson.D{
 		primitive.E{Key: "nudge_id", Value: nudgeID},
@@ -231,7 +231,7 @@ func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, cr
 	return &sentNudge, nil
 }
 
-//FindSentNudges finds sent nudges entities
+// FindSentNudges finds sent nudges entities
 func (sa *Adapter) FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHashes *[]uint32, mode *string) ([]model.SentNudge, error) {
 
 	filter := bson.D{}
@@ -264,7 +264,7 @@ func (sa *Adapter) FindSentNudges(nudgeID *string, userID *string, netID *string
 	return result, nil
 }
 
-//DeleteSentNudges deletes sent nudge
+// DeleteSentNudges deletes sent nudge
 func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
 	filter := bson.M{}
 	if ids != nil {
@@ -288,7 +288,7 @@ func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
 	return nil
 }
 
-//FindNudgesProcesses finds all nudges-process
+// FindNudgesProcesses finds all nudges-process
 func (sa *Adapter) FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error) {
 	filter := bson.D{}
 	var result []model.NudgesProcess
@@ -310,7 +310,7 @@ func (sa *Adapter) FindNudgesProcesses(limit int, offset int) ([]model.NudgesPro
 	return result, nil
 }
 
-//InsertNudgesProcess inserts nudges process
+// InsertNudgesProcess inserts nudges process
 func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error {
 	_, err := sa.db.nudgesProcesses.InsertOne(nudgesProcess)
 	if err != nil {
@@ -319,7 +319,7 @@ func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error 
 	return nil
 }
 
-//UpdateNudgesProcess updates a nudges process
+// UpdateNudgesProcess updates a nudges process
 func (sa *Adapter) UpdateNudgesProcess(ID string, completedAt time.Time, status string, errStr *string) error {
 	filter := bson.D{primitive.E{Key: "_id", Value: ID}}
 	update := bson.D{
@@ -341,7 +341,7 @@ func (sa *Adapter) UpdateNudgesProcess(ID string, completedAt time.Time, status 
 	return nil
 }
 
-//CountNudgesProcesses counts the nudges process by status
+// CountNudgesProcesses counts the nudges process by status
 func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 	filter := bson.D{primitive.E{Key: "status", Value: status}}
 
@@ -352,7 +352,7 @@ func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 	return &count, nil
 }
 
-//AddBlockToNudgesProcess adds a block to a nudges process
+// AddBlockToNudgesProcess adds a block to a nudges process
 func (sa *Adapter) AddBlockToNudgesProcess(processID string, block model.Block) error {
 	filter := bson.M{"_id": processID}
 	update := bson.D{
@@ -370,7 +370,7 @@ func (sa *Adapter) AddBlockToNudgesProcess(processID string, block model.Block) 
 	return nil
 }
 
-//GetBlockFromNudgesProcess gets a block from a nudges process
+// GetBlockFromNudgesProcess gets a block from a nudges process
 func (sa *Adapter) GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error) {
 	filter := bson.M{"_id": processID}
 	var result []model.NudgesProcess
