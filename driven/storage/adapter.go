@@ -399,9 +399,7 @@ func (sa *Adapter) GetBlockFromNudgesProcess(processID string, blockNumber int) 
 
 //FindBlock gets a block from
 func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, error) {
-	filter := bson.D{
-		primitive.E{Key: "_id", Value: processID},
-		primitive.E{Key: "number", Value: blockNumber}}
+	filter := bson.M{"_id": processID, "number": blockNumber}
 	var result []model.Block
 	err := sa.db.block.Find(filter, &result, nil)
 	if err != nil {
