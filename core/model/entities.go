@@ -21,56 +21,57 @@ import "time"
 
 // Course entity
 type Course struct {
-	ID                     int    `json:"id"`
-	Name                   string `json:"name"`
-	AccessRestrictedByDate bool   `json:"access_restricted_by_date"`
+	ID                     int    `json:"id"  bson:"id"`
+	Name                   string `json:"name" bson:"name"`
+	AccessRestrictedByDate bool   `json:"access_restricted_by_date" bson:"access_restricted_by_date"`
 }
 
 // Assignment entity
 type Assignment struct {
-	ID         int         `json:"id"`
-	Name       string      `json:"name"`
-	CourseID   int         `json:"course_id"`
-	HTMLUrl    string      `json:"html_url"`
-	Position   *int        `json:"position"`
-	DueAt      *time.Time  `json:"due_at"`
-	Submission *Submission `json:"submission"`
+	ID         int         `json:"id" bson:"id"`
+	Name       string      `json:"name" bson:"name"`
+	CourseID   int         `json:"course_id" bson:"course_id"`
+	HTMLUrl    string      `json:"html_url" bson:"html_url"`
+	Position   *int        `json:"position" bson:"position"`
+	CreatedAt  *time.Time  `json:"created_at" bson:"created_at"`
+	DueAt      *time.Time  `json:"due_at" bson:"due_at"`
+	Submission *Submission `json:"submission" bson:"submission"`
 }
 
 // Submission entity
 type Submission struct {
-	ID          int        `json:"id"`
-	SubmittedAt *time.Time `json:"submitted_at"`
+	ID          int        `json:"id" bson:"id"`
+	SubmittedAt *time.Time `json:"submitted_at" bson:"submitted_at"`
 }
 
 // AssignmentGroup entity
 type AssignmentGroup struct {
-	ID          int          `json:"id"`
-	Assignments []Assignment `json:"assignments"`
+	ID          int          `json:"id" bson:"id"`
+	Assignments []Assignment `json:"assignments" bson:"assignments"`
 }
 
 // Grade entity
 type Grade struct {
-	CurrentScore *float64 `json:"current_score"`
+	CurrentScore *float64 `json:"current_score" bson:"current_score"`
 }
 
 // Enrollment entity
 type Enrollment struct {
-	ID    int    `json:"id"`
-	Type  string `json:"type"`
-	Grade *Grade `json:"grade"`
+	ID    int    `json:"id" bson:"id"`
+	Type  string `json:"type" bson:"type"`
+	Grade *Grade `json:"grade" bson:"grade"`
 }
 
 // User entity
 type User struct {
-	ID          int          `json:"id"`
-	Name        string       `json:"name"`
-	LastLogin   *time.Time   `json:"last_login"`
-	Enrollments []Enrollment `json:"enrollments"`
+	ID          int          `json:"id" bson:"id"`
+	Name        string       `json:"name" bson:"name"`
+	LastLogin   *time.Time   `json:"last_login" bson:"last_login"`
+	Enrollments []Enrollment `json:"enrollments" bson:"enrollments"`
 }
 
 // CalendarEvent entity
 type CalendarEvent struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
+	ID    int    `json:"id" bson:"id"`
+	Title string `json:"title" bson:"title"`
 }
