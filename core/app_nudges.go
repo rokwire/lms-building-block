@@ -1066,7 +1066,25 @@ func (n nudgesLogic) ecLoadDataIfNecessary(user ProviderUser, assignments []Cour
 }
 
 func (n nudgesLogic) ecFindAssignments(user ProviderUser, assignmentsIDs []int) []CourseAssignment {
-	return nil
+	userCourses := user.Courses
+	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
+		return []CourseAssignment{}
+	}
+	userCoursesData := userCourses.Data
+
+	result := []CourseAssignment{}
+	for _, uc := range userCoursesData {
+		assignments := uc.Assignments
+		if len(assignments) > 0 {
+			for _, assignment := range assignments {
+				if utils.ExistInt(assignmentsIDs, assignment.Data.ID) {
+					result = append(result, assignment)
+				}
+			}
+		}
+	}
+
+	return result
 }
 
 func (n nudgesLogic) findCompletedEarlyAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
