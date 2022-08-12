@@ -64,6 +64,7 @@ type NudgesProcess struct {
 
 // Block entity
 type Block struct {
+	ID     string      `json:"id" bson:"_id"`
 	Number int         `json:"number" bson:"number"`
 	Items  []BlockItem `json:"items" bson:"items"`
 }
