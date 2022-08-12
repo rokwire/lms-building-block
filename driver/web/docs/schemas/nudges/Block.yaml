@@ -1,0 +1,17 @@
+required:
+  - id
+  - number
+type: object
+properties:
+  id:
+    readOnly: true
+    type: string
+  number:
+    type: integer
+  items: 
+    type: object
+    properties:
+      net_id:
+        type: string
+      user_id:
+        type: string  
