@@ -48,6 +48,8 @@ type Administration interface {
 	ClearTestSentNudges(l *logs.Log) error
 
 	FindNudgesProcesses(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error)
+
+	GetBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error)
 }
 
 type servicesImpl struct {
@@ -124,6 +126,10 @@ func (s *administrationImpl) FindNudgesProcesses(l *logs.Log, limit int, offset 
 	return s.app.findNudgesProcesses(l, limit, offset)
 }
 
+func (s *administrationImpl) GetBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error) {
+	return s.app.getBlock(l, processID, blockNumber)
+}
+
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
 	SetListener(listener storage.CollectionListener)
@@ -150,6 +156,7 @@ type Storage interface {
 	AddBlockToNudgesProcess(processID string, block model.Block) error
 	FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error)
 	GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error)
+	FindBlock(processID string, blockNumber int) (*model.Block, error)
 }
 
 // Provider interface for LMS provider
