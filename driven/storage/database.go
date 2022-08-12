@@ -47,6 +47,7 @@ type database struct {
 	nudges          *collectionWrapper
 	sentNudges      *collectionWrapper
 	nudgesProcesses *collectionWrapper
+	block           *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -97,6 +98,12 @@ func (m *database) start() error {
 		return err
 	}
 
+	block := &collectionWrapper{database: m, coll: db.Collection("block")}
+	err = m.applyBlockChecks(nudgesProcesses)
+	if err != nil {
+		return err
+	}
+
 	//asign the db, db client and the collections
 	m.db = db
 	m.dbClient = client
@@ -105,6 +112,7 @@ func (m *database) start() error {
 	m.nudges = nudges
 	m.sentNudges = sentNudges
 	m.nudgesProcesses = nudgesProcesses
+	m.block = block
 
 	go m.configs.Watch(nil, m.logger)
 
@@ -166,6 +174,19 @@ func (m *database) applyNudgesProcessesChecks(nudgesProcesses *collectionWrapper
 	}
 
 	m.logger.Info("nudges processes check passed")
+	return nil
+}
+
+func (m *database) applyBlockChecks(block *collectionWrapper) error {
+	m.logger.Info("apply block checks.....")
+
+	//add blocks number index
+	err := block.AddIndex(bson.D{primitive.E{Key: "block", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
+	m.logger.Info("block check passed")
 	return nil
 }
 
