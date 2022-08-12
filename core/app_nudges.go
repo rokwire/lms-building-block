@@ -1188,8 +1188,11 @@ func (n nudgesLogic) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, u
 	}
 
 	//we have calendar events, so process
-	//TODO
-	//n.processCalendarEvents(nudge, user, calendarEvents)
+	err = n.processCalendarEvents(nudge, user, calendarEvents)
+	if err != nil {
+		n.logger.Errorf("\t\t\terror processing calendar events - %s", user.NetID)
+		return err
+	}
 
 	return nil
 }
@@ -1202,25 +1205,30 @@ func (n nudgesLogic) prepareTodayCalendarEventsDates() (time.Time, time.Time) {
 	return start, end
 }
 
-func (n nudgesLogic) processCalendarEvents(nudge model.Nudge, user GroupsBBUser, events []model.CalendarEvent) {
+func (n nudgesLogic) processCalendarEvents(nudge model.Nudge, user ProviderUser, events []model.CalendarEvent) error {
 	n.logger.Infof("\t\t\tprocessCalendarEvents - %s - %s - %d", nudge.ID, user.NetID, len(events))
 
 	//find unset events
 	unsentEvents, err := n.findUnsentEvents(nudge, user, events)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror finding unset events - %s - %s", nudge.ID, user.NetID)
-		return
+		return err
 	}
 	if len(unsentEvents) == 0 {
 		n.logger.Infof("\t\t\tunsent events is 0 - %s - %s", nudge.ID, user.NetID)
-		return
+		return err
 	}
 
 	//we have unsent events, so process them for sending
-	n.sendCalendareEventNudgeForUsers(nudge, user, unsentEvents)
+	err = n.sendCalendareEventNudgeForUsers(nudge, user, unsentEvents)
+	if err != nil {
+		n.logger.Errorf("\t\t\terror send calendar event nudge - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+	return nil
 }
 
-func (n nudgesLogic) findUnsentEvents(nudge model.Nudge, user GroupsBBUser, events []model.CalendarEvent) ([]model.CalendarEvent, error) {
+func (n nudgesLogic) findUnsentEvents(nudge model.Nudge, user ProviderUser, events []model.CalendarEvent) ([]model.CalendarEvent, error) {
 	//get hashes for all events
 	hashes := []uint32{}
 	for _, event := range events {
@@ -1229,7 +1237,7 @@ func (n nudgesLogic) findUnsentEvents(nudge model.Nudge, user GroupsBBUser, even
 	}
 
 	//find the sent nudges
-	sentNudges, err := n.storage.FindSentNudges(&nudge.ID, &user.UserID, &user.NetID, &hashes, &n.config.Mode)
+	sentNudges, err := n.storage.FindSentNudges(&nudge.ID, &user.ID, &user.NetID, &hashes, &n.config.Mode)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror checking if sent nudge exists for calendar events - %s - %s", nudge.ID, user.NetID)
 		return nil, err
@@ -1257,32 +1265,40 @@ func (n nudgesLogic) isEventSent(event model.CalendarEvent, sentEvents []model.S
 	return false
 }
 
-func (n nudgesLogic) sendCalendareEventNudgeForUsers(nudge model.Nudge, user GroupsBBUser,
-	events []model.CalendarEvent) {
-	n.logger.Infof("\t\t\tsendCalendareEventNudgeForUsers - %s - %s", nudge.ID, user.UserID)
-
-	//send push notification
-	recipient := Recipient{UserID: user.UserID, Name: ""}
-	body := n.prepareCalendarEventNudgeBody(nudge, events)
-	data := n.prepareNotificationData(nudge.DeepLink)
-	err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
-	if err != nil {
-		n.logger.Debugf("\t\t\terror sending notification for %s - %s", user.UserID, err)
-		return
-	}
+func (n nudgesLogic) sendCalendareEventNudgeForUsers(nudge model.Nudge, user ProviderUser,
+	events []model.CalendarEvent) error {
+	n.logger.Infof("\t\t\tsendCalendareEventNudgeForUsers - %s - %s", nudge.ID, user.NetID)
 
 	//insert sent nudge
 	sentNudges := make([]model.SentNudge, len(events))
 	for i, event := range events {
 		criteriaHash := n.generateCalendarEventHash(event.ID)
-		sentNudge := n.createSentNudge(nudge.ID, user.UserID, user.NetID, criteriaHash, n.config.Mode)
+		sentNudge := n.createSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
 		sentNudges[i] = sentNudge
 	}
-	err = n.storage.InsertSentNudges(sentNudges)
+	err := n.storage.InsertSentNudges(sentNudges)
 	if err != nil {
-		n.logger.Errorf("\t\t\terror saving sent calendar events nudge for %s - %s", user.UserID, err)
-		return
+		n.logger.Errorf("\t\t\terror saving sent calendar events nudge for %s - %s", user.ID, err)
+		return err
 	}
+
+	//sending in another thread as it happen very slowly
+	go func(user ProviderUser) {
+		//send push notification
+		recipient := Recipient{UserID: user.ID, Name: ""}
+		body := n.prepareCalendarEventNudgeBody(nudge, events)
+		data := n.prepareNotificationData(nudge.DeepLink)
+		err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
+		if err != nil {
+			n.logger.Debugf("\t\t\terror sending notification for %s - %s", user.NetID, err)
+			return
+		}
+
+		//the logger does not work in another thread
+		log.Printf("\t\t\t\tsuccess sending notification for %s", user.NetID)
+	}(user)
+
+	return nil
 }
 
 func (n nudgesLogic) prepareCalendarEventNudgeBody(nudge model.Nudge, events []model.CalendarEvent) string {
