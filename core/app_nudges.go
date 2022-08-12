@@ -464,10 +464,14 @@ func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser) (*Provid
 			return nil, err
 		}
 		return processedUser, nil
-	/*case "completed_assignment_early":
-		n.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
-	case "today_calendar_events":
-		n.processTodayCalendarEventsNudgePerUser(nudge, user) */
+	case "completed_assignment_early":
+		processedUser, err := n.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
+		if err != nil {
+			return nil, err
+		}
+		return processedUser, nil
+	/*case "today_calendar_events":
+	n.processTodayCalendarEventsNudgePerUser(nudge, user) */
 	default:
 		n.logger.Infof("\t\tnot supported nudge - %s", nudge.ID)
 		return &user, nil
@@ -885,7 +889,7 @@ func (n nudgesLogic) generateMissedAssignmentHash(assignemntID int, hours float6
 }
 
 func (n nudgesLogic) findMissedAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
-	n.logger.Info("findMissedAssignments")
+	n.logger.Info("\t\t\tfindMissedAssignments")
 
 	resultList := []model.Assignment{}
 	for _, assignment := range assignments {
@@ -907,39 +911,41 @@ func (n nudgesLogic) findMissedAssignments(hours float64, now time.Time, assignm
 
 // completed_assignment_early nudge
 
-func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user GroupsBBUser) {
-	n.logger.Infof("\tprocessCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
+func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user ProviderUser) (*ProviderUser, error) {
+	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
 
-	//get completed assignments
-	ecAssignments, err := n.provider.GetCompletedAssignments(user.NetID)
-	if err != nil {
-		n.logger.Errorf("error getting early completed assignments for - %s", user.NetID)
-	}
-	if len(ecAssignments) == 0 {
-		//no early completed assignments
-		n.logger.Infof("no early completed assignments, so not send notifications - %s", user.NetID)
-		return
-	}
+	return &user, nil
+	/*
+		//get completed assignments
+		ecAssignments, err := n.provider.GetCompletedAssignments(user.NetID)
+		if err != nil {
+			n.logger.Errorf("error getting early completed assignments for - %s", user.NetID)
+		}
+		if len(ecAssignments) == 0 {
+			//no early completed assignments
+			n.logger.Infof("no early completed assignments, so not send notifications - %s", user.NetID)
+			return
+		}
 
-	//determine for which of the submissions we need to send notifications
-	hours := nudge.Params["hours"].(float64)
-	now := time.Now()
-	ecAssignments, err = n.findCompletedEarlyAssignments(hours, now, ecAssignments)
-	if err != nil {
-		n.logger.Errorf("error finding early completed assignments for - %s", user.NetID)
-	}
-	if len(ecAssignments) == 0 {
-		//no early completed assignments
-		n.logger.Infof("no early completed assignments after checking submitted date, so not send notifications - %s", user.NetID)
-		return
-	}
+		//determine for which of the submissions we need to send notifications
+		hours := nudge.Params["hours"].(float64)
+		now := time.Now()
+		ecAssignments, err = n.findCompletedEarlyAssignments(hours, now, ecAssignments)
+		if err != nil {
+			n.logger.Errorf("error finding early completed assignments for - %s", user.NetID)
+		}
+		if len(ecAssignments) == 0 {
+			//no early completed assignments
+			n.logger.Infof("no early completed assignments after checking submitted date, so not send notifications - %s", user.NetID)
+			return
+		}
 
-	//here we have the assignments we need to send notifications for
+		//here we have the assignments we need to send notifications for
 
-	//process the early completed assignments
-	for _, assignment := range ecAssignments {
-		n.processCompletedAssignmentEarly(nudge, user, assignment, hours)
-	}
+		//process the early completed assignments
+		for _, assignment := range ecAssignments {
+			n.processCompletedAssignmentEarly(nudge, user, assignment, hours)
+		} */
 }
 
 func (n nudgesLogic) findCompletedEarlyAssignments(hours float64, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
