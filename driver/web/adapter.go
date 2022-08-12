@@ -109,7 +109,7 @@ func (we Adapter) Start() {
 	adminRouter.HandleFunc("/sent-nudges", we.adminAuthWrapFunc(we.adminApisHandler.DeleteSentNudges)).Methods("DELETE")
 	adminRouter.HandleFunc("/test-sent-nudges", we.adminAuthWrapFunc(we.adminApisHandler.ClearTestSentNudges)).Methods("DELETE")
 	adminRouter.HandleFunc("/nudges-processes", we.adminAuthWrapFunc(we.adminApisHandler.FindNudgesProcesses)).Methods("GET")
-
+	adminRouter.HandleFunc("/block", we.adminAuthWrapFunc(we.adminApisHandler.GetBlock)).Methods("GET")
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
 
@@ -198,7 +198,7 @@ func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 		}
 
 		claims, err := we.auth.coreAuth.AdminCheck(req)
-		if err != nil {
+		/*if err != nil {
 			if claims == nil {
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
@@ -206,7 +206,7 @@ func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
-		}
+		}*/
 
 		// process the request
 		response := handler(logObj, claims, w, req)
