@@ -198,7 +198,7 @@ func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 		}
 
 		claims, err := we.auth.coreAuth.AdminCheck(req)
-		/*if err != nil {
+		if err != nil {
 			if claims == nil {
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
@@ -206,7 +206,7 @@ func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
-		}*/
+		}
 
 		// process the request
 		response := handler(logObj, claims, w, req)
