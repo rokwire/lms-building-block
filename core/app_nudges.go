@@ -323,10 +323,14 @@ func (n nudgesLogic) processPhase1Block(processID string, curentBlock int, users
 }
 
 func (n nudgesLogic) createBlock(processID string, curentBlock int, users []GroupsBBUser) model.Block {
-	items := make([]model.BlockItem, len(users))
-	for i, user := range users {
+	items := []model.BlockItem{}
+	for _, user := range users {
+		if len(user.NetID) == 0 {
+			//skip the ones with empty net id
+			continue
+		}
 		blockItem := model.BlockItem{NetID: user.NetID, UserID: user.UserID}
-		items[i] = blockItem
+		items = append(items, blockItem)
 	}
 	return model.Block{ProcessID: processID, Number: curentBlock, Items: items}
 }
