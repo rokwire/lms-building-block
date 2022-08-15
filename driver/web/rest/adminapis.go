@@ -250,10 +250,10 @@ func (h AdminApisHandler) FindNudgesProcesses(l *logs.Log, claims *tokenauth.Cla
 	return l.HttpResponseSuccessJSON(data)
 }
 
-// GetBlock gets all the nudges-process
-func (h AdminApisHandler) GetBlock(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
+// GetNudgesBlock gets all the nudges-process
+func (h AdminApisHandler) GetNudgesBlock(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	//nudges process ID
-	nudgesProcessIdParam := r.URL.Query().Get("id")
+	nudgesProcessIdParam := r.URL.Query().Get("process_id")
 	if nudgesProcessIdParam == "" {
 		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
 	}
@@ -269,7 +269,7 @@ func (h AdminApisHandler) GetBlock(l *logs.Log, claims *tokenauth.Claims, w http
 		}
 	}
 
-	block, err := h.app.Administration.GetBlock(l, nudgesProcessIdParam, number)
+	block, err := h.app.Administration.GetNudgesBlock(l, nudgesProcessIdParam, number)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "block", nil, err, http.StatusInternalServerError, true)
 	}

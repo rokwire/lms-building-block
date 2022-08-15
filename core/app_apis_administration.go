@@ -116,7 +116,7 @@ func (app *Application) findNudgesProcesses(l *logs.Log, limit int, offset int) 
 	return nudgesProcess, nil
 }
 
-func (app *Application) getBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error) {
+func (app *Application) getNudgesBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error) {
 	block, err := app.storage.FindBlock(processID, blockNumber)
 	if err != nil {
 		return nil, err

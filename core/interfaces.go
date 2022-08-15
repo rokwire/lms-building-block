@@ -49,7 +49,7 @@ type Administration interface {
 
 	FindNudgesProcesses(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error)
 
-	GetBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error)
+	GetNudgesBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error)
 }
 
 type servicesImpl struct {
@@ -126,8 +126,8 @@ func (s *administrationImpl) FindNudgesProcesses(l *logs.Log, limit int, offset 
 	return s.app.findNudgesProcesses(l, limit, offset)
 }
 
-func (s *administrationImpl) GetBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error) {
-	return s.app.getBlock(l, processID, blockNumber)
+func (s *administrationImpl) GetNudgesBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error) {
+	return s.app.getNudgesBlock(l, processID, blockNumber)
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
