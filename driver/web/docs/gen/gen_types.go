@@ -98,6 +98,13 @@ type AdminReqUpdateNudge struct {
 // PostAdminNudgesJSONBody defines parameters for PostAdminNudges.
 type PostAdminNudgesJSONBody = AdminReqCreateNudge
 
+// GetAdminNudgesBlockParams defines parameters for GetAdminNudgesBlock.
+type GetAdminNudgesBlockParams struct {
+	// nudges process ID
+	ProcessId *string `form:"process_id,omitempty" json:"process_id,omitempty"`
+	Number    *int    `form:"number,omitempty" json:"number,omitempty"`
+}
+
 // PutAdminNudgesConfigJSONBody defines parameters for PutAdminNudgesConfig.
 type PutAdminNudgesConfigJSONBody = NudgesConfig
 
@@ -112,13 +119,6 @@ type GetAdminNudgesProcessesParams struct {
 
 // PutAdminNudgesIdJSONBody defines parameters for PutAdminNudgesId.
 type PutAdminNudgesIdJSONBody = AdminReqUpdateNudge
-
-// GetAdminNudgesBlocksParams defines parameters for GetAdminNudgesBlocks.
-type GetAdminNudgesBlocksParams struct {
-	// nudges process ID
-	ProcessId *string `form:"process_id,omitempty" json:"process_id,omitempty"`
-	Number    *int    `form:"number,omitempty" json:"number,omitempty"`
-}
 
 // DeleteAdminSentNudgesParams defines parameters for DeleteAdminSentNudges.
 type DeleteAdminSentNudgesParams struct {

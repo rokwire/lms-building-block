@@ -253,9 +253,9 @@ func (h AdminApisHandler) FindNudgesProcesses(l *logs.Log, claims *tokenauth.Cla
 // GetNudgesBlock gets all the nudges-process
 func (h AdminApisHandler) GetNudgesBlock(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	//nudges process ID
-	nudgesProcessIdParam := r.URL.Query().Get("process_id")
+	nudgesProcessIdParam := r.URL.Query().Get("process-id")
 	if nudgesProcessIdParam == "" {
-		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
+		return l.HttpResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("process-id"), nil, http.StatusBadRequest, false)
 	}
 
 	//number
