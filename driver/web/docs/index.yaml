@@ -43,7 +43,7 @@ paths:
     $ref: "./resources/admin/sentNudges/testSentNudges.yaml"
   /admin/nudges-processes:
     $ref: "./resources/admin/nudgesProcess/nudges-process.yaml"
-  /admin/block:
+  /admin/nudgesBlocks:
     $ref: "./resources/admin/block/block.yaml"
 
 components:

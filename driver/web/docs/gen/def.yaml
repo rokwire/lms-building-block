@@ -549,7 +549,7 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
-  /admin/block:
+  /admin/nudgesBlocks:
     get:
       tags:
         - Admin
@@ -559,7 +559,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: id
+        - name: process_id
           in: query
           description: nudges process ID
           required: false
@@ -583,11 +583,11 @@ paths:
                 type: array
                 items:
                   required:
-                    - id
+                    - process_id
                     - number
                   type: object
                   properties:
-                    id:
+                    process_id:
                       readOnly: true
                       type: string
                     number:
