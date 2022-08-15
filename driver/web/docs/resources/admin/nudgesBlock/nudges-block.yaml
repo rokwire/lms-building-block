@@ -30,7 +30,7 @@ get:
           schema:
             type: array
             items:
-              $ref: "../../../schemas/nudges/Block.yaml"
+              $ref: "../../../schemas/nudges/NudgesBlock.yaml"
     400:
       description: Bad request
     401:
