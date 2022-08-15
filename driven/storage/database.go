@@ -47,7 +47,7 @@ type database struct {
 	nudges          *collectionWrapper
 	sentNudges      *collectionWrapper
 	nudgesProcesses *collectionWrapper
-	block           *collectionWrapper
+	nudgesBlocks    *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -98,8 +98,8 @@ func (m *database) start() error {
 		return err
 	}
 
-	block := &collectionWrapper{database: m, coll: db.Collection("block")}
-	err = m.applyBlockChecks(block)
+	nudgesBlocks := &collectionWrapper{database: m, coll: db.Collection("nudges_blocks")}
+	err = m.applyNudgesBlocksChecks(nudgesBlocks)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (m *database) start() error {
 	m.nudges = nudges
 	m.sentNudges = sentNudges
 	m.nudgesProcesses = nudgesProcesses
-	m.block = block
+	m.nudgesBlocks = nudgesBlocks
 
 	go m.configs.Watch(nil, m.logger)
 
@@ -177,16 +177,21 @@ func (m *database) applyNudgesProcessesChecks(nudgesProcesses *collectionWrapper
 	return nil
 }
 
-func (m *database) applyBlockChecks(block *collectionWrapper) error {
-	m.logger.Info("apply block checks.....")
+func (m *database) applyNudgesBlocksChecks(nudgesProcesses *collectionWrapper) error {
+	m.logger.Info("apply nudges blocks checks.....")
 
-	//add blocks number index
-	err := block.AddIndex(bson.D{primitive.E{Key: "block", Value: 1}}, false)
+	//add process id index
+	err := nudgesProcesses.AddIndex(bson.D{primitive.E{Key: "process_id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
-	m.logger.Info("block check passed")
+	//add blocks number index
+	err = nudgesProcesses.AddIndex(bson.D{primitive.E{Key: "number", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("nudges blocks check passed")
 	return nil
 }
 

@@ -352,65 +352,29 @@ func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 	return &count, nil
 }
 
-// AddBlockToNudgesProcess adds a block to a nudges process
-func (sa *Adapter) AddBlockToNudgesProcess(processID string, block model.Block) error {
-	filter := bson.M{"_id": processID}
-	update := bson.D{
-		primitive.E{Key: "$push", Value: bson.D{
-			primitive.E{Key: "blocks", Value: block},
-		}},
-	}
-	res, err := sa.db.nudgesProcesses.UpdateOne(filter, update, nil)
+// InsertBlock adds a block to a nudges process
+func (sa *Adapter) InsertBlock(block model.Block) error {
+	_, err := sa.db.nudgesBlocks.InsertOne(block)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "nudges process", logutils.StringArgs("inserting block"), err)
-	}
-	if res.ModifiedCount != 1 {
-		return errors.ErrorAction(logutils.ActionUpdate, "nudges process", &logutils.FieldArgs{"unexpected modified count": res.ModifiedCount})
+		return errors.WrapErrorAction(logutils.ActionInsert, "nudge block", nil, err)
 	}
 	return nil
 }
 
-// GetBlockFromNudgesProcess gets a block from a nudges process
-func (sa *Adapter) GetBlockFromNudgesProcess(processID string, blockNumber int) (*model.Block, error) {
-	filter := bson.M{"_id": processID}
-	var result []model.NudgesProcess
-	err := sa.db.nudgesProcesses.Find(filter, &result, nil)
-	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudges process", nil, err)
-	}
-	if len(result) == 0 {
-		//no such process
-		return nil, nil
-	}
-	process := result[0]
-
-	processBlocks := process.Blocks
-	if len(processBlocks) == 0 {
-		return nil, errors.Newf("not blocks for process - %s", processID)
-	}
-
-	for _, block := range processBlocks {
-		if block.Number == blockNumber {
-			return &block, nil
-		}
-	}
-	return nil, errors.Newf("%s does not have a block with number %d", processID, blockNumber)
-}
-
-//FindBlock gets a block from
+// FindBlock finds for a nudges process
 func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, error) {
-	filter := bson.M{"_id": processID, "number": blockNumber}
+	filter := bson.D{primitive.E{Key: "process_id", Value: processID},
+		primitive.E{Key: "number", Value: blockNumber}}
 	var result []model.Block
-	err := sa.db.block.Find(filter, &result, nil)
+	err := sa.db.nudgesBlocks.Find(filter, &result, nil)
 	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionFind, "block", nil, err)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge block", nil, err)
 	}
 	if len(result) == 0 {
-		//no such process
 		return nil, nil
 	}
-	process := result[0]
-	return &process, nil
+	block := result[0]
+	return &block, nil
 }
 
 // NewStorageAdapter creates a new storage adapter instance
