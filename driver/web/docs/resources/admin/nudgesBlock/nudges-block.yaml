@@ -1,7 +1,7 @@
 get:
   tags:
   - Admin
-  summary: Get block
+  summary: Get nudges block
   description: |
     Get Block by nudges process ID and number
   security:
