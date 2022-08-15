@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2022-08-15
+### Changed
+- Nudges improvements [#54](https://github.com/rokwire/lms-building-block/issues/54)
+
 ## [1.2.0] - 2022-08-12
 ### Fixed
 - Fix nudges processes docs [#47](https://github.com/rokwire/lms-building-block/issues/47)
