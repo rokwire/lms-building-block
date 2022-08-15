@@ -293,7 +293,7 @@ func Exist(list []string, value string) bool {
 	return false
 }
 
-//ExistInt checks if the items exists in the list
+// ExistInt checks if the items exists in the list
 func ExistInt(list []int, value int) bool {
 	if len(list) == 0 {
 		return false
