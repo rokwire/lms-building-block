@@ -230,8 +230,7 @@ func (n nudgesLogic) startProcess() (*string, error) {
 	mode := n.config.Mode
 	createdAt := time.Now()
 	status := "processing"
-	blocks := []model.Block{} //empty
-	process := model.NudgesProcess{ID: id, Mode: mode, CreatedAt: createdAt, Status: status, Blocks: blocks}
+	process := model.NudgesProcess{ID: id, Mode: mode, CreatedAt: createdAt, Status: status}
 
 	//store it
 	err := n.storage.InsertNudgesProcess(process)
@@ -306,8 +305,8 @@ func (n nudgesLogic) processPhase1(processID string) (*int, error) {
 
 func (n nudgesLogic) processPhase1Block(processID string, curentBlock int, users []GroupsBBUser) error {
 	//add the block to the process
-	block := n.createBlock(curentBlock, users)
-	err := n.storage.AddBlockToNudgesProcess(processID, block)
+	block := n.createBlock(processID, curentBlock, users)
+	err := n.storage.InsertBlock(block)
 	if err != nil {
 		n.logger.Errorf("error on adding block %d to process %s - %s", block.Number, processID, err)
 		return err
@@ -323,13 +322,13 @@ func (n nudgesLogic) processPhase1Block(processID string, curentBlock int, users
 	return nil
 }
 
-func (n nudgesLogic) createBlock(curentBlock int, users []GroupsBBUser) model.Block {
+func (n nudgesLogic) createBlock(processID string, curentBlock int, users []GroupsBBUser) model.Block {
 	items := make([]model.BlockItem, len(users))
 	for i, user := range users {
 		blockItem := model.BlockItem{NetID: user.NetID, UserID: user.UserID}
 		items[i] = blockItem
 	}
-	return model.Block{Number: curentBlock, Items: items}
+	return model.Block{ProcessID: processID, Number: curentBlock, Items: items}
 }
 
 // phase2 operates over the data prepared in phase1 and apply the nudges for every user
@@ -372,7 +371,7 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudge
 
 func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, error) {
 	//get data
-	block, err := n.storage.GetBlockFromNudgesProcess(processID, blockNumber)
+	block, err := n.storage.FindBlock(processID, blockNumber)
 	if err != nil {
 		n.logger.Errorf("error on getting block data from the storage %s - %d - %s", processID, blockNumber, err)
 		return nil, err
