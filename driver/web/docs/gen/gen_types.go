@@ -101,7 +101,7 @@ type PostAdminNudgesJSONBody = AdminReqCreateNudge
 // GetAdminNudgesBlockParams defines parameters for GetAdminNudgesBlock.
 type GetAdminNudgesBlockParams struct {
 	// nudges process ID
-	ProcessId *string `form:"process_id,omitempty" json:"process_id,omitempty"`
+	ProcessId *string `form:"process-id,omitempty" json:"process-id,omitempty"`
 	Number    *int    `form:"number,omitempty" json:"number,omitempty"`
 }
 
