@@ -1,9 +1,9 @@
 required:
-  - process_id
+  - _id
   - number
 type: object
 properties:
-  process_id:
+  _id:
     readOnly: true
     type: string
   number:
