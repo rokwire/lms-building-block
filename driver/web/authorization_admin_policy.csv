@@ -22,4 +22,4 @@ p, delete_test-nudges, /lms/admin/test-sent-nudges, (DELETE), Clear test sent nu
 
 p, get_nudges-processes, /lms/admin/nudges-processes, (GET), Gets nudges processes
 
-p, get_block, /lms/admin/block, (GET), Gets block
+p, get_block, /lms/admin/nudges-block, (GET), Gets nudges block
