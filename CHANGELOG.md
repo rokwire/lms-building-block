@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Expose Block in separated API [#51](https://github.com/rokwire/lms-building-block/issues/51)
+
+## [1.2.1] - 2022-08-15
+### Changed
 - Nudges improvements [#54](https://github.com/rokwire/lms-building-block/issues/54)
 
 ## [1.2.0] - 2022-08-12
