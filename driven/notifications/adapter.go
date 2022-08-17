@@ -35,15 +35,20 @@ type Adapter struct {
 // SendNotifications sends notifications via the Notifications BB
 func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, body string, data map[string]string) error {
 	if len(recipients) > 0 {
-		url := fmt.Sprintf("%s/api/int/message", a.host)
+		url := fmt.Sprintf("%s/api/int/v2/message", a.host)
 
-		bodyData := map[string]interface{}{
+		async := true
+		message := map[string]interface{}{
 			"priority":   10,
 			"recipients": recipients,
 			"topic":      nil,
 			"subject":    text,
 			"body":       body,
 			"data":       data,
+		}
+		bodyData := map[string]interface{}{
+			"async":   async,
+			"message": message,
 		}
 		bodyBytes, err := json.Marshal(bodyData)
 		if err != nil {
