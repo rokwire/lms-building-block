@@ -748,7 +748,7 @@ func (n nudgesLogic) maCheckDataValidity(missedAssignments []CourseAssignment) (
 	return notValid, valid
 }
 
-//if coursesIDs is empty then check for all courses
+// if coursesIDs is empty then check for all courses
 func (n nudgesLogic) getMissedAssignmentsData(user ProviderUser, coursesIDs []int) []CourseAssignment {
 	userCourses := user.Courses
 	if userCourses == nil || len(userCourses.Data) == 0 {
