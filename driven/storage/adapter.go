@@ -363,7 +363,7 @@ func (sa *Adapter) InsertBlock(block model.Block) error {
 
 // FindBlock finds for a nudges process
 func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, error) {
-	filter := bson.D{primitive.E{Key: "_id", Value: processID},
+	filter := bson.D{primitive.E{Key: "process_id", Value: processID},
 		primitive.E{Key: "number", Value: blockNumber}}
 	var result []model.Block
 	err := sa.db.nudgesBlocks.Find(filter, &result, nil)
