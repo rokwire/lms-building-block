@@ -28,8 +28,10 @@ import (
 
 // Adapter implements the notifications BB interface
 type Adapter struct {
-	host           string
-	internalAPIKey string
+	host               string
+	internalAPIKey     string
+	notificationsAppID string
+	notificationsOrgID string
 }
 
 // SendNotifications sends notifications via the Notifications BB
@@ -81,6 +83,6 @@ func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, bo
 }
 
 // NewNotificationsAdapter creates a new notifications BB adapter
-func NewNotificationsAdapter(notificationHost string, internalAPIKey string) *Adapter {
-	return &Adapter{host: notificationHost, internalAPIKey: internalAPIKey}
+func NewNotificationsAdapter(notificationHost string, internalAPIKey string, ntAppID string, ntOrgID string) *Adapter {
+	return &Adapter{host: notificationHost, internalAPIKey: internalAPIKey, notificationsAppID: ntAppID, notificationsOrgID: ntOrgID}
 }
