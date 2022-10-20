@@ -47,8 +47,8 @@ func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, bo
 			"subject":    text,
 			"body":       body,
 			"data":       data,
-			"app_ID":     a.appID,
-			"org_ID":     a.orgID,
+			"app_id":     a.appID,
+			"org_id":     a.orgID,
 		}
 		bodyData := map[string]interface{}{
 			"async":   async,
