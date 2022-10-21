@@ -4,4 +4,4 @@ repos:
   rev: v1.0.3
   hooks:
   - id: detect-secrets
-    args: ['--baseline', '.secrets.baseline']
+   args: ['--baseline', '.secrets.baseline']
