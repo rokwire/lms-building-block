@@ -17,7 +17,6 @@ require (
 require (
 	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/Yelp/detect-secrets v1.4.0 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/casbin/casbin/v2 v2.51.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -37,7 +36,6 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/montanaflynn/stats v0.6.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pre-commit/pre-commit-hooks v4.3.0+incompatible // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/swaggo/files v0.0.0-20220728132757-551d4a08d97a // indirect
