@@ -35,11 +35,13 @@ require (
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mikefarah/yaml/v2 v2.4.0 // indirect
 	github.com/montanaflynn/stats v0.6.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pre-commit/pre-commit-hooks v4.3.0+incompatible // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/stedolan/jq v0.0.0-20220526210432-cff5336ec71b // indirect
 	github.com/swaggo/files v0.0.0-20220728132757-551d4a08d97a // indirect
 	github.com/swaggo/swag v1.8.4 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
