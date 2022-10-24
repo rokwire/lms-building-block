@@ -76,8 +76,8 @@ func main() {
 	groupsBBAdapter := groups.NewGroupsAdapter(groupsHost, internalAPIKey)
 
 	//notifications BB adapter
-	appID := getEnvKey("LMS_APP_ID", false)
-	orgID := getEnvKey("LMS_ORG_ID", false)
+	appID := getEnvKey("LMS_APP_ID", true)
+	orgID := getEnvKey("LMS_ORG_ID", true)
 	notificationHost := getEnvKey("LMS_NOTIFICATIONS_BB_HOST", true)
 	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey, appID, orgID)
 
