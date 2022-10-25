@@ -30,8 +30,8 @@ import (
 type Adapter struct {
 	host           string
 	internalAPIKey string
-	appId          string
-	orgId          string
+	app            string
+	org            string
 }
 
 // SendNotifications sends notifications via the Notifications BB
@@ -47,8 +47,8 @@ func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, bo
 			"subject":    text,
 			"body":       body,
 			"data":       data,
-			"app_id":     a.appId,
-			"org_id":     a.orgId,
+			"app_id":     a.app,
+			"org_id":     a.org,
 		}
 		bodyData := map[string]interface{}{
 			"async":   async,
@@ -86,5 +86,5 @@ func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, bo
 
 // NewNotificationsAdapter creates a new notifications BB adapter
 func NewNotificationsAdapter(notificationHost string, internalAPIKey string, appId string, orgId string) *Adapter {
-	return &Adapter{host: notificationHost, internalAPIKey: internalAPIKey, appId: appId, orgId: orgId}
+	return &Adapter{host: notificationHost, internalAPIKey: internalAPIKey, app: appId, org: orgId}
 }
