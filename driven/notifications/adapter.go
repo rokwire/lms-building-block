@@ -85,6 +85,6 @@ func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, bo
 }
 
 // NewNotificationsAdapter creates a new notifications BB adapter
-func NewNotificationsAdapter(notificationHost string, internalAPIKey string, appId string, orgId string) *Adapter {
-	return &Adapter{host: notificationHost, internalAPIKey: internalAPIKey, app: appId, org: orgId}
+func NewNotificationsAdapter(notificationHost string, internalAPIKey string, app string, org string) *Adapter {
+	return &Adapter{host: notificationHost, internalAPIKey: internalAPIKey, app: app, org: org}
 }
