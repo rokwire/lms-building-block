@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2022-11-18
+### Added
+- Set appID and orgID for notifications [#59](https://github.com/rokwire/lms-building-block/issues/59)
+
 ## [1.3.0] - 2022-08-17
 ### Changed
 - Send nudges async [#56](https://github.com/rokwire/lms-building-block/issues/56)
