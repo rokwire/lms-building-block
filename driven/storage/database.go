@@ -191,7 +191,6 @@ func (m *database) applyNudgesBlocksChecks(nudgesProcesses *collectionWrapper) e
 	if err != nil {
 		return err
 	}
-
 	m.logger.Info("nudges blocks check passed")
 	return nil
 }

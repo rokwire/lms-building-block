@@ -48,6 +48,8 @@ type Administration interface {
 	ClearTestSentNudges(l *logs.Log) error
 
 	FindNudgesProcesses(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error)
+
+	GetNudgesBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error)
 }
 
 type servicesImpl struct {
@@ -122,6 +124,10 @@ func (s *administrationImpl) ClearTestSentNudges(l *logs.Log) error {
 
 func (s *administrationImpl) FindNudgesProcesses(l *logs.Log, limit int, offset int) ([]model.NudgesProcess, error) {
 	return s.app.findNudgesProcesses(l, limit, offset)
+}
+
+func (s *administrationImpl) GetNudgesBlock(l *logs.Log, processID string, blockNumber int) (*model.Block, error) {
+	return s.app.getNudgesBlock(l, processID, blockNumber)
 }
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
