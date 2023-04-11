@@ -59,7 +59,7 @@ type Grade struct {
 type Enrollment struct {
 	ID    int    `json:"id" bson:"id"`
 	Type  string `json:"type" bson:"type"`
-	Grade *Grade `json:"grade" bson:"grade"`
+	Grade *Grade `json:"grades" bson:"grades"`
 }
 
 // User entity
