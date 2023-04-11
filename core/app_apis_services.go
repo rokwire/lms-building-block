@@ -45,8 +45,8 @@ func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID i
 	return course, nil
 }
 
-func (app *Application) getAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
-	assignmentGroups, err := app.provider.GetAssignmentGroups(providerUserID, courseID, include)
+func (app *Application) getAssignmentGroups(l *logs.Log, providerUserID string, courseID int, includeAssignments bool, includeSubmission bool) ([]model.AssignmentGroup, error) {
+	assignmentGroups, err := app.provider.GetAssignmentGroups(providerUserID, courseID, includeAssignments, includeSubmission)
 	if err != nil {
 		l.Debugf("error getting assignment groups - %s", err)
 		return nil, err
