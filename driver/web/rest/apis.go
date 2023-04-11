@@ -116,8 +116,9 @@ func (h ApisHandler) GetAssignemntGroups(l *logs.Log, claims *tokenauth.Claims, 
 		include = strings.Split(includeParam, ",")
 	}
 	includeAssignments := utils.Exist(include, "assignments")
+	includeSubmission := utils.Exist(include, "submission")
 
-	assignmentGroups, err := h.app.Services.GetAssignmentGroups(l, providerUserID, courseID, includeAssignments)
+	assignmentGroups, err := h.app.Services.GetAssignmentGroups(l, providerUserID, courseID, includeAssignments, includeSubmission)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "assignment group", nil, err, http.StatusInternalServerError, true)
 	}

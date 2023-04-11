@@ -85,13 +85,16 @@ func (a *Adapter) GetCourse(userID string, courseID int) (*model.Course, error) 
 }
 
 // GetAssignmentGroups gives the the course assignment groups for the user
-func (a *Adapter) GetAssignmentGroups(userID string, courseID int, includeAssignments bool) ([]model.AssignmentGroup, error) {
+func (a *Adapter) GetAssignmentGroups(userID string, courseID int, includeAssignments bool, includeSubmission bool) ([]model.AssignmentGroup, error) {
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
 	includes := []string{}
 	if includeAssignments {
 		includes = append(includes, "assignments")
+	}
+	if includeSubmission {
+		includes = append(includes, "submission")
 	}
 
 	if len(includes) > 0 {
