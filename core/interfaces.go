@@ -28,7 +28,7 @@ type Services interface {
 
 	GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error)
 	GetCourse(l *logs.Log, providerUserID string, courseID int) (*model.Course, error)
-	GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error)
+	GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, includeAssignments bool) ([]model.AssignmentGroup, error)
 	GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(l *logs.Log, providerUserID string) (*model.User, error)
 }
@@ -66,8 +66,8 @@ func (s *servicesImpl) GetCourse(l *logs.Log, providerUserID string, courseID in
 	return s.app.getCourse(l, providerUserID, courseID)
 }
 
-func (s *servicesImpl) GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, include *string) ([]model.AssignmentGroup, error) {
-	return s.app.getAssignmentGroups(l, providerUserID, courseID, include)
+func (s *servicesImpl) GetAssignmentGroups(l *logs.Log, providerUserID string, courseID int, includeAssignments bool) ([]model.AssignmentGroup, error) {
+	return s.app.getAssignmentGroups(l, providerUserID, courseID, includeAssignments)
 }
 
 func (s *servicesImpl) GetCourseUser(l *logs.Log, providerUserID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
@@ -157,7 +157,7 @@ type Storage interface {
 type Provider interface {
 	GetCourses(userID string) ([]model.Course, error)
 	GetCourse(userID string, courseID int) (*model.Course, error)
-	GetAssignmentGroups(userID string, courseID int, include *string) ([]model.AssignmentGroup, error)
+	GetAssignmentGroups(userID string, courseID int, includeAssignments bool) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
 
