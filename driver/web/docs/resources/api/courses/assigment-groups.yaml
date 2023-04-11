@@ -18,7 +18,7 @@
   - name: include
     in: query
     description: include = assignments,submission
-    required: true
+    required: false
     style: form
     explode: false
     schema:

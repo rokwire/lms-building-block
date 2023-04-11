@@ -137,7 +137,7 @@ type GetAdminSentNudgesParams struct {
 // GetApiCoursesIdAssignmentGroupsParams defines parameters for GetApiCoursesIdAssignmentGroups.
 type GetApiCoursesIdAssignmentGroupsParams struct {
 	// include = assignments,submission
-	Include string `form:"include" json:"include"`
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
 // GetApiCoursesIdUsersParams defines parameters for GetApiCoursesIdUsers.
