@@ -17,7 +17,7 @@
       type: string
   - name: include
     in: query
-    description: include = enrollments,scores
+    description: include = assignments,submission
     required: true
     style: form
     explode: false
