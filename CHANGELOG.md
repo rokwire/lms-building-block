@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Acknowledge the include "submission" in assignment groups API [#68](https://github.com/rokwire/lms-building-block/issues/68)
 
+## [1.3.2] - 2023-02-21
+### Changed
+- Update library
+
 ## [1.3.1] - 2022-11-18
 ### Added
 - Set appID and orgID for notifications [#59](https://github.com/rokwire/lms-building-block/issues/59)
