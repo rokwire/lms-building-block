@@ -24,6 +24,7 @@ type Course struct {
 	ID                     int    `json:"id"  bson:"id"`
 	Name                   string `json:"name" bson:"name"`
 	AccessRestrictedByDate bool   `json:"access_restricted_by_date" bson:"access_restricted_by_date"`
+	AccountID              int    `json:"account_id" bson:"account_id"`
 }
 
 // Assignment entity
