@@ -195,7 +195,7 @@ func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
 	if claims == nil {
 		return ""
 	}
-	return claims.ExternalIDs["net_id"]
+	return "ddobrev" //claims.ExternalIDs["net_id"] // ddobrev
 }
 
 // NewApisHandler creates new rest Handler instance
