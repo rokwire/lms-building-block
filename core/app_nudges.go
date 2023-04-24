@@ -484,7 +484,7 @@ func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryDa
 		return memoryData, &user, nil
 	case "two_week_before_assignment":
 		var err error
-		memoryData, err = n.processTodayCalendarEventsNudgePerUser(nudge, user, memoryData)
+		memoryData, err = n.processTwoWeeksBeforeEventNudgePerUser(nudge, user, memoryData)
 		if err != nil {
 			return nil, nil, err
 		}
