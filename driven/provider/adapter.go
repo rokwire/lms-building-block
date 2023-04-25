@@ -307,53 +307,21 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 		a.logger.Errorf("error finding user for - %s", netID)
 		return nil, err
 	}
-	if cachedUser == nil {
-		return nil, errors.Newf("there is no cached record for - %s", netID)
-	}
 
 	//check if the user has courses data
-	if cachedUser.Courses == nil {
-		a.logger.Infof("there is no cached courses for %s, so loading them", netID)
+	if cachedUser != nil {
+		if cachedUser.Courses == nil {
+			a.logger.Infof("there is no cached courses for %s, so loading them", netID)
 
-		var userCourses *core.UserCourses
-		userCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
-		if err != nil {
-			a.logger.Errorf("error loading user courses for - %s", netID)
-			return nil, err
-		}
-
-		//add the courses data to the user
-		cachedUser.Courses = userCourses
-
-		//cache the user
-		err = a.db.saveUser(*cachedUser)
-		if err != nil {
-			a.logger.Errorf("error saving user - %s", netID)
-			return nil, err
-		}
-	} else {
-		a.logger.Infof("there is cached courses for %s, so need to decide if we have to to refresh it", netID)
-
-		currentUserCourses := cachedUser.Courses
-		passedTimeInSecconds := time.Now().Unix() - currentUserCourses.SyncDate.Unix()
-
-		//432000 seconds  = 5 days - to put it in the config
-		if passedTimeInSecconds > 432000 {
-			//if passedTimeInSecconds > 1 {
-			a.logger.Infof("we need to refresh courses for - %s", netID)
-
-			var loadedUserCourses *core.UserCourses
-			loadedUserCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
+			var userCourses *core.UserCourses
+			userCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
 			if err != nil {
-				a.logger.Errorf("error loading user courses for - %s on refresh", netID)
+				a.logger.Errorf("error loading user courses for - %s", netID)
 				return nil, err
 			}
 
-			//do not loose the submissions when we refresh the courses data/submissions are not part of it/
-			readyUserCourses := a.getSubmissionsFromCurrent(*currentUserCourses, *loadedUserCourses)
-
 			//add the courses data to the user
-			cachedUser.Courses = &readyUserCourses
+			cachedUser.Courses = userCourses
 
 			//cache the user
 			err = a.db.saveUser(*cachedUser)
@@ -362,7 +330,38 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 				return nil, err
 			}
 		} else {
-			a.logger.Infof("no need to refresh courses for - %s", netID)
+			a.logger.Infof("there is cached courses for %s, so need to decide if we have to to refresh it", netID)
+
+			currentUserCourses := cachedUser.Courses
+			passedTimeInSecconds := time.Now().Unix() - currentUserCourses.SyncDate.Unix()
+
+			//432000 seconds  = 5 days - to put it in the config
+			if passedTimeInSecconds > 432000 {
+				//if passedTimeInSecconds > 1 {
+				a.logger.Infof("we need to refresh courses for - %s", netID)
+
+				var loadedUserCourses *core.UserCourses
+				loadedUserCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
+				if err != nil {
+					a.logger.Errorf("error loading user courses for - %s on refresh", netID)
+					return nil, err
+				}
+
+				//do not loose the submissions when we refresh the courses data/submissions are not part of it/
+				readyUserCourses := a.getSubmissionsFromCurrent(*currentUserCourses, *loadedUserCourses)
+
+				//add the courses data to the user
+				cachedUser.Courses = &readyUserCourses
+
+				//cache the user
+				err = a.db.saveUser(*cachedUser)
+				if err != nil {
+					a.logger.Errorf("error saving user - %s", netID)
+					return nil, err
+				}
+			} else {
+				a.logger.Infof("no need to refresh courses for - %s", netID)
+			}
 		}
 	}
 
