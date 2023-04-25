@@ -483,12 +483,23 @@ func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryDa
 		}
 		return memoryData, &user, nil
 	case "two_week_before_assignment":
-		var err error
-		memoryData, err = n.processTwoWeeksBeforeEventNudgePerUser(nudge, user, memoryData)
+		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 14)
 		if err != nil {
 			return nil, nil, err
 		}
-		return memoryData, &user, nil
+		return memoryData, processedUser, nil
+	case "one_week_before_assignment":
+		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 7)
+		if err != nil {
+			return nil, nil, err
+		}
+		return memoryData, processedUser, nil
+	case "one_day_before_assignment":
+		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 1)
+		if err != nil {
+			return nil, nil, err
+		}
+		return memoryData, processedUser, nil
 	default:
 		n.logger.Infof("\t\tnot supported nudge - %s", nudge.ID)
 		return memoryData, &user, nil
@@ -1187,10 +1198,8 @@ func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge,
 func (n nudgesLogic) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
 	n.logger.Infof("\t\t\tprocessTodayCalendarEventsNudgePerUser - %s", nudge.ID)
 
-	date := time.Now()
-
 	//get calendar events
-	memoryData, calendarEvents, err := n.getCalendarEventsForDate(user, memoryData, date)
+	memoryData, calendarEvents, err := n.getCalendarEvents(user, memoryData)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror getting calendar events for - %s", user.NetID)
 		return nil, err
@@ -1209,6 +1218,78 @@ func (n nudgesLogic) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, u
 	}
 
 	return memoryData, nil
+}
+
+func (n nudgesLogic) getCalendarEvents(user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, []model.CalendarEvent, error) {
+
+	userCourses := user.Courses
+	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
+		return memoryData, []model.CalendarEvent{}, nil
+	}
+	userCoursesData := userCourses.Data
+
+	startDate, endDate := n.prepareTodayCalendarEventsDates()
+
+	result := []model.CalendarEvent{}
+	for _, uc := range userCoursesData {
+		courseID := uc.Data.ID
+
+		//check if we have it in the memory
+		memoryCourseEvents, ok := memoryData[courseID]
+		if ok {
+			n.logger.Infof("\t\t\tthere is in the memory - %d", courseID)
+			result = append(result, memoryCourseEvents...)
+		} else {
+			n.logger.Infof("\t\t\tthere is NO in the memory, so we need to load it - %d", courseID)
+
+			//load it
+			loadedCalendarEvents, err := n.provider.GetCalendarEvents(user.NetID, user.User.ID, courseID, startDate, endDate)
+			if err != nil {
+				n.logger.Errorf("\t\t\terror loading calendar events - %s", user.NetID)
+				return nil, nil, err
+			}
+
+			//set it in the memory
+			memoryData[courseID] = loadedCalendarEvents
+
+			//add it to the result
+			result = append(result, loadedCalendarEvents...)
+		}
+	}
+
+	return memoryData, result, nil
+
+}
+
+func (n nudgesLogic) prepareTodayCalendarEventsDates() (time.Time, time.Time) {
+	now := time.Now()
+
+	start := time.Date(now.Year(), time.Month(now.Month()), now.Day(), 0, 0, 0, 0, time.UTC)
+	end := time.Date(now.Year(), time.Month(now.Month()), now.Day(), 23, 59, 59, 999, time.UTC)
+	return start, end
+}
+
+func (n nudgesLogic) processCalendarEvents(nudge model.Nudge, user ProviderUser, events []model.CalendarEvent) error {
+	n.logger.Infof("\t\t\tprocessCalendarEvents - %s - %s - %d", nudge.ID, user.NetID, len(events))
+
+	//find unset events
+	unsentEvents, err := n.findUnsentEvents(nudge, user, events)
+	if err != nil {
+		n.logger.Errorf("\t\t\terror finding unset events - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+	if len(unsentEvents) == 0 {
+		n.logger.Infof("\t\t\tunsent events is 0 - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+
+	//we have unsent events, so process them for sending
+	err = n.sendCalendareEventNudgeForUsers(nudge, user, unsentEvents)
+	if err != nil {
+		n.logger.Errorf("\t\t\terror send calendar event nudge - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+	return nil
 }
 
 func (n nudgesLogic) findUnsentEvents(nudge model.Nudge, user ProviderUser, events []model.CalendarEvent) ([]model.CalendarEvent, error) {
@@ -1299,107 +1380,140 @@ func (n nudgesLogic) generateCalendarEventHash(eventID int) uint32 {
 	return hash
 }
 
-// end calendar_event nudgeX
+// end calendar_event nudge
 
 // two_week_before_assignment nudge
 
-func (n nudgesLogic) processTwoWeeksBeforeEventNudgePerUser(nudge model.Nudge, user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
-	n.logger.Infof("\t\t\tprocessTwoWeeksBeforeEventNudgePerUser - %s", nudge.ID)
+func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, user ProviderUser, numberOfDaysInAdvance int) (*ProviderUser, error) {
+	n.logger.Infof("\t\t\tprocessTwoWeekBeforeDueDatePerUser - %s", nudge.ID)
 
-	date := time.Now().Add(2 * 7 * 24 * time.Hour)
-
-	//get calendar events
-	memoryData, calendarEvents, err := n.getCalendarEventsForDate(user, memoryData, date)
+	//fill the cache if empty
+	userData, err := n.maFillCacheIfEmpty(user)
 	if err != nil {
-		n.logger.Errorf("\t\t\terror getting calendar events for - %s", user.NetID)
+		n.logger.Debugf("\t\t\terror filling cache if empty [ma] %s - %s", user.NetID, err)
 		return nil, err
 	}
-	if len(calendarEvents) == 0 {
-		//no calendar events
-		n.logger.Infof("\t\t\tno calendar events, so not send notifications - %s", user.NetID)
-		return memoryData, nil
+	user = *userData
+
+	var accountID *int
+	if val, ok := nudge.Params["account_id"]; ok {
+		value := val.(int)
+		accountID = &value
 	}
 
-	//we have calendar events, so process
-	err = n.processCalendarEvents(nudge, user, calendarEvents)
+	//get the missed assignments based on the cache data
+	assignments := n.getAssignmentsForAdvancedReminders(user, accountID, nil, numberOfDaysInAdvance)
+
+	if len(assignments) == 0 {
+		n.logger.Infof("\t\t\tno missed assignments, so not send notifications - %s", user.NetID)
+		return &user, nil
+	}
+
+	//at this moment we have identified missed assignments but based on the cached data
+	//now we have to determine for which courses we have to update the data and for which
+	//we can use the cache data
+	notValid, valid := n.maCheckDataValidity(assignments)
+
+	refreshedData := []CourseAssignment{}
+	if len(notValid) > 0 {
+		n.logger.Infof("\t\t\twe have old data, so need to refresh it - %s", user.NetID)
+		updatedData, err := n.provider.CacheUserCoursesData(user, notValid)
+		if err != nil {
+			n.logger.Debugf("\t\t\terror getting not valid data [ma] %s - %s", user.NetID, err)
+			return nil, err
+		}
+		user = *updatedData
+
+		//once we have loaded the not valid data then we have to cehck if it is really missed assignments
+		refreshedData = n.getMissedAssignmentsData(user, notValid)
+	}
+
+	//merge valid and unvalid
+	readyData := n.maMergeData(refreshedData, valid)
+
+	//determine for which of the assignments we need to send notifications
+	hours := nudge.Params["hours"].(float64)
+	now := time.Now()
+	readyData, err = n.findMissedAssignments(hours, now, readyData)
 	if err != nil {
-		n.logger.Errorf("\t\t\terror processing calendar events - %s", user.NetID)
+		n.logger.Errorf("\t\t\terror finding missed assignments for - %s", user.NetID)
 		return nil, err
 	}
-
-	return memoryData, nil
-}
-
-// end two_week_before_assignment nudge
-
-// common logic
-
-func (n nudgesLogic) getCalendarEventsForDate(user ProviderUser, memoryData map[int][]model.CalendarEvent, date time.Time) (map[int][]model.CalendarEvent, []model.CalendarEvent, error) {
-
-	userCourses := user.Courses
-	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
-		return memoryData, []model.CalendarEvent{}, nil
+	if len(readyData) == 0 {
+		//no missed assignments
+		n.logger.Infof("\t\t\tno missed assignments after checking due date, so not send notifications - %s", user.NetID)
+		return &user, nil
 	}
-	userCoursesData := userCourses.Data
 
-	startDate, endDate := n.prepareCalendarEventsDatesForDate(date)
+	//here we have the assignments we need to send notifications for
 
-	result := []model.CalendarEvent{}
-	for _, uc := range userCoursesData {
-		courseID := uc.Data.ID
-
-		//check if we have it in the memory
-		memoryCourseEvents, ok := memoryData[courseID]
-		if ok {
-			n.logger.Infof("\t\t\tthere is in the memory - %d", courseID)
-			result = append(result, memoryCourseEvents...)
-		} else {
-			n.logger.Infof("\t\t\tthere is NO in the memory, so we need to load it - %d", courseID)
-
-			//load it
-			loadedCalendarEvents, err := n.provider.GetCalendarEvents(user.NetID, user.User.ID, courseID, startDate, endDate)
-			if err != nil {
-				n.logger.Errorf("\t\t\terror loading calendar events - %s", user.NetID)
-				return nil, nil, err
-			}
-
-			//set it in the memory
-			memoryData[courseID] = loadedCalendarEvents
-
-			//add it to the result
-			result = append(result, loadedCalendarEvents...)
+	//process the missed assignments
+	for _, assignment := range readyData {
+		err = n.processMissedAssignment(nudge, user, assignment, hours)
+		if err != nil {
+			n.logger.Errorf("\t\t\terror process missed assignment for - %s - %s", user.NetID, assignment.Name)
+			return nil, err
 		}
 	}
 
-	return memoryData, result, nil
-
+	return &user, nil
 }
 
-func (n nudgesLogic) prepareCalendarEventsDatesForDate(date time.Time) (time.Time, time.Time) {
-	start := time.Date(date.Year(), time.Month(date.Month()), date.Day(), 0, 0, 0, 0, time.UTC)
-	end := time.Date(date.Year(), time.Month(date.Month()), date.Day(), 23, 59, 59, 999, time.UTC)
-	return start, end
+func (n nudgesLogic) getAssignmentsForAdvancedReminders(user ProviderUser, accountID *int, coursesIDs []int, numberOfDaysInAdvance int) []CourseAssignment {
+	userCourses := user.Courses
+	if userCourses == nil || len(userCourses.Data) == 0 {
+		return []CourseAssignment{}
+	}
+
+	result := []CourseAssignment{}
+	for _, uc := range userCourses.Data {
+
+		if (accountID == nil || *accountID == uc.Data.AccountID) && (len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID)) {
+
+			assignments := uc.Assignments
+			if len(assignments) > 0 {
+				for _, assignment := range assignments {
+					if n.isAssignmentMatchedByDaysInAdvance(assignment, numberOfDaysInAdvance) {
+						result = append(result, assignment)
+					}
+				}
+			}
+		}
+	}
+
+	return result
 }
 
-func (n nudgesLogic) processCalendarEvents(nudge model.Nudge, user ProviderUser, events []model.CalendarEvent) error {
-	n.logger.Infof("\t\t\tprocessCalendarEvents - %s - %s - %d", nudge.ID, user.NetID, len(events))
-
-	//find unset events
-	unsentEvents, err := n.findUnsentEvents(nudge, user, events)
-	if err != nil {
-		n.logger.Errorf("\t\t\terror finding unset events - %s - %s", nudge.ID, user.NetID)
-		return err
-	}
-	if len(unsentEvents) == 0 {
-		n.logger.Infof("\t\t\tunsent events is 0 - %s - %s", nudge.ID, user.NetID)
-		return err
+func (n nudgesLogic) isAssignmentMatchedByDaysInAdvance(ca CourseAssignment, numberOfDaysInAdvance int) bool {
+	assignmentData := ca.Data
+	assignmentDueAt := assignmentData.DueAt
+	if assignmentDueAt == nil {
+		n.logger.Debugf("\t\t\tthere is no due_at for assignment %s", assignmentData.Name)
+		return false
 	}
 
-	//we have unsent events, so process them for sending
-	err = n.sendCalendareEventNudgeForUsers(nudge, user, unsentEvents)
-	if err != nil {
-		n.logger.Errorf("\t\t\terror send calendar event nudge - %s - %s", nudge.ID, user.NetID)
-		return err
-	}
-	return nil
+	now := time.Now()
+
+	return now.Before(*assignmentDueAt) && int(now.Sub(*assignmentDueAt).Hours()) == 24*numberOfDaysInAdvance
 }
+
+func (n nudgesLogic) findAssignmentsInDaysAdvance(days int, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
+	n.logger.Info("\t\t\tfindAssignmentsInDaysAdvance")
+
+	resultList := []model.Assignment{}
+	for _, assignment := range assignments {
+		if assignment.DueAt == nil {
+			continue
+		}
+
+		difference := now.Sub(*assignment.DueAt) //difference between now and the due at date
+		differenceInDays := int(difference.Hours() / 24)
+		if differenceInDays == days {
+			resultList = append(resultList, assignment)
+		}
+	}
+
+	return resultList, nil
+}
+
+// end two_week_before_assignment nudge
