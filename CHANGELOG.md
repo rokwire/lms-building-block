@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Implement new nudges [#72](https://github.com/rokwire/lms-building-block/issues/72)
+
 ## [1.5.0] - 2023-04-12
 ### Changed
 - Update Course entity [#70](https://github.com/rokwire/lms-building-block/issues/70)
