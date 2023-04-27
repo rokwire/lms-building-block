@@ -1475,7 +1475,7 @@ func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, u
 
 	//process the missed assignments
 	for _, assignment := range readyData {
-		criteriaHash := n.generateMissedAssignmentHash(nudge.ID, fmt.Sprintf("%d", assignment.ID), fmt.Sprintf("%f", numberOfDaysInAdvance))
+		criteriaHash := n.generateMissedAssignmentHash(nudge.ID, fmt.Sprintf("%d", assignment.ID), fmt.Sprintf("%d", numberOfDaysInAdvance))
 		err = n.processAdvancedReminderForAssignment(nudge, user, assignment, criteriaHash)
 		if err != nil {
 			n.logger.Errorf("\t\t\terror process missed assignment for - %s - %s", user.NetID, assignment.Name)
