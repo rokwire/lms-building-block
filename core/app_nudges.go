@@ -471,7 +471,13 @@ func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryDa
 		}
 		return memoryData, processedUser, nil
 	case "completed_assignment_early":
-		processedUser, err := n.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
+		processedUser, err := n.processCompletedAssignmentEarlyNudgePerUser(nudge, user, false)
+		if err != nil {
+			return nil, nil, err
+		}
+		return memoryData, processedUser, nil
+	case "completed_assignment_late":
+		processedUser, err := n.processCompletedAssignmentEarlyNudgePerUser(nudge, user, true)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -496,7 +502,7 @@ func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryDa
 		}
 		return memoryData, processedUser, nil
 	case "one_day_before_assignment":
-		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 1)
+		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 3)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -937,7 +943,7 @@ func (n nudgesLogic) findMissedAssignments(hours float64, now time.Time, assignm
 
 // completed_assignment_early nudge
 
-func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user ProviderUser) (*ProviderUser, error) {
+func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user ProviderUser, lateCompletion bool) (*ProviderUser, error) {
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
 
 	// find the early completion candidate assignments
@@ -957,9 +963,12 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 
 	// determine which of the assignments are early completed
 	ecAssignments := []model.Assignment{}
-	hours := nudge.Params["hours"].(float64)
+	var hours float64
+	if val, ok := nudge.Params["hours"].(float64); ok {
+		hours = val
+	}
 	for _, assignment := range updatedCandidateAssignments {
-		if n.ecIsEarlyCompleted(assignment, hours) {
+		if (lateCompletion && n.ecIsLateCompleted(assignment)) || n.ecIsEarlyCompleted(assignment, hours) {
 			ecAssignments = append(ecAssignments, assignment.Data)
 		}
 	}
@@ -999,6 +1008,26 @@ func (n nudgesLogic) ecIsEarlyCompleted(assignment CourseAssignment, hours float
 	difference := dueAtSeconds - submittedAtSeconds
 
 	return difference > int64(hoursInSecs)
+}
+
+func (n nudgesLogic) ecIsLateCompleted(assignment CourseAssignment) bool {
+	submission := assignment.Submission
+	if submission == nil {
+		return false
+	}
+	submissionData := submission.Data
+	if submissionData == nil {
+		return false
+	}
+	submittedAt := submissionData.SubmittedAt
+	if submittedAt == nil {
+		return false
+	}
+
+	if assignment.Data.DueAt != nil {
+		return submittedAt.After(*assignment.Data.DueAt)
+	}
+	return false
 }
 
 func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssignment {
