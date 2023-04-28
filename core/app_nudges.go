@@ -947,14 +947,14 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
 
 	// find the early completion candidate assignments
-	candidateAssignments := n.ecFindCandidateAssignments(user)
+	candidateAssignments := n.ecFindCandidateAssignments(user, lateCompletion)
 	if len(candidateAssignments) == 0 {
 		n.logger.Infof("\t\t\tthere is no candidate assignments - %s", user.NetID)
 		return &user, nil
 	}
 
 	// load data if necessary
-	updatedUser, updatedCandidateAssignments, err := n.ecLoadDataIfNecessary(user, candidateAssignments)
+	updatedUser, updatedCandidateAssignments, err := n.ecLoadDataIfNecessary(user, candidateAssignments, lateCompletion)
 	if err != nil {
 		n.logger.Debugf("\t\t\terror loading data if necessary [ec] %s - %s", user.ID, err)
 		return nil, err
@@ -1030,7 +1030,7 @@ func (n nudgesLogic) ecIsLateCompleted(assignment CourseAssignment) bool {
 	return false
 }
 
-func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssignment {
+func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser, lateCompletion bool) []CourseAssignment {
 	userCourses := user.Courses
 	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
 		return []CourseAssignment{}
@@ -1048,7 +1048,7 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssig
 					//we rely on due at date
 					continue
 				}
-				if now.Before(*dueAt) {
+				if (lateCompletion && now.After(*dueAt)) || now.Before(*dueAt) {
 					result = append(result, assignment)
 				}
 			}
@@ -1058,7 +1058,7 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssig
 	return result
 }
 
-func (n nudgesLogic) ecLoadDataIfNecessary(user ProviderUser, assignments []CourseAssignment) (*ProviderUser, []CourseAssignment, error) {
+func (n nudgesLogic) ecLoadDataIfNecessary(user ProviderUser, assignments []CourseAssignment, lateCompletion bool) (*ProviderUser, []CourseAssignment, error) {
 	result := []CourseAssignment{}
 	forLoading := map[int][]int{}
 
@@ -1169,7 +1169,7 @@ func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user Pro
 	}
 
 	//it has not been sent, so sent it
-	err = n.sendEarlyCompletedAssignmentNudgeForUser(nudge, user, assignment, hours)
+	err = n.sendCompletedAssignmentNudgeForUser(nudge, user, assignment)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror send early completed assignment - %s - %s", nudge.ID, user.NetID)
 		return err
@@ -1186,9 +1186,9 @@ func (n nudgesLogic) generateEarlyCompletedAssignmentHash(assignmentID int, subm
 	return hash
 }
 
-func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
-	assignment model.Assignment, hours float64) error {
-	n.logger.Infof("\t\t\tsendEarlyCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
+func (n nudgesLogic) sendCompletedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
+	assignment model.Assignment) error {
+	n.logger.Infof("\t\t\tsendCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
 	//insert sent nudge
 	criteriaHash := n.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
@@ -1422,14 +1422,17 @@ func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, u
 	}
 	user = *userData
 
-	var accountID *int
-	if val, ok := nudge.Params["account_id"]; ok {
-		value := val.(int)
-		accountID = &value
+	var accountIDs []int
+	if val, ok := nudge.Params["account_ids"].([]int); ok {
+		accountIDs = val
+	}
+	var courseIDs []int
+	if val, ok := nudge.Params["course_ids"].([]int); ok {
+		courseIDs = val
 	}
 
 	//get the missed assignments based on the cache data
-	assignments := n.getAssignmentsForAdvancedReminders(user, accountID, nil, numberOfDaysInAdvance)
+	assignments := n.getAssignmentsForAdvancedReminders(user, accountIDs, courseIDs, numberOfDaysInAdvance)
 
 	if len(assignments) == 0 {
 		n.logger.Infof("\t\t\tno missed assignments, so not send notifications - %s", user.NetID)
@@ -1486,7 +1489,7 @@ func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, u
 	return &user, nil
 }
 
-func (n nudgesLogic) getAssignmentsForAdvancedReminders(user ProviderUser, accountID *int, coursesIDs []int, numberOfDaysInAdvance int) []CourseAssignment {
+func (n nudgesLogic) getAssignmentsForAdvancedReminders(user ProviderUser, accountIDs []int, coursesIDs []int, numberOfDaysInAdvance int) []CourseAssignment {
 	userCourses := user.Courses
 	if userCourses == nil || len(userCourses.Data) == 0 {
 		return []CourseAssignment{}
@@ -1494,8 +1497,7 @@ func (n nudgesLogic) getAssignmentsForAdvancedReminders(user ProviderUser, accou
 
 	result := []CourseAssignment{}
 	for _, uc := range userCourses.Data {
-
-		if (accountID == nil || *accountID == uc.Data.AccountID) && (len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID)) {
+		if (len(accountIDs) == 0 || utils.ExistInt(accountIDs, uc.Data.AccountID)) && (len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID)) {
 
 			assignments := uc.Assignments
 			if len(assignments) > 0 {
