@@ -947,14 +947,14 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
 
 	// find the early completion candidate assignments
-	candidateAssignments := n.ecFindCandidateAssignments(user, lateCompletion)
+	candidateAssignments := n.ecFindCandidateAssignments(user)
 	if len(candidateAssignments) == 0 {
 		n.logger.Infof("\t\t\tthere is no candidate assignments - %s", user.NetID)
 		return &user, nil
 	}
 
 	// load data if necessary
-	updatedUser, updatedCandidateAssignments, err := n.ecLoadDataIfNecessary(user, candidateAssignments, lateCompletion)
+	updatedUser, updatedCandidateAssignments, err := n.ecLoadDataIfNecessary(user, candidateAssignments)
 	if err != nil {
 		n.logger.Debugf("\t\t\terror loading data if necessary [ec] %s - %s", user.ID, err)
 		return nil, err
@@ -1030,7 +1030,7 @@ func (n nudgesLogic) ecIsLateCompleted(assignment CourseAssignment) bool {
 	return false
 }
 
-func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser, lateCompletion bool) []CourseAssignment {
+func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssignment {
 	userCourses := user.Courses
 	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
 		return []CourseAssignment{}
@@ -1048,7 +1048,7 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser, lateCompletio
 					//we rely on due at date
 					continue
 				}
-				if (lateCompletion && now.After(*dueAt)) || now.Before(*dueAt) {
+				if now.Before(*dueAt) {
 					result = append(result, assignment)
 				}
 			}
@@ -1058,7 +1058,7 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser, lateCompletio
 	return result
 }
 
-func (n nudgesLogic) ecLoadDataIfNecessary(user ProviderUser, assignments []CourseAssignment, lateCompletion bool) (*ProviderUser, []CourseAssignment, error) {
+func (n nudgesLogic) ecLoadDataIfNecessary(user ProviderUser, assignments []CourseAssignment) (*ProviderUser, []CourseAssignment, error) {
 	result := []CourseAssignment{}
 	forLoading := map[int][]int{}
 
@@ -1169,7 +1169,7 @@ func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user Pro
 	}
 
 	//it has not been sent, so sent it
-	err = n.sendCompletedAssignmentNudgeForUser(nudge, user, assignment)
+	err = n.sendEarlyCompletedAssignmentNudgeForUser(nudge, user, assignment, hours)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror send early completed assignment - %s - %s", nudge.ID, user.NetID)
 		return err
@@ -1186,9 +1186,9 @@ func (n nudgesLogic) generateEarlyCompletedAssignmentHash(assignmentID int, subm
 	return hash
 }
 
-func (n nudgesLogic) sendCompletedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
-	assignment model.Assignment) error {
-	n.logger.Infof("\t\t\tsendCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
+func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
+	assignment model.Assignment, hours float64) error {
+	n.logger.Infof("\t\t\tsendEarlyCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
 	//insert sent nudge
 	criteriaHash := n.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
