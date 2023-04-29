@@ -502,7 +502,7 @@ func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryDa
 		}
 		return memoryData, processedUser, nil
 	case "one_day_before_assignment":
-		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 3)
+		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 1)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -539,7 +539,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Provid
 	}
 
 	//prepare another needed data
-	hours := nudge.Params["hours"].(float64)
+	var hours = nudge.Params.Hours
 	now := time.Now()
 
 	//determine if needs to send notification - using the cached data
@@ -705,7 +705,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 	readyData := n.maMergeData(refreshedData, valid)
 
 	//determine for which of the assignments we need to send notifications
-	hours := nudge.Params["hours"].(float64)
+	var hours = nudge.Params.Hours
 	now := time.Now()
 	readyData, err = n.findMissedAssignments(hours, now, readyData)
 	if err != nil {
@@ -963,12 +963,9 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 
 	// determine which of the assignments are early completed
 	ecAssignments := []model.Assignment{}
-	var hours float64
-	if val, ok := nudge.Params["hours"].(float64); ok {
-		hours = val
-	}
+	var hours = nudge.Params.Hours
 	for _, assignment := range updatedCandidateAssignments {
-		if (lateCompletion && n.ecIsLateCompleted(assignment)) || n.ecIsEarlyCompleted(assignment, hours) {
+		if assignment.Submission != nil && (lateCompletion && n.ecIsLateCompleted(assignment)) || n.ecIsEarlyCompleted(assignment, hours) {
 			ecAssignments = append(ecAssignments, assignment.Data)
 		}
 	}
@@ -1154,6 +1151,9 @@ func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user Pro
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarly - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before
+	if assignment.Submission == nil {
+		return nil
+	}
 
 	//check if has been sent before
 	criteriaHash := n.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
@@ -1422,17 +1422,8 @@ func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, u
 	}
 	user = *userData
 
-	var accountIDs []int
-	if val, ok := nudge.Params["account_ids"].([]int); ok {
-		accountIDs = val
-	}
-	var courseIDs []int
-	if val, ok := nudge.Params["course_ids"].([]int); ok {
-		courseIDs = val
-	}
-
 	//get the missed assignments based on the cache data
-	assignments := n.getAssignmentsForAdvancedReminders(user, accountIDs, courseIDs, numberOfDaysInAdvance)
+	assignments := n.getAssignmentsForAdvancedReminders(user, nudge.Params.AccountIDs, nudge.Params.CourseIDs, numberOfDaysInAdvance)
 
 	if len(assignments) == 0 {
 		n.logger.Infof("\t\t\tno missed assignments, so not send notifications - %s", user.NetID)

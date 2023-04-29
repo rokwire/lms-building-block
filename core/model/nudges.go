@@ -31,12 +31,19 @@ type NudgesConfig struct {
 
 // Nudge entity
 type Nudge struct {
-	ID       string                 `json:"id" bson:"_id"`              //last_login
-	Name     string                 `json:"name" bson:"name"`           //"Last Canvas use was over 2 weeks"
-	Body     string                 `json:"body" bson:"body"`           //"You have not used the Canvas Application in over 2 weeks."
-	DeepLink string                 `json:"deep_link" bson:"deep_link"` //deep link
-	Params   map[string]interface{} `json:"params" bson:"params"`       //Nudge specific settings
-	Active   bool                   `json:"active" bson:"active"`       //true or false
+	ID       string      `json:"id" bson:"_id"`              //last_login
+	Name     string      `json:"name" bson:"name"`           //"Last Canvas use was over 2 weeks"
+	Body     string      `json:"body" bson:"body"`           //"You have not used the Canvas Application in over 2 weeks."
+	DeepLink string      `json:"deep_link" bson:"deep_link"` //deep link
+	Params   NudgeParams `json:"params" bson:"params"`       //Nudge specific settings
+	Active   bool        `json:"active" bson:"active"`       //true or false
+}
+
+// NudgeParams entity
+type NudgeParams struct {
+	Hours      float64 `json:"hours" bson:"hours"`
+	CourseIDs  []int   `json:"course_ids" bson:"course_ids"`
+	AccountIDs []int   `json:"account_ids" bson:"account_ids"`
 }
 
 // SentNudge entity

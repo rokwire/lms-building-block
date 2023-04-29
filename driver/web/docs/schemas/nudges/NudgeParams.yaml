@@ -1,0 +1,10 @@
+type: object
+properties:
+  hours:
+    type: number
+  account_ids:
+    type: array
+    items: integer
+  course_ids:
+    type: array
+    items: integer
