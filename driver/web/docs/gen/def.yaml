@@ -627,7 +627,15 @@ components:
           type: string
         params:
           type: object
-          nullable: true
+          properties:
+            account_ids:
+              type: array
+              items:
+                type: integer
+            course_ids:
+              type: array
+              items:
+                type: integer
         active:
           type: boolean
     NudgesConfig:
@@ -673,7 +681,17 @@ components:
           type: string
         params:
           type: object
-          nullable: true
+          properties:
+            hours:
+              type: number
+            account_ids:
+              type: array
+              items:
+                type: integer
+            course_ids:
+              type: array
+              items:
+                type: integer
         active:
           type: boolean
     _admin_req_update_nudge:
@@ -693,6 +711,16 @@ components:
           type: string
         params:
           type: object
-          nullable: true
+          properties:
+            hours:
+              type: number
+            account_ids:
+              type: array
+              items:
+                type: integer
+            course_ids:
+              type: array
+              items:
+                type: integer
         active:
           type: boolean

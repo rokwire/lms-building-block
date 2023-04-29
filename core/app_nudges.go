@@ -23,6 +23,7 @@ import (
 	"lms/core/model"
 	"lms/utils"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -470,7 +471,13 @@ func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryDa
 		}
 		return memoryData, processedUser, nil
 	case "completed_assignment_early":
-		processedUser, err := n.processCompletedAssignmentEarlyNudgePerUser(nudge, user)
+		processedUser, err := n.processCompletedAssignmentEarlyNudgePerUser(nudge, user, false)
+		if err != nil {
+			return nil, nil, err
+		}
+		return memoryData, processedUser, nil
+	case "completed_assignment_late":
+		processedUser, err := n.processCompletedAssignmentEarlyNudgePerUser(nudge, user, true)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -482,6 +489,24 @@ func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryDa
 			return nil, nil, err
 		}
 		return memoryData, &user, nil
+	case "two_week_before_assignment":
+		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 14)
+		if err != nil {
+			return nil, nil, err
+		}
+		return memoryData, processedUser, nil
+	case "one_week_before_assignment":
+		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 7)
+		if err != nil {
+			return nil, nil, err
+		}
+		return memoryData, processedUser, nil
+	case "one_day_before_assignment":
+		processedUser, err := n.processDueDateAsAdvanceReminderPerUser(nudge, user, 1)
+		if err != nil {
+			return nil, nil, err
+		}
+		return memoryData, processedUser, nil
 	default:
 		n.logger.Infof("\t\tnot supported nudge - %s", nudge.ID)
 		return memoryData, &user, nil
@@ -514,7 +539,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Provid
 	}
 
 	//prepare another needed data
-	hours := nudge.Params["hours"].(float64)
+	var hours = nudge.Params.Hours
 	now := time.Now()
 
 	//determine if needs to send notification - using the cached data
@@ -680,7 +705,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 	readyData := n.maMergeData(refreshedData, valid)
 
 	//determine for which of the assignments we need to send notifications
-	hours := nudge.Params["hours"].(float64)
+	var hours = nudge.Params.Hours
 	now := time.Now()
 	readyData, err = n.findMissedAssignments(hours, now, readyData)
 	if err != nil {
@@ -834,7 +859,7 @@ func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user ProviderUse
 	//need to send but first check if it has been send before
 
 	//check if has been sent before
-	criteriaHash := n.generateMissedAssignmentHash(assignment.ID, hours)
+	criteriaHash := n.generateMissedAssignmentHash(fmt.Sprintf("%d", assignment.ID), fmt.Sprintf("%f", hours))
 	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
 	if err != nil {
 		//not reached the max hours, so not send notification
@@ -847,7 +872,7 @@ func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user ProviderUse
 	}
 
 	//it has not been sent, so sent it
-	err = n.sendMissedAssignmentNudgeForUser(nudge, user, assignment, hours)
+	err = n.sendMissedAssignmentNudgeForUser(nudge, user, assignment, criteriaHash)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror sending missed assignment nudge - %s - %s", nudge.ID, user.NetID)
 		return err
@@ -857,11 +882,10 @@ func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user ProviderUse
 }
 
 func (n nudgesLogic) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
-	assignment model.Assignment, hours float64) error {
+	assignment model.Assignment, criteriaHash uint32) error {
 	n.logger.Infof("\t\t\tsendMissedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
 	//insert sent nudge
-	criteriaHash := n.generateMissedAssignmentHash(assignment.ID, hours)
 	sentNudge := n.createSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
 	err := n.storage.InsertSentNudge(sentNudge)
 	if err != nil {
@@ -890,10 +914,8 @@ func (n nudgesLogic) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user Pr
 	return nil
 }
 
-func (n nudgesLogic) generateMissedAssignmentHash(assignemntID int, hours float64) uint32 {
-	assignmentIDComponent := fmt.Sprintf("%d", assignemntID)
-	hoursComponent := fmt.Sprintf("%f", hours)
-	component := fmt.Sprintf("%s+%s", assignmentIDComponent, hoursComponent)
+func (n nudgesLogic) generateMissedAssignmentHash(components ...string) uint32 {
+	component := strings.Join(components, "+")
 	hash := utils.Hash(component)
 	return hash
 }
@@ -921,7 +943,7 @@ func (n nudgesLogic) findMissedAssignments(hours float64, now time.Time, assignm
 
 // completed_assignment_early nudge
 
-func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user ProviderUser) (*ProviderUser, error) {
+func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user ProviderUser, lateCompletion bool) (*ProviderUser, error) {
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
 
 	// find the early completion candidate assignments
@@ -941,9 +963,9 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 
 	// determine which of the assignments are early completed
 	ecAssignments := []model.Assignment{}
-	hours := nudge.Params["hours"].(float64)
+	var hours = nudge.Params.Hours
 	for _, assignment := range updatedCandidateAssignments {
-		if n.ecIsEarlyCompleted(assignment, hours) {
+		if assignment.Submission != nil && (lateCompletion && n.ecIsLateCompleted(assignment)) || n.ecIsEarlyCompleted(assignment, hours) {
 			ecAssignments = append(ecAssignments, assignment.Data)
 		}
 	}
@@ -983,6 +1005,26 @@ func (n nudgesLogic) ecIsEarlyCompleted(assignment CourseAssignment, hours float
 	difference := dueAtSeconds - submittedAtSeconds
 
 	return difference > int64(hoursInSecs)
+}
+
+func (n nudgesLogic) ecIsLateCompleted(assignment CourseAssignment) bool {
+	submission := assignment.Submission
+	if submission == nil {
+		return false
+	}
+	submissionData := submission.Data
+	if submissionData == nil {
+		return false
+	}
+	submittedAt := submissionData.SubmittedAt
+	if submittedAt == nil {
+		return false
+	}
+
+	if assignment.Data.DueAt != nil {
+		return submittedAt.After(*assignment.Data.DueAt)
+	}
+	return false
 }
 
 func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssignment {
@@ -1109,6 +1151,9 @@ func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user Pro
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarly - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before
+	if assignment.Submission == nil {
+		return nil
+	}
 
 	//check if has been sent before
 	criteriaHash := n.generateEarlyCompletedAssignmentHash(assignment.ID, assignment.Submission.ID, *assignment.Submission.SubmittedAt)
@@ -1363,3 +1408,160 @@ func (n nudgesLogic) generateCalendarEventHash(eventID int) uint32 {
 }
 
 // end calendar_event nudge
+
+// two_week_before_assignment one_week_before_assignment one_day_before_assignment nudge
+
+func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, user ProviderUser, numberOfDaysInAdvance int) (*ProviderUser, error) {
+	n.logger.Infof("\t\t\tprocessTwoWeekBeforeDueDatePerUser - %s", nudge.ID)
+
+	//fill the cache if empty
+	userData, err := n.maFillCacheIfEmpty(user)
+	if err != nil {
+		n.logger.Debugf("\t\t\terror filling cache if empty [ma] %s - %s", user.NetID, err)
+		return nil, err
+	}
+	user = *userData
+
+	//get the missed assignments based on the cache data
+	assignments := n.getAssignmentsForAdvancedReminders(user, nudge.Params.AccountIDs, nudge.Params.CourseIDs, numberOfDaysInAdvance)
+
+	if len(assignments) == 0 {
+		n.logger.Infof("\t\t\tno missed assignments, so not send notifications - %s", user.NetID)
+		return &user, nil
+	}
+
+	//at this moment we have identified missed assignments but based on the cached data
+	//now we have to determine for which courses we have to update the data and for which
+	//we can use the cache data
+	notValid, valid := n.maCheckDataValidity(assignments)
+
+	refreshedData := []CourseAssignment{}
+	if len(notValid) > 0 {
+		n.logger.Infof("\t\t\twe have old data, so need to refresh it - %s", user.NetID)
+		updatedData, err := n.provider.CacheUserCoursesData(user, notValid)
+		if err != nil {
+			n.logger.Debugf("\t\t\terror getting not valid data [ma] %s - %s", user.NetID, err)
+			return nil, err
+		}
+		user = *updatedData
+
+		//once we have loaded the not valid data then we have to cehck if it is really missed assignments
+		refreshedData = n.getMissedAssignmentsData(user, notValid)
+	}
+
+	//merge valid and unvalid
+	readyData := n.maMergeData(refreshedData, valid)
+
+	//determine for which of the assignments we need to send notifications
+	now := time.Now()
+	readyData, err = n.findAssignmentsInDaysAdvance(numberOfDaysInAdvance, now, readyData)
+	if err != nil {
+		n.logger.Errorf("\t\t\terror finding missed assignments for - %s", user.NetID)
+		return nil, err
+	}
+	if len(readyData) == 0 {
+		//no missed assignments
+		n.logger.Infof("\t\t\tno missed assignments after checking due date, so not send notifications - %s", user.NetID)
+		return &user, nil
+	}
+
+	//here we have the assignments we need to send notifications for
+
+	//process the missed assignments
+	for _, assignment := range readyData {
+		criteriaHash := n.generateMissedAssignmentHash(nudge.ID, fmt.Sprintf("%d", assignment.ID), fmt.Sprintf("%d", numberOfDaysInAdvance))
+		err = n.processAdvancedReminderForAssignment(nudge, user, assignment, criteriaHash)
+		if err != nil {
+			n.logger.Errorf("\t\t\terror process missed assignment for - %s - %s", user.NetID, assignment.Name)
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+func (n nudgesLogic) getAssignmentsForAdvancedReminders(user ProviderUser, accountIDs []int, coursesIDs []int, numberOfDaysInAdvance int) []CourseAssignment {
+	userCourses := user.Courses
+	if userCourses == nil || len(userCourses.Data) == 0 {
+		return []CourseAssignment{}
+	}
+
+	result := []CourseAssignment{}
+	for _, uc := range userCourses.Data {
+		if (len(accountIDs) == 0 || utils.ExistInt(accountIDs, uc.Data.AccountID)) && (len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID)) {
+
+			assignments := uc.Assignments
+			if len(assignments) > 0 {
+				for _, assignment := range assignments {
+					if n.isAssignmentMatchedByDaysInAdvance(assignment, numberOfDaysInAdvance) {
+						result = append(result, assignment)
+					}
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+func (n nudgesLogic) isAssignmentMatchedByDaysInAdvance(ca CourseAssignment, numberOfDaysInAdvance int) bool {
+	assignmentData := ca.Data
+	assignmentDueAt := assignmentData.DueAt
+	if assignmentDueAt == nil {
+		n.logger.Debugf("\t\t\tthere is no due_at for assignment %s", assignmentData.Name)
+		return false
+	}
+
+	now := time.Now()
+	daysDifference := -int64(now.Sub(*assignmentDueAt).Hours() / 24)
+	daysInAdvance := int64(numberOfDaysInAdvance)
+	return now.Before(*assignmentDueAt) && daysDifference == daysInAdvance
+}
+
+func (n nudgesLogic) findAssignmentsInDaysAdvance(days int, now time.Time, assignments []model.Assignment) ([]model.Assignment, error) {
+	n.logger.Info("\t\t\tfindAssignmentsInDaysAdvance")
+
+	resultList := []model.Assignment{}
+	for _, assignment := range assignments {
+		if assignment.DueAt == nil {
+			continue
+		}
+
+		difference := now.Sub(*assignment.DueAt) //difference between now and the due at date
+		differenceInDays := -int(difference.Hours() / 24)
+		if differenceInDays == days {
+			resultList = append(resultList, assignment)
+		}
+	}
+
+	return resultList, nil
+}
+
+func (n nudgesLogic) processAdvancedReminderForAssignment(nudge model.Nudge, user ProviderUser, assignment model.Assignment, criteriaHash uint32) error {
+	n.logger.Infof("\t\t\tprocessAdvancedReminderForAssignment - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
+
+	//need to send but first check if it has been send before
+
+	//check if has been sent before
+	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
+	if err != nil {
+		//not reached the max hours, so not send notification
+		n.logger.Errorf("\t\t\terror checking if sent nudge exists for missed assignment - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+	if sentNudge != nil {
+		n.logger.Infof("\t\t\tthis has been already sent - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+
+	//it has not been sent, so sent it
+	err = n.sendMissedAssignmentNudgeForUser(nudge, user, assignment, criteriaHash)
+	if err != nil {
+		n.logger.Errorf("\t\t\terror sending missed assignment nudge - %s - %s", nudge.ID, user.NetID)
+		return err
+	}
+
+	return nil
+}
+
+// end two_week_before_assignment one_week_before_assignment one_day_before_assignment nudge

@@ -143,7 +143,7 @@ func (sa *Adapter) InsertNudge(item model.Nudge) error {
 }
 
 // UpdateNudge updates nudge
-func (sa *Adapter) UpdateNudge(ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+func (sa *Adapter) UpdateNudge(ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error {
 
 	nudgeFilter := bson.D{primitive.E{Key: "_id", Value: ID}}
 	updateNudge := bson.D{

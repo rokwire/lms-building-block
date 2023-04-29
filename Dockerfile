@@ -1,4 +1,4 @@
-FROM golang:1.18-buster as builder
+FROM golang:1.20-bullseye as builder
 
 ENV CGO_ENABLED=0
 
@@ -8,7 +8,7 @@ WORKDIR /lms-app
 COPY . .
 RUN make
 
-FROM alpine:3.16.2
+FROM alpine:3.17
 
 #we need timezone database
 RUN apk --no-cache add tzdata

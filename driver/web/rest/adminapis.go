@@ -102,7 +102,17 @@ func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	err = h.app.Administration.CreateNudge(l, requestData.Id, requestData.Name, requestData.Body, requestData.DeepLink, requestData.Params, requestData.Active)
+	var hours float64 = 0
+	if requestData.Params.Hours != nil {
+		hours = float64(*requestData.Params.Hours)
+	}
+	params := model.NudgeParams{
+		Hours:      hours,
+		AccountIDs: *requestData.Params.AccountIds,
+		CourseIDs:  *requestData.Params.CourseIds,
+	}
+
+	err = h.app.Administration.CreateNudge(l, requestData.Id, requestData.Name, requestData.Body, requestData.DeepLink, params, requestData.Active)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}
@@ -127,7 +137,17 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	err = h.app.Administration.UpdateNudge(l, ID, requestData.Name, requestData.Body, requestData.DeepLink, requestData.Params, requestData.Active)
+	var hours float64 = 0
+	if requestData.Params.Hours != nil {
+		hours = float64(*requestData.Params.Hours)
+	}
+	nudgeParams := model.NudgeParams{
+		Hours:      hours,
+		AccountIDs: *requestData.Params.AccountIds,
+		CourseIDs:  *requestData.Params.CourseIds,
+	}
+
+	err = h.app.Administration.UpdateNudge(l, ID, requestData.Name, requestData.Body, requestData.DeepLink, nudgeParams, requestData.Active)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
 	}

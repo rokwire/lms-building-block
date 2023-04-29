@@ -14,6 +14,17 @@ properties:
     type: string
   params:
     type: object
-    nullable: true
+    properties:
+      hours:
+        type: number
+
+      account_ids:
+        type: array
+        items:
+          type: integer
+      course_ids:
+        type: array
+        items:
+          type: integer
   active:
     type: boolean

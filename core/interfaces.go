@@ -39,8 +39,8 @@ type Administration interface {
 	UpdateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string, processTime *int, blockSize *int) error
 
 	GetNudges() ([]model.Nudge, error)
-	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
-	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
+	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error
+	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error
 	DeleteNudge(l *logs.Log, ID string) error
 
 	FindSentNudges(l *logs.Log, nudgeID *string, userID *string, netID *string, mode *string) ([]model.SentNudge, error)
@@ -96,11 +96,11 @@ func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
 	return s.app.getNudges()
 }
 
-func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error {
 	return s.app.createNudge(l, ID, name, body, deepLink, params, active)
 }
 
-func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error {
 	return s.app.updateNudge(l, ID, name, body, deepLink, params, active)
 }
 
@@ -135,7 +135,7 @@ type Storage interface {
 	LoadAllNudges() ([]model.Nudge, error)
 	LoadActiveNudges() ([]model.Nudge, error)
 	InsertNudge(item model.Nudge) error
-	UpdateNudge(ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error
+	UpdateNudge(ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error
 	DeleteNudge(ID string) error
 
 	InsertSentNudge(sentNudge model.SentNudge) error

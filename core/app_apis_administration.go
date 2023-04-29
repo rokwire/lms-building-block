@@ -55,9 +55,9 @@ func (app *Application) getNudges() ([]model.Nudge, error) {
 	return nudges, nil
 }
 
-func (app *Application) createNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+func (app *Application) createNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error {
 	//create and insert nudge
-	nudge := model.Nudge{ID: ID, Name: name, Body: body, DeepLink: deepLink, Params: *params, Active: active}
+	nudge := model.Nudge{ID: ID, Name: name, Body: body, DeepLink: deepLink, Params: params, Active: active}
 	err := app.storage.InsertNudge(nudge)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (app *Application) createNudge(l *logs.Log, ID string, name string, body st
 	return nil
 }
 
-func (app *Application) updateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params *map[string]interface{}, active bool) error {
+func (app *Application) updateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error {
 	err := app.storage.UpdateNudge(ID, name, body, deepLink, params, active)
 	if err != nil {
 		return nil
