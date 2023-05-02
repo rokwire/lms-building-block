@@ -20,6 +20,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -339,20 +340,30 @@ func AnyToFloat64(val any) float64 {
 
 func AnyToArrayOfInt(val any) []int {
 	var result []int
-	switch val.(type) {
-	case []int:
-		for _, value := range val.([]int) {
-			result = append(result, int(value))
-		}
-		return result
-	case []int32:
-		for _, value := range val.([]int32) {
-			result = append(result, int(value))
-		}
-		return result
-	case []int64:
-		for _, value := range val.([]int64) {
-			result = append(result, int(value))
+	switch reflect.TypeOf(val).Kind() {
+	case reflect.Slice:
+		s := reflect.ValueOf(val)
+		for i := 0; i < s.Len(); i++ {
+			iVal := s.Index(i)
+			intVal := iVal.Interface()
+			switch intVal.(type) {
+			case int:
+				result = append(result, intVal.(int))
+				break
+			case int32:
+				result = append(result, int(intVal.(int32)))
+				break
+			case int64:
+				result = append(result, int(intVal.(int64)))
+				break
+			case float32:
+				result = append(result, int(intVal.(float64)))
+				break
+			case float64:
+				result = append(result, int(intVal.(float64)))
+				break
+			}
+
 		}
 		return result
 	}
