@@ -539,11 +539,11 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Provid
 	}
 
 	//prepare another needed data
-	var hours = nudge.Params.Hours
+	var hours = nudge.Params.Hours()
 	now := time.Now()
 
 	//determine if needs to send notification - using the cached data
-	needsSend := n.lastLoginNeedsToSend(hours, now, *lastLogin)
+	needsSend := n.lastLoginNeedsToSend(*hours, now, *lastLogin)
 	if !needsSend {
 		//not reached the max hours, so not send notification
 		n.logger.Infof("\t\t\t\tnot reached the max hours, so not send notification - %s (cache)", user.NetID)
@@ -563,7 +563,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Provid
 	}
 
 	//determine if needs to send notification - using up to date login time
-	needsSend = n.lastLoginNeedsToSend(hours, now, *lastLogin)
+	needsSend = n.lastLoginNeedsToSend(*hours, now, *lastLogin)
 	if !needsSend {
 		//not reached the max hours, so not send notification
 		n.logger.Infof("\t\t\t\tnot reached the max hours, so not send notification - %s (up to date)", user.NetID)
@@ -573,7 +573,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Provid
 	//need to send but first check if it has been send before
 
 	//check if has been sent before
-	criteriaHash := n.generateLastLoginHash(*lastLogin, hours)
+	criteriaHash := n.generateLastLoginHash(*lastLogin, *hours)
 	sentNudge, err := n.storage.FindSentNudge(nudge.ID, user.ID, user.NetID, criteriaHash, n.config.Mode)
 	if err != nil {
 		//not reached the max hours, so not send notification
@@ -586,7 +586,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Provid
 	}
 
 	//it has not been sent, so sent it
-	err = n.sendLastLoginNudgeForUser(nudge, user, *lastLogin, hours)
+	err = n.sendLastLoginNudgeForUser(nudge, user, *lastLogin, *hours)
 	if err != nil {
 		n.logger.Errorf("\t\t\t\terror send last login nudge - %s - %s", nudge.ID, user.NetID)
 		return err
@@ -596,6 +596,7 @@ func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user Provid
 }
 
 func (n nudgesLogic) lastLoginNeedsToSend(hours float64, now time.Time, lastLogin time.Time) bool {
+
 	difference := now.Sub(lastLogin) //difference between now and the last login
 	differenceInHours := difference.Hours()
 	return differenceInHours > hours
@@ -705,9 +706,10 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 	readyData := n.maMergeData(refreshedData, valid)
 
 	//determine for which of the assignments we need to send notifications
-	var hours = nudge.Params.Hours
+	var hours = nudge.Params.Hours()
+
 	now := time.Now()
-	readyData, err = n.findMissedAssignments(hours, now, readyData)
+	readyData, err = n.findMissedAssignments(*hours, now, readyData)
 	if err != nil {
 		n.logger.Errorf("\t\t\terror finding missed assignments for - %s", user.NetID)
 		return nil, err
@@ -722,7 +724,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 
 	//process the missed assignments
 	for _, assignment := range readyData {
-		err = n.processMissedAssignment(nudge, user, assignment, hours)
+		err = n.processMissedAssignment(nudge, user, assignment, *hours)
 		if err != nil {
 			n.logger.Errorf("\t\t\terror process missed assignment for - %s - %s", user.NetID, assignment.Name)
 			return nil, err
@@ -963,9 +965,10 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 
 	// determine which of the assignments are early completed
 	ecAssignments := []model.Assignment{}
-	var hours = nudge.Params.Hours
+	var hours = nudge.Params.Hours()
+
 	for _, assignment := range updatedCandidateAssignments {
-		if assignment.Submission != nil && (lateCompletion && n.ecIsLateCompleted(assignment)) || n.ecIsEarlyCompleted(assignment, hours) {
+		if assignment.Submission != nil && (lateCompletion && n.ecIsLateCompleted(assignment)) || n.ecIsEarlyCompleted(assignment, *hours) {
 			ecAssignments = append(ecAssignments, assignment.Data)
 		}
 	}
@@ -1147,7 +1150,7 @@ func (n nudgesLogic) ecFindAssignments(user ProviderUser, assignmentsIDs []int) 
 	return result
 }
 
-func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user ProviderUser, assignment model.Assignment, hours float64) error {
+func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user ProviderUser, assignment model.Assignment, hours *float64) error {
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarly - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before
@@ -1187,7 +1190,7 @@ func (n nudgesLogic) generateEarlyCompletedAssignmentHash(assignmentID int, subm
 }
 
 func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
-	assignment model.Assignment, hours float64) error {
+	assignment model.Assignment, hours *float64) error {
 	n.logger.Infof("\t\t\tsendEarlyCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
 	//insert sent nudge
@@ -1423,7 +1426,7 @@ func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, u
 	user = *userData
 
 	//get the missed assignments based on the cache data
-	assignments := n.getAssignmentsForAdvancedReminders(user, nudge.Params.AccountIDs, nudge.Params.CourseIDs, numberOfDaysInAdvance)
+	assignments := n.getAssignmentsForAdvancedReminders(user, nudge.Params.AccountIDs(), nudge.Params.CourseIDs(), numberOfDaysInAdvance)
 
 	if len(assignments) == 0 {
 		n.logger.Infof("\t\t\tno missed assignments, so not send notifications - %s", user.NetID)

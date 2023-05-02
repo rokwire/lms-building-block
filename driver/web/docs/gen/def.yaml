@@ -681,17 +681,7 @@ components:
           type: string
         params:
           type: object
-          properties:
-            hours:
-              type: number
-            account_ids:
-              type: array
-              items:
-                type: integer
-            course_ids:
-              type: array
-              items:
-                type: integer
+          nullable: false
         active:
           type: boolean
     _admin_req_update_nudge:
@@ -711,16 +701,6 @@ components:
           type: string
         params:
           type: object
-          properties:
-            hours:
-              type: number
-            account_ids:
-              type: array
-              items:
-                type: integer
-            course_ids:
-              type: array
-              items:
-                type: integer
+          nullable: false
         active:
           type: boolean

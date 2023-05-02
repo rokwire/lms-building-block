@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
+	"math"
 	"net/http"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -319,4 +321,53 @@ func DateEqual(date1, date2 time.Time) bool {
 	y1, m1, d1 := date1.Date()
 	y2, m2, d2 := date2.Date()
 	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
+// AnyToFloat64 Converts to float64
+func AnyToFloat64(val any) float64 {
+	switch i := val.(type) {
+	case float64:
+		return i
+	case float32:
+		return float64(i)
+	case int64:
+		return float64(i)
+	case int32:
+		return float64(i)
+	default:
+		return math.NaN()
+	}
+}
+
+// AnyToArrayOfInt Converts to list of integers
+func AnyToArrayOfInt(val any) []int {
+	var result []int
+	switch reflect.TypeOf(val).Kind() {
+	case reflect.Slice:
+		s := reflect.ValueOf(val)
+		for i := 0; i < s.Len(); i++ {
+			iVal := s.Index(i)
+			intVal := iVal.Interface()
+			switch intVal.(type) {
+			case int:
+				result = append(result, intVal.(int))
+				break
+			case int32:
+				result = append(result, int(intVal.(int32)))
+				break
+			case int64:
+				result = append(result, int(intVal.(int64)))
+				break
+			case float32:
+				result = append(result, int(intVal.(float64)))
+				break
+			case float64:
+				result = append(result, int(intVal.(float64)))
+				break
+			}
+
+		}
+		return result
+	}
+	return result
 }
