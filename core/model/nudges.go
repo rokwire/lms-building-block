@@ -17,7 +17,10 @@
 
 package model
 
-import "time"
+import (
+	"lms/utils"
+	"time"
+)
 
 // NudgesConfig entity
 type NudgesConfig struct {
@@ -40,10 +43,41 @@ type Nudge struct {
 }
 
 // NudgeParams entity
-type NudgeParams struct {
-	Hours      float64 `json:"hours" bson:"hours"`
-	CourseIDs  []int   `json:"course_ids" bson:"course_ids"`
-	AccountIDs []int   `json:"account_ids" bson:"account_ids"`
+type NudgeParams map[string]any
+
+/*type NudgeParams struct {
+	Hours      *float64 `json:"hours" bson:"hours"`
+	CourseIDs  []int    `json:"course_ids" bson:"course_ids"`
+	AccountIDs []int    `json:"account_ids" bson:"account_ids"`
+}*/
+
+func (p NudgeParams) Hours() *float64 {
+	if val, ok := p["hours"]; ok {
+		rValue := utils.AnyToFloat64(val)
+		return &rValue
+	}
+	return p.DefaultHours()
+}
+
+func (p NudgeParams) CourseIDs() []int {
+	if val, ok := p["course_ids"]; ok {
+		rValue := utils.AnyToArrayOfInt(val)
+		return rValue
+	}
+	return nil
+}
+
+func (p NudgeParams) AccountIDs() []int {
+	if val, ok := p["account_ids"]; ok {
+		rValue := utils.AnyToArrayOfInt(val)
+		return rValue
+	}
+	return nil
+}
+
+func (p *NudgeParams) DefaultHours() *float64 {
+	val := float64(0)
+	return &val
 }
 
 // SentNudge entity

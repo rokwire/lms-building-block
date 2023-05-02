@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -319,4 +320,41 @@ func DateEqual(date1, date2 time.Time) bool {
 	y1, m1, d1 := date1.Date()
 	y2, m2, d2 := date2.Date()
 	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
+func AnyToFloat64(val any) float64 {
+	switch i := val.(type) {
+	case float64:
+		return i
+	case float32:
+		return float64(i)
+	case int64:
+		return float64(i)
+	case int32:
+		return float64(i)
+	default:
+		return math.NaN()
+	}
+}
+
+func AnyToArrayOfInt(val any) []int {
+	var result []int
+	switch val.(type) {
+	case []int:
+		for _, value := range val.([]int) {
+			result = append(result, int(value))
+		}
+		return result
+	case []int32:
+		for _, value := range val.([]int32) {
+			result = append(result, int(value))
+		}
+		return result
+	case []int64:
+		for _, value := range val.([]int64) {
+			result = append(result, int(value))
+		}
+		return result
+	}
+	return result
 }

@@ -81,29 +81,21 @@ type User struct {
 
 // AdminReqCreateNudge defines model for _admin_req_create_nudge.
 type AdminReqCreateNudge struct {
-	Active   bool   `json:"active"`
-	Body     string `json:"body"`
-	DeepLink string `json:"deep_link"`
-	Id       string `json:"id"`
-	Name     string `json:"name"`
-	Params   struct {
-		AccountIds *[]int   `json:"account_ids,omitempty"`
-		CourseIds  *[]int   `json:"course_ids,omitempty"`
-		Hours      *float32 `json:"hours,omitempty"`
-	} `json:"params"`
+	Active   bool                   `json:"active"`
+	Body     string                 `json:"body"`
+	DeepLink string                 `json:"deep_link"`
+	Id       string                 `json:"id"`
+	Name     string                 `json:"name"`
+	Params   map[string]interface{} `json:"params"`
 }
 
 // AdminReqUpdateNudge defines model for _admin_req_update_nudge.
 type AdminReqUpdateNudge struct {
-	Active   bool   `json:"active"`
-	Body     string `json:"body"`
-	DeepLink string `json:"deep_link"`
-	Name     string `json:"name"`
-	Params   struct {
-		AccountIds *[]int   `json:"account_ids,omitempty"`
-		CourseIds  *[]int   `json:"course_ids,omitempty"`
-		Hours      *float32 `json:"hours,omitempty"`
-	} `json:"params"`
+	Active   bool                   `json:"active"`
+	Body     string                 `json:"body"`
+	DeepLink string                 `json:"deep_link"`
+	Name     string                 `json:"name"`
+	Params   map[string]interface{} `json:"params"`
 }
 
 // GetAdminNudgesProcessesParams defines parameters for GetAdminNudgesProcesses.
