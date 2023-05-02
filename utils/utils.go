@@ -323,6 +323,7 @@ func DateEqual(date1, date2 time.Time) bool {
 	return y1 == y2 && m1 == m2 && d1 == d2
 }
 
+// AnyToFloat64 Converts to float64
 func AnyToFloat64(val any) float64 {
 	switch i := val.(type) {
 	case float64:
@@ -338,6 +339,7 @@ func AnyToFloat64(val any) float64 {
 	}
 }
 
+// AnyToArrayOfInt Converts to list of integers
 func AnyToArrayOfInt(val any) []int {
 	var result []int
 	switch reflect.TypeOf(val).Kind() {

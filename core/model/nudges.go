@@ -45,12 +45,7 @@ type Nudge struct {
 // NudgeParams entity
 type NudgeParams map[string]any
 
-/*type NudgeParams struct {
-	Hours      *float64 `json:"hours" bson:"hours"`
-	CourseIDs  []int    `json:"course_ids" bson:"course_ids"`
-	AccountIDs []int    `json:"account_ids" bson:"account_ids"`
-}*/
-
+// Hours Retrieves hours param
 func (p NudgeParams) Hours() *float64 {
 	if val, ok := p["hours"]; ok {
 		rValue := utils.AnyToFloat64(val)
@@ -59,6 +54,7 @@ func (p NudgeParams) Hours() *float64 {
 	return p.DefaultHours()
 }
 
+// CourseIDs Retrieves course_ids param
 func (p NudgeParams) CourseIDs() []int {
 	if val, ok := p["course_ids"]; ok {
 		rValue := utils.AnyToArrayOfInt(val)
@@ -67,6 +63,7 @@ func (p NudgeParams) CourseIDs() []int {
 	return nil
 }
 
+// AccountIDs Retrieves account_ids param
 func (p NudgeParams) AccountIDs() []int {
 	if val, ok := p["account_ids"]; ok {
 		rValue := utils.AnyToArrayOfInt(val)
@@ -75,6 +72,7 @@ func (p NudgeParams) AccountIDs() []int {
 	return nil
 }
 
+// DefaultHours Returns the default hours param
 func (p *NudgeParams) DefaultHours() *float64 {
 	val := float64(0)
 	return &val

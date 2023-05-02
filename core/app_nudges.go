@@ -724,7 +724,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 
 	//process the missed assignments
 	for _, assignment := range readyData {
-		err = n.processMissedAssignment(nudge, user, assignment, hours)
+		err = n.processMissedAssignment(nudge, user, assignment, *hours)
 		if err != nil {
 			n.logger.Errorf("\t\t\terror process missed assignment for - %s - %s", user.NetID, assignment.Name)
 			return nil, err
@@ -855,7 +855,7 @@ func (n nudgesLogic) maFillCacheIfEmpty(user ProviderUser) (*ProviderUser, error
 	return updatedData, nil
 }
 
-func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user ProviderUser, assignment model.Assignment, hours *float64) error {
+func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user ProviderUser, assignment model.Assignment, hours float64) error {
 	n.logger.Infof("\t\t\tprocessMissedAssignment - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before
