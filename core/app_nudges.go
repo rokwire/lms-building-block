@@ -268,8 +268,6 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 func (n nudgesLogic) processPhase0(processID string) error {
 	n.logger.Info("START Phase0")
 
-	//var courseIDs []string
-	//netIDmapping := map[string]bool{}
 	nudges, err := n.storage.LoadActiveNudges()
 	if err != nil {
 		n.logger.Errorf("error getting all active nudges - %s", err)
@@ -280,6 +278,8 @@ func (n nudgesLogic) processPhase0(processID string) error {
 		nudgeCourseIDs := nudge.Params.CourseIDs()
 		if len(nudgeCourseIDs) > 0 {
 			for _, courseID := range nudgeCourseIDs {
+				log.Printf("Start synchronizing course id: %s", courseID)
+
 				// Get all users for course
 				users, err := n.provider.GetCourseUsers(courseID)
 				if err != nil {
@@ -289,11 +289,53 @@ func (n nudgesLogic) processPhase0(processID string) error {
 
 				// Iterate and check if the user is cached
 				var netIDsForcheck []int
+				canvasUserMapping := map[int]bool{}
 				for _, user := range users {
 					netIDsForcheck = append(netIDsForcheck, user.ID)
+					canvasUserMapping[user.ID] = true
 				}
 
-				//n.provider.FindCachedData()
+				cachedUsers, err := n.provider.FindUsersByCanvasUserID(netIDsForcheck)
+				if err != nil {
+					n.logger.Errorf("error getting cached users for course - %s - %s", courseID, err)
+					return err
+				}
+
+				// Find all missing NetIDs for cache procedure
+				var missingCoreNetIDs []string
+				for _, canvasUserID := range netIDsForcheck {
+					found := false
+					for _, cachedUser := range cachedUsers {
+						if cachedUser.User.ID == canvasUserID {
+							found = true
+							break
+						}
+					}
+
+					if !found {
+						missingCoreNetIDs = append(missingCoreNetIDs, fmt.Sprintf("%d", canvasUserID))
+					}
+				}
+
+				var coreUsers []model.CoreAccount
+				// TBD Retrieve missing IDs
+
+				var pendingNetIDs []string
+				netIDmapping := map[string]string{}
+				for _, coreUser := range coreUsers {
+					netID := coreUser.GetNetID()
+					if netID != nil {
+						netIDmapping[*netID] = coreUser.ID
+						pendingNetIDs = append(pendingNetIDs, *netID)
+					}
+				}
+
+				if len(netIDmapping) > 0 {
+					log.Printf("Cache missing net ids: %s", pendingNetIDs)
+					n.provider.CacheCommonData(netIDmapping)
+				} else {
+					log.Printf("0 NetIDs for cache")
+				}
 			}
 
 		}

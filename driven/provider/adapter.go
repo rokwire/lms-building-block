@@ -532,6 +532,11 @@ func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
 	return courses, nil
 }
 
+// FindUsersByCanvasUserID finds cached users by canvas user ids
+func (a *Adapter) FindUsersByCanvasUserID(canvasUserIds []int) ([]core.ProviderUser, error) {
+	return a.db.findUsersByCanvasUserID(canvasUserIds)
+}
+
 // FindCachedData finds a cached data
 func (a *Adapter) FindCachedData(usersIDs []string) ([]core.ProviderUser, error) {
 	return a.db.findUsers(usersIDs)

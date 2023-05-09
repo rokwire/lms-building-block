@@ -81,3 +81,19 @@ type CoreAccount struct {
 		Name string `json:"name"`
 	} `json:"roles"`
 }
+
+// GetUIN Gets the uin
+func (a *CoreAccount) GetUIN() *string {
+	for _, auth := range a.AuthTypes {
+		return &auth.Params.User.Identifier
+	}
+	return nil
+}
+
+// GetNetID Gets the NetID
+func (a *CoreAccount) GetNetID() *string {
+	for _, auth := range a.AuthTypes {
+		return &auth.Params.User.SystemSpecific.PreferredUsername
+	}
+	return nil
+}

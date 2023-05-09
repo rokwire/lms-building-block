@@ -162,6 +162,8 @@ type Provider interface {
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
 
+	FindUsersByCanvasUserID(canvasUserIds []int) ([]ProviderUser, error)
+
 	CacheCommonData(usersIDs map[string]string) error
 	FindCachedData(usersIDs []string) ([]ProviderUser, error)
 	CacheUserData(user ProviderUser) (*ProviderUser, error)
