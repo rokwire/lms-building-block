@@ -262,6 +262,47 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 	return nil
 }
 
+// Phase 0 will fetch net_ids from specific courses that are linked to nudges.
+//
+//	Then all uncached users would be cached & prepared for phase 1 & phase 2.
+func (n nudgesLogic) processPhase0(processID string) error {
+	n.logger.Info("START Phase0")
+
+	//var courseIDs []string
+	//netIDmapping := map[string]bool{}
+	nudges, err := n.storage.LoadActiveNudges()
+	if err != nil {
+		n.logger.Errorf("error getting all active nudges - %s", err)
+		return err
+	}
+
+	for _, nudge := range nudges {
+		nudgeCourseIDs := nudge.Params.CourseIDs()
+		if len(nudgeCourseIDs) > 0 {
+			for _, courseID := range nudgeCourseIDs {
+				// Get all users for course
+				users, err := n.provider.GetCourseUsers(courseID)
+				if err != nil {
+					n.logger.Errorf("error getting users for course - %s - %s", courseID, err)
+					return err
+				}
+
+				// Iterate and check if the user is cached
+				var netIDsForcheck []int
+				for _, user := range users {
+					netIDsForcheck = append(netIDsForcheck, user.ID)
+				}
+
+				//n.provider.FindCachedData()
+			}
+
+		}
+	}
+
+	n.logger.Info("END Phase0")
+	return nil
+}
+
 // as a result of phase 1 we have into our service a cached provider data for:
 // all users
 // users courses

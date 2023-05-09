@@ -123,6 +123,29 @@ func (a *Adapter) GetAssignmentGroups(userID string, courseID int, includeAssign
 	return assignmentGroups, nil
 }
 
+// GetCourseUsers gives the all users for a course
+func (a *Adapter) GetCourseUsers(courseID int) ([]model.User, error) {
+
+	//path
+	pathAndParams := fmt.Sprintf("/api/v1/courses/%d/users", courseID)
+
+	//execute query
+	data, err := a.executeQuery(http.NoBody, pathAndParams, "GET")
+	if err != nil {
+		log.Print("error getting courses")
+		return nil, err
+	}
+
+	//prepare the response and return it
+	var users []model.User
+	err = json.Unmarshal(data, &users)
+	if err != nil {
+		log.Printf("error converting users for course %s", courseID)
+		return nil, err
+	}
+	return users, nil
+}
+
 // GetCourseUser gives the course user
 func (a *Adapter) GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error) {
 	//params

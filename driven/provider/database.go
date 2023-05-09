@@ -183,6 +183,20 @@ func (m *database) findUsers(netIDs []string) ([]core.ProviderUser, error) {
 	return result, nil
 }
 
+func (m *database) findUsersByCanvasUserID(canvasUserIds []int) ([]core.ProviderUser, error) {
+	filter := bson.D{primitive.E{Key: "user.id", Value: bson.M{"$in": canvasUserIds}}}
+	var result []core.ProviderUser
+	err := m.users.Find(filter, &result, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		//no data
+		return nil, nil
+	}
+	return result, nil
+}
+
 func (m *database) saveUser(providerUser core.ProviderUser) error {
 	filter := bson.M{"_id": providerUser.ID}
 	err := m.users.ReplaceOne(filter, providerUser, nil)
