@@ -91,19 +91,19 @@ func (n nudgesLogic) setupNudgesTimer() {
 		desiredMoment = *n.config.ProcessTime
 	}
 
-	var durationInSeconds int
+	//var durationInSeconds int
 	n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
 	if nowSecondsInDay <= desiredMoment {
 		n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
-		durationInSeconds = desiredMoment - nowSecondsInDay
+		//durationInSeconds = desiredMoment - nowSecondsInDay
 	} else {
 		n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-		leftToday := 86400 - nowSecondsInDay
-		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+		//leftToday := 86400 - nowSecondsInDay
+		//durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
 	}
 	//app.logger.Infof("%d", durationInSeconds)
 	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
+	duration := 10 * time.Second //time.Second * time.Duration(durationInSeconds)
 	n.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
 	n.dailyNudgesTimer = time.NewTimer(duration)
