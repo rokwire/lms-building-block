@@ -78,34 +78,34 @@ func (n nudgesLogic) setupNudgesTimer() {
 		n.timerDone <- true
 		n.dailyNudgesTimer.Stop()
 	}
+	/*
+		//wait until it is the correct moment from the day
+		location, err := time.LoadLocation("America/Chicago")
+		if err != nil {
+			n.logger.Errorf("Error getting location:%s\n", err.Error())
+		}
+		now := time.Now().In(location)
+		n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-	//wait until it is the correct moment from the day
-	location, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		n.logger.Errorf("Error getting location:%s\n", err.Error())
-	}
-	now := time.Now().In(location)
-	n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
+		nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+		desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
+		if n.config != nil && n.config.ProcessTime != nil {
+			desiredMoment = *n.config.ProcessTime
+		}
 
-	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
-	if n.config != nil && n.config.ProcessTime != nil {
-		desiredMoment = *n.config.ProcessTime
-	}
-
-	var durationInSeconds int
-	n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
-	if nowSecondsInDay <= desiredMoment {
-		n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
-		durationInSeconds = desiredMoment - nowSecondsInDay
-	} else {
-		n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-		leftToday := 86400 - nowSecondsInDay
-		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
-	}
-	//app.logger.Infof("%d", durationInSeconds)
-	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
+		var durationInSeconds int
+		n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
+		if nowSecondsInDay <= desiredMoment {
+			n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
+			durationInSeconds = desiredMoment - nowSecondsInDay
+		} else {
+			n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
+			leftToday := 86400 - nowSecondsInDay
+			durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+		} */
+	//app.logger.Infof("%d", durationInSeconds) */
+	duration := time.Second * time.Duration(3)
+	//duration := time.Second * time.Duration(durationInSeconds)
 	n.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
 	n.dailyNudgesTimer = time.NewTimer(duration)
@@ -196,21 +196,24 @@ func (n nudgesLogic) processAllNudges() {
 		return
 	}
 
-	// process phase 1
-	err = n.processPhase1(*processID, *blocksSize)
-	if err != nil {
-		n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
-		n.completeProcessFailed(*processID, err.Error())
-		return
-	}
+	log.Println(blocksSize)
 
-	// process phase 2
-	err = n.processPhase2(*processID, *blocksSize, nudges)
-	if err != nil {
-		n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
-		n.completeProcessFailed(*processID, err.Error())
-		return
-	}
+	/*
+		// process phase 1
+		err = n.processPhase1(*processID, *blocksSize)
+		if err != nil {
+			n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
+			n.completeProcessFailed(*processID, err.Error())
+			return
+		}
+
+		// process phase 2
+		err = n.processPhase2(*processID, *blocksSize, nudges)
+		if err != nil {
+			n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
+			n.completeProcessFailed(*processID, err.Error())
+			return
+		} */
 
 	//end process
 	err = n.completeProcessSuccess(*processID)
@@ -276,7 +279,33 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 func (n nudgesLogic) processPhase0(processID string) (*int, error) {
 	n.logger.Info("START Phase0")
 
-	/// get the users from the groups bb adapter on blocks
+	/// load the groups bb users
+	groupsBBUsers, err := n.loadGroupsBBUsers()
+	if err != nil {
+		n.logger.Errorf("error on adding loading groups users - %s", err)
+		return nil, err
+	}
+
+	log.Println(groupsBBUsers)
+
+	/*	//add the block to the process
+		block := n.createBlock(processID, currentBlock, users)
+		err = n.storage.InsertBlock(block)
+		if err != nil {
+			n.logger.Errorf("error on adding block %d to process %s - %s", block.Number, processID, err)
+			return nil, err
+		} */
+
+	n.logger.Info("END Phase0")
+
+	//TODO
+	currentBlock := 100
+	return &currentBlock, nil
+}
+
+func (n nudgesLogic) loadGroupsBBUsers() ([]GroupsBBUser, error) {
+	groupsBBUsers := []GroupsBBUser{}
+
 	groupName := n.getGroupName()
 	offset := 0
 	limit := n.config.BlockSize
@@ -294,21 +323,13 @@ func (n nudgesLogic) processPhase0(processID string) (*int, error) {
 			break
 		}
 
-		//add the block to the process
-		block := n.createBlock(processID, currentBlock, users)
-		err = n.storage.InsertBlock(block)
-		if err != nil {
-			n.logger.Errorf("error on adding block %d to process %s - %s", block.Number, processID, err)
-			return nil, err
-		}
+		groupsBBUsers = append(groupsBBUsers, users...)
 
 		//move offset
 		offset += limit
 		currentBlock++
 	}
-
-	n.logger.Info("END Phase0")
-	return &currentBlock, nil
+	return groupsBBUsers, nil
 }
 
 func (n nudgesLogic) createBlock(processID string, curentBlock int, users []GroupsBBUser) model.Block {
