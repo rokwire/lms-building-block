@@ -34,12 +34,19 @@ type NudgesConfig struct {
 
 // Nudge entity
 type Nudge struct {
-	ID       string      `json:"id" bson:"_id"`              //last_login
-	Name     string      `json:"name" bson:"name"`           //"Last Canvas use was over 2 weeks"
-	Body     string      `json:"body" bson:"body"`           //"You have not used the Canvas Application in over 2 weeks."
-	DeepLink string      `json:"deep_link" bson:"deep_link"` //deep link
-	Params   NudgeParams `json:"params" bson:"params"`       //Nudge specific settings
-	Active   bool        `json:"active" bson:"active"`       //true or false
+	ID           string        `json:"id" bson:"_id"`                      //last_login
+	Name         string        `json:"name" bson:"name"`                   //"Last Canvas use was over 2 weeks"
+	Body         string        `json:"body" bson:"body"`                   //"You have not used the Canvas Application in over 2 weeks."
+	DeepLink     string        `json:"deep_link" bson:"deep_link"`         //deep link
+	Params       NudgeParams   `json:"params" bson:"params"`               //Nudge specific settings
+	Active       bool          `json:"active" bson:"active"`               //true or false
+	UsersSources []UsersSource `json:"users_sources" bson:"users_sources"` //it says where to take the users from for this nudge - groups-bb-group, canvas course
+}
+
+// UsersSource entity
+type UsersSource struct {
+	Type   string         `json:"type" bson:"type"`     //groups-bb-group or canvas-course
+	Params map[string]any `json:"params" bson:"params"` //nil for groups-bb-group and a list with canvas courses for canvas-course
 }
 
 // NudgeParams entity
