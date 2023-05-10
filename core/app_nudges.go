@@ -188,13 +188,14 @@ func (n nudgesLogic) processAllNudges() {
 		return
 	}
 
-	// process phase 0
-	err = n.processPhase0(*processID)
-	if err != nil {
-		n.logger.Errorf("error on processing phase 0, so stopping the process and mark it as failed - %s", err)
-		n.completeProcessFailed(*processID, err.Error())
-		return
-	}
+	/*
+		// process phase 0
+		err = n.processPhase0(*processID)
+		if err != nil {
+			n.logger.Errorf("error on processing phase 0, so stopping the process and mark it as failed - %s", err)
+			n.completeProcessFailed(*processID, err.Error())
+			return
+		} */
 
 	// process phase 1
 	blocksSize, err := n.processPhase1(*processID)
