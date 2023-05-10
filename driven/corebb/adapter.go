@@ -32,11 +32,14 @@ import (
 type Adapter struct {
 	coreURL               string
 	serviceAccountManager *authservice.ServiceAccountManager
+
+	appID string
+	orgID string
 }
 
 // NewCoreAdapter creates a new adapter for Core API
-func NewCoreAdapter(coreURL string, serviceAccountManager *authservice.ServiceAccountManager) *Adapter {
-	return &Adapter{coreURL: coreURL, serviceAccountManager: serviceAccountManager}
+func NewCoreAdapter(coreURL string, serviceAccountManager *authservice.ServiceAccountManager, orgID string, appID string) *Adapter {
+	return &Adapter{coreURL: coreURL, serviceAccountManager: serviceAccountManager, appID: appID, orgID: orgID}
 }
 
 // RetrieveCoreUserAccount retrieves Core user account
@@ -120,26 +123,24 @@ func (a *Adapter) RetrieveCoreServices(serviceIDs []string) ([]model.CoreService
 	return nil, nil
 }
 
-// GetAccounts retrieves account count for provided params
-func (a *Adapter) GetAccounts(searchParams map[string]interface{}, appID *string, orgID *string, limit int, offset int, allAccess bool, approvedKeys []string) ([]model.CoreAccount, error) {
+// GetAccountsByNetIDs retrieves accounts by net ids
+func (a *Adapter) GetAccountsByNetIDs(netIDs []string) ([]model.CoreAccount, error) {
+	searchParams := map[string]interface{}{
+		"auth_types.params.user.system_specific.preferred_username": netIDs,
+	}
+	return a.GetAccounts(searchParams)
+}
+
+// GetAccounts retrieves account for provided params
+func (a *Adapter) GetAccounts(searchParams map[string]interface{}) ([]model.CoreAccount, error) {
 	if a.serviceAccountManager == nil {
 		log.Println("GetAccounts: service account manager is nil")
 		return nil, errors.New("service account manager is nil")
 	}
 
 	url := fmt.Sprintf("%s/bbs/accounts", a.coreURL)
-	queryString := ""
-	if appID != nil {
-		queryString += "?app_id=" + *appID
-	}
-	if orgID != nil {
-		if queryString == "" {
-			queryString += "?"
-		} else {
-			queryString += "&"
-		}
-		queryString += "org_id=" + *orgID
-	}
+	queryString := "?app_id=" + a.appID + "&org_id=" + a.orgID
+
 	bodyBytes, err := json.Marshal(searchParams)
 	if err != nil {
 		log.Printf("GetAccounts: error marshalling body - %s", err)
@@ -153,15 +154,7 @@ func (a *Adapter) GetAccounts(searchParams map[string]interface{}, appID *string
 	}
 	req.Header.Add("Content-Type", "application/json")
 
-	appIDVal := "all"
-	if appID != nil {
-		appIDVal = *appID
-	}
-	orgIDVal := "all"
-	if orgID != nil {
-		appIDVal = *orgID
-	}
-	resp, err := a.serviceAccountManager.MakeRequest(req, appIDVal, orgIDVal)
+	resp, err := a.serviceAccountManager.MakeRequest(req, a.appID, a.orgID)
 	if err != nil {
 		log.Printf("GetAccounts: error sending request - %s", err)
 		return nil, err

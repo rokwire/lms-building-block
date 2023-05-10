@@ -140,7 +140,7 @@ func (a *Adapter) GetCourseUsers(courseID int) ([]model.User, error) {
 	var users []model.User
 	err = json.Unmarshal(data, &users)
 	if err != nil {
-		log.Printf("error converting users for course %s", courseID)
+		log.Printf("error converting users for course %d", courseID)
 		return nil, err
 	}
 	return users, nil

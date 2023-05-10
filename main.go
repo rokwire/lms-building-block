@@ -132,7 +132,7 @@ func main() {
 		log.Fatalf("Error initializing service account manager: %v", err)
 	}
 
-	coreAdapter := corebb.NewCoreAdapter(coreBBHost, serviceAccountManager)
+	coreAdapter := corebb.NewCoreAdapter(coreBBHost, serviceAccountManager, org, app)
 
 	config := model.Config{
 		InternalAPIKey:  internalAPIKey,

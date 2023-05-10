@@ -63,6 +63,7 @@ func NewApplication(version string, build string, storage Storage, provider Prov
 		storage:         storage,
 		logger:          logger,
 		timerDone:       timerDone,
+		core:            coreBB,
 	}
 
 	application := Application{

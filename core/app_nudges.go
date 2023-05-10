@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"fmt"
 	"lms/core/model"
+	"lms/driven/corebb"
 	"lms/utils"
 	"log"
 	"strings"
@@ -36,6 +37,7 @@ type nudgesLogic struct {
 	provider        Provider
 	groupsBB        GroupsBB
 	notificationsBB NotificationsBB
+	core            *corebb.Adapter
 
 	storage Storage
 
@@ -186,6 +188,14 @@ func (n nudgesLogic) processAllNudges() {
 		return
 	}
 
+	// process phase 0
+	err = n.processPhase0(*processID)
+	if err != nil {
+		n.logger.Errorf("error on processing phase 0, so stopping the process and mark it as failed - %s", err)
+		n.completeProcessFailed(*processID, err.Error())
+		return
+	}
+
 	// process phase 1
 	blocksSize, err := n.processPhase1(*processID)
 	if err != nil {
@@ -278,47 +288,50 @@ func (n nudgesLogic) processPhase0(processID string) error {
 		nudgeCourseIDs := nudge.Params.CourseIDs()
 		if len(nudgeCourseIDs) > 0 {
 			for _, courseID := range nudgeCourseIDs {
-				log.Printf("Start synchronizing course id: %s", courseID)
+				log.Printf("Start synchronizing course id: %d", courseID)
 
 				// Get all users for course
 				users, err := n.provider.GetCourseUsers(courseID)
 				if err != nil {
-					n.logger.Errorf("error getting users for course - %s - %s", courseID, err)
+					n.logger.Errorf("error getting users for course - %d - %s", courseID, err)
 					return err
 				}
 
 				// Iterate and check if the user is cached
-				var netIDsForcheck []int
-				canvasUserMapping := map[int]bool{}
+				var canvasUserIDForcheck []int
+				var netIDForcheck []string
 				for _, user := range users {
-					netIDsForcheck = append(netIDsForcheck, user.ID)
-					canvasUserMapping[user.ID] = true
+					canvasUserIDForcheck = append(canvasUserIDForcheck, user.ID)
+					netIDForcheck = append(netIDForcheck, user.LoginID)
 				}
 
-				cachedUsers, err := n.provider.FindUsersByCanvasUserID(netIDsForcheck)
+				cachedUsers, err := n.provider.FindUsersByCanvasUserID(canvasUserIDForcheck)
 				if err != nil {
-					n.logger.Errorf("error getting cached users for course - %s - %s", courseID, err)
+					n.logger.Errorf("error getting cached users for course - %d - %s", courseID, err)
 					return err
 				}
 
 				// Find all missing NetIDs for cache procedure
 				var missingCoreNetIDs []string
-				for _, canvasUserID := range netIDsForcheck {
+				for _, netID := range netIDForcheck {
 					found := false
 					for _, cachedUser := range cachedUsers {
-						if cachedUser.User.ID == canvasUserID {
+						if cachedUser.NetID == netID {
 							found = true
 							break
 						}
 					}
 
 					if !found {
-						missingCoreNetIDs = append(missingCoreNetIDs, fmt.Sprintf("%d", canvasUserID))
+						missingCoreNetIDs = append(missingCoreNetIDs, fmt.Sprintf("%s", netID))
 					}
 				}
 
-				var coreUsers []model.CoreAccount
-				// TBD Retrieve missing IDs
+				coreUsers, err := n.core.GetAccountsByNetIDs(missingCoreNetIDs)
+				if err != nil {
+					n.logger.Errorf("error getting core accounts - %s", err)
+					return err
+				}
 
 				var pendingNetIDs []string
 				netIDmapping := map[string]string{}
