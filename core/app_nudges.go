@@ -189,7 +189,7 @@ func (n nudgesLogic) processAllNudges() {
 	}
 
 	// process phase 0
-	blocksSize, err := n.processPhase0(*processID)
+	blocksSize, err := n.processPhase0(*processID, nudges)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 0, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -276,17 +276,25 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 }
 
 // Phase 0 will ensure the users for every nudge and will prepare the blocks data for processing on phase 1
-func (n nudgesLogic) processPhase0(processID string) (*int, error) {
+func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int, error) {
 	n.logger.Info("START Phase0")
 
-	/// load the groups bb users
+	// load the groups bb users
 	groupsBBUsers, err := n.loadGroupsBBUsers()
 	if err != nil {
-		n.logger.Errorf("error on adding loading groups users - %s", err)
+		n.logger.Errorf("error on loading groups users - %s", err)
+		return nil, err
+	}
+
+	// load the canvas courses users
+	canvasCoursesUsers, err := n.loadCanvasCoursesUsers(nudges)
+	if err != nil {
+		n.logger.Errorf("error on loading canvas courses users users - %s", err)
 		return nil, err
 	}
 
 	log.Println(groupsBBUsers)
+	log.Println(canvasCoursesUsers)
 
 	/*	//add the block to the process
 		block := n.createBlock(processID, currentBlock, users)
@@ -330,6 +338,23 @@ func (n nudgesLogic) loadGroupsBBUsers() ([]GroupsBBUser, error) {
 		currentBlock++
 	}
 	return groupsBBUsers, nil
+}
+
+func (n nudgesLogic) loadCanvasCoursesUsers(nudges []model.Nudge) (map[int][]model.CoreAccount, error) {
+
+	//coursesIDs := map[int]bool{}
+	//_, ok := s[6] // check for existence
+	//s[8] = true   // add element
+	//delete(s, 2)  // remove element
+
+	//prepare the uniques courses ids
+	for _, nudge := range nudges {
+		nudgeCoursesIDs := nudge.GetUsersSourcesCanvasCoursesIDs()
+
+		log.Println(nudgeCoursesIDs)
+	}
+
+	return nil, nil
 }
 
 func (n nudgesLogic) createBlock(processID string, curentBlock int, users []GroupsBBUser) model.Block {

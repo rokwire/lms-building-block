@@ -43,6 +43,20 @@ type Nudge struct {
 	UsersSources []UsersSource `json:"users_sources" bson:"users_sources"` //it says where to take the users from for this nudge - groups-bb-group, canvas courses
 }
 
+// GetUsersSourcesCanvasCoursesIDs gives the uniques canvas courses ids
+func (p Nudge) GetUsersSourcesCanvasCoursesIDs() []int {
+	if len(p.UsersSources) == 0 {
+		return []int{}
+	}
+	for _, source := range p.UsersSources {
+		if source.Type == "canvas-courses" {
+			currentCoursesIDs := source.Params["courses_ids"]
+			return utils.AnyToArrayOfInt(currentCoursesIDs)
+		}
+	}
+	return []int{}
+}
+
 // UsersSource entity
 type UsersSource struct {
 	Type   string         `json:"type" bson:"type"`     //groups-bb-group or canvas-course
