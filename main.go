@@ -26,8 +26,11 @@ import (
 	driver "lms/driver/web"
 	"log"
 	"os"
+	"strings"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/rokwire/core-auth-library-go/v2/authservice"
+	"github.com/rokwire/core-auth-library-go/v2/sigauth"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
@@ -110,10 +113,8 @@ func main() {
 }
 
 func getCoreBBAdapterValues(logger *logs.Logger, serviceID string) (string, *authservice.ServiceAccountManager) {
-	return "", nil
-	/*host := envLoader.GetAndLogEnvVar("APPOINTMENTS_GATEWAY_BB_CURRENT_HOST", true, true)
-	coreBBHost := envLoader.GetAndLogEnvVar("APPOINTMENTS_GATEWAY_BB_CORE_HOST", true, true)
-	gatewayHost := envLoader.GetAndLogEnvVar("APPOINTMENTS_GATEWAY_BB_HOST", true, true)
+	host := getEnvKey("LMS_CORE_BB_CURRENT_HOST", true)
+	coreBBHost := getEnvKey("LMS_CORE_BB_CORE_HOST", true)
 
 	authService := authservice.AuthService{
 		ServiceID:   serviceID,
@@ -132,8 +133,8 @@ func getCoreBBAdapterValues(logger *logs.Logger, serviceID string) (string, *aut
 		logger.Fatalf("Error initializing service registration manager: %v", err)
 	}
 
-	serviceAccountID := envLoader.GetAndLogEnvVar("APPOINTMENTS_SERVICE_ACCOUNT_ID", false, false)
-	privKeyRaw := envLoader.GetAndLogEnvVar("APPOINTMENTS_PRIV_KEY", true, true)
+	serviceAccountID := getEnvKey("LMS_SERVICE_ACCOUNT_ID", true)
+	privKeyRaw := getEnvKey("LMS_PRIV_KEY", true)
 	privKeyRaw = strings.ReplaceAll(privKeyRaw, "\\n", "\n")
 	privKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privKeyRaw))
 	if err != nil {
@@ -154,7 +155,7 @@ func getCoreBBAdapterValues(logger *logs.Logger, serviceID string) (string, *aut
 	if err != nil {
 		log.Fatalf("Error initializing service account manager: %v", err)
 	}
-	return gatewayHost, serviceAccountManager */
+	return coreBBHost, serviceAccountManager
 }
 
 func getEnvKey(key string, required bool) string {
