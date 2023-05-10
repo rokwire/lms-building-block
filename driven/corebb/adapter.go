@@ -38,8 +38,8 @@ type Adapter struct {
 }
 
 // NewCoreAdapter creates a new adapter for Core API
-func NewCoreAdapter(coreURL string, serviceAccountManager *authservice.ServiceAccountManager, orgID string, appID string) *Adapter {
-	return &Adapter{coreURL: coreURL, serviceAccountManager: serviceAccountManager, appID: appID, orgID: orgID}
+func NewCoreAdapter(coreURL string, serviceAccountManager *authservice.ServiceAccountManager /*, orgID string, appID string*/) *Adapter {
+	return &Adapter{coreURL: coreURL, serviceAccountManager: serviceAccountManager /*, appID: appID, orgID: orgID*/}
 }
 
 // RetrieveCoreUserAccount retrieves Core user account

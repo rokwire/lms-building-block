@@ -18,6 +18,7 @@ import (
 	"lms/core"
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
+	"lms/driven/corebb"
 	"lms/driven/groups"
 	"lms/driven/notifications"
 	"lms/driven/provider"
@@ -26,6 +27,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/rokwire/core-auth-library-go/v2/authservice"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
@@ -41,10 +43,10 @@ func main() {
 		Version = "dev"
 	}
 
-	//serviceID := "lms"
+	serviceID := "lms"
 
-	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties("/lms/version")}}
-	logger := logs.NewLogger("core", &loggerOpts)
+	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties(serviceID + "/version")}}
+	logger := logs.NewLogger(serviceID, &loggerOpts)
 
 	port := getEnvKey("LMS_PORT", true)
 
@@ -84,13 +86,60 @@ func main() {
 	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey, app, org)
 
 	//core adapter
-	/*serviceAccountID := getEnvKey("LMS_SERVICE_ACCOUNT_ID", false)
-	privKeyRaw := getEnvKey("LMS_PRIV_KEY", true)
+	cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID)
+	coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager)
+
+	// application
+	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
+		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, coreAdapter, logger)
+	application.Start()
+
+	// web adapter
+	coreBBHost := getEnvKey("LMS_CORE_BB_HOST", true)
+	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
+	config := model.Config{
+		InternalAPIKey:  internalAPIKey,
+		CoreBBHost:      coreBBHost,
+		LmsServiceURL:   lmsServiceURL,
+		CanvasBaseURL:   canvasBaseURL,
+		CanvasTokenType: canvasTokenType,
+		CanvasToken:     canvasToken,
+	}
+	webAdapter := driver.NewWebAdapter(port, application, &config, logger)
+	webAdapter.Start()
+}
+
+func getCoreBBAdapterValues(logger *logs.Logger, serviceID string) (string, *authservice.ServiceAccountManager) {
+	return "", nil
+	/*host := envLoader.GetAndLogEnvVar("APPOINTMENTS_GATEWAY_BB_CURRENT_HOST", true, true)
+	coreBBHost := envLoader.GetAndLogEnvVar("APPOINTMENTS_GATEWAY_BB_CORE_HOST", true, true)
+	gatewayHost := envLoader.GetAndLogEnvVar("APPOINTMENTS_GATEWAY_BB_HOST", true, true)
+
+	authService := authservice.AuthService{
+		ServiceID:   serviceID,
+		ServiceHost: host,
+		FirstParty:  true,
+		AuthBaseURL: coreBBHost,
+	}
+
+	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{})
+	if err != nil {
+		logger.Fatalf("Error initializing remote service registration loader: %v", err)
+	}
+
+	serviceRegManager, err := authservice.NewServiceRegManager(&authService, serviceRegLoader)
+	if err != nil {
+		logger.Fatalf("Error initializing service registration manager: %v", err)
+	}
+
+	serviceAccountID := envLoader.GetAndLogEnvVar("APPOINTMENTS_SERVICE_ACCOUNT_ID", false, false)
+	privKeyRaw := envLoader.GetAndLogEnvVar("APPOINTMENTS_PRIV_KEY", true, true)
 	privKeyRaw = strings.ReplaceAll(privKeyRaw, "\\n", "\n")
 	privKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privKeyRaw))
 	if err != nil {
 		log.Fatalf("Error parsing priv key: %v", err)
 	}
+
 	signatureAuth, err := sigauth.NewSignatureAuth(privKey, serviceRegManager, false)
 	if err != nil {
 		log.Fatalf("Error initializing signature auth: %v", err)
@@ -105,44 +154,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error initializing service account manager: %v", err)
 	}
-
-	coreAdapter := corebb.NewCoreAdapter(coreBBHost, serviceAccountManager, org, app) */
-
-	// application
-	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
-		groupsBBAdapter, notificationsBBAdapter, cacheAdapter /*coreAdapter*/, nil, logger)
-	application.Start()
-
-	// web adapter
-	coreBBHost := getEnvKey("LMS_CORE_BB_HOST", true)
-	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
-	/*
-		authService := authservice.AuthService{
-			ServiceID:   serviceID,
-			ServiceHost: lmsServiceURL,
-			FirstParty:  true,
-			AuthBaseURL: coreBBHost,
-		}
-
-		serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{"auth"})
-		if err != nil {
-			log.Fatalf("Error initializing remote service registration loader: %v", err)
-		}
-
-		serviceRegManager, err := authservice.NewServiceRegManager(&authService, serviceRegLoader)
-		if err != nil {
-			log.Fatalf("Error initializing service registration manager: %v", err)
-		} */
-	config := model.Config{
-		InternalAPIKey:  internalAPIKey,
-		CoreBBHost:      coreBBHost,
-		LmsServiceURL:   lmsServiceURL,
-		CanvasBaseURL:   canvasBaseURL,
-		CanvasTokenType: canvasTokenType,
-		CanvasToken:     canvasToken,
-	}
-	webAdapter := driver.NewWebAdapter(port, application, &config, logger)
-	webAdapter.Start()
+	return gatewayHost, serviceAccountManager */
 }
 
 func getEnvKey(key string, required bool) string {
