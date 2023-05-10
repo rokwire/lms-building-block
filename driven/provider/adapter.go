@@ -492,7 +492,7 @@ func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate tim
 	loadedAssignments, err := a.getAssignments(course.ID, netID, false)
 	if err != nil {
 		a.logger.Errorf("error getting assignments for course and user - %d - %s", course.ID, netID)
-		return nil, err
+		// some cources have restricted access, so we do not have to fail if we meet a such course
 	}
 
 	assignments := make([]core.CourseAssignment, len(loadedAssignments))
