@@ -321,6 +321,38 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 		}
 	}
 
+	//fill nudges ids for every user - loop through nudges
+	for _, nudge := range nudges {
+		usersSources := nudge.UsersSources
+		if len(usersSources) == 0 {
+			//if omited then we threat it as groups-bb-group
+			err = n.addNudgeIDToUsersForGroupsBBGroup(nudge.ID, uniqueUsers, groupsBBUsers)
+			if err != nil {
+				n.logger.Errorf("error on adding nudge id to users - groups bb group - %s", err)
+				return nil, err
+			}
+			continue
+		}
+
+		for _, usersSource := range usersSources {
+			sourceType := usersSource.Type
+			if sourceType == "groups-bb-group" {
+				err = n.addNudgeIDToUsersForGroupsBBGroup(nudge.ID, uniqueUsers, groupsBBUsers)
+				if err != nil {
+					n.logger.Errorf("error on adding nudge id to users - groups bb group - %s", err)
+					return nil, err
+				}
+			} else if sourceType == "canvas-courses" {
+				coursesIDs := nudge.GetUsersSourcesCanvasCoursesIDs()
+				err = n.addNudgeIDToUsersForCanvasCourse(nudge.ID, uniqueUsers, canvasCoursesUsers, coursesIDs)
+				if err != nil {
+					n.logger.Errorf("error on adding nudge id to users - canvas courses - %s", err)
+					return nil, err
+				}
+			}
+		}
+	}
+
 	/*	//add the block to the process
 		block := n.createBlock(processID, currentBlock, users)
 		err = n.storage.InsertBlock(block)
@@ -334,6 +366,32 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 	//TODO
 	currentBlock := 100
 	return &currentBlock, nil
+}
+
+func (n nudgesLogic) addNudgeIDToUsersForGroupsBBGroup(nudgeID string, uniqueUsers map[string][]interface{}, groupsBBUsers []GroupsBBUser) error {
+	for _, groupBBUser := range groupsBBUsers {
+		nudgesIDs := uniqueUsers[groupBBUser.UserID][1].([]string)
+		nudgesIDs = append(nudgesIDs, nudgeID)
+		uniqueUsers[groupBBUser.UserID][1] = nudgesIDs
+	}
+	return nil
+}
+
+func (n nudgesLogic) addNudgeIDToUsersForCanvasCourse(nudgeID string, uniqueUsers map[string][]interface{},
+	canvasCoursesUsers map[int][]model.CoreAccount, coursesIDs []int) error {
+	for _, courseID := range coursesIDs {
+		courseUsers := canvasCoursesUsers[courseID]
+		if len(courseUsers) == 0 {
+			continue
+		}
+
+		for _, courseUser := range courseUsers {
+			nudgesIDs := uniqueUsers[courseUser.ID][1].([]string)
+			nudgesIDs = append(nudgesIDs, nudgeID)
+			uniqueUsers[courseUser.ID][1] = nudgesIDs
+		}
+	}
+	return nil
 }
 
 func (n nudgesLogic) loadGroupsBBUsers() ([]GroupsBBUser, error) {
