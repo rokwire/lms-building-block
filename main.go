@@ -90,7 +90,7 @@ func main() {
 
 	//core adapter
 	cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID)
-	coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager)
+	coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager, org, app)
 
 	// application
 	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,

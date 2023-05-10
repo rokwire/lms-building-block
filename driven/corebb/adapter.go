@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"lms/core/model"
 	"log"
@@ -35,11 +36,6 @@ type Adapter struct {
 
 	appID string
 	orgID string
-}
-
-// NewCoreAdapter creates a new adapter for Core API
-func NewCoreAdapter(coreURL string, serviceAccountManager *authservice.ServiceAccountManager /*, orgID string, appID string*/) *Adapter {
-	return &Adapter{coreURL: coreURL, serviceAccountManager: serviceAccountManager /*, appID: appID, orgID: orgID*/}
 }
 
 // RetrieveCoreUserAccount retrieves Core user account
@@ -138,8 +134,7 @@ func (a *Adapter) GetAccounts(searchParams map[string]interface{}) ([]model.Core
 		return nil, errors.New("service account manager is nil")
 	}
 
-	url := fmt.Sprintf("%s/bbs/accounts", a.coreURL)
-	queryString := "?app_id=" + a.appID + "&org_id=" + a.orgID
+	url := fmt.Sprintf("%s/bbs/accounts?app_id=%s&org_id=%s", a.coreURL, a.appID, a.orgID)
 
 	bodyBytes, err := json.Marshal(searchParams)
 	if err != nil {
@@ -147,36 +142,48 @@ func (a *Adapter) GetAccounts(searchParams map[string]interface{}) ([]model.Core
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", url+queryString, bytes.NewReader(bodyBytes))
+	respBody, err := a.makeRequest("POST", url, bytes.NewReader(bodyBytes))
 	if err != nil {
-		log.Printf("GetAccounts: error creating request - %s", err)
+		return nil, err
+	}
+
+	var items []model.CoreAccount
+	err = json.Unmarshal(respBody, &items)
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (a *Adapter) makeRequest(method string, url string, body io.Reader) ([]byte, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		log.Printf("gateway adapter: error creating request - %s", err)
 		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := a.serviceAccountManager.MakeRequest(req, a.appID, a.orgID)
 	if err != nil {
-		log.Printf("GetAccounts: error sending request - %s", err)
+		log.Printf("gateway adapter: error sending request - %s", err)
 		return nil, err
 	}
+
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		log.Printf("GetAccounts: error with response code - %d", resp.StatusCode)
-		return nil, fmt.Errorf("GetAccounts: error with response code != 200")
+		log.Printf("gateway adapter: error with response code - %d", resp.StatusCode)
+		return nil, fmt.Errorf("gateway adapter: error with response code != 200 but %d", resp.StatusCode)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("GetAccounts: unable to read json: %s", err)
-		return nil, fmt.Errorf("GetAccounts: unable to parse json: %s", err)
+		log.Printf("gateway adapter: unable to read json: %s", err)
+		return nil, fmt.Errorf("gateway adapter: unable to parse json: %s", err)
 	}
+	return data, nil
+}
 
-	var maping []model.CoreAccount
-	err = json.Unmarshal(data, &maping)
-	if err != nil {
-		log.Printf("GetAccounts: unable to parse json: %s", err)
-		return nil, fmt.Errorf("GetAccounts: unable to parse json: %s", err)
-	}
-
-	return maping, nil
+// NewCoreAdapter creates a new adapter for Core API
+func NewCoreAdapter(coreURL string, serviceAccountManager *authservice.ServiceAccountManager, orgID string, appID string) *Adapter {
+	return &Adapter{coreURL: coreURL, serviceAccountManager: serviceAccountManager, appID: appID, orgID: orgID}
 }
