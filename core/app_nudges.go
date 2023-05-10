@@ -357,10 +357,40 @@ func (n nudgesLogic) loadCanvasCoursesUsers(nudges []model.Nudge) (map[int][]mod
 		coursesIDsSet[i] = key
 		i++
 	}
+	if len(coursesIDsSet) == 0 {
+		return map[int][]model.CoreAccount{}, nil
+	}
 
-	log.Println(coursesIDsSet)
+	//load the users for every course
+	result := map[int][]model.CoreAccount{}
 
-	return nil, nil
+	for _, courseID := range coursesIDsSet {
+		//get the user form the provider by course id
+		courseUsers, err := n.provider.GetCourseUsers(courseID)
+		if err != nil {
+			n.logger.Errorf("error getting users for course - %d - %s", courseID, err)
+			return nil, err
+		}
+		if len(courseUsers) == 0 {
+			//no users
+			result[courseID] = []model.CoreAccount{} //empty
+			continue
+		}
+
+		//get the users from the core BB
+		netsIDs := make([]string, len(courseUsers))
+		for _, cUser := range courseUsers {
+			netsIDs = append(netsIDs, cUser.LoginID)
+		}
+		coreUsers, err := n.core.GetAccountsByNetIDs(netsIDs)
+		if err != nil {
+			n.logger.Errorf("error getting core users - %s", err)
+			return nil, err
+		}
+
+		result[courseID] = coreUsers
+	}
+	return result, nil
 }
 
 func (n nudgesLogic) createBlock(processID string, curentBlock int, users []GroupsBBUser) model.Block {
