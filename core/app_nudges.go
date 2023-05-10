@@ -341,18 +341,24 @@ func (n nudgesLogic) loadGroupsBBUsers() ([]GroupsBBUser, error) {
 }
 
 func (n nudgesLogic) loadCanvasCoursesUsers(nudges []model.Nudge) (map[int][]model.CoreAccount, error) {
-
-	//coursesIDs := map[int]bool{}
-	//_, ok := s[6] // check for existence
-	//s[8] = true   // add element
-	//delete(s, 2)  // remove element
-
 	//prepare the uniques courses ids
+	coursesIDs := map[int]bool{}
 	for _, nudge := range nudges {
 		nudgeCoursesIDs := nudge.GetUsersSourcesCanvasCoursesIDs()
-
-		log.Println(nudgeCoursesIDs)
+		if len(nudgeCoursesIDs) > 0 {
+			for _, cID := range nudgeCoursesIDs {
+				coursesIDs[cID] = true
+			}
+		}
 	}
+	coursesIDsSet := make([]int, len(coursesIDs))
+	i := 0
+	for key, _ := range coursesIDs {
+		coursesIDsSet[i] = key
+		i++
+	}
+
+	log.Println(coursesIDsSet)
 
 	return nil, nil
 }
