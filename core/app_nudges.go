@@ -293,8 +293,33 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 		return nil, err
 	}
 
-	log.Println(groupsBBUsers)
-	log.Println(canvasCoursesUsers)
+	//fill the unique users
+	//key: account id, index 0: net id, index 1:array with nudges ids
+	uniqueUsers := map[string][]interface{}{}
+	//from groups bb users
+	for _, groupBBUser := range groupsBBUsers {
+		key := groupBBUser.UserID
+		netID := groupBBUser.NetID
+		nudgesIDs := []string{}
+
+		data := make([]interface{}, 2)
+		data[0] = netID
+		data[1] = nudgesIDs
+		uniqueUsers[key] = data
+	}
+	//from canvas courses
+	for _, courseUsers := range canvasCoursesUsers {
+		for _, courseUser := range courseUsers {
+			key := courseUser.ID
+			netID := courseUser.GetNetID()
+			nudgesIDs := []string{}
+
+			data := make([]interface{}, 2)
+			data[0] = netID
+			data[1] = nudgesIDs
+			uniqueUsers[key] = data
+		}
+	}
 
 	/*	//add the block to the process
 		block := n.createBlock(processID, currentBlock, users)
@@ -379,8 +404,8 @@ func (n nudgesLogic) loadCanvasCoursesUsers(nudges []model.Nudge) (map[int][]mod
 
 		//get the users from the core BB
 		netsIDs := make([]string, len(courseUsers))
-		for _, cUser := range courseUsers {
-			netsIDs = append(netsIDs, cUser.LoginID)
+		for i, cUser := range courseUsers {
+			netsIDs[i] = cUser.LoginID
 		}
 		coreUsers, err := n.core.GetAccountsByNetIDs(netsIDs)
 		if err != nil {
