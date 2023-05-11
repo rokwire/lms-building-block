@@ -39,7 +39,7 @@ type Administration interface {
 	UpdateNudgesConfig(l *logs.Log, active bool, groupName string, testGroupName string, mode string, processTime *int, blockSize *int) error
 
 	GetNudges() ([]model.Nudge, error)
-	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error
+	CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool, usersSourse []model.UsersSource) error
 	UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error
 	DeleteNudge(l *logs.Log, ID string) error
 
@@ -96,8 +96,8 @@ func (s *administrationImpl) GetNudges() ([]model.Nudge, error) {
 	return s.app.getNudges()
 }
 
-func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error {
-	return s.app.createNudge(l, ID, name, body, deepLink, params, active)
+func (s *administrationImpl) CreateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool, usersSourse []model.UsersSource) error {
+	return s.app.createNudge(l, ID, name, body, deepLink, params, active, usersSourse)
 }
 
 func (s *administrationImpl) UpdateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error {
