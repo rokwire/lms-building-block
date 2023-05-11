@@ -638,6 +638,10 @@ components:
                 type: integer
         active:
           type: boolean
+        users_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsersSources'
     NudgesConfig:
       required:
         - active
@@ -661,6 +665,13 @@ components:
           type: integer
         block_size:
           type: integer
+    UsersSources:
+      type: object
+      properties:
+        type:
+          type: string
+        params:
+          type: object
     _admin_req_create_nudge:
       required:
         - id

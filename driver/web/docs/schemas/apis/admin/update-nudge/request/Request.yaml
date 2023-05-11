@@ -4,6 +4,7 @@ required:
   - deep_link
   - params
   - active
+  - users_sources
 type: object
 properties:
   name:
@@ -17,3 +18,6 @@ properties:
     nullable: false
   active:
     type: boolean
+  users_sources:
+    type: object
+    nullable: true  

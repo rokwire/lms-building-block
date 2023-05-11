@@ -7,7 +7,7 @@ Assigment:
   $ref: "./assigment/Assigment.yaml"
 AssigmentGroup:
   $ref: "./assigment/AssigmentGroup.yaml"
-
+  
 # user
 User:
   $ref: "./user/User.yaml"
@@ -21,6 +21,8 @@ Nudge:
   $ref: "./nudges/Nudge.yaml"
 NudgesConfig:
   $ref: "./nudges/nudges-config.yaml"
+UsersSources:
+  $ref: "./nudges/UsersSources.yaml"  
 
  ###nudges api
 _admin_req_create_nudge:
