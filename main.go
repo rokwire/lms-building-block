@@ -18,6 +18,7 @@ import (
 	"lms/core"
 	"lms/core/model"
 	cacheadapter "lms/driven/cache"
+	"lms/driven/corebb"
 	"lms/driven/groups"
 	"lms/driven/notifications"
 	"lms/driven/provider"
@@ -25,7 +26,11 @@ import (
 	driver "lms/driver/web"
 	"log"
 	"os"
+	"strings"
 
+	"github.com/golang-jwt/jwt"
+	"github.com/rokwire/core-auth-library-go/v2/authservice"
+	"github.com/rokwire/core-auth-library-go/v2/sigauth"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
@@ -41,8 +46,10 @@ func main() {
 		Version = "dev"
 	}
 
-	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties("/lms/version")}}
-	logger := logs.NewLogger("core", &loggerOpts)
+	serviceID := "lms"
+
+	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties(serviceID + "/version")}}
+	logger := logs.NewLogger(serviceID, &loggerOpts)
 
 	port := getEnvKey("LMS_PORT", true)
 
@@ -81,15 +88,18 @@ func main() {
 	notificationHost := getEnvKey("LMS_NOTIFICATIONS_BB_HOST", true)
 	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey, app, org)
 
+	//core adapter
+	cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID)
+	coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager, org, app)
+
 	// application
 	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
-		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, logger)
+		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, coreAdapter, logger)
 	application.Start()
 
 	// web adapter
 	coreBBHost := getEnvKey("LMS_CORE_BB_HOST", true)
 	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
-
 	config := model.Config{
 		InternalAPIKey:  internalAPIKey,
 		CoreBBHost:      coreBBHost,
@@ -98,10 +108,54 @@ func main() {
 		CanvasTokenType: canvasTokenType,
 		CanvasToken:     canvasToken,
 	}
-
 	webAdapter := driver.NewWebAdapter(port, application, &config, logger)
-
 	webAdapter.Start()
+}
+
+func getCoreBBAdapterValues(logger *logs.Logger, serviceID string) (string, *authservice.ServiceAccountManager) {
+	host := getEnvKey("LMS_CORE_BB_CURRENT_HOST", true)
+	coreBBHost := getEnvKey("LMS_CORE_BB_CORE_HOST", true)
+
+	authService := authservice.AuthService{
+		ServiceID:   serviceID,
+		ServiceHost: host,
+		FirstParty:  true,
+		AuthBaseURL: coreBBHost,
+	}
+
+	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{})
+	if err != nil {
+		logger.Fatalf("Error initializing remote service registration loader: %v", err)
+	}
+
+	serviceRegManager, err := authservice.NewServiceRegManager(&authService, serviceRegLoader)
+	if err != nil {
+		logger.Fatalf("Error initializing service registration manager: %v", err)
+	}
+
+	serviceAccountID := getEnvKey("LMS_SERVICE_ACCOUNT_ID", true)
+	privKeyRaw := getEnvKey("LMS_PRIV_KEY", true)
+	privKeyRaw = strings.ReplaceAll(privKeyRaw, "\\n", "\n")
+	privKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privKeyRaw))
+	if err != nil {
+		log.Fatalf("Error parsing priv key: %v", err)
+	}
+
+	signatureAuth, err := sigauth.NewSignatureAuth(privKey, serviceRegManager, false)
+	if err != nil {
+		log.Fatalf("Error initializing signature auth: %v", err)
+	}
+
+	serviceAccountLoader, err := authservice.NewRemoteServiceAccountLoader(&authService, serviceAccountID, signatureAuth)
+	if err != nil {
+		log.Fatalf("Error initializing remote service account loader: %v", err)
+	}
+
+	serviceAccountManager, err := authservice.NewServiceAccountManager(&authService, serviceAccountLoader)
+	if err != nil {
+		log.Fatalf("Error initializing service account manager: %v", err)
+	}
+	return coreBBHost, serviceAccountManager
 }
 
 func getEnvKey(key string, required bool) string {

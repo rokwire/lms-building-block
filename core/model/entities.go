@@ -67,6 +67,7 @@ type Enrollment struct {
 type User struct {
 	ID          int          `json:"id" bson:"id"`
 	Name        string       `json:"name" bson:"name"`
+	LoginID     string       `json:"login_id" bson:"login_id"`
 	LastLogin   *time.Time   `json:"last_login" bson:"last_login"`
 	Enrollments []Enrollment `json:"enrollments" bson:"enrollments"`
 }

@@ -150,6 +150,7 @@ type Storage interface {
 	FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error)
 
 	InsertBlock(block model.Block) error
+	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
 }
 
@@ -157,9 +158,12 @@ type Storage interface {
 type Provider interface {
 	GetCourses(userID string) ([]model.Course, error)
 	GetCourse(userID string, courseID int) (*model.Course, error)
+	GetCourseUsers(courseID int) ([]model.User, error)
 	GetAssignmentGroups(userID string, courseID int, includeAssignments bool, includeSubmission bool) ([]model.AssignmentGroup, error)
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
+
+	FindUsersByCanvasUserID(canvasUserIds []int) ([]ProviderUser, error)
 
 	CacheCommonData(usersIDs map[string]string) error
 	FindCachedData(usersIDs []string) ([]ProviderUser, error)

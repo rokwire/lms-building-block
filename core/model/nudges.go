@@ -34,12 +34,33 @@ type NudgesConfig struct {
 
 // Nudge entity
 type Nudge struct {
-	ID       string      `json:"id" bson:"_id"`              //last_login
-	Name     string      `json:"name" bson:"name"`           //"Last Canvas use was over 2 weeks"
-	Body     string      `json:"body" bson:"body"`           //"You have not used the Canvas Application in over 2 weeks."
-	DeepLink string      `json:"deep_link" bson:"deep_link"` //deep link
-	Params   NudgeParams `json:"params" bson:"params"`       //Nudge specific settings
-	Active   bool        `json:"active" bson:"active"`       //true or false
+	ID           string        `json:"id" bson:"_id"`                      //last_login
+	Name         string        `json:"name" bson:"name"`                   //"Last Canvas use was over 2 weeks"
+	Body         string        `json:"body" bson:"body"`                   //"You have not used the Canvas Application in over 2 weeks."
+	DeepLink     string        `json:"deep_link" bson:"deep_link"`         //deep link
+	Params       NudgeParams   `json:"params" bson:"params"`               //Nudge specific settings
+	Active       bool          `json:"active" bson:"active"`               //true or false
+	UsersSources []UsersSource `json:"users_sources" bson:"users_sources"` //it says where to take the users from for this nudge - groups-bb-group, canvas courses
+}
+
+// GetUsersSourcesCanvasCoursesIDs gives the uniques canvas courses ids
+func (p Nudge) GetUsersSourcesCanvasCoursesIDs() []int {
+	if len(p.UsersSources) == 0 {
+		return []int{}
+	}
+	for _, source := range p.UsersSources {
+		if source.Type == "canvas-courses" {
+			currentCoursesIDs := source.Params["courses_ids"]
+			return utils.AnyToArrayOfInt(currentCoursesIDs)
+		}
+	}
+	return []int{}
+}
+
+// UsersSource entity
+type UsersSource struct {
+	Type   string         `json:"type" bson:"type"`     //groups-bb-group or canvas-course
+	Params map[string]any `json:"params" bson:"params"` //nil for groups-bb-group and a list with canvas courses for canvas-courses
 }
 
 // NudgeParams entity
@@ -108,6 +129,7 @@ type Block struct {
 
 // BlockItem entity
 type BlockItem struct {
-	NetID  string `json:"net_id" bson:"net_id"`
-	UserID string `json:"user_id" bson:"user_id"`
+	NetID     string   `json:"net_id" bson:"net_id"`
+	UserID    string   `json:"user_id" bson:"user_id"`
+	NudgesIDs []string `json:"nudges_ids" bson:"nudges_ids"`
 }

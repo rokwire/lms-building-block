@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"fmt"
 	"lms/core/model"
+	"lms/driven/corebb"
 	"lms/utils"
 	"log"
 	"strings"
@@ -36,6 +37,7 @@ type nudgesLogic struct {
 	provider        Provider
 	groupsBB        GroupsBB
 	notificationsBB NotificationsBB
+	core            *corebb.Adapter
 
 	storage Storage
 
@@ -186,8 +188,16 @@ func (n nudgesLogic) processAllNudges() {
 		return
 	}
 
+	// process phase 0
+	blocksSize, err := n.processPhase0(*processID, nudges)
+	if err != nil {
+		n.logger.Errorf("error on processing phase 0, so stopping the process and mark it as failed - %s", err)
+		n.completeProcessFailed(*processID, err.Error())
+		return
+	}
+
 	// process phase 1
-	blocksSize, err := n.processPhase1(*processID)
+	err = n.processPhase1(*processID, *blocksSize)
 	if err != nil {
 		n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
 		n.completeProcessFailed(*processID, err.Error())
@@ -262,15 +272,167 @@ func (n nudgesLogic) completeProcessFailed(processID string, errStr string) erro
 	return nil
 }
 
-// as a result of phase 1 we have into our service a cached provider data for:
-// all users
-// users courses
-// courses assignments
-// - with acceptable sync date
-func (n nudgesLogic) processPhase1(processID string) (*int, error) {
-	n.logger.Info("START Phase1")
+// Phase 0 will ensure the users for every nudge and will prepare the blocks data for processing on phase 1
+func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int, error) {
+	n.logger.Info("START Phase0")
 
-	/// get the users from the groups bb adapter on blocks
+	// load the groups bb users
+	groupsBBUsers, err := n.loadGroupsBBUsers()
+	if err != nil {
+		n.logger.Errorf("error on loading groups users - %s", err)
+		return nil, err
+	}
+
+	// load the canvas courses users
+	canvasCoursesUsers, err := n.loadCanvasCoursesUsers(nudges)
+	if err != nil {
+		n.logger.Errorf("error on loading canvas courses users users - %s", err)
+		return nil, err
+	}
+
+	//fill the unique users
+	//key: account id, index 0: net id, index 1:set(map) with nudges ids
+	uniqueUsers := map[string][]interface{}{}
+	//from groups bb users
+	for _, groupBBUser := range groupsBBUsers {
+		key := groupBBUser.UserID
+		netID := groupBBUser.NetID
+		nudgesIDs := map[string]bool{}
+
+		data := make([]interface{}, 2)
+		data[0] = netID
+		data[1] = nudgesIDs
+		uniqueUsers[key] = data
+	}
+	//from canvas courses
+	for _, courseUsers := range canvasCoursesUsers {
+		for _, courseUser := range courseUsers {
+			key := courseUser.ID
+			netID := courseUser.GetNetID()
+			if netID == nil {
+				n.logger.Errorf("net id is nil for - %s", key)
+				continue
+			}
+			nudgesIDs := map[string]bool{}
+
+			data := make([]interface{}, 2)
+			data[0] = *netID
+			data[1] = nudgesIDs
+			uniqueUsers[key] = data
+		}
+	}
+
+	//fill nudges ids for every user - loop through nudges
+	for _, nudge := range nudges {
+		usersSources := nudge.UsersSources
+		if len(usersSources) == 0 {
+			//if omited then we threat it as groups-bb-group
+			err = n.addNudgeIDToUsersForGroupsBBGroup(nudge.ID, uniqueUsers, groupsBBUsers)
+			if err != nil {
+				n.logger.Errorf("error on adding nudge id to users - groups bb group - %s", err)
+				return nil, err
+			}
+			continue
+		}
+
+		for _, usersSource := range usersSources {
+			sourceType := usersSource.Type
+			if sourceType == "groups-bb-group" {
+				err = n.addNudgeIDToUsersForGroupsBBGroup(nudge.ID, uniqueUsers, groupsBBUsers)
+				if err != nil {
+					n.logger.Errorf("error on adding nudge id to users - groups bb group - %s", err)
+					return nil, err
+				}
+			} else if sourceType == "canvas-courses" {
+				coursesIDs := nudge.GetUsersSourcesCanvasCoursesIDs()
+				err = n.addNudgeIDToUsersForCanvasCourse(nudge.ID, uniqueUsers, canvasCoursesUsers, coursesIDs)
+				if err != nil {
+					n.logger.Errorf("error on adding nudge id to users - canvas courses - %s", err)
+					return nil, err
+				}
+			}
+		}
+	}
+
+	//create the blocks objects
+	allBlocksItems := []model.BlockItem{}
+	for accountID, data := range uniqueUsers {
+		netID := data[0].(string)
+		nudgesIDsMap := data[1].(map[string]bool)
+
+		nudgesIDs := make([]string, len(nudgesIDsMap))
+		current := 0
+		for key := range nudgesIDsMap {
+			nudgesIDs[current] = key
+			current++
+		}
+
+		blockItem := model.BlockItem{NetID: netID, UserID: accountID, NudgesIDs: nudgesIDs}
+		allBlocksItems = append(allBlocksItems, blockItem)
+	}
+
+	groupedBlocksItems := [][]model.BlockItem{}
+	var currentItems []model.BlockItem
+	for i, blockItem := range allBlocksItems {
+		res := i % n.config.BlockSize
+		if res == 0 {
+			//create new group
+			currentItems = []model.BlockItem{}
+		}
+		currentItems = append(currentItems, blockItem)
+
+		if len(currentItems) == n.config.BlockSize || i == (len(allBlocksItems)-1) {
+			//put it
+			groupedBlocksItems = append(groupedBlocksItems, currentItems)
+		}
+	}
+	blocks := make([]model.Block, len(groupedBlocksItems))
+	for i, items := range groupedBlocksItems {
+		block := model.Block{ProcessID: processID, Number: i, Items: items}
+		blocks[i] = block
+	}
+
+	err = n.storage.InsertBlocks(blocks)
+	if err != nil {
+		n.logger.Errorf("error on adding blocks to process %s - %s", processID, err)
+		return nil, err
+	}
+
+	n.logger.Info("END Phase0")
+
+	blocksSize := len(blocks)
+	return &blocksSize, nil
+}
+
+func (n nudgesLogic) addNudgeIDToUsersForGroupsBBGroup(nudgeID string, uniqueUsers map[string][]interface{}, groupsBBUsers []GroupsBBUser) error {
+	for _, groupBBUser := range groupsBBUsers {
+		nudgesIDs := uniqueUsers[groupBBUser.UserID][1].(map[string]bool)
+		nudgesIDs[nudgeID] = true
+		uniqueUsers[groupBBUser.UserID][1] = nudgesIDs
+	}
+	return nil
+}
+
+func (n nudgesLogic) addNudgeIDToUsersForCanvasCourse(nudgeID string, uniqueUsers map[string][]interface{},
+	canvasCoursesUsers map[int][]model.CoreAccount, coursesIDs []int) error {
+	for _, courseID := range coursesIDs {
+		courseUsers := canvasCoursesUsers[courseID]
+		if len(courseUsers) == 0 {
+			continue
+		}
+
+		for _, courseUser := range courseUsers {
+			nudgesIDs := uniqueUsers[courseUser.ID][1].(map[string]bool)
+			nudgesIDs[nudgeID] = true
+			uniqueUsers[courseUser.ID][1] = nudgesIDs
+		}
+	}
+	return nil
+}
+
+func (n nudgesLogic) loadGroupsBBUsers() ([]GroupsBBUser, error) {
+	groupsBBUsers := []GroupsBBUser{}
+
 	groupName := n.getGroupName()
 	offset := 0
 	limit := n.config.BlockSize
@@ -288,39 +450,66 @@ func (n nudgesLogic) processPhase1(processID string) (*int, error) {
 			break
 		}
 
-		//process the block
-		err = n.processPhase1Block(processID, currentBlock, users)
-		if err != nil {
-			n.logger.Errorf("error processing block - %s", err)
-			return nil, err
-		}
+		groupsBBUsers = append(groupsBBUsers, users...)
 
 		//move offset
 		offset += limit
 		currentBlock++
 	}
-
-	n.logger.Info("END Phase1")
-	return &currentBlock, nil
+	return groupsBBUsers, nil
 }
 
-func (n nudgesLogic) processPhase1Block(processID string, curentBlock int, users []GroupsBBUser) error {
-	//add the block to the process
-	block := n.createBlock(processID, curentBlock, users)
-	err := n.storage.InsertBlock(block)
-	if err != nil {
-		n.logger.Errorf("error on adding block %d to process %s - %s", block.Number, processID, err)
-		return err
+func (n nudgesLogic) loadCanvasCoursesUsers(nudges []model.Nudge) (map[int][]model.CoreAccount, error) {
+	//prepare the uniques courses ids
+	coursesIDs := map[int]bool{}
+	for _, nudge := range nudges {
+		nudgeCoursesIDs := nudge.GetUsersSourcesCanvasCoursesIDs()
+		if len(nudgeCoursesIDs) > 0 {
+			for _, cID := range nudgeCoursesIDs {
+				coursesIDs[cID] = true
+			}
+		}
+	}
+	coursesIDsSet := make([]int, len(coursesIDs))
+	i := 0
+	for key := range coursesIDs {
+		coursesIDsSet[i] = key
+		i++
+	}
+	if len(coursesIDsSet) == 0 {
+		return map[int][]model.CoreAccount{}, nil
 	}
 
-	//prepare the provider data for the block
-	err = n.prepareProviderData(users)
-	if err != nil {
-		n.logger.Errorf("error on preparing the provider data - %s", err)
-		return err
-	}
+	//load the users for every course
+	result := map[int][]model.CoreAccount{}
 
-	return nil
+	for _, courseID := range coursesIDsSet {
+		//get the user form the provider by course id
+		courseUsers, err := n.provider.GetCourseUsers(courseID)
+		if err != nil {
+			n.logger.Errorf("error getting users for course - %d - %s", courseID, err)
+			return nil, err
+		}
+		if len(courseUsers) == 0 {
+			//no users
+			result[courseID] = []model.CoreAccount{} //empty
+			continue
+		}
+
+		//get the users from the core BB
+		netsIDs := make([]string, len(courseUsers))
+		for i, cUser := range courseUsers {
+			netsIDs[i] = cUser.LoginID
+		}
+		coreUsers, err := n.core.GetAccountsByNetIDs(netsIDs)
+		if err != nil {
+			n.logger.Errorf("error getting core users - %s", err)
+			return nil, err
+		}
+
+		result[courseID] = coreUsers
+	}
+	return result, nil
 }
 
 func (n nudgesLogic) createBlock(processID string, curentBlock int, users []GroupsBBUser) model.Block {
@@ -336,15 +525,52 @@ func (n nudgesLogic) createBlock(processID string, curentBlock int, users []Grou
 	return model.Block{ProcessID: processID, Number: curentBlock, Items: items}
 }
 
+// as a result of phase 1 we have into our service a cached provider data for:
+// all users
+// users courses
+// courses assignments
+// - with acceptable sync date
+func (n nudgesLogic) processPhase1(processID string, blocksSize int) error {
+	n.logger.Info("START Phase1")
+
+	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
+		n.logger.Infof("block:%d", blockNumber)
+
+		block, err := n.storage.FindBlock(processID, blockNumber)
+		if err != nil {
+			n.logger.Errorf("error on finding block %d - %s", blockNumber, err)
+			return err
+		}
+
+		//process caching for the block
+		blockItems := block.Items
+		if len(blockItems) == 0 {
+			continue
+		}
+		usersIDs := make(map[string]string, len(blockItems))
+		for _, blockItem := range blockItems {
+			usersIDs[blockItem.NetID] = blockItem.UserID
+		}
+		err = n.provider.CacheCommonData(usersIDs)
+		if err != nil {
+			n.logger.Errorf("error caching common data - %s", err)
+			return err
+		}
+	}
+
+	n.logger.Info("END Phase1")
+	return nil
+}
+
 // phase2 operates over the data prepared in phase1 and apply the nudges for every user
-func (n nudgesLogic) processPhase2(processID string, blocksSize int, nudges []model.Nudge) error {
+func (n nudgesLogic) processPhase2(processID string, blocksSize int, allNudges []model.Nudge) error {
 	n.logger.Info("START Phase2")
 
 	memoryData := map[int][]model.CalendarEvent{}
 	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
 		n.logger.Infof("block:%d", blockNumber)
 
-		err := n.processPhase2Block(processID, blockNumber, nudges, memoryData)
+		err := n.processPhase2Block(processID, blockNumber, allNudges, memoryData)
 		if err != nil {
 			n.logger.Errorf("error on process block %d - %s", blockNumber, err)
 			return err
@@ -355,9 +581,9 @@ func (n nudgesLogic) processPhase2(processID string, blocksSize int, nudges []mo
 	return nil
 }
 
-func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) error {
+func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, allNudges []model.Nudge, memoryData map[int][]model.CalendarEvent) error {
 	// load block data
-	cachedData, err := n.getBlockData(processID, blockNumber)
+	cachedData, usersNudgesMap, err := n.getBlockData(processID, blockNumber)
 	if err != nil {
 		n.logger.Errorf("error on getting block data %s - %d - %s", processID, blockNumber, err)
 		return err
@@ -365,7 +591,11 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudge
 
 	// process every user
 	for _, providerUser := range cachedData {
-		memoryData, err = n.processUser(providerUser, nudges, memoryData)
+
+		//find the nudges for the user
+		usersNudges := n.findUsersNudges(allNudges, providerUser.ID, usersNudgesMap)
+
+		memoryData, err = n.processUser(providerUser, usersNudges, memoryData)
 		if err != nil {
 			n.logger.Errorf("process provider user %s - %s", providerUser.NetID, err)
 			return err
@@ -374,50 +604,57 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudge
 	return nil
 }
 
-func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, error) {
+func (n nudgesLogic) findUsersNudges(allNudges []model.Nudge, userAccountID string, usersNudgesMap map[string][]string) []model.Nudge {
+	usersNudges := usersNudgesMap[userAccountID]
+	if len(usersNudges) == 0 {
+		return []model.Nudge{}
+	}
+
+	result := []model.Nudge{}
+	for _, un := range usersNudges {
+		foundedNudge := n.findNudge(allNudges, un)
+		if foundedNudge != nil {
+			result = append(result, *foundedNudge)
+		}
+	}
+
+	return result
+}
+
+func (n nudgesLogic) findNudge(allNudges []model.Nudge, nudgeID string) *model.Nudge {
+	for _, n := range allNudges {
+		if n.ID == nudgeID {
+			return &n
+		}
+	}
+	return nil
+}
+
+func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, map[string][]string, error) {
 	//get data
 	block, err := n.storage.FindBlock(processID, blockNumber)
 	if err != nil {
 		n.logger.Errorf("error on getting block data from the storage %s - %d - %s", processID, blockNumber, err)
-		return nil, err
+		return nil, nil, err
 	}
 	items := block.Items
 	if len(items) == 0 {
-		return []ProviderUser{}, nil
+		return []ProviderUser{}, map[string][]string{}, nil
 	}
 
-	//get the cached data from the block
+	//get the cached data from the block + prepare the users nudges
 	usersIDs := make([]string, len(items))
+	usersNudges := map[string][]string{}
 	for i, item := range items {
 		usersIDs[i] = item.NetID
+		usersNudges[item.UserID] = item.NudgesIDs
 	}
 	cachedData, err := n.provider.FindCachedData(usersIDs)
 	if err != nil {
 		n.logger.Errorf("error on getting cached data %s - %d - %s", processID, blockNumber, err)
-		return nil, err
+		return nil, nil, err
 	}
-
-	return cachedData, nil
-}
-
-func (n nudgesLogic) prepareProviderData(users []GroupsBBUser) error {
-	n.logger.Info("\tprepareProviderData")
-
-	//get the net ids from the users
-	usersIDs := n.prepareUsers(users)
-	if len(usersIDs) == 0 {
-		n.logger.Info("\t\tno users for processing")
-		return nil
-	}
-
-	//process caching
-	err := n.provider.CacheCommonData(usersIDs)
-	if err != nil {
-		n.logger.Errorf("error caching common data- %s", err)
-		return err
-	}
-
-	return nil
+	return cachedData, usersNudges, nil
 }
 
 // returns the net ids for all user who have it
@@ -439,7 +676,7 @@ func (n nudgesLogic) getGroupName() string {
 }
 
 func (n nudgesLogic) processUser(user ProviderUser, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
-	n.logger.Infof("\tprocess %s", user.NetID)
+	n.logger.Infof("\tprocess %s, %d nudges count", user.NetID, len(nudges))
 
 	for _, nudge := range nudges {
 		updateMemoryData, processedUser, err := n.processNudge(nudge, user, memoryData)
