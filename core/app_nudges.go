@@ -353,6 +353,8 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 		}
 	}
 
+	//create the blocks objects
+
 	/*	//add the block to the process
 		block := n.createBlock(processID, currentBlock, users)
 		err = n.storage.InsertBlock(block)
@@ -488,83 +490,6 @@ func (n nudgesLogic) createBlock(processID string, curentBlock int, users []Grou
 	}
 	return model.Block{ProcessID: processID, Number: curentBlock, Items: items}
 }
-
-/*
-	nudges, err := n.storage.LoadActiveNudges()
-	if err != nil {
-		n.logger.Errorf("error getting all active nudges - %s", err)
-		return err
-	}
-
-	for _, nudge := range nudges {
-		nudgeCourseIDs := nudge.Params.CourseIDs()
-		if len(nudgeCourseIDs) > 0 {
-			for _, courseID := range nudgeCourseIDs {
-				log.Printf("Start synchronizing course id: %d", courseID)
-
-				// Get all users for course
-				users, err := n.provider.GetCourseUsers(courseID)
-				if err != nil {
-					n.logger.Errorf("error getting users for course - %d - %s", courseID, err)
-					return err
-				}
-
-				// Iterate and check if the user is cached
-				var canvasUserIDForcheck []int
-				var netIDForcheck []string
-				for _, user := range users {
-					canvasUserIDForcheck = append(canvasUserIDForcheck, user.ID)
-					netIDForcheck = append(netIDForcheck, user.LoginID)
-				}
-
-				cachedUsers, err := n.provider.FindUsersByCanvasUserID(canvasUserIDForcheck)
-				if err != nil {
-					n.logger.Errorf("error getting cached users for course - %d - %s", courseID, err)
-					return err
-				}
-
-				// Find all missing NetIDs for cache procedure
-				var missingCoreNetIDs []string
-				for _, netID := range netIDForcheck {
-					found := false
-					for _, cachedUser := range cachedUsers {
-						if cachedUser.NetID == netID {
-							found = true
-							break
-						}
-					}
-
-					if !found {
-						missingCoreNetIDs = append(missingCoreNetIDs, fmt.Sprintf("%s", netID))
-					}
-				}
-
-				coreUsers, err := n.core.GetAccountsByNetIDs(missingCoreNetIDs)
-				if err != nil {
-					n.logger.Errorf("error getting core accounts - %s", err)
-					return err
-				}
-
-				var pendingNetIDs []string
-				netIDmapping := map[string]string{}
-				for _, coreUser := range coreUsers {
-					netID := coreUser.GetNetID()
-					if netID != nil {
-						netIDmapping[*netID] = coreUser.ID
-						pendingNetIDs = append(pendingNetIDs, *netID)
-					}
-				}
-
-				if len(netIDmapping) > 0 {
-					log.Printf("Cache missing net ids: %s", pendingNetIDs)
-					n.provider.CacheCommonData(netIDmapping)
-				} else {
-					log.Printf("0 NetIDs for cache")
-				}
-			}
-
-		}
-	} */
 
 // as a result of phase 1 we have into our service a cached provider data for:
 // all users
