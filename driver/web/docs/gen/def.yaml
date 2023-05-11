@@ -669,8 +669,10 @@ components:
       type: object
       properties:
         type:
+          nullable: true
           type: string
         params:
+          nullable: true
           type: object
     _admin_req_create_nudge:
       required:
@@ -706,7 +708,6 @@ components:
         - deep_link
         - params
         - active
-        - users_sources
       type: object
       properties:
         name:

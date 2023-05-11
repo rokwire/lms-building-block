@@ -1,6 +1,8 @@
 type: object
 properties:
   type:
+    nullable: true  
     type: string
   params:
+    nullable: true
     type: object

@@ -115,6 +115,22 @@ func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	return l.HttpResponseSuccess()
 }
 
+// AdminReqUpdateNudge defines model for _admin_req_update_nudge.
+type adminReqUpdateNudge struct {
+	Active       bool                   `json:"active"`
+	Body         string                 `json:"body"`
+	DeepLink     string                 `json:"deep_link"`
+	Name         string                 `json:"name"`
+	Params       map[string]interface{} `json:"params"`
+	UsersSources *[]UsersSources        `json:"users_sources"`
+}
+
+// UsersSources defines model for UsersSources.
+type UsersSources struct {
+	Params *map[string]interface{} `json:"params,omitempty"`
+	Type   *string                 `json:"type,omitempty"`
+}
+
 // UpdateNudge updates nudge
 func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w http.ResponseWriter, r *http.Request) logs.HttpResponse {
 	params := mux.Vars(r)
@@ -127,18 +143,20 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionRead, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, false)
 	}
-	var requestData Def.AdminReqUpdateNudge
+	var requestData adminReqUpdateNudge
 	err = json.Unmarshal(data, &requestData)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
 
-	var req model.UsersSource
-	var usersSource []model.UsersSource
-	for _, u := range requestData.UsersSources {
-		req = model.UsersSource{Params: *u.Params, Type: *u.Type}
+	var req model.UsersSources
+	var usersSource []model.UsersSources
+	if requestData.UsersSources != nil {
+		for _, u := range *requestData.UsersSources {
+			req = model.UsersSources{Type: u.Type, Params: u.Params}
+		}
+		usersSource = append(usersSource, req)
 	}
-	usersSource = append(usersSource, req)
 
 	err = h.app.Administration.UpdateNudge(l, ID, requestData.Name, requestData.Body, requestData.DeepLink, requestData.Params, requestData.Active, usersSource)
 	if err != nil {
