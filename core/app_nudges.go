@@ -362,7 +362,7 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 
 		nudgesIDs := make([]string, len(nudgesIDsMap))
 		current := 0
-		for key, _ := range nudgesIDsMap {
+		for key := range nudgesIDsMap {
 			nudgesIDs[current] = key
 			current++
 		}
@@ -472,7 +472,7 @@ func (n nudgesLogic) loadCanvasCoursesUsers(nudges []model.Nudge) (map[int][]mod
 	}
 	coursesIDsSet := make([]int, len(coursesIDs))
 	i := 0
-	for key, _ := range coursesIDs {
+	for key := range coursesIDs {
 		coursesIDsSet[i] = key
 		i++
 	}
