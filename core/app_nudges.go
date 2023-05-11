@@ -294,13 +294,13 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 	}
 
 	//fill the unique users
-	//key: account id, index 0: net id, index 1:array with nudges ids
+	//key: account id, index 0: net id, index 1:set(map) with nudges ids
 	uniqueUsers := map[string][]interface{}{}
 	//from groups bb users
 	for _, groupBBUser := range groupsBBUsers {
 		key := groupBBUser.UserID
 		netID := groupBBUser.NetID
-		nudgesIDs := []string{}
+		nudgesIDs := map[string]bool{}
 
 		data := make([]interface{}, 2)
 		data[0] = netID
@@ -316,7 +316,7 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 				n.logger.Errorf("net id is nil for - %s", key)
 				continue
 			}
-			nudgesIDs := []string{}
+			nudgesIDs := map[string]bool{}
 
 			data := make([]interface{}, 2)
 			data[0] = *netID
@@ -361,10 +361,17 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 	allBlocksItems := []model.BlockItem{}
 	for accountID, data := range uniqueUsers {
 		netID := data[0].(string)
-		nudgesIDs := data[1].([]string)
+		nudgesIDsMap := data[1].(map[string]bool)
 
-		block1Item := model.BlockItem{NetID: netID, UserID: accountID, NudgesIDs: nudgesIDs}
-		allBlocksItems = append(allBlocksItems, block1Item)
+		nudgesIDs := make([]string, len(nudgesIDsMap))
+		current := 0
+		for key, _ := range nudgesIDsMap {
+			nudgesIDs[current] = key
+			current++
+		}
+
+		blockItem := model.BlockItem{NetID: netID, UserID: accountID, NudgesIDs: nudgesIDs}
+		allBlocksItems = append(allBlocksItems, blockItem)
 	}
 
 	groupedBlocksItems := [][]model.BlockItem{}
@@ -402,8 +409,8 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 
 func (n nudgesLogic) addNudgeIDToUsersForGroupsBBGroup(nudgeID string, uniqueUsers map[string][]interface{}, groupsBBUsers []GroupsBBUser) error {
 	for _, groupBBUser := range groupsBBUsers {
-		nudgesIDs := uniqueUsers[groupBBUser.UserID][1].([]string)
-		nudgesIDs = append(nudgesIDs, nudgeID)
+		nudgesIDs := uniqueUsers[groupBBUser.UserID][1].(map[string]bool)
+		nudgesIDs[nudgeID] = true
 		uniqueUsers[groupBBUser.UserID][1] = nudgesIDs
 	}
 	return nil
@@ -418,8 +425,8 @@ func (n nudgesLogic) addNudgeIDToUsersForCanvasCourse(nudgeID string, uniqueUser
 		}
 
 		for _, courseUser := range courseUsers {
-			nudgesIDs := uniqueUsers[courseUser.ID][1].([]string)
-			nudgesIDs = append(nudgesIDs, nudgeID)
+			nudgesIDs := uniqueUsers[courseUser.ID][1].(map[string]bool)
+			nudgesIDs[nudgeID] = true
 			uniqueUsers[courseUser.ID][1] = nudgesIDs
 		}
 	}
