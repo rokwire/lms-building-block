@@ -62,6 +62,10 @@ type UsersSource struct {
 	Type   string         `json:"type" bson:"type"`     //groups-bb-group or canvas-course
 	Params map[string]any `json:"params" bson:"params"` //nil for groups-bb-group and a list with canvas courses for canvas-courses
 }
+type UsersSources struct {
+	Type   *string         `json:"type" bson:"type"`     //groups-bb-group or canvas-course
+	Params *map[string]any `json:"params" bson:"params"` //nil for groups-bb-group and a list with canvas courses for canvas-courses
+}
 
 // NudgeParams entity
 type NudgeParams map[string]any
