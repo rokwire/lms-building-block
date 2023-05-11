@@ -21,8 +21,8 @@ properties:
   active:
     type: boolean
   users_sources:
-    type: array
     nullable: true
+    type: array
     items:
       $ref: "../../../../nudges/UsersSources.yaml"
  
