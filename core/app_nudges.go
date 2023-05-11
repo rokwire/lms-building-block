@@ -312,10 +312,14 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 		for _, courseUser := range courseUsers {
 			key := courseUser.ID
 			netID := courseUser.GetNetID()
+			if netID == nil {
+				n.logger.Errorf("net id is nil for - %s", key)
+				continue
+			}
 			nudgesIDs := []string{}
 
 			data := make([]interface{}, 2)
-			data[0] = netID
+			data[0] = *netID
 			data[1] = nudgesIDs
 			uniqueUsers[key] = data
 		}
@@ -352,6 +356,27 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 			}
 		}
 	}
+
+	//create the blocks objects
+	//blocks := []model.Block{}
+
+	//var block1 model.Block
+	blocksItems := []model.BlockItem{}
+	for accountID, data := range uniqueUsers {
+		netID := data[0].(string)
+		nudgesIDs := data[1].([]string)
+
+		block1Item := model.BlockItem{NetID: netID, UserID: accountID, NudgesIDs: nudgesIDs}
+		blocksItems = append(blocksItems, block1Item)
+
+		//	block1Items := []model.BlockItem{block1Item}
+
+		//block1 := model.Block{Items: block1Items}
+	}
+
+	log.Println(blocksItems)
+
+	//blocks = append(blocks, block1)
 
 	/*	//add the block to the process
 		block := n.createBlock(processID, currentBlock, users)
@@ -488,83 +513,6 @@ func (n nudgesLogic) createBlock(processID string, curentBlock int, users []Grou
 	}
 	return model.Block{ProcessID: processID, Number: curentBlock, Items: items}
 }
-
-/*
-	nudges, err := n.storage.LoadActiveNudges()
-	if err != nil {
-		n.logger.Errorf("error getting all active nudges - %s", err)
-		return err
-	}
-
-	for _, nudge := range nudges {
-		nudgeCourseIDs := nudge.Params.CourseIDs()
-		if len(nudgeCourseIDs) > 0 {
-			for _, courseID := range nudgeCourseIDs {
-				log.Printf("Start synchronizing course id: %d", courseID)
-
-				// Get all users for course
-				users, err := n.provider.GetCourseUsers(courseID)
-				if err != nil {
-					n.logger.Errorf("error getting users for course - %d - %s", courseID, err)
-					return err
-				}
-
-				// Iterate and check if the user is cached
-				var canvasUserIDForcheck []int
-				var netIDForcheck []string
-				for _, user := range users {
-					canvasUserIDForcheck = append(canvasUserIDForcheck, user.ID)
-					netIDForcheck = append(netIDForcheck, user.LoginID)
-				}
-
-				cachedUsers, err := n.provider.FindUsersByCanvasUserID(canvasUserIDForcheck)
-				if err != nil {
-					n.logger.Errorf("error getting cached users for course - %d - %s", courseID, err)
-					return err
-				}
-
-				// Find all missing NetIDs for cache procedure
-				var missingCoreNetIDs []string
-				for _, netID := range netIDForcheck {
-					found := false
-					for _, cachedUser := range cachedUsers {
-						if cachedUser.NetID == netID {
-							found = true
-							break
-						}
-					}
-
-					if !found {
-						missingCoreNetIDs = append(missingCoreNetIDs, fmt.Sprintf("%s", netID))
-					}
-				}
-
-				coreUsers, err := n.core.GetAccountsByNetIDs(missingCoreNetIDs)
-				if err != nil {
-					n.logger.Errorf("error getting core accounts - %s", err)
-					return err
-				}
-
-				var pendingNetIDs []string
-				netIDmapping := map[string]string{}
-				for _, coreUser := range coreUsers {
-					netID := coreUser.GetNetID()
-					if netID != nil {
-						netIDmapping[*netID] = coreUser.ID
-						pendingNetIDs = append(pendingNetIDs, *netID)
-					}
-				}
-
-				if len(netIDmapping) > 0 {
-					log.Printf("Cache missing net ids: %s", pendingNetIDs)
-					n.provider.CacheCommonData(netIDmapping)
-				} else {
-					log.Printf("0 NetIDs for cache")
-				}
-			}
-
-		}
-	} */
 
 // as a result of phase 1 we have into our service a cached provider data for:
 // all users

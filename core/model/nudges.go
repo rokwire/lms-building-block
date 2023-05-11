@@ -129,6 +129,7 @@ type Block struct {
 
 // BlockItem entity
 type BlockItem struct {
-	NetID  string `json:"net_id" bson:"net_id"`
-	UserID string `json:"user_id" bson:"user_id"`
+	NetID     string   `json:"net_id" bson:"net_id"`
+	UserID    string   `json:"user_id" bson:"user_id"`
+	NudgesIDs []string `json:"nudges_ids" bson:"nudges_ids"`
 }
