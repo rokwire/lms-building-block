@@ -676,7 +676,7 @@ func (n nudgesLogic) getGroupName() string {
 }
 
 func (n nudgesLogic) processUser(user ProviderUser, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
-	n.logger.Infof("\tprocess %s", user.NetID)
+	n.logger.Infof("\tprocess %s, %d nudges count", user.NetID, len(nudges))
 
 	for _, nudge := range nudges {
 		updateMemoryData, processedUser, err := n.processNudge(nudge, user, memoryData)
