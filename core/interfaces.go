@@ -150,6 +150,7 @@ type Storage interface {
 	FindNudgesProcesses(limit int, offset int) ([]model.NudgesProcess, error)
 
 	InsertBlock(block model.Block) error
+	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
 }
 

@@ -358,39 +358,46 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 	}
 
 	//create the blocks objects
-	//blocks := []model.Block{}
-
-	//var block1 model.Block
-	blocksItems := []model.BlockItem{}
+	allBlocksItems := []model.BlockItem{}
 	for accountID, data := range uniqueUsers {
 		netID := data[0].(string)
 		nudgesIDs := data[1].([]string)
 
 		block1Item := model.BlockItem{NetID: netID, UserID: accountID, NudgesIDs: nudgesIDs}
-		blocksItems = append(blocksItems, block1Item)
-
-		//	block1Items := []model.BlockItem{block1Item}
-
-		//block1 := model.Block{Items: block1Items}
+		allBlocksItems = append(allBlocksItems, block1Item)
 	}
 
-	log.Println(blocksItems)
+	groupedBlocksItems := [][]model.BlockItem{}
+	var currentItems []model.BlockItem
+	for i, blockItem := range allBlocksItems {
+		res := i % n.config.BlockSize
+		if res == 0 {
+			//create new group
+			currentItems = []model.BlockItem{}
+		}
+		currentItems = append(currentItems, blockItem)
 
-	//blocks = append(blocks, block1)
+		if len(currentItems) == n.config.BlockSize || i == (len(allBlocksItems)-1) {
+			//put it
+			groupedBlocksItems = append(groupedBlocksItems, currentItems)
+		}
+	}
+	blocks := make([]model.Block, len(groupedBlocksItems))
+	for i, items := range groupedBlocksItems {
+		block := model.Block{ProcessID: processID, Number: i, Items: items}
+		blocks[i] = block
+	}
 
-	/*	//add the block to the process
-		block := n.createBlock(processID, currentBlock, users)
-		err = n.storage.InsertBlock(block)
-		if err != nil {
-			n.logger.Errorf("error on adding block %d to process %s - %s", block.Number, processID, err)
-			return nil, err
-		} */
+	err = n.storage.InsertBlocks(blocks)
+	if err != nil {
+		n.logger.Errorf("error on adding blocks to process %s - %s", processID, err)
+		return nil, err
+	}
 
 	n.logger.Info("END Phase0")
 
-	//TODO
-	currentBlock := 100
-	return &currentBlock, nil
+	blocksSize := len(blocks)
+	return &blocksSize, nil
 }
 
 func (n nudgesLogic) addNudgeIDToUsersForGroupsBBGroup(nudgeID string, uniqueUsers map[string][]interface{}, groupsBBUsers []GroupsBBUser) error {
