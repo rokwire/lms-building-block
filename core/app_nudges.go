@@ -78,34 +78,34 @@ func (n nudgesLogic) setupNudgesTimer() {
 		n.timerDone <- true
 		n.dailyNudgesTimer.Stop()
 	}
-	/*
-		//wait until it is the correct moment from the day
-		location, err := time.LoadLocation("America/Chicago")
-		if err != nil {
-			n.logger.Errorf("Error getting location:%s\n", err.Error())
-		}
-		now := time.Now().In(location)
-		n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-		nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-		desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
-		if n.config != nil && n.config.ProcessTime != nil {
-			desiredMoment = *n.config.ProcessTime
-		}
+	//wait until it is the correct moment from the day
+	location, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		n.logger.Errorf("Error getting location:%s\n", err.Error())
+	}
+	now := time.Now().In(location)
+	n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-		var durationInSeconds int
-		n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
-		if nowSecondsInDay <= desiredMoment {
-			n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
-			durationInSeconds = desiredMoment - nowSecondsInDay
-		} else {
-			n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-			leftToday := 86400 - nowSecondsInDay
-			durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
-		} */
-	//app.logger.Infof("%d", durationInSeconds) */
-	duration := time.Second * time.Duration(3)
-	//duration := time.Second * time.Duration(durationInSeconds)
+	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
+	if n.config != nil && n.config.ProcessTime != nil {
+		desiredMoment = *n.config.ProcessTime
+	}
+
+	var durationInSeconds int
+	n.logger.Infof("setupNudgesTimer -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
+	if nowSecondsInDay <= desiredMoment {
+		n.logger.Info("setupNudgesTimer -> not processed nudges today, so the first nudges process will be today")
+		durationInSeconds = desiredMoment - nowSecondsInDay
+	} else {
+		n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
+		leftToday := 86400 - nowSecondsInDay
+		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
+	}
+	//app.logger.Infof("%d", durationInSeconds)
+	//duration := time.Second * time.Duration(3)
+	duration := time.Second * time.Duration(durationInSeconds)
 	n.logger.Infof("setupNudgesTimer -> first call after %s", duration)
 
 	n.dailyNudgesTimer = time.NewTimer(duration)
@@ -196,24 +196,21 @@ func (n nudgesLogic) processAllNudges() {
 		return
 	}
 
-	log.Println(blocksSize)
+	// process phase 1
+	err = n.processPhase1(*processID, *blocksSize)
+	if err != nil {
+		n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
+		n.completeProcessFailed(*processID, err.Error())
+		return
+	}
 
-	/*
-		// process phase 1
-		err = n.processPhase1(*processID, *blocksSize)
-		if err != nil {
-			n.logger.Errorf("error on processing phase 1, so stopping the process and mark it as failed - %s", err)
-			n.completeProcessFailed(*processID, err.Error())
-			return
-		}
-
-		// process phase 2
-		err = n.processPhase2(*processID, *blocksSize, nudges)
-		if err != nil {
-			n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
-			n.completeProcessFailed(*processID, err.Error())
-			return
-		} */
+	// process phase 2
+	err = n.processPhase2(*processID, *blocksSize, nudges)
+	if err != nil {
+		n.logger.Errorf("error on processing phase 2, so stopping the process and mark it as failed - %s", err)
+		n.completeProcessFailed(*processID, err.Error())
+		return
+	}
 
 	//end process
 	err = n.completeProcessSuccess(*processID)
@@ -365,7 +362,7 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 
 		nudgesIDs := make([]string, len(nudgesIDsMap))
 		current := 0
-		for key, _ := range nudgesIDsMap {
+		for key := range nudgesIDsMap {
 			nudgesIDs[current] = key
 			current++
 		}
@@ -475,7 +472,7 @@ func (n nudgesLogic) loadCanvasCoursesUsers(nudges []model.Nudge) (map[int][]mod
 	}
 	coursesIDsSet := make([]int, len(coursesIDs))
 	i := 0
-	for key, _ := range coursesIDs {
+	for key := range coursesIDs {
 		coursesIDsSet[i] = key
 		i++
 	}
@@ -566,14 +563,14 @@ func (n nudgesLogic) processPhase1(processID string, blocksSize int) error {
 }
 
 // phase2 operates over the data prepared in phase1 and apply the nudges for every user
-func (n nudgesLogic) processPhase2(processID string, blocksSize int, nudges []model.Nudge) error {
+func (n nudgesLogic) processPhase2(processID string, blocksSize int, allNudges []model.Nudge) error {
 	n.logger.Info("START Phase2")
 
 	memoryData := map[int][]model.CalendarEvent{}
 	for blockNumber := 0; blockNumber < blocksSize; blockNumber++ {
 		n.logger.Infof("block:%d", blockNumber)
 
-		err := n.processPhase2Block(processID, blockNumber, nudges, memoryData)
+		err := n.processPhase2Block(processID, blockNumber, allNudges, memoryData)
 		if err != nil {
 			n.logger.Errorf("error on process block %d - %s", blockNumber, err)
 			return err
@@ -584,9 +581,9 @@ func (n nudgesLogic) processPhase2(processID string, blocksSize int, nudges []mo
 	return nil
 }
 
-func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) error {
+func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, allNudges []model.Nudge, memoryData map[int][]model.CalendarEvent) error {
 	// load block data
-	cachedData, err := n.getBlockData(processID, blockNumber)
+	cachedData, usersNudgesMap, err := n.getBlockData(processID, blockNumber)
 	if err != nil {
 		n.logger.Errorf("error on getting block data %s - %d - %s", processID, blockNumber, err)
 		return err
@@ -594,7 +591,11 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudge
 
 	// process every user
 	for _, providerUser := range cachedData {
-		memoryData, err = n.processUser(providerUser, nudges, memoryData)
+
+		//find the nudges for the user
+		usersNudges := n.findUsersNudges(allNudges, providerUser.ID, usersNudgesMap)
+
+		memoryData, err = n.processUser(providerUser, usersNudges, memoryData)
 		if err != nil {
 			n.logger.Errorf("process provider user %s - %s", providerUser.NetID, err)
 			return err
@@ -603,30 +604,57 @@ func (n nudgesLogic) processPhase2Block(processID string, blockNumber int, nudge
 	return nil
 }
 
-func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, error) {
+func (n nudgesLogic) findUsersNudges(allNudges []model.Nudge, userAccountID string, usersNudgesMap map[string][]string) []model.Nudge {
+	usersNudges := usersNudgesMap[userAccountID]
+	if len(usersNudges) == 0 {
+		return []model.Nudge{}
+	}
+
+	result := []model.Nudge{}
+	for _, un := range usersNudges {
+		foundedNudge := n.findNudge(allNudges, un)
+		if foundedNudge != nil {
+			result = append(result, *foundedNudge)
+		}
+	}
+
+	return result
+}
+
+func (n nudgesLogic) findNudge(allNudges []model.Nudge, nudgeID string) *model.Nudge {
+	for _, n := range allNudges {
+		if n.ID == nudgeID {
+			return &n
+		}
+	}
+	return nil
+}
+
+func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, map[string][]string, error) {
 	//get data
 	block, err := n.storage.FindBlock(processID, blockNumber)
 	if err != nil {
 		n.logger.Errorf("error on getting block data from the storage %s - %d - %s", processID, blockNumber, err)
-		return nil, err
+		return nil, nil, err
 	}
 	items := block.Items
 	if len(items) == 0 {
-		return []ProviderUser{}, nil
+		return []ProviderUser{}, map[string][]string{}, nil
 	}
 
-	//get the cached data from the block
+	//get the cached data from the block + prepare the users nudges
 	usersIDs := make([]string, len(items))
+	usersNudges := map[string][]string{}
 	for i, item := range items {
 		usersIDs[i] = item.NetID
+		usersNudges[item.UserID] = item.NudgesIDs
 	}
 	cachedData, err := n.provider.FindCachedData(usersIDs)
 	if err != nil {
 		n.logger.Errorf("error on getting cached data %s - %d - %s", processID, blockNumber, err)
-		return nil, err
+		return nil, nil, err
 	}
-
-	return cachedData, nil
+	return cachedData, usersNudges, nil
 }
 
 // returns the net ids for all user who have it
@@ -648,7 +676,7 @@ func (n nudgesLogic) getGroupName() string {
 }
 
 func (n nudgesLogic) processUser(user ProviderUser, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
-	n.logger.Infof("\tprocess %s", user.NetID)
+	n.logger.Infof("\tprocess %s, %d nudges count", user.NetID, len(nudges))
 
 	for _, nudge := range nudges {
 		updateMemoryData, processedUser, err := n.processNudge(nudge, user, memoryData)
