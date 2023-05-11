@@ -312,10 +312,14 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 		for _, courseUser := range courseUsers {
 			key := courseUser.ID
 			netID := courseUser.GetNetID()
+			if netID == nil {
+				n.logger.Errorf("net id is nil for - %s", key)
+				continue
+			}
 			nudgesIDs := []string{}
 
 			data := make([]interface{}, 2)
-			data[0] = netID
+			data[0] = *netID
 			data[1] = nudgesIDs
 			uniqueUsers[key] = data
 		}
@@ -354,6 +358,25 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 	}
 
 	//create the blocks objects
+	//blocks := []model.Block{}
+
+	//var block1 model.Block
+	blocksItems := []model.BlockItem{}
+	for accountID, data := range uniqueUsers {
+		netID := data[0].(string)
+		nudgesIDs := data[1].([]string)
+
+		block1Item := model.BlockItem{NetID: netID, UserID: accountID, NudgesIDs: nudgesIDs}
+		blocksItems = append(blocksItems, block1Item)
+
+		//	block1Items := []model.BlockItem{block1Item}
+
+		//block1 := model.Block{Items: block1Items}
+	}
+
+	log.Println(blocksItems)
+
+	//blocks = append(blocks, block1)
 
 	/*	//add the block to the process
 		block := n.createBlock(processID, currentBlock, users)
