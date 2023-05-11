@@ -669,8 +669,10 @@ components:
       type: object
       properties:
         type:
+          nullable: true
           type: string
         params:
+          nullable: true
           type: object
     _admin_req_create_nudge:
       required:
@@ -720,7 +722,6 @@ components:
         active:
           type: boolean
         users_sources:
-          nullable: true
           type: array
           items:
             $ref: '#/components/schemas/UsersSources'
