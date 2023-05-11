@@ -25,4 +25,9 @@ properties:
           type: integer
   active:
     type: boolean
+  users_sources:
+    type: array
+    items:
+      $ref: "./UsersSources.yaml"
+
  

@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rokwire LMS Building Block API
   description: LMS Building Block API Documentation
-  version: 1.7.0
+  version: 1.8.0
 servers:
   - url: 'https://api.rokwire.illinois.edu/lms'
     description: Production server
@@ -638,6 +638,10 @@ components:
                 type: integer
         active:
           type: boolean
+        users_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsersSources'
     NudgesConfig:
       required:
         - active
@@ -661,6 +665,13 @@ components:
           type: integer
         block_size:
           type: integer
+    UsersSources:
+      type: object
+      properties:
+        type:
+          type: string
+        params:
+          type: object
     _admin_req_create_nudge:
       required:
         - id
@@ -684,6 +695,10 @@ components:
           nullable: false
         active:
           type: boolean
+        users_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsersSources'
     _admin_req_update_nudge:
       required:
         - name
@@ -691,6 +706,7 @@ components:
         - deep_link
         - params
         - active
+        - users_sources
       type: object
       properties:
         name:
@@ -704,3 +720,7 @@ components:
           nullable: false
         active:
           type: boolean
+        users_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsersSources'
