@@ -706,7 +706,6 @@ components:
         - deep_link
         - params
         - active
-        - users_sources
       type: object
       properties:
         name:
@@ -721,6 +720,7 @@ components:
         active:
           type: boolean
         users_sources:
+          nullable: true
           type: array
           items:
             $ref: '#/components/schemas/UsersSources'
