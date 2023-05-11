@@ -698,12 +698,7 @@ components:
         users_sources:
           type: array
           items:
-            type: object
-            properties:
-              type:
-                type: string
-              params:
-                type: object
+            $ref: '#/components/schemas/UsersSources'
     _admin_req_update_nudge:
       required:
         - name
@@ -728,9 +723,4 @@ components:
         users_sources:
           type: array
           items:
-            type: object
-            properties:
-              type:
-                type: string
-              params:
-                type: object
+            $ref: '#/components/schemas/UsersSources'

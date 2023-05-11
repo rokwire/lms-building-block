@@ -94,10 +94,7 @@ type AdminReqCreateNudge struct {
 	Id           string                 `json:"id"`
 	Name         string                 `json:"name"`
 	Params       map[string]interface{} `json:"params"`
-	UsersSources *[]struct {
-		Params *map[string]interface{} `json:"params,omitempty"`
-		Type   *string                 `json:"type,omitempty"`
-	} `json:"users_sources,omitempty"`
+	UsersSources *[]UsersSources        `json:"users_sources,omitempty"`
 }
 
 // AdminReqUpdateNudge defines model for _admin_req_update_nudge.
@@ -107,10 +104,7 @@ type AdminReqUpdateNudge struct {
 	DeepLink     string                 `json:"deep_link"`
 	Name         string                 `json:"name"`
 	Params       map[string]interface{} `json:"params"`
-	UsersSources []struct {
-		Params *map[string]interface{} `json:"params,omitempty"`
-		Type   *string                 `json:"type,omitempty"`
-	} `json:"users_sources"`
+	UsersSources []UsersSources         `json:"users_sources"`
 }
 
 // GetAdminNudgesProcessesParams defines parameters for GetAdminNudgesProcesses.

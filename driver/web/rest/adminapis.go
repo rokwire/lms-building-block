@@ -101,7 +101,7 @@ func (h AdminApisHandler) CreateNudge(l *logs.Log, claims *tokenauth.Claims, w h
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
-
+	user := requestData.UsersSources.Params
 	err = h.app.Administration.CreateNudge(l, requestData.Id, requestData.Name, requestData.Body, requestData.DeepLink, requestData.Params, requestData.Active)
 	if err != nil {
 		return l.HttpResponseErrorAction(logutils.ActionGet, "", nil, err, http.StatusInternalServerError, true)
