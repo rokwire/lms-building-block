@@ -5,6 +5,7 @@ required:
   - deep_link
   - params
   - active
+  - users_sources
 type: object
 properties:
   id:
