@@ -670,11 +670,11 @@ components:
       type: object
       properties:
         type:
+          nullable: true
           type: string
-          nullable: true
         params:
-          type: object
           nullable: true
+          type: object
     _admin_req_create_nudge:
       required:
         - id
