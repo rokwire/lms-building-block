@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rokwire LMS Building Block API
   description: LMS Building Block API Documentation
-  version: 1.8.0
+  version: 1.9.0
 servers:
   - url: 'https://api.rokwire.illinois.edu/lms'
     description: Production server
@@ -669,8 +669,10 @@ components:
       type: object
       properties:
         type:
+          nullable: true
           type: string
         params:
+          nullable: true
           type: object
     _admin_req_create_nudge:
       required:
@@ -706,7 +708,6 @@ components:
         - deep_link
         - params
         - active
-        - users_sources
       type: object
       properties:
         name:
