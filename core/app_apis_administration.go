@@ -65,8 +65,8 @@ func (app *Application) createNudge(l *logs.Log, ID string, name string, body st
 	return nil
 }
 
-func (app *Application) updateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool) error {
-	err := app.storage.UpdateNudge(ID, name, body, deepLink, params, active)
+func (app *Application) updateNudge(l *logs.Log, ID string, name string, body string, deepLink string, params model.NudgeParams, active bool, usersSourse []model.UsersSource) error {
+	err := app.storage.UpdateNudge(ID, name, body, deepLink, params, active, usersSourse)
 	if err != nil {
 		return nil
 	}
