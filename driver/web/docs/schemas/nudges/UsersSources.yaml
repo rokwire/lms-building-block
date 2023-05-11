@@ -2,5 +2,7 @@ type: object
 properties:
   type:
     type: string
+    nullable: true
   params:
     type: object
+    nullable: true
