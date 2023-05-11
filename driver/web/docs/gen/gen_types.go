@@ -57,6 +57,7 @@ type Nudge struct {
 		AccountIds *[]int `json:"account_ids,omitempty"`
 		CourseIds  *[]int `json:"course_ids,omitempty"`
 	} `json:"params"`
+	UsersSources *[]UsersSources `json:"users_sources,omitempty"`
 }
 
 // NudgesConfig defines model for NudgesConfig.
@@ -79,23 +80,31 @@ type User struct {
 	Name        *string     `json:"name,omitempty"`
 }
 
+// UsersSources defines model for UsersSources.
+type UsersSources struct {
+	Params *map[string]interface{} `json:"params,omitempty"`
+	Type   *string                 `json:"type,omitempty"`
+}
+
 // AdminReqCreateNudge defines model for _admin_req_create_nudge.
 type AdminReqCreateNudge struct {
-	Active   bool                   `json:"active"`
-	Body     string                 `json:"body"`
-	DeepLink string                 `json:"deep_link"`
-	Id       string                 `json:"id"`
-	Name     string                 `json:"name"`
-	Params   map[string]interface{} `json:"params"`
+	Active       bool                   `json:"active"`
+	Body         string                 `json:"body"`
+	DeepLink     string                 `json:"deep_link"`
+	Id           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	Params       map[string]interface{} `json:"params"`
+	UsersSources *[]UsersSources        `json:"users_sources,omitempty"`
 }
 
 // AdminReqUpdateNudge defines model for _admin_req_update_nudge.
 type AdminReqUpdateNudge struct {
-	Active   bool                   `json:"active"`
-	Body     string                 `json:"body"`
-	DeepLink string                 `json:"deep_link"`
-	Name     string                 `json:"name"`
-	Params   map[string]interface{} `json:"params"`
+	Active       bool                   `json:"active"`
+	Body         string                 `json:"body"`
+	DeepLink     string                 `json:"deep_link"`
+	Name         string                 `json:"name"`
+	Params       map[string]interface{} `json:"params"`
+	UsersSources []UsersSources         `json:"users_sources"`
 }
 
 // GetAdminNudgesProcessesParams defines parameters for GetAdminNudgesProcesses.
