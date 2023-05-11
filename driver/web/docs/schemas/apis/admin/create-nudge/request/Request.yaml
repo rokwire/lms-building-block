@@ -21,6 +21,7 @@ properties:
   active:
     type: boolean
   users_sources:
-    type: object
-    nullable: true
+    type: array
+    items:
+      $ref: "./UsersSources.yaml"
  
