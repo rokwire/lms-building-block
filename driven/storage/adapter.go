@@ -361,6 +361,21 @@ func (sa *Adapter) InsertBlock(block model.Block) error {
 	return nil
 }
 
+// InsertBlocks inserts blocks
+func (sa *Adapter) InsertBlocks(blocks []model.Block) error {
+	data := make([]interface{}, len(blocks))
+	for i, sn := range blocks {
+		data[i] = sn
+	}
+
+	_, err := sa.db.nudgesBlocks.InsertMany(data, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "blocks", nil, err)
+	}
+
+	return nil
+}
+
 // FindBlock finds for a nudges process
 func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, error) {
 	filter := bson.D{primitive.E{Key: "process_id", Value: processID},
