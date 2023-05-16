@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.2] - 2023-05-16
+### Fixed 
+- Fix filtering by NetID [#85](https://github.com/rokwire/lms-building-block/issues/85)
+
 ## [1.9.1] - 2023-05-12
 ### Fixed
 - Fix update nudge [#81](https://github.com/rokwire/lms-building-block/issues/81)
