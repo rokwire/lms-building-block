@@ -122,7 +122,7 @@ func (a *Adapter) RetrieveCoreServices(serviceIDs []string) ([]model.CoreService
 // GetAccountsByNetIDs retrieves accounts by net ids
 func (a *Adapter) GetAccountsByNetIDs(netIDs []string) ([]model.CoreAccount, error) {
 	searchParams := map[string]interface{}{
-		"accounts.external_ids.net_id": netIDs,
+		"external_ids.net_id": netIDs,
 	}
 	return a.GetAccounts(searchParams)
 }
