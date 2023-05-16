@@ -80,20 +80,24 @@ type CoreAccount struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"roles"`
+	ExternalIDs map[string]string `json:"external_ids"`
 }
 
 // GetUIN Gets the uin
 func (a *CoreAccount) GetUIN() *string {
-	for _, auth := range a.AuthTypes {
-		return &auth.Params.User.Identifier
+	if a.ExternalIDs == nil {
+		return nil
 	}
-	return nil
+	uin := a.ExternalIDs["uin"]
+	return &uin
 }
 
 // GetNetID Gets the NetID
 func (a *CoreAccount) GetNetID() *string {
-	for _, auth := range a.AuthTypes {
-		return &auth.Params.User.ExternalIDs.NetID
+	if a.ExternalIDs == nil {
+		return nil
 	}
-	return nil
+	netID := a.ExternalIDs["net_id"]
+	return &netID
+
 }
