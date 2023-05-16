@@ -30,13 +30,16 @@ type CoreAccount struct {
 		Identifier string `json:"identifier"`
 		Params     struct {
 			User struct {
-				Email          string        `json:"email"`
-				FirstName      string        `json:"first_name"`
-				Groups         []interface{} `json:"groups"`
-				Identifier     string        `json:"identifier"`
-				LastName       string        `json:"last_name"`
-				MiddleName     string        `json:"middle_name"`
-				Roles          []string      `json:"roles"`
+				Email       string        `json:"email"`
+				FirstName   string        `json:"first_name"`
+				Groups      []interface{} `json:"groups"`
+				ExternalIDs struct {
+					NetID string `json:"net_id"`
+				} `json:"external_ids"`
+				Identifier     string   `json:"identifier"`
+				LastName       string   `json:"last_name"`
+				MiddleName     string   `json:"middle_name"`
+				Roles          []string `json:"roles"`
 				SystemSpecific struct {
 					PreferredUsername string `json:"preferred_username"`
 				} `json:"system_specific"`
@@ -93,7 +96,7 @@ func (a *CoreAccount) GetUIN() *string {
 // GetNetID Gets the NetID
 func (a *CoreAccount) GetNetID() *string {
 	for _, auth := range a.AuthTypes {
-		return &auth.Params.User.SystemSpecific.PreferredUsername
+		return &auth.Params.User.ExternalIDs.NetID
 	}
 	return nil
 }
