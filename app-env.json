@@ -1,0 +1,25 @@
+{
+    "app_secret": {
+        "LMS_MONGO_AUTH": "<mongo auth url>",
+        "LMS_INTERNAL_API_KEY": "<internal api key>",
+        "LMS_PRIV_KEY": "<service account priv key>"
+    },
+    "app_config":{
+        "LMS_PORT": "5000",
+        "LMS_MONGO_DATABASE": "<mongo database>",
+        "LMS_MONGO_TIMEOUT": "",
+        "LMS_DEFAULT_CACHE_EXPIRATION_SECONDS": "<default cache expiration seconds>",
+        "LMS_CANVAS_BASE_URL": "<canvas base url>",
+        "LMS_CANVAS_TOKEN_TYPE": "<canvas token type>",
+        "LMS_CANVAS_TOKEN": "<canvas token>",
+        "LMS_GROUPS_BB_HOST": "<groups bb host>",
+        "LMS_APP_ID": "<app id>",
+        "LMS_ORG_ID": "<org id>",
+        "LMS_NOTIFICATIONS_BB_HOST": "<notifications bb host>",
+        "LMS_CORE_BB_HOST": "<core bb host>",
+        "LMS_SERVICE_URL": "<service url>",
+        "LMS_CORE_BB_CURRENT_HOST": "<core bb current host>",
+        "LMS_CORE_BB_CORE_HOST": "<core bb core host>",
+        "LMS_SERVICE_ACCOUNT_ID": "<service account id>"
+    }
+}
