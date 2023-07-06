@@ -31,8 +31,8 @@ import (
 	"github.com/getkin/kin-openapi/routers"
 
 	"github.com/rokwire/core-auth-library-go/v2/tokenauth"
-	"github.com/rokwire/logging-library-go/logs"
-	"github.com/rokwire/logging-library-go/logutils"
+	"github.com/rokwire/logging-library-go/v2/logs"
+	"github.com/rokwire/logging-library-go/v2/logutils"
 
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -131,7 +131,7 @@ func (we Adapter) wrapFunc(handler http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-type userAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
+type userAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HTTPResponse
 
 func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -142,7 +142,7 @@ func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 		// validate request
 		_, err := we.validateRequest(req)
 		if err != nil {
-			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
+			logObj.HTTPResponseErrorAction(logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
 			return
 		}
 
@@ -182,7 +182,7 @@ func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 	}
 }
 
-type adminAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
+type adminAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HTTPResponse
 
 func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -193,7 +193,7 @@ func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
 		// validate request
 		_, err := we.validateRequest(req)
 		if err != nil {
-			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
+			logObj.HTTPResponseErrorAction(logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
 			return
 		}
 
@@ -237,12 +237,14 @@ type internalAPIKeyAuthFunc = func(http.ResponseWriter, *http.Request)
 
 func (we Adapter) internalAPIKeyAuthWrapFunc(handler internalAPIKeyAuthFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		utils.LogRequest(req)
+		logObj := we.logger.NewRequestLog(req)
+		logObj.RequestReceived()
 
 		apiKeyAuthenticated := we.auth.internalAuth.check(w, req)
 
 		if apiKeyAuthenticated {
 			handler(w, req)
+			logObj.RequestComplete()
 		} else {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		}
