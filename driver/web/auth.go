@@ -22,7 +22,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 // Auth handler

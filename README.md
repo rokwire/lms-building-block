@@ -34,8 +34,12 @@ LMS_TEST_NET_ID | < string > | yes | Net ID of test user
 LMS_TEST_USER_ID2 | < string > | yes | Account ID of second test user
 LMS_TEST_NET_ID2 | < string > | yes | Net ID of second test user
 LMS_NOTIFICATIONS_BB_HOST | < url > | yes | Notifications BB base URL
+LMS_CORE_BB_CURRENT_HOST | < url > | yes | Core current BB host URL
+LMS_CORE_BB_CORE_HOST | < url > | yes | Core BB core host URL
 LMS_CORE_BB_HOST | < url > | yes | Core BB host URL
+LMS_GROUPS_BB_HOST | < url > | yes | Groups BB host URL
 LMS_SERVICE_URL | < url > | yes | URL where this application is being hosted
+LMS_SERVICE_ACCOUNT_ID | < string > | yes | ID of Service Account for LMS BB
 
 ### Run Application
 

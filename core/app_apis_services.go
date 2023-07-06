@@ -20,7 +20,7 @@ package core
 import (
 	"lms/core/model"
 
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 func (app *Application) getVersion() string {

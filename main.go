@@ -31,7 +31,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/rokwire/core-auth-library-go/v2/authservice"
 	"github.com/rokwire/core-auth-library-go/v2/sigauth"
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 var (
@@ -48,7 +48,10 @@ func main() {
 
 	serviceID := "lms"
 
-	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties(serviceID + "/version")}}
+	loggerOpts := logs.LoggerOpts{
+		SuppressRequests: logs.NewStandardHealthCheckHTTPRequestProperties(serviceID + "/version"),
+		SensitiveHeaders: []string{"Internal-Api-Key"},
+	}
 	logger := logs.NewLogger(serviceID, &loggerOpts)
 
 	port := getEnvKey("LMS_PORT", true)
