@@ -31,8 +31,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rokwire/logging-library-go/errors"
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/v2/errors"
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 // Adapter implements the Provider interface

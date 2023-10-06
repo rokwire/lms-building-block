@@ -20,11 +20,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/rokwire/core-auth-library-go/v2/authorization"
-	"github.com/rokwire/core-auth-library-go/v2/authservice"
-	"github.com/rokwire/core-auth-library-go/v2/tokenauth"
-	"github.com/rokwire/logging-library-go/errors"
-	"github.com/rokwire/logging-library-go/logutils"
+	"github.com/rokwire/core-auth-library-go/v3/authorization"
+	"github.com/rokwire/core-auth-library-go/v3/authservice"
+	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
+	"github.com/rokwire/logging-library-go/v2/errors"
+	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 // CoreAuth implementation
@@ -47,7 +47,7 @@ func NewCoreAuth(app *core.Application, config *model.Config) *CoreAuth {
 		log.Fatalf("Error initializing remote service registration loader: %v", err)
 	}
 
-	serviceRegManager, err := authservice.NewTestServiceRegManager(&authService, serviceRegLoader)
+	serviceRegManager, err := authservice.NewTestServiceRegManager(&authService, serviceRegLoader, false)
 	if err != nil {
 		log.Fatalf("Error initializing service registration manager: %v", err)
 	}
@@ -64,7 +64,7 @@ func NewCoreAuth(app *core.Application, config *model.Config) *CoreAuth {
 
 // Check checks the request contains a valid Core access token
 func (ca CoreAuth) Check(r *http.Request) (*tokenauth.Claims, error) {
-	claims, err := ca.tokenAuth.CheckRequestTokens(r)
+	claims, err := ca.tokenAuth.CheckRequestToken(r)
 	if err != nil || claims == nil {
 		log.Printf("error validating token: %s", err)
 		return nil, err
@@ -81,7 +81,7 @@ func (ca CoreAuth) Check(r *http.Request) (*tokenauth.Claims, error) {
 
 // AdminCheck checks the request contains a valid admin Core access token with the appropriate permissions
 func (ca CoreAuth) AdminCheck(r *http.Request) (*tokenauth.Claims, error) {
-	claims, err := ca.tokenAuth.CheckRequestTokens(r)
+	claims, err := ca.tokenAuth.CheckRequestToken(r)
 	if err != nil || claims == nil {
 		log.Printf("error validate token: %s", err)
 		return nil, err

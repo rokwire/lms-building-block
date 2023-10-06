@@ -20,7 +20,6 @@ import (
 	"lms/core"
 	"lms/core/model"
 	"lms/driver/web/rest"
-	"lms/utils"
 	"log"
 	"net/http"
 
@@ -30,9 +29,10 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers"
 
-	"github.com/rokwire/core-auth-library-go/v2/tokenauth"
-	"github.com/rokwire/logging-library-go/logs"
-	"github.com/rokwire/logging-library-go/logutils"
+	"github.com/rokwire/core-auth-library-go/v3/authservice"
+	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
+	"github.com/rokwire/logging-library-go/v2/logs"
+	"github.com/rokwire/logging-library-go/v2/logutils"
 
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -76,6 +76,8 @@ type Adapter struct {
 // @in header
 // @name GROUP
 
+type handlerFunc = func(*logs.Log, *http.Request, *tokenauth.Claims) logs.HTTPResponse
+
 // Start starts the module
 func (we Adapter) Start() {
 
@@ -85,30 +87,30 @@ func (we Adapter) Start() {
 	subrouter := router.PathPrefix("/lms").Subrouter()
 	subrouter.PathPrefix("/doc/ui").Handler(we.serveDocUI())
 	subrouter.HandleFunc("/doc", we.serveDoc)
-	subrouter.HandleFunc("/version", we.wrapFunc(we.apisHandler.Version)).Methods("GET")
+	// subrouter.HandleFunc("/version", we.userAuthWrapFunc(we.apisHandler.Version)).Methods("GET")
 
 	// handle apis
 	apiRouter := subrouter.PathPrefix("/api").Subrouter()
 
-	apiRouter.HandleFunc("/courses", we.userAuthWrapFunc(we.apisHandler.GetCourses)).Methods("GET")
-	apiRouter.HandleFunc("/courses/{id}", we.userAuthWrapFunc(we.apisHandler.GetCourse)).Methods("GET")
-	apiRouter.HandleFunc("/courses/{id}/assignment-groups", we.userAuthWrapFunc(we.apisHandler.GetAssignemntGroups)).Methods("GET")
-	apiRouter.HandleFunc("/courses/{id}/users", we.userAuthWrapFunc(we.apisHandler.GetUsers)).Methods("GET")
-	apiRouter.HandleFunc("/users/self", we.userAuthWrapFunc(we.apisHandler.GetCurrentUser)).Methods("GET")
+	apiRouter.HandleFunc("/courses", we.wrapFunc(we.apisHandler.GetCourses, we.auth.client.User)).Methods("GET")
+	apiRouter.HandleFunc("/courses/{id}", we.wrapFunc(we.apisHandler.GetCourse, we.auth.client.User)).Methods("GET")
+	apiRouter.HandleFunc("/courses/{id}/assignment-groups", we.wrapFunc(we.apisHandler.GetAssignemntGroups, we.auth.client.User)).Methods("GET")
+	apiRouter.HandleFunc("/courses/{id}/users", we.wrapFunc(we.apisHandler.GetUsers, we.auth.client.User)).Methods("GET")
+	apiRouter.HandleFunc("/users/self", we.wrapFunc(we.apisHandler.GetCurrentUser, we.auth.client.User)).Methods("GET")
 
 	///admin ///
 	adminRouter := subrouter.PathPrefix("/admin").Subrouter()
 
-	adminRouter.HandleFunc("/nudges-config", we.adminAuthWrapFunc(we.adminApisHandler.GetNudgesConfig)).Methods("GET")
-	adminRouter.HandleFunc("/nudges-config", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudgesConfig)).Methods("PUT")
-	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.GetNudges)).Methods("GET")
-	adminRouter.HandleFunc("/nudges", we.adminAuthWrapFunc(we.adminApisHandler.CreateNudge)).Methods("POST")
-	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.UpdateNudge)).Methods("PUT")
-	adminRouter.HandleFunc("/nudges/{id}", we.adminAuthWrapFunc(we.adminApisHandler.DeleteNudge)).Methods("DELETE")
-	adminRouter.HandleFunc("/sent-nudges", we.adminAuthWrapFunc(we.adminApisHandler.FindSentNudges)).Methods("GET")
-	adminRouter.HandleFunc("/sent-nudges", we.adminAuthWrapFunc(we.adminApisHandler.DeleteSentNudges)).Methods("DELETE")
-	adminRouter.HandleFunc("/test-sent-nudges", we.adminAuthWrapFunc(we.adminApisHandler.ClearTestSentNudges)).Methods("DELETE")
-	adminRouter.HandleFunc("/nudges-processes", we.adminAuthWrapFunc(we.adminApisHandler.FindNudgesProcesses)).Methods("GET")
+	adminRouter.HandleFunc("/nudges-config", we.wrapFunc(we.adminApisHandler.GetNudgesConfig, we.auth.admin.Permissions)).Methods("GET")
+	adminRouter.HandleFunc("/nudges-config", we.wrapFunc(we.adminApisHandler.UpdateNudgesConfig, we.auth.admin.Permissions)).Methods("PUT")
+	adminRouter.HandleFunc("/nudges", we.wrapFunc(we.adminApisHandler.GetNudges, we.auth.admin.Permissions)).Methods("GET")
+	adminRouter.HandleFunc("/nudges", we.wrapFunc(we.adminApisHandler.CreateNudge, we.auth.admin.Permissions)).Methods("POST")
+	adminRouter.HandleFunc("/nudges/{id}", we.wrapFunc(we.adminApisHandler.UpdateNudge, we.auth.admin.Permissions)).Methods("PUT")
+	adminRouter.HandleFunc("/nudges/{id}", we.wrapFunc(we.adminApisHandler.DeleteNudge, we.auth.admin.Permissions)).Methods("DELETE")
+	adminRouter.HandleFunc("/sent-nudges", we.wrapFunc(we.adminApisHandler.FindSentNudges, we.auth.admin.Permissions)).Methods("GET")
+	adminRouter.HandleFunc("/sent-nudges", we.wrapFunc(we.adminApisHandler.DeleteSentNudges, we.auth.admin.Permissions)).Methods("DELETE")
+	adminRouter.HandleFunc("/test-sent-nudges", we.wrapFunc(we.adminApisHandler.ClearTestSentNudges, we.auth.admin.Permissions)).Methods("DELETE")
+	adminRouter.HandleFunc("/nudges-processes", we.wrapFunc(we.adminApisHandler.FindNudgesProcesses, we.auth.admin.Permissions)).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":"+we.port, router))
 }
@@ -123,131 +125,134 @@ func (we Adapter) serveDocUI() http.Handler {
 	return httpSwagger.Handler(httpSwagger.URL(url))
 }
 
-func (we Adapter) wrapFunc(handler http.HandlerFunc) http.HandlerFunc {
+func (a Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		utils.LogRequest(req)
-
-		handler(w, req)
-	}
-}
-
-type userAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
-
-func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		logObj := we.logger.NewRequestLog(req)
+		logObj := a.logger.NewRequestLog(req)
 
 		logObj.RequestReceived()
 
-		// validate request
-		_, err := we.validateRequest(req)
-		if err != nil {
-			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
-			return
-		}
-
-		claims, err := we.auth.coreAuth.Check(req)
-		if err != nil {
-			if claims == nil {
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		var response logs.HTTPResponse
+		if authorization != nil {
+			responseStatus, claims, err := authorization.Check(req)
+			if err != nil {
+				logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.ActionValidate, logutils.TypeRequest, nil, err, responseStatus, true))
 				return
 			}
 
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
-		}
-
-		// process the request
-		response := handler(logObj, claims, w, req)
-
-		/// return response
-		// headers
-		if len(response.Headers) > 0 {
-			for key, values := range response.Headers {
-				if len(values) > 0 {
-					for _, value := range values {
-						w.Header().Add(key, value)
-					}
-				}
+			if claims != nil {
+				logObj.SetContext("account_id", claims.Subject)
 			}
-		}
-		// response code
-		w.WriteHeader(response.ResponseCode)
-		// body
-		if len(response.Body) > 0 {
-			w.Write(response.Body)
-		}
-
-		logObj.RequestComplete()
-	}
-}
-
-type adminAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
-
-func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		logObj := we.logger.NewRequestLog(req)
-
-		logObj.RequestReceived()
-
-		// validate request
-		_, err := we.validateRequest(req)
-		if err != nil {
-			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
-			return
-		}
-
-		claims, err := we.auth.coreAuth.AdminCheck(req)
-		if err != nil {
-			if claims == nil {
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				return
-			}
-
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
-		}
-
-		// process the request
-		response := handler(logObj, claims, w, req)
-
-		/// return response
-		// headers
-		if len(response.Headers) > 0 {
-			for key, values := range response.Headers {
-				if len(values) > 0 {
-					for _, value := range values {
-						w.Header().Add(key, value)
-					}
-				}
-			}
-		}
-		// response code
-		w.WriteHeader(response.ResponseCode)
-		// body
-		if len(response.Body) > 0 {
-			w.Write(response.Body)
-		}
-
-		logObj.RequestComplete()
-	}
-}
-
-type internalAPIKeyAuthFunc = func(http.ResponseWriter, *http.Request)
-
-func (we Adapter) internalAPIKeyAuthWrapFunc(handler internalAPIKeyAuthFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		utils.LogRequest(req)
-
-		apiKeyAuthenticated := we.auth.internalAuth.check(w, req)
-
-		if apiKeyAuthenticated {
-			handler(w, req)
+			response = handler(logObj, req, claims)
 		} else {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			response = handler(logObj, req, nil)
 		}
+
+		logObj.SendHTTPResponse(w, response)
+		logObj.RequestComplete()
 	}
 }
+
+// type userAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HTTPResponse
+
+// func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, req *http.Request) {
+// 		logObj := we.logger.NewRequestLog(req)
+
+// 		logObj.RequestReceived()
+
+// 		// validate request
+// 		_, err := we.validateRequest(req)
+// 		if err != nil {
+// 			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
+// 			return
+// 		}
+
+// 		claims, err := we.auth.coreAuth.Check(req)
+// 		if err != nil {
+// 			if claims == nil {
+// 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+// 				return
+// 			}
+
+// 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+// 			return
+// 		}
+
+// 		// process the request
+// 		response := handler(logObj, claims, w, req)
+
+// 		/// return response
+// 		// headers
+// 		if len(response.Headers) > 0 {
+// 			for key, values := range response.Headers {
+// 				if len(values) > 0 {
+// 					for _, value := range values {
+// 						w.Header().Add(key, value)
+// 					}
+// 				}
+// 			}
+// 		}
+// 		// response code
+// 		w.WriteHeader(response.ResponseCode)
+// 		// body
+// 		if len(response.Body) > 0 {
+// 			w.Write(response.Body)
+// 		}
+
+// 		logObj.RequestComplete()
+// 	}
+// }
+
+// type adminAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
+
+// func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, req *http.Request) {
+// 		logObj := we.logger.NewRequestLog(req)
+
+// 		logObj.RequestReceived()
+
+// 		// validate request
+// 		_, err := we.validateRequest(req)
+// 		if err != nil {
+// 			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.ActionValidate, logutils.TypeRequest, nil, err, 500, true))
+// 			return
+// 		}
+
+// 		claims, err := we.auth.coreAuth.AdminCheck(req)
+// 		if err != nil {
+// 			if claims == nil {
+// 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+// 				return
+// 			}
+
+// 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+// 			return
+// 		}
+
+// 		// process the request
+// 		response := handler(logObj, claims, w, req)
+
+// 		/// return response
+// 		// headers
+// 		if len(response.Headers) > 0 {
+// 			for key, values := range response.Headers {
+// 				if len(values) > 0 {
+// 					for _, value := range values {
+// 						w.Header().Add(key, value)
+// 					}
+// 				}
+// 			}
+// 		}
+// 		// response code
+// 		w.WriteHeader(response.ResponseCode)
+// 		// body
+// 		if len(response.Body) > 0 {
+// 			w.Write(response.Body)
+// 		}
+
+// 		logObj.RequestComplete()
+// 	}
+// }
 
 func (we Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
 	route, pathParams, err := we.openAPIRouter.FindRoute(req)
@@ -273,7 +278,7 @@ func (we Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestVal
 }
 
 // NewWebAdapter creates new WebAdapter instance
-func NewWebAdapter(port string, app *core.Application, config *model.Config, logger *logs.Logger) Adapter {
+func NewWebAdapter(port string, app *core.Application, config *model.Config, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
 	//openAPI doc
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile("driver/web/docs/gen/def.yaml")
@@ -300,7 +305,7 @@ func NewWebAdapter(port string, app *core.Application, config *model.Config, log
 		logger.Fatalf("error on openapi3 gorillamux router - %s", err.Error())
 	}
 
-	auth := NewAuth(app, config)
+	auth, err := NewAuth(serviceRegManager, app, config)
 
 	apisHandler := rest.NewApisHandler(app, config)
 	adminApisHandler := rest.NewAdminApisHandler(app, config)

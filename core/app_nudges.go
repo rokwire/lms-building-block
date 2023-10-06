@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 type nudgesLogic struct {

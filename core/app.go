@@ -15,10 +15,11 @@
 package core
 
 import (
+	"lms/core/interfaces"
 	cacheadapter "lms/driven/cache"
 	"lms/driven/corebb"
 
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 // Application represents the core application code based on hexagonal architecture
@@ -26,14 +27,14 @@ type Application struct {
 	version string
 	build   string
 
-	Services       Services       //expose to the drivers adapters
-	Administration Administration //expose to the drivers adapters
+	Services       interfaces.Services       //expose to the drivers adapters
+	Administration interfaces.Administration //expose to the drivers adapters
 
 	provider        Provider
 	groupsBB        GroupsBB
 	notificationsBB NotificationsBB
 
-	storage      Storage
+	storage      interfaces.Storage
 	cacheAdapter *cacheadapter.CacheAdapter
 	core         *corebb.Adapter
 
@@ -51,7 +52,7 @@ func (app *Application) Start() {
 }
 
 // NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, provider Provider,
+func NewApplication(version string, build string, storage interfaces.Storage, provider Provider,
 	groupsBB GroupsBB, notificationsBB NotificationsBB,
 	cacheadapter *cacheadapter.CacheAdapter, coreBB *corebb.Adapter, logger *logs.Logger) *Application {
 
