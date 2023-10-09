@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"lms/core/model"
 	"log"
 	"net/http"
@@ -61,7 +60,7 @@ func (a *Adapter) RetrieveCoreUserAccount(token string) (*model.CoreAccount, err
 			return nil, fmt.Errorf("RetrieveCoreUserAccount: error with response code != 200")
 		}
 
-		data, err := ioutil.ReadAll(resp.Body)
+		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Printf("RetrieveCoreUserAccount: unable to read json: %s", err)
 			return nil, fmt.Errorf("RetrieveCoreUserAccount: unable to parse json: %s", err)
@@ -101,7 +100,7 @@ func (a *Adapter) RetrieveCoreServices(serviceIDs []string) ([]model.CoreService
 			return nil, fmt.Errorf("RetrieveCoreUserAccount: error with response code != 200")
 		}
 
-		data, err := ioutil.ReadAll(resp.Body)
+		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Printf("RetrieveCoreServices: unable to read json: %s", err)
 			return nil, fmt.Errorf("RetrieveCoreUserAccount: unable to parse json: %s", err)
@@ -175,7 +174,7 @@ func (a *Adapter) makeRequest(method string, url string, body io.Reader) ([]byte
 		return nil, fmt.Errorf("gateway adapter: error with response code != 200 but %d", resp.StatusCode)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("gateway adapter: unable to read json: %s", err)
 		return nil, fmt.Errorf("gateway adapter: unable to parse json: %s", err)

@@ -16,7 +16,6 @@ package rest
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"lms/core"
 	"lms/core/model"
 	"net/http"
@@ -55,13 +54,8 @@ func (h AdminApisHandler) GetNudgesConfig(l *logs.Log, r *http.Request, claims *
 
 // UpdateNudgesConfig updates the nudges config
 func (h AdminApisHandler) UpdateNudgesConfig(l *logs.Log, r *http.Request, claims *tokenauth.Claims) logs.HTTPResponse {
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return l.HTTPResponseErrorAction(logutils.ActionRead, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, false)
-	}
-
 	var requestData Def.NudgesConfig
-	err = json.Unmarshal(data, &requestData)
+	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		return l.HTTPResponseErrorAction(logutils.ActionUnmarshal, "nudges config", nil, err, http.StatusBadRequest, true)
 	}
@@ -92,12 +86,8 @@ func (h AdminApisHandler) GetNudges(l *logs.Log, r *http.Request, claims *tokena
 
 // CreateNudge creates nudge
 func (h AdminApisHandler) CreateNudge(l *logs.Log, r *http.Request, claims *tokenauth.Claims) logs.HTTPResponse {
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return l.HTTPResponseErrorAction(logutils.ActionRead, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, false)
-	}
 	var requestData Def.AdminReqCreateNudge
-	err = json.Unmarshal(data, &requestData)
+	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		return l.HTTPResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}
@@ -139,12 +129,8 @@ func (h AdminApisHandler) UpdateNudge(l *logs.Log, r *http.Request, claims *toke
 		return l.HTTPResponseErrorData(logutils.StatusMissing, logutils.TypeQueryParam, logutils.StringArgs("id"), nil, http.StatusBadRequest, false)
 	}
 
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return l.HTTPResponseErrorAction(logutils.ActionRead, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, false)
-	}
 	var requestData adminReqUpdateNudge
-	err = json.Unmarshal(data, &requestData)
+	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		return l.HTTPResponseErrorAction(logutils.ActionUnmarshal, "", nil, err, http.StatusBadRequest, true)
 	}

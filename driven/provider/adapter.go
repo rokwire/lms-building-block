@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"lms/core/model"
 	"log"
 	"net/http"
@@ -296,8 +295,8 @@ func (a *Adapter) cacheUser(netID string, userID string) error {
 		return err
 	}
 	//store it
-	user := User{ID: userID, NetID: netID, User: *loadedUser, SyncDate: time.Now()}
-	err = a.db.insertUser(user)
+	providerUser := User{ID: userID, NetID: netID, User: *loadedUser, SyncDate: time.Now()}
+	err = a.db.insertUser(providerUser)
 	if err != nil {
 		a.logger.Errorf("error inserting user - %s", netID)
 		return err
@@ -780,7 +779,7 @@ func (a *Adapter) getAssignments(courseID int, userID string, includeSubmission 
 }
 
 // GetCalendarEvents gives the events of the user
-func (a *Adapter) GetCalendarEvents(netID string, userID int, courseID int, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error) {
+func (a *Adapter) GetCalendarEvents(netID string, providerUserID int, courseID int, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error) {
 	// load the calendar events
 
 	//params
@@ -791,7 +790,7 @@ func (a *Adapter) GetCalendarEvents(netID string, userID int, courseID int, star
 	queryParamsItems["end_date"] = []string{endAt.Format(time.RFC3339)}
 
 	contextCodes := []string{}
-	contextCodes = append(contextCodes, fmt.Sprintf("user_%d", userID))
+	contextCodes = append(contextCodes, fmt.Sprintf("user_%d", providerUserID))
 	contextCodes = append(contextCodes, fmt.Sprintf("course_%d", courseID))
 	queryParamsItems["context_codes[]"] = contextCodes
 
@@ -837,7 +836,7 @@ func (a *Adapter) constructQueryParams(items map[string][]string) string {
 
 func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method string) ([]byte, error) {
 	//body
-	requestBody, err := ioutil.ReadAll(body)
+	requestBody, err := io.ReadAll(body)
 	if err != nil {
 		log.Printf("error getting body - %s", pathAndParams)
 		return nil, err
@@ -864,7 +863,7 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 	defer resp.Body.Close()
 
 	//return the response
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("error converting response body - %s", pathAndParams)
 		return nil, err
