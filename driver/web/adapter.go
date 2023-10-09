@@ -125,9 +125,9 @@ func (we Adapter) serveDocUI() http.Handler {
 	return httpSwagger.Handler(httpSwagger.URL(url))
 }
 
-func (a Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler) http.HandlerFunc {
+func (we Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		logObj := a.logger.NewRequestLog(req)
+		logObj := we.logger.NewRequestLog(req)
 
 		logObj.RequestReceived()
 

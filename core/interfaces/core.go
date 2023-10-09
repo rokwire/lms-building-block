@@ -12,6 +12,9 @@ package interfaces
 
 import (
 	"lms/core/model"
+	"lms/driven/groups"
+	"lms/driven/notifications"
+	"lms/driven/provider"
 	"time"
 
 	"github.com/rokwire/logging-library-go/v2/logs"
@@ -59,12 +62,12 @@ type Provider interface {
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
 
-	FindUsersByCanvasUserID(canvasUserIds []int) ([]ProviderUser, error)
+	FindUsersByCanvasUserID(canvasUserIds []int) ([]provider.User, error)
 
 	CacheCommonData(usersIDs map[string]string) error
-	FindCachedData(usersIDs []string) ([]ProviderUser, error)
-	CacheUserData(user ProviderUser) (*ProviderUser, error)
-	CacheUserCoursesData(user ProviderUser, coursesIDs []int) (*ProviderUser, error)
+	FindCachedData(usersIDs []string) ([]provider.User, error)
+	CacheUserData(user provider.User) (*provider.User, error)
+	CacheUserCoursesData(user provider.User, coursesIDs []int) (*provider.User, error)
 
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)
@@ -72,63 +75,14 @@ type Provider interface {
 	GetCalendarEvents(netID string, providerUserID int, courseID int, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
 }
 
-// ProviderUser cache entity
-type ProviderUser struct {
-	ID       string     `bson:"_id"`    //core BB account id
-	NetID    string     `bson:"net_id"` //core BB external system id
-	User     model.User `bson:"user"`
-	SyncDate time.Time  `bson:"sync_date"`
-
-	Courses *UserCourses `bson:"courses"`
-}
-
-// UserCourses cache entity
-type UserCourses struct {
-	Data     []UserCourse `bson:"data"`
-	SyncDate time.Time    `bson:"sync_date"`
-}
-
-// UserCourse cache entity
-type UserCourse struct {
-	Data        model.Course       `bson:"data"`
-	Assignments []CourseAssignment `bson:"assignments"`
-	SyncDate    time.Time          `bson:"sync_date"`
-}
-
-// CourseAssignment cache entity
-type CourseAssignment struct {
-	Data       model.Assignment `bson:"data"`
-	Submission *Submission      `bson:"submission"`
-	SyncDate   time.Time        `bson:"sync_date"`
-}
-
-// Submission cache entity
-type Submission struct {
-	Data     *model.Submission `bson:"data"`
-	SyncDate time.Time         `bson:"sync_date"`
-}
-
 // GroupsBB interface for the Groups building block communication
 type GroupsBB interface {
-	GetUsers(groupName string, offset int, limit int) ([]GroupsBBUser, error)
-}
-
-// GroupsBBUser entity
-type GroupsBBUser struct {
-	UserID string `json:"user_id"`
-	NetID  string `json:"net_id"`
-	Name   string `json:"name"`
+	GetUsers(groupName string, offset int, limit int) ([]groups.User, error)
 }
 
 // NotificationsBB interface for the Notifications building block communication
 type NotificationsBB interface {
-	SendNotifications(recipients []Recipient, text string, body string, data map[string]string) error
-}
-
-// Recipient entity
-type Recipient struct {
-	UserID string `json:"user_id"`
-	Name   string `json:"name"`
+	SendNotifications(recipients []notifications.Recipient, text string, body string, data map[string]string) error
 }
 
 // BBs exposes Building Block APIs for the driver adapters

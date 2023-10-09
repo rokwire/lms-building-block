@@ -20,8 +20,12 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"lms/core/interfaces"
 	"lms/core/model"
 	"lms/driven/corebb"
+	"lms/driven/groups"
+	"lms/driven/notifications"
+	"lms/driven/provider"
 	"lms/utils"
 	"log"
 	"strings"
@@ -34,12 +38,12 @@ import (
 type nudgesLogic struct {
 	logger *logs.Logger
 
-	provider        Provider
-	groupsBB        GroupsBB
-	notificationsBB NotificationsBB
+	provider        interfaces.Provider
+	groupsBB        interfaces.GroupsBB
+	notificationsBB interfaces.NotificationsBB
 	core            *corebb.Adapter
 
-	storage Storage
+	storage interfaces.Storage
 
 	//nudges timer
 	dailyNudgesTimer *time.Timer
@@ -404,7 +408,7 @@ func (n nudgesLogic) processPhase0(processID string, nudges []model.Nudge) (*int
 	return &blocksSize, nil
 }
 
-func (n nudgesLogic) addNudgeIDToUsersForGroupsBBGroup(nudgeID string, uniqueUsers map[string][]interface{}, groupsBBUsers []GroupsBBUser) error {
+func (n nudgesLogic) addNudgeIDToUsersForGroupsBBGroup(nudgeID string, uniqueUsers map[string][]interface{}, groupsBBUsers []groups.User) error {
 	for _, groupBBUser := range groupsBBUsers {
 		nudgesIDs := uniqueUsers[groupBBUser.UserID][1].(map[string]bool)
 		nudgesIDs[nudgeID] = true
@@ -430,8 +434,8 @@ func (n nudgesLogic) addNudgeIDToUsersForCanvasCourse(nudgeID string, uniqueUser
 	return nil
 }
 
-func (n nudgesLogic) loadGroupsBBUsers() ([]GroupsBBUser, error) {
-	groupsBBUsers := []GroupsBBUser{}
+func (n nudgesLogic) loadGroupsBBUsers() ([]groups.User, error) {
+	groupsBBUsers := []groups.User{}
 
 	groupName := n.getGroupName()
 	offset := 0
@@ -512,7 +516,7 @@ func (n nudgesLogic) loadCanvasCoursesUsers(nudges []model.Nudge) (map[int][]mod
 	return result, nil
 }
 
-func (n nudgesLogic) createBlock(processID string, curentBlock int, users []GroupsBBUser) model.Block {
+func (n nudgesLogic) createBlock(processID string, curentBlock int, users []groups.User) model.Block {
 	items := []model.BlockItem{}
 	for _, user := range users {
 		if len(user.NetID) == 0 {
@@ -630,7 +634,7 @@ func (n nudgesLogic) findNudge(allNudges []model.Nudge, nudgeID string) *model.N
 	return nil
 }
 
-func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]ProviderUser, map[string][]string, error) {
+func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]provider.User, map[string][]string, error) {
 	//get data
 	block, err := n.storage.FindBlock(processID, blockNumber)
 	if err != nil {
@@ -639,7 +643,7 @@ func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]Provider
 	}
 	items := block.Items
 	if len(items) == 0 {
-		return []ProviderUser{}, map[string][]string{}, nil
+		return []provider.User{}, map[string][]string{}, nil
 	}
 
 	//get the cached data from the block + prepare the users nudges
@@ -658,7 +662,7 @@ func (n nudgesLogic) getBlockData(processID string, blockNumber int) ([]Provider
 }
 
 // returns the net ids for all user who have it
-func (n nudgesLogic) prepareUsers(users []GroupsBBUser) map[string]string {
+func (n nudgesLogic) prepareUsers(users []groups.User) map[string]string {
 	result := map[string]string{}
 	for _, user := range users {
 		if len(user.NetID) > 0 {
@@ -675,7 +679,7 @@ func (n nudgesLogic) getGroupName() string {
 	return n.config.TestGroupName //test mode
 }
 
-func (n nudgesLogic) processUser(user ProviderUser, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
+func (n nudgesLogic) processUser(user provider.User, nudges []model.Nudge, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
 	n.logger.Infof("\tprocess %s, %d nudges count", user.NetID, len(nudges))
 
 	for _, nudge := range nudges {
@@ -691,7 +695,7 @@ func (n nudgesLogic) processUser(user ProviderUser, nudges []model.Nudge, memory
 	return memoryData, nil
 }
 
-func (n nudgesLogic) processNudge(nudge model.Nudge, user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, *ProviderUser, error) {
+func (n nudgesLogic) processNudge(nudge model.Nudge, user provider.User, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, *provider.User, error) {
 	n.logger.Infof("\t\tprocessNudge - %s - %s", user.NetID, nudge.ID)
 
 	switch nudge.ID {
@@ -762,7 +766,7 @@ func (n nudgesLogic) prepareNotificationData(deepLink string) map[string]string 
 
 // last_login nudge
 
-func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user ProviderUser) error {
+func (n nudgesLogic) processLastLoginNudgePerUser(nudge model.Nudge, user provider.User) error {
 	n.logger.Infof("\t\t\tprocessLastLoginNudgePerUser - %s", nudge.ID)
 
 	var err error
@@ -839,7 +843,7 @@ func (n nudgesLogic) lastLoginNeedsToSend(hours float64, now time.Time, lastLogi
 	return differenceInHours > hours
 }
 
-func (n nudgesLogic) lastLoginRefreshCache(user ProviderUser) (*time.Time, error) {
+func (n nudgesLogic) lastLoginRefreshCache(user provider.User) (*time.Time, error) {
 	//cache the user data
 	updatedUser, err := n.provider.CacheUserData(user)
 	if err != nil {
@@ -851,7 +855,7 @@ func (n nudgesLogic) lastLoginRefreshCache(user ProviderUser) (*time.Time, error
 	return updatedUser.User.LastLogin, nil
 }
 
-func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user ProviderUser,
+func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user provider.User,
 	lastLogin time.Time, hours float64) error {
 	n.logger.Infof("\t\t\t\tsendLastLoginNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
@@ -865,11 +869,11 @@ func (n nudgesLogic) sendLastLoginNudgeForUser(nudge model.Nudge, user ProviderU
 	}
 
 	//sending in another thread as it happen very slowly
-	go func(user ProviderUser) {
+	go func(user provider.User) {
 		//send push notification
-		recipient := Recipient{UserID: user.ID, Name: ""}
+		recipient := notifications.Recipient{UserID: user.ID, Name: ""}
 		data := n.prepareNotificationData(nudge.DeepLink)
-		err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body, data)
+		err := n.notificationsBB.SendNotifications([]notifications.Recipient{recipient}, nudge.Name, nudge.Body, data)
 		if err != nil {
 			log.Printf("\t\t\t\terror sending notification for %s - %s", user.NetID, err)
 			return
@@ -899,7 +903,7 @@ func (n nudgesLogic) createSentNudge(nudgeID string, userID string, netID string
 
 // missed_assignemnt nudge
 
-func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user ProviderUser) (*ProviderUser, error) {
+func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user provider.User) (*provider.User, error) {
 	n.logger.Infof("\t\t\tprocessMissedAssignmentNudgePerUser - %s", nudge.ID)
 
 	//fill the cache if empty
@@ -925,7 +929,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 	//we can use the cache data
 	notValid, valid := n.maCheckDataValidity(missedAssignments)
 
-	refreshedData := []CourseAssignment{}
+	refreshedData := []provider.CourseAssignment{}
 	if len(notValid) > 0 {
 		n.logger.Infof("\t\t\twe have old data, so need to refresh it - %s", user.NetID)
 		updatedData, err := n.provider.CacheUserCoursesData(user, notValid)
@@ -971,7 +975,7 @@ func (n nudgesLogic) processMissedAssignmentNudgePerUser(nudge model.Nudge, user
 	return &user, nil
 }
 
-func (n nudgesLogic) maMergeData(part1 []CourseAssignment, part2 []CourseAssignment) []model.Assignment {
+func (n nudgesLogic) maMergeData(part1 []provider.CourseAssignment, part2 []provider.CourseAssignment) []model.Assignment {
 	result := []model.Assignment{}
 
 	for _, c := range part1 {
@@ -985,9 +989,9 @@ func (n nudgesLogic) maMergeData(part1 []CourseAssignment, part2 []CourseAssignm
 	return result
 }
 
-func (n nudgesLogic) maCheckDataValidity(missedAssignments []CourseAssignment) ([]int, []CourseAssignment) {
+func (n nudgesLogic) maCheckDataValidity(missedAssignments []provider.CourseAssignment) ([]int, []provider.CourseAssignment) {
 	notValidMap := map[int]bool{}
-	valid := []CourseAssignment{}
+	valid := []provider.CourseAssignment{}
 
 	now := time.Now()
 	for _, ma := range missedAssignments {
@@ -1013,13 +1017,13 @@ func (n nudgesLogic) maCheckDataValidity(missedAssignments []CourseAssignment) (
 }
 
 // if coursesIDs is empty then check for all courses
-func (n nudgesLogic) getMissedAssignmentsData(user ProviderUser, coursesIDs []int) []CourseAssignment {
+func (n nudgesLogic) getMissedAssignmentsData(user provider.User, coursesIDs []int) []provider.CourseAssignment {
 	userCourses := user.Courses
 	if userCourses == nil || len(userCourses.Data) == 0 {
-		return []CourseAssignment{}
+		return []provider.CourseAssignment{}
 	}
 
-	result := []CourseAssignment{}
+	result := []provider.CourseAssignment{}
 	for _, uc := range userCourses.Data {
 
 		if len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID) {
@@ -1038,7 +1042,7 @@ func (n nudgesLogic) getMissedAssignmentsData(user ProviderUser, coursesIDs []in
 	return result
 }
 
-func (n nudgesLogic) isAssignmentMissed(ca CourseAssignment) bool {
+func (n nudgesLogic) isAssignmentMissed(ca provider.CourseAssignment) bool {
 	assignmentData := ca.Data
 	assignmentDueAt := assignmentData.DueAt
 	if assignmentDueAt == nil {
@@ -1055,7 +1059,7 @@ func (n nudgesLogic) isAssignmentMissed(ca CourseAssignment) bool {
 			(submissionData != nil && submissionData.SubmittedAt != nil && submissionData.SubmittedAt.After(*assignmentData.DueAt)))
 }
 
-func (n nudgesLogic) maFillCacheIfEmpty(user ProviderUser) (*ProviderUser, error) {
+func (n nudgesLogic) maFillCacheIfEmpty(user provider.User) (*provider.User, error) {
 	//get the courses we need to load assignments data
 	coursesIDs := []int{}
 
@@ -1092,7 +1096,7 @@ func (n nudgesLogic) maFillCacheIfEmpty(user ProviderUser) (*ProviderUser, error
 	return updatedData, nil
 }
 
-func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user ProviderUser, assignment model.Assignment, hours float64) error {
+func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user provider.User, assignment model.Assignment, hours float64) error {
 	n.logger.Infof("\t\t\tprocessMissedAssignment - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before
@@ -1120,7 +1124,7 @@ func (n nudgesLogic) processMissedAssignment(nudge model.Nudge, user ProviderUse
 	return nil
 }
 
-func (n nudgesLogic) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
+func (n nudgesLogic) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user provider.User,
 	assignment model.Assignment, criteriaHash uint32) error {
 	n.logger.Infof("\t\t\tsendMissedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
@@ -1133,14 +1137,14 @@ func (n nudgesLogic) sendMissedAssignmentNudgeForUser(nudge model.Nudge, user Pr
 	}
 
 	//sending in another thread as it happen very slowly
-	go func(user ProviderUser) {
+	go func(user provider.User) {
 
 		//send push notification
-		recipient := Recipient{UserID: user.ID, Name: ""}
+		recipient := notifications.Recipient{UserID: user.ID, Name: ""}
 		body := fmt.Sprintf(nudge.Body, assignment.Name)
 		deepLink := fmt.Sprintf(nudge.DeepLink, assignment.CourseID, assignment.ID)
 		data := n.prepareNotificationData(deepLink)
-		err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
+		err := n.notificationsBB.SendNotifications([]notifications.Recipient{recipient}, nudge.Name, body, data)
 		if err != nil {
 			n.logger.Debugf("\t\t\terror sending notification for %s - %s", user.ID, err)
 			return
@@ -1182,7 +1186,7 @@ func (n nudgesLogic) findMissedAssignments(hours float64, now time.Time, assignm
 
 // completed_assignment_early nudge
 
-func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user ProviderUser, lateCompletion bool) (*ProviderUser, error) {
+func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nudge, user provider.User, lateCompletion bool) (*provider.User, error) {
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarlyNudgePerUser - %s", nudge.ID)
 
 	// find the early completion candidate assignments
@@ -1224,7 +1228,7 @@ func (n nudgesLogic) processCompletedAssignmentEarlyNudgePerUser(nudge model.Nud
 	return &user, nil
 }
 
-func (n nudgesLogic) ecIsEarlyCompleted(assignment CourseAssignment, hours float64) bool {
+func (n nudgesLogic) ecIsEarlyCompleted(assignment provider.CourseAssignment, hours float64) bool {
 	submission := assignment.Submission
 	if submission == nil {
 		return false
@@ -1247,7 +1251,7 @@ func (n nudgesLogic) ecIsEarlyCompleted(assignment CourseAssignment, hours float
 	return difference > int64(hoursInSecs)
 }
 
-func (n nudgesLogic) ecIsLateCompleted(assignment CourseAssignment) bool {
+func (n nudgesLogic) ecIsLateCompleted(assignment provider.CourseAssignment) bool {
 	submission := assignment.Submission
 	if submission == nil {
 		return false
@@ -1267,14 +1271,14 @@ func (n nudgesLogic) ecIsLateCompleted(assignment CourseAssignment) bool {
 	return false
 }
 
-func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssignment {
+func (n nudgesLogic) ecFindCandidateAssignments(user provider.User) []provider.CourseAssignment {
 	userCourses := user.Courses
 	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
-		return []CourseAssignment{}
+		return []provider.CourseAssignment{}
 	}
 	userCoursesData := userCourses.Data
 
-	result := []CourseAssignment{}
+	result := []provider.CourseAssignment{}
 	now := time.Now()
 	for _, uc := range userCoursesData {
 		assignments := uc.Assignments
@@ -1295,8 +1299,8 @@ func (n nudgesLogic) ecFindCandidateAssignments(user ProviderUser) []CourseAssig
 	return result
 }
 
-func (n nudgesLogic) ecLoadDataIfNecessary(user ProviderUser, assignments []CourseAssignment) (*ProviderUser, []CourseAssignment, error) {
-	result := []CourseAssignment{}
+func (n nudgesLogic) ecLoadDataIfNecessary(user provider.User, assignments []provider.CourseAssignment) (*provider.User, []provider.CourseAssignment, error) {
+	result := []provider.CourseAssignment{}
 	forLoading := map[int][]int{}
 
 	now := time.Now()
@@ -1365,14 +1369,14 @@ func (n nudgesLogic) ecLoadDataIfNecessary(user ProviderUser, assignments []Cour
 	return &user, result, nil
 }
 
-func (n nudgesLogic) ecFindAssignments(user ProviderUser, assignmentsIDs []int) []CourseAssignment {
+func (n nudgesLogic) ecFindAssignments(user provider.User, assignmentsIDs []int) []provider.CourseAssignment {
 	userCourses := user.Courses
 	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
-		return []CourseAssignment{}
+		return []provider.CourseAssignment{}
 	}
 	userCoursesData := userCourses.Data
 
-	result := []CourseAssignment{}
+	result := []provider.CourseAssignment{}
 	for _, uc := range userCoursesData {
 		assignments := uc.Assignments
 		if len(assignments) > 0 {
@@ -1387,7 +1391,7 @@ func (n nudgesLogic) ecFindAssignments(user ProviderUser, assignmentsIDs []int) 
 	return result
 }
 
-func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user ProviderUser, assignment model.Assignment, hours *float64) error {
+func (n nudgesLogic) processCompletedAssignmentEarly(nudge model.Nudge, user provider.User, assignment model.Assignment, hours *float64) error {
 	n.logger.Infof("\t\t\tprocessCompletedAssignmentEarly - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before
@@ -1426,7 +1430,7 @@ func (n nudgesLogic) generateEarlyCompletedAssignmentHash(assignmentID int, subm
 	return hash
 }
 
-func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user ProviderUser,
+func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge, user provider.User,
 	assignment model.Assignment, hours *float64) error {
 	n.logger.Infof("\t\t\tsendEarlyCompletedAssignmentNudgeForUser - %s - %s", nudge.ID, user.NetID)
 
@@ -1440,12 +1444,12 @@ func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge,
 	}
 
 	//sending in another thread as it happen very slowly
-	go func(user ProviderUser) {
+	go func(user provider.User) {
 		//send push notification
-		recipient := Recipient{UserID: user.ID, Name: ""}
+		recipient := notifications.Recipient{UserID: user.ID, Name: ""}
 		deepLink := fmt.Sprintf(nudge.DeepLink, assignment.CourseID, assignment.ID)
 		data := n.prepareNotificationData(deepLink)
-		err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, nudge.Body, data)
+		err := n.notificationsBB.SendNotifications([]notifications.Recipient{recipient}, nudge.Name, nudge.Body, data)
 		if err != nil {
 			n.logger.Debugf("\t\t\terror sending notification for %s - %s", user.ID, err)
 			return
@@ -1462,7 +1466,7 @@ func (n nudgesLogic) sendEarlyCompletedAssignmentNudgeForUser(nudge model.Nudge,
 
 // calendar_event nudge
 
-func (n nudgesLogic) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
+func (n nudgesLogic) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, user provider.User, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, error) {
 	n.logger.Infof("\t\t\tprocessTodayCalendarEventsNudgePerUser - %s", nudge.ID)
 
 	//get calendar events
@@ -1487,7 +1491,7 @@ func (n nudgesLogic) processTodayCalendarEventsNudgePerUser(nudge model.Nudge, u
 	return memoryData, nil
 }
 
-func (n nudgesLogic) getCalendarEvents(user ProviderUser, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, []model.CalendarEvent, error) {
+func (n nudgesLogic) getCalendarEvents(user provider.User, memoryData map[int][]model.CalendarEvent) (map[int][]model.CalendarEvent, []model.CalendarEvent, error) {
 
 	userCourses := user.Courses
 	if userCourses == nil || userCourses.Data == nil || len(userCourses.Data) == 0 {
@@ -1536,7 +1540,7 @@ func (n nudgesLogic) prepareTodayCalendarEventsDates() (time.Time, time.Time) {
 	return start, end
 }
 
-func (n nudgesLogic) processCalendarEvents(nudge model.Nudge, user ProviderUser, events []model.CalendarEvent) error {
+func (n nudgesLogic) processCalendarEvents(nudge model.Nudge, user provider.User, events []model.CalendarEvent) error {
 	n.logger.Infof("\t\t\tprocessCalendarEvents - %s - %s - %d", nudge.ID, user.NetID, len(events))
 
 	//find unset events
@@ -1559,7 +1563,7 @@ func (n nudgesLogic) processCalendarEvents(nudge model.Nudge, user ProviderUser,
 	return nil
 }
 
-func (n nudgesLogic) findUnsentEvents(nudge model.Nudge, user ProviderUser, events []model.CalendarEvent) ([]model.CalendarEvent, error) {
+func (n nudgesLogic) findUnsentEvents(nudge model.Nudge, user provider.User, events []model.CalendarEvent) ([]model.CalendarEvent, error) {
 	//get hashes for all events
 	hashes := []uint32{}
 	for _, event := range events {
@@ -1596,7 +1600,7 @@ func (n nudgesLogic) isEventSent(event model.CalendarEvent, sentEvents []model.S
 	return false
 }
 
-func (n nudgesLogic) sendCalendareEventNudgeForUsers(nudge model.Nudge, user ProviderUser,
+func (n nudgesLogic) sendCalendareEventNudgeForUsers(nudge model.Nudge, user provider.User,
 	events []model.CalendarEvent) error {
 	n.logger.Infof("\t\t\tsendCalendareEventNudgeForUsers - %s - %s", nudge.ID, user.NetID)
 
@@ -1614,12 +1618,12 @@ func (n nudgesLogic) sendCalendareEventNudgeForUsers(nudge model.Nudge, user Pro
 	}
 
 	//sending in another thread as it happen very slowly
-	go func(user ProviderUser) {
+	go func(user provider.User) {
 		//send push notification
-		recipient := Recipient{UserID: user.ID, Name: ""}
+		recipient := notifications.Recipient{UserID: user.ID, Name: ""}
 		body := n.prepareCalendarEventNudgeBody(nudge, events)
 		data := n.prepareNotificationData(nudge.DeepLink)
-		err := n.notificationsBB.SendNotifications([]Recipient{recipient}, nudge.Name, body, data)
+		err := n.notificationsBB.SendNotifications([]notifications.Recipient{recipient}, nudge.Name, body, data)
 		if err != nil {
 			n.logger.Debugf("\t\t\terror sending notification for %s - %s", user.NetID, err)
 			return
@@ -1651,7 +1655,7 @@ func (n nudgesLogic) generateCalendarEventHash(eventID int) uint32 {
 
 // two_week_before_assignment one_week_before_assignment one_day_before_assignment nudge
 
-func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, user ProviderUser, numberOfDaysInAdvance int) (*ProviderUser, error) {
+func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, user provider.User, numberOfDaysInAdvance int) (*provider.User, error) {
 	n.logger.Infof("\t\t\tprocessTwoWeekBeforeDueDatePerUser - %s", nudge.ID)
 
 	//fill the cache if empty
@@ -1675,7 +1679,7 @@ func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, u
 	//we can use the cache data
 	notValid, valid := n.maCheckDataValidity(assignments)
 
-	refreshedData := []CourseAssignment{}
+	refreshedData := []provider.CourseAssignment{}
 	if len(notValid) > 0 {
 		n.logger.Infof("\t\t\twe have old data, so need to refresh it - %s", user.NetID)
 		updatedData, err := n.provider.CacheUserCoursesData(user, notValid)
@@ -1720,13 +1724,13 @@ func (n nudgesLogic) processDueDateAsAdvanceReminderPerUser(nudge model.Nudge, u
 	return &user, nil
 }
 
-func (n nudgesLogic) getAssignmentsForAdvancedReminders(user ProviderUser, accountIDs []int, coursesIDs []int, numberOfDaysInAdvance int) []CourseAssignment {
+func (n nudgesLogic) getAssignmentsForAdvancedReminders(user provider.User, accountIDs []int, coursesIDs []int, numberOfDaysInAdvance int) []provider.CourseAssignment {
 	userCourses := user.Courses
 	if userCourses == nil || len(userCourses.Data) == 0 {
-		return []CourseAssignment{}
+		return []provider.CourseAssignment{}
 	}
 
-	result := []CourseAssignment{}
+	result := []provider.CourseAssignment{}
 	for _, uc := range userCourses.Data {
 		if (len(accountIDs) == 0 || utils.ExistInt(accountIDs, uc.Data.AccountID)) && (len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID)) {
 
@@ -1744,7 +1748,7 @@ func (n nudgesLogic) getAssignmentsForAdvancedReminders(user ProviderUser, accou
 	return result
 }
 
-func (n nudgesLogic) isAssignmentMatchedByDaysInAdvance(ca CourseAssignment, numberOfDaysInAdvance int) bool {
+func (n nudgesLogic) isAssignmentMatchedByDaysInAdvance(ca provider.CourseAssignment, numberOfDaysInAdvance int) bool {
 	assignmentData := ca.Data
 	assignmentDueAt := assignmentData.DueAt
 	if assignmentDueAt == nil {
@@ -1777,7 +1781,7 @@ func (n nudgesLogic) findAssignmentsInDaysAdvance(days int, now time.Time, assig
 	return resultList, nil
 }
 
-func (n nudgesLogic) processAdvancedReminderForAssignment(nudge model.Nudge, user ProviderUser, assignment model.Assignment, criteriaHash uint32) error {
+func (n nudgesLogic) processAdvancedReminderForAssignment(nudge model.Nudge, user provider.User, assignment model.Assignment, criteriaHash uint32) error {
 	n.logger.Infof("\t\t\tprocessAdvancedReminderForAssignment - %s - %s - %s", nudge.ID, user.NetID, assignment.Name)
 
 	//need to send but first check if it has been send before

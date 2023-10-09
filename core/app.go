@@ -30,9 +30,9 @@ type Application struct {
 	Services       interfaces.Services       //expose to the drivers adapters
 	Administration interfaces.Administration //expose to the drivers adapters
 
-	provider        Provider
-	groupsBB        GroupsBB
-	notificationsBB NotificationsBB
+	provider        interfaces.Provider
+	groupsBB        interfaces.GroupsBB
+	notificationsBB interfaces.NotificationsBB
 
 	storage      interfaces.Storage
 	cacheAdapter *cacheadapter.CacheAdapter
@@ -52,9 +52,8 @@ func (app *Application) Start() {
 }
 
 // NewApplication creates new Application
-func NewApplication(version string, build string, storage interfaces.Storage, provider Provider,
-	groupsBB GroupsBB, notificationsBB NotificationsBB,
-	cacheadapter *cacheadapter.CacheAdapter, coreBB *corebb.Adapter, logger *logs.Logger) *Application {
+func NewApplication(version string, build string, storage interfaces.Storage, provider interfaces.Provider, groupsBB interfaces.GroupsBB,
+	notificationsBB interfaces.NotificationsBB, cacheadapter *cacheadapter.CacheAdapter, coreBB *corebb.Adapter, logger *logs.Logger) *Application {
 
 	timerDone := make(chan bool)
 	nudgesLogic := nudgesLogic{

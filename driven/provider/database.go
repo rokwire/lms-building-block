@@ -16,7 +16,6 @@ package provider
 
 import (
 	"context"
-	"lms/core"
 	"log"
 	"time"
 
@@ -145,7 +144,7 @@ func (m *database) userExist(netID string) (*bool, error) {
 	return &result, nil
 }
 
-func (m *database) insertUser(user core.ProviderUser) error {
+func (m *database) insertUser(user User) error {
 	_, err := m.users.InsertOne(user)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "provider user", &logutils.FieldArgs{"net_id": user.NetID}, err)
@@ -153,9 +152,9 @@ func (m *database) insertUser(user core.ProviderUser) error {
 	return nil
 }
 
-func (m *database) findUser(netID string) (*core.ProviderUser, error) {
+func (m *database) findUser(netID string) (*User, error) {
 	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
-	var result []core.ProviderUser
+	var result []User
 	err := m.users.Find(filter, &result, nil)
 	if err != nil {
 		return nil, err
@@ -169,9 +168,9 @@ func (m *database) findUser(netID string) (*core.ProviderUser, error) {
 	return &user, nil
 }
 
-func (m *database) findUsers(netIDs []string) ([]core.ProviderUser, error) {
+func (m *database) findUsers(netIDs []string) ([]User, error) {
 	filter := bson.D{primitive.E{Key: "net_id", Value: bson.M{"$in": netIDs}}}
-	var result []core.ProviderUser
+	var result []User
 	err := m.users.Find(filter, &result, nil)
 	if err != nil {
 		return nil, err
@@ -183,9 +182,9 @@ func (m *database) findUsers(netIDs []string) ([]core.ProviderUser, error) {
 	return result, nil
 }
 
-func (m *database) findUsersByCanvasUserID(canvasUserIds []int) ([]core.ProviderUser, error) {
+func (m *database) findUsersByCanvasUserID(canvasUserIds []int) ([]User, error) {
 	filter := bson.D{primitive.E{Key: "user.id", Value: bson.M{"$in": canvasUserIds}}}
-	var result []core.ProviderUser
+	var result []User
 	err := m.users.Find(filter, &result, nil)
 	if err != nil {
 		return nil, err
@@ -197,7 +196,7 @@ func (m *database) findUsersByCanvasUserID(canvasUserIds []int) ([]core.Provider
 	return result, nil
 }
 
-func (m *database) saveUser(providerUser core.ProviderUser) error {
+func (m *database) saveUser(providerUser User) error {
 	filter := bson.M{"_id": providerUser.ID}
 	err := m.users.ReplaceOne(filter, providerUser, nil)
 	if err != nil {

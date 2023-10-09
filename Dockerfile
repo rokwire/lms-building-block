@@ -1,6 +1,8 @@
-FROM golang:1.20-bullseye as builder
+FROM golang:1.21-alpine as builder
 
 ENV CGO_ENABLED=0
+
+RUN apk add --no-cache --update make git
 
 RUN mkdir /lms-app
 WORKDIR /lms-app
