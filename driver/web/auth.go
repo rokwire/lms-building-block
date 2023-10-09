@@ -15,11 +15,8 @@
 package web
 
 import (
-	"fmt"
 	"lms/core"
 	"lms/core/model"
-	web "lms/driver/web/auth"
-	"log"
 	"net/http"
 
 	"github.com/rokwire/core-auth-library-go/v3/authorization"
@@ -32,30 +29,13 @@ import (
 
 // Auth handler
 type Auth struct {
-	client       tokenauth.Handlers
-	admin        tokenauth.Handlers
-	internalAuth *InternalAuth
-	coreAuth     *web.CoreAuth
-	logger       *logs.Logger
-}
-
-func (auth *Auth) clientIDCheck(w http.ResponseWriter, r *http.Request) bool {
-	clientID := r.Header.Get("APP")
-	if len(clientID) == 0 {
-		clientID = "edu.illinois.rokwire"
-	}
-
-	log.Println(fmt.Sprintf("400 - Bad Request"))
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte("Bad Request"))
-	return false
+	client tokenauth.Handlers
+	admin  tokenauth.Handlers
+	logger *logs.Logger
 }
 
 // NewAuth creates new auth handler
 func NewAuth(serviceRegManager *authservice.ServiceRegManager, app *core.Application, config *model.Config) (*Auth, error) {
-	coreAuth := web.NewCoreAuth(app, config)
-	internalAuth := newInternalAuth(config)
-
 	client, err := newClientAuth(serviceRegManager)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionCreate, "client auth", nil, err)
@@ -68,43 +48,8 @@ func NewAuth(serviceRegManager *authservice.ServiceRegManager, app *core.Applica
 	}
 	adminHandlers := tokenauth.NewHandlers(admin)
 
-	auth := Auth{coreAuth: coreAuth, internalAuth: internalAuth, client: clientHandlers, admin: adminHandlers}
+	auth := Auth{client: clientHandlers, admin: adminHandlers}
 	return &auth, nil
-}
-
-// InternalAuth handling the internal calls fromother BBs
-type InternalAuth struct {
-	internalAPIKey string
-}
-
-func newInternalAuth(config *model.Config) *InternalAuth {
-	auth := InternalAuth{internalAPIKey: config.InternalAPIKey}
-	return &auth
-}
-
-func (auth *InternalAuth) check(w http.ResponseWriter, r *http.Request) bool {
-	apiKey := r.Header.Get("INTERNAL-API-KEY")
-	//check if there is api key in the header
-	if len(apiKey) == 0 {
-		//no key, so return 400
-		log.Println(fmt.Sprintf("400 - Bad Request"))
-
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(http.StatusText(http.StatusUnauthorized)))
-		return false
-	}
-
-	exist := auth.internalAPIKey == apiKey
-
-	if !exist {
-		//not exist, so return 401
-		log.Println(fmt.Sprintf("401 - Unauthorized for key %s", apiKey))
-
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(http.StatusText(http.StatusUnauthorized)))
-		return false
-	}
-	return true
 }
 
 func newClientAuth(serviceRegManager *authservice.ServiceRegManager) (*tokenauth.StandardHandler, error) {

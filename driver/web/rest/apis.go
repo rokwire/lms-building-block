@@ -36,8 +36,8 @@ type ApisHandler struct {
 }
 
 // Version gets version
-func (h ApisHandler) Version(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(h.app.Services.GetVersion()))
+func (h ApisHandler) Version(l *logs.Log, r *http.Request, claims *tokenauth.Claims) logs.HTTPResponse {
+	return l.HTTPResponseSuccessMessage(h.app.Services.GetVersion())
 }
 
 // GetCourses gets courses
@@ -206,9 +206,4 @@ func NewApisHandler(app *core.Application, config *model.Config) ApisHandler {
 // NewAdminApisHandler creates new rest Handler instance
 func NewAdminApisHandler(app *core.Application, config *model.Config) AdminApisHandler {
 	return AdminApisHandler{app: app, config: config}
-}
-
-// NewInternalApisHandler creates new rest Handler instance
-func NewInternalApisHandler(app *core.Application, config *model.Config) InternalApisHandler {
-	return InternalApisHandler{app: app, config: config}
 }

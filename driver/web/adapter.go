@@ -23,7 +23,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -46,9 +45,8 @@ type Adapter struct {
 	auth          *Auth
 	openAPIRouter routers.Router
 
-	apisHandler         rest.ApisHandler
-	adminApisHandler    rest.AdminApisHandler
-	internalApisHandler rest.InternalApisHandler
+	apisHandler      rest.ApisHandler
+	adminApisHandler rest.AdminApisHandler
 
 	app *core.Application
 
@@ -87,7 +85,7 @@ func (we Adapter) Start() {
 	subrouter := router.PathPrefix("/lms").Subrouter()
 	subrouter.PathPrefix("/doc/ui").Handler(we.serveDocUI())
 	subrouter.HandleFunc("/doc", we.serveDoc)
-	// subrouter.HandleFunc("/version", we.userAuthWrapFunc(we.apisHandler.Version)).Methods("GET")
+	subrouter.HandleFunc("/version", we.wrapFunc(we.apisHandler.Version, nil)).Methods("GET")
 
 	// handle apis
 	apiRouter := subrouter.PathPrefix("/api").Subrouter()
@@ -152,130 +150,28 @@ func (we Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler)
 	}
 }
 
-// type userAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HTTPResponse
-
-// func (we Adapter) userAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, req *http.Request) {
-// 		logObj := we.logger.NewRequestLog(req)
-
-// 		logObj.RequestReceived()
-
-// 		// validate request
-// 		_, err := we.validateRequest(req)
-// 		if err != nil {
-// 			logObj.RequestErrorAction(w, logutils.ActionValidate, logutils.TypeRequest, nil, err, http.StatusBadRequest, true)
-// 			return
-// 		}
-
-// 		claims, err := we.auth.coreAuth.Check(req)
-// 		if err != nil {
-// 			if claims == nil {
-// 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-// 				return
-// 			}
-
-// 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-// 			return
-// 		}
-
-// 		// process the request
-// 		response := handler(logObj, claims, w, req)
-
-// 		/// return response
-// 		// headers
-// 		if len(response.Headers) > 0 {
-// 			for key, values := range response.Headers {
-// 				if len(values) > 0 {
-// 					for _, value := range values {
-// 						w.Header().Add(key, value)
-// 					}
-// 				}
-// 			}
-// 		}
-// 		// response code
-// 		w.WriteHeader(response.ResponseCode)
-// 		// body
-// 		if len(response.Body) > 0 {
-// 			w.Write(response.Body)
-// 		}
-
-// 		logObj.RequestComplete()
+// func (we Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
+// 	route, pathParams, err := we.openAPIRouter.FindRoute(req)
+// 	if err != nil {
+// 		return nil, err
 // 	}
-// }
 
-// type adminAuthFunc = func(*logs.Log, *tokenauth.Claims, http.ResponseWriter, *http.Request) logs.HttpResponse
-
-// func (we Adapter) adminAuthWrapFunc(handler userAuthFunc) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, req *http.Request) {
-// 		logObj := we.logger.NewRequestLog(req)
-
-// 		logObj.RequestReceived()
-
-// 		// validate request
-// 		_, err := we.validateRequest(req)
-// 		if err != nil {
-// 			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.ActionValidate, logutils.TypeRequest, nil, err, 500, true))
-// 			return
-// 		}
-
-// 		claims, err := we.auth.coreAuth.AdminCheck(req)
-// 		if err != nil {
-// 			if claims == nil {
-// 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-// 				return
-// 			}
-
-// 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-// 			return
-// 		}
-
-// 		// process the request
-// 		response := handler(logObj, claims, w, req)
-
-// 		/// return response
-// 		// headers
-// 		if len(response.Headers) > 0 {
-// 			for key, values := range response.Headers {
-// 				if len(values) > 0 {
-// 					for _, value := range values {
-// 						w.Header().Add(key, value)
-// 					}
-// 				}
-// 			}
-// 		}
-// 		// response code
-// 		w.WriteHeader(response.ResponseCode)
-// 		// body
-// 		if len(response.Body) > 0 {
-// 			w.Write(response.Body)
-// 		}
-
-// 		logObj.RequestComplete()
+// 	dummyAuthFunc := func(c context.Context, input *openapi3filter.AuthenticationInput) error {
+// 		return nil
 // 	}
+// 	options := &openapi3filter.Options{AuthenticationFunc: dummyAuthFunc}
+// 	requestValidationInput := &openapi3filter.RequestValidationInput{
+// 		Request:    req,
+// 		PathParams: pathParams,
+// 		Route:      route,
+// 		Options:    options,
+// 	}
+
+// 	if err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput); err != nil {
+// 		return nil, err
+// 	}
+// 	return requestValidationInput, nil
 // }
-
-func (we Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
-	route, pathParams, err := we.openAPIRouter.FindRoute(req)
-	if err != nil {
-		return nil, err
-	}
-
-	dummyAuthFunc := func(c context.Context, input *openapi3filter.AuthenticationInput) error {
-		return nil
-	}
-	options := &openapi3filter.Options{AuthenticationFunc: dummyAuthFunc}
-	requestValidationInput := &openapi3filter.RequestValidationInput{
-		Request:    req,
-		PathParams: pathParams,
-		Route:      route,
-		Options:    options,
-	}
-
-	if err := openapi3filter.ValidateRequest(context.Background(), requestValidationInput); err != nil {
-		return nil, err
-	}
-	return requestValidationInput, nil
-}
 
 // NewWebAdapter creates new WebAdapter instance
 func NewWebAdapter(port string, app *core.Application, config *model.Config, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
@@ -309,17 +205,15 @@ func NewWebAdapter(port string, app *core.Application, config *model.Config, ser
 
 	apisHandler := rest.NewApisHandler(app, config)
 	adminApisHandler := rest.NewAdminApisHandler(app, config)
-	internalApisHandler := rest.NewInternalApisHandler(app, config)
 	return Adapter{
-		lmsServiceURL:       config.LmsServiceURL,
-		port:                port,
-		auth:                auth,
-		apisHandler:         apisHandler,
-		adminApisHandler:    adminApisHandler,
-		internalApisHandler: internalApisHandler,
-		app:                 app,
-		logger:              logger,
-		openAPIRouter:       openAPIRouter,
+		lmsServiceURL:    config.LmsServiceURL,
+		port:             port,
+		auth:             auth,
+		apisHandler:      apisHandler,
+		adminApisHandler: adminApisHandler,
+		app:              app,
+		logger:           logger,
+		openAPIRouter:    openAPIRouter,
 	}
 }
 

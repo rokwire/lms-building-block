@@ -25,7 +25,6 @@ import (
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/rokwire/core-auth-library-go/v3/authservice"
@@ -58,7 +57,7 @@ func main() {
 		port = "80"
 	}
 
-	internalAPIKey := getEnvKey("LMS_INTERNAL_API_KEY", true)
+	internalAPIKey := envLoader.GetAndLogEnvVar(envPrefix+"INTERNAL_API_KEY", true, true)
 
 	// mongoDB adapter
 	mongoDBAuth := envLoader.GetAndLogEnvVar(envPrefix+"MONGO_AUTH", true, true)
@@ -70,13 +69,13 @@ func main() {
 		logger.Fatalf("Cannot start the mongoDB adapter: %v", err)
 	}
 
-	defaultCacheExpirationSeconds := getEnvKey("LMS_DEFAULT_CACHE_EXPIRATION_SECONDS", false)
+	defaultCacheExpirationSeconds := envLoader.GetAndLogEnvVar(envPrefix+"DEFAULT_CACHE_EXPIRATION_SECONDS", false, false)
 	cacheAdapter := cacheadapter.NewCacheAdapter(defaultCacheExpirationSeconds)
 
 	//provider adapter
-	canvasBaseURL := getEnvKey("LMS_CANVAS_BASE_URL", true)
-	canvasTokenType := getEnvKey("LMS_CANVAS_TOKEN_TYPE", true)
-	canvasToken := getEnvKey("LMS_CANVAS_TOKEN", true)
+	canvasBaseURL := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_BASE_URL", true, false)
+	canvasTokenType := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN_TYPE", true, false)
+	canvasToken := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN", true, true)
 	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType, mongoDBAuth, mongoDBName, mongoTimeout, logger)
 	err = providerAdapter.Start()
 	if err != nil {
@@ -84,13 +83,13 @@ func main() {
 	}
 
 	//groups BB adapter
-	groupsHost := getEnvKey("LMS_GROUPS_BB_HOST", true)
+	groupsHost := envLoader.GetAndLogEnvVar(envPrefix+"GROUPS_BB_HOST", true, false)
 	groupsBBAdapter := groups.NewGroupsAdapter(groupsHost, internalAPIKey)
 
 	//notifications BB adapter
-	app := getEnvKey("LMS_APP_ID", true)
-	org := getEnvKey("LMS_ORG_ID", true)
-	notificationHost := getEnvKey("LMS_NOTIFICATIONS_BB_HOST", true)
+	app := envLoader.GetAndLogEnvVar(envPrefix+"APP_ID", true, false)
+	org := envLoader.GetAndLogEnvVar(envPrefix+"ORG_ID", true, false)
+	notificationHost := envLoader.GetAndLogEnvVar(envPrefix+"NOTIFICATIONS_BB_HOST", true, false)
 	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey, app, org)
 
 	// Service registration
@@ -124,8 +123,8 @@ func main() {
 	application.Start()
 
 	// web adapter
-	coreBBHost := getEnvKey("LMS_CORE_BB_HOST", true)
-	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
+	coreBBHost := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_HOST", true, false)
+	lmsServiceURL := envLoader.GetAndLogEnvVar(envPrefix+"SERVICE_URL", true, false)
 	config := model.Config{
 		InternalAPIKey:  internalAPIKey,
 		CoreBBHost:      coreBBHost,
@@ -139,8 +138,8 @@ func main() {
 }
 
 func getCoreBBAdapterValues(logger *logs.Logger, serviceID string, serviceRegManager *authservice.ServiceRegManager, envLoader envloader.EnvLoader, envPrefix string) (string, *authservice.ServiceAccountManager) {
-	host := getEnvKey("LMS_CORE_BB_CURRENT_HOST", true)
-	coreBBHost := getEnvKey("LMS_CORE_BB_CORE_HOST", true)
+	host := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_CURRENT_HOST", true, false)
+	coreBBHost := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_CORE_HOST", true, false)
 
 	authService := authservice.AuthService{
 		ServiceID:   serviceID,
@@ -173,17 +172,4 @@ func getCoreBBAdapterValues(logger *logs.Logger, serviceID string, serviceRegMan
 		log.Fatalf("Error initializing service account manager: %v", err)
 	}
 	return coreBBHost, serviceAccountManager
-}
-
-func getEnvKey(key string, required bool) string {
-	// get from the environment
-	value, exist := os.LookupEnv(key)
-	if !exist {
-		if required {
-			log.Fatal("No provided environment variable for " + key)
-		} else {
-			log.Printf("No provided environment variable for " + key)
-		}
-	}
-	return value
 }
