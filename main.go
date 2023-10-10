@@ -151,7 +151,7 @@ func getCoreBBAdapterValues(logger *logs.Logger, serviceID string, serviceRegMan
 	serviceAccountID := envLoader.GetAndLogEnvVar(envPrefix+"SERVICE_ACCOUNT_ID", false, false)
 	privKeyRaw := envLoader.GetAndLogEnvVar(envPrefix+"PRIV_KEY", false, true)
 	privKeyRaw = strings.ReplaceAll(privKeyRaw, "\\n", "\n")
-	privKey, err := keys.NewPrivKey(keys.PS256, privKeyRaw)
+	privKey, err := keys.NewPrivKey(keys.RS256, privKeyRaw)
 	if err != nil {
 		logger.Errorf("Error parsing priv key: %v", err)
 	} else if serviceAccountID == "" {
