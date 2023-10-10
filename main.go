@@ -103,7 +103,7 @@ func main() {
 		AuthBaseURL: coreBBBaseURL,
 	}
 
-	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{})
+	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{"groups", "notifications"})
 	if err != nil {
 		logger.Fatalf("Error initializing remote service registration loader: %v", err)
 	}
