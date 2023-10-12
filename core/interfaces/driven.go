@@ -16,13 +16,21 @@ package interfaces
 
 import (
 	"lms/core/model"
-	"lms/driven/storage"
 	"time"
 )
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
 type Storage interface {
-	SetListener(listener storage.CollectionListener)
+	SetListener(listener CollectionListener)
+
+	PerformTransaction(transaction func(storage Storage) error) error
+
+	UserExist(netID string) (*bool, error)
+	InsertUser(user model.ProviderUser) error
+	FindUser(netID string) (*model.ProviderUser, error)
+	FindUsers(netIDs []string) ([]model.ProviderUser, error)
+	FindUsersByCanvasUserID(canvasUserIds []int) ([]model.ProviderUser, error)
+	SaveUser(providerUser model.ProviderUser) error
 
 	CreateNudgesConfig(nudgesConfig model.NudgesConfig) error
 	FindNudgesConfig() (*model.NudgesConfig, error)
@@ -50,8 +58,7 @@ type Storage interface {
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
 }
 
-// StorageListener represents storage listener
-type StorageListener interface {
+// CollectionListener listens for collection updates
+type CollectionListener interface {
 	OnConfigsUpdated()
-	OnExamplesUpdated()
 }

@@ -14,7 +14,6 @@ import (
 	"lms/core/model"
 	"lms/driven/groups"
 	"lms/driven/notifications"
-	"lms/driven/provider"
 	"time"
 
 	"github.com/rokwire/logging-library-go/v2/logs"
@@ -62,12 +61,12 @@ type Provider interface {
 	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
 	GetCurrentUser(userID string) (*model.User, error)
 
-	FindUsersByCanvasUserID(canvasUserIds []int) ([]provider.User, error)
+	FindUsersByCanvasUserID(canvasUserIds []int) ([]model.ProviderUser, error)
 
 	CacheCommonData(usersIDs map[string]string) error
-	FindCachedData(usersIDs []string) ([]provider.User, error)
-	CacheUserData(user provider.User) (*provider.User, error)
-	CacheUserCoursesData(user provider.User, coursesIDs []int) (*provider.User, error)
+	FindCachedData(usersIDs []string) ([]model.ProviderUser, error)
+	CacheUserData(user model.ProviderUser) (*model.ProviderUser, error)
+	CacheUserCoursesData(user model.ProviderUser, coursesIDs []int) (*model.ProviderUser, error)
 
 	GetLastLogin(userID string) (*time.Time, error)
 	GetMissedAssignments(userID string) ([]model.Assignment, error)

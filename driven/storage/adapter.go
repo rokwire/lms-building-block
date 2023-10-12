@@ -15,6 +15,8 @@
 package storage
 
 import (
+	"context"
+	"lms/core/interfaces"
 	"lms/core/model"
 	"log"
 	"sort"
@@ -26,6 +28,7 @@ import (
 	"github.com/rokwire/logging-library-go/v2/logutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -37,6 +40,8 @@ type configEntity struct {
 // Adapter implements the Storage interface
 type Adapter struct {
 	db *database
+
+	context mongo.SessionContext
 }
 
 // Start starts the storage
@@ -46,14 +51,132 @@ func (sa *Adapter) Start() error {
 }
 
 // SetListener sets the upper layer listener for sending collection changed callbacks
-func (sa *Adapter) SetListener(listener CollectionListener) {
+func (sa *Adapter) SetListener(listener interfaces.CollectionListener) {
 	sa.db.listener = listener
+}
+
+// PerformTransaction performs a transaction
+func (sa *Adapter) PerformTransaction(transaction func(storage interfaces.Storage) error) error {
+	// transaction
+	callback := func(sessionContext mongo.SessionContext) (interface{}, error) {
+		adapter := sa.withContext(sessionContext)
+
+		err := transaction(adapter)
+		if err != nil {
+			if wrappedErr, ok := err.(interface {
+				Internal() error
+			}); ok && wrappedErr.Internal() != nil {
+				return nil, wrappedErr.Internal()
+			}
+			return nil, err
+		}
+
+		return nil, nil
+	}
+
+	session, err := sa.db.dbClient.StartSession()
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionStart, "mongo session", nil, err)
+	}
+	context := context.Background()
+	defer session.EndSession(context)
+
+	_, err = session.WithTransaction(context, callback)
+	if err != nil {
+		return errors.WrapErrorAction("performing", logutils.TypeTransaction, nil, err)
+	}
+	return nil
+}
+
+// UserExist returns whether a user exists with the given netID
+func (sa *Adapter) UserExist(netID string) (*bool, error) {
+	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
+
+	count, err := sa.db.users.CountDocuments(sa.context, filter)
+	if err != nil {
+		return nil, errors.WrapErrorAction("error counting user for net id", "", &logutils.FieldArgs{"net_id": netID}, err)
+	}
+
+	var result bool
+	if count == 1 {
+		result = true
+	} else {
+		result = false
+	}
+	return &result, nil
+}
+
+// InsertUser inserts a provider user
+func (sa *Adapter) InsertUser(user model.ProviderUser) error {
+	_, err := sa.db.users.InsertOne(sa.context, user)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "provider user", &logutils.FieldArgs{"net_id": user.NetID}, err)
+	}
+	return nil
+}
+
+// FindUser finds a provider user by netID
+func (sa *Adapter) FindUser(netID string) (*model.ProviderUser, error) {
+	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
+	var result []model.ProviderUser
+	err := sa.db.users.Find(sa.context, filter, &result, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		//no data
+		return nil, nil
+	}
+
+	user := result[0]
+	return &user, nil
+}
+
+// FindUsers finds provider users by netID
+func (sa *Adapter) FindUsers(netIDs []string) ([]model.ProviderUser, error) {
+	filter := bson.D{primitive.E{Key: "net_id", Value: bson.M{"$in": netIDs}}}
+	var result []model.ProviderUser
+	err := sa.db.users.Find(sa.context, filter, &result, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		//no data
+		return nil, nil
+	}
+	return result, nil
+}
+
+// FindUsersByCanvasUserID finds provider users by canvas user ID
+func (sa *Adapter) FindUsersByCanvasUserID(canvasUserIds []int) ([]model.ProviderUser, error) {
+	filter := bson.D{primitive.E{Key: "user.id", Value: bson.M{"$in": canvasUserIds}}}
+	var result []model.ProviderUser
+	err := sa.db.users.Find(sa.context, filter, &result, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		//no data
+		return nil, nil
+	}
+	return result, nil
+}
+
+// SaveUser saves a provider user
+func (sa *Adapter) SaveUser(providerUser model.ProviderUser) error {
+	filter := bson.M{"_id": providerUser.ID}
+	err := sa.db.users.ReplaceOne(sa.context, filter, providerUser, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionSave, "provider user", &logutils.FieldArgs{"_id": providerUser.ID}, err)
+	}
+
+	return nil
 }
 
 // CreateNudgesConfig creates nudges config
 func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
 	storageConfig := configEntity{Name: "nudges", Config: nudgesConfig}
-	_, err := sa.db.configs.InsertOne(storageConfig)
+	_, err := sa.db.configs.InsertOne(sa.context, storageConfig)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "config", &logutils.FieldArgs{"name": "nudges"}, err)
 	}
@@ -64,7 +187,7 @@ func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
 func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
 	filter := bson.D{primitive.E{Key: "_id", Value: "nudges"}}
 	var result []configEntity
-	err := sa.db.configs.Find(filter, &result, nil)
+	err := sa.db.configs.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "configs", &logutils.FieldArgs{"name": "nudges"}, err)
 	}
@@ -97,7 +220,7 @@ func (sa *Adapter) SaveNudgesConfig(nudgesConfig model.NudgesConfig) error {
 
 	upsert := true
 	opts := options.UpdateOptions{Upsert: &upsert}
-	_, err := sa.db.configs.UpdateOne(filter, update, &opts)
+	_, err := sa.db.configs.UpdateOne(sa.context, filter, update, &opts)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": "nudges"}, err)
 	}
@@ -109,7 +232,7 @@ func (sa *Adapter) SaveNudgesConfig(nudgesConfig model.NudgesConfig) error {
 func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 	filter := bson.D{}
 	var result []model.Nudge
-	err := sa.db.nudges.Find(filter, &result, nil)
+	err := sa.db.nudges.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge", nil, err)
 	}
@@ -123,7 +246,7 @@ func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 func (sa *Adapter) LoadActiveNudges() ([]model.Nudge, error) {
 	filter := bson.D{primitive.E{Key: "active", Value: true}}
 	var result []model.Nudge
-	err := sa.db.nudges.Find(filter, &result, nil)
+	err := sa.db.nudges.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge", nil, err)
 	}
@@ -135,7 +258,7 @@ func (sa *Adapter) LoadActiveNudges() ([]model.Nudge, error) {
 
 // InsertNudge inserts a new Nudge
 func (sa *Adapter) InsertNudge(item model.Nudge) error {
-	_, err := sa.db.nudges.InsertOne(item)
+	_, err := sa.db.nudges.InsertOne(sa.context, item)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
 	}
@@ -157,7 +280,7 @@ func (sa *Adapter) UpdateNudge(ID string, name string, body string, deepLink str
 		}},
 	}
 
-	result, err := sa.db.nudges.UpdateOne(nudgeFilter, updateNudge, nil)
+	result, err := sa.db.nudges.UpdateOne(sa.context, nudgeFilter, updateNudge, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": ID}, err)
 	}
@@ -171,7 +294,7 @@ func (sa *Adapter) UpdateNudge(ID string, name string, body string, deepLink str
 // DeleteNudge deletes nudge
 func (sa *Adapter) DeleteNudge(ID string) error {
 	filter := bson.M{"_id": ID}
-	result, err := sa.db.nudges.DeleteOne(filter, nil)
+	result, err := sa.db.nudges.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": ID}, err)
 	}
@@ -187,7 +310,7 @@ func (sa *Adapter) DeleteNudge(ID string) error {
 
 // InsertSentNudge inserts sent nudge entity
 func (sa *Adapter) InsertSentNudge(sentNudge model.SentNudge) error {
-	_, err := sa.db.sentNudges.InsertOne(sentNudge)
+	_, err := sa.db.sentNudges.InsertOne(sa.context, sentNudge)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "sent nudge", nil, err)
 	}
@@ -202,7 +325,7 @@ func (sa *Adapter) InsertSentNudges(sentNudges []model.SentNudge) error {
 		data[i] = sn
 	}
 
-	_, err := sa.db.sentNudges.InsertMany(data, nil)
+	_, err := sa.db.sentNudges.InsertMany(sa.context, data, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "sent nudge", nil, err)
 	}
@@ -220,7 +343,7 @@ func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, cr
 		primitive.E{Key: "mode", Value: mode}}
 
 	var result []model.SentNudge
-	err := sa.db.sentNudges.Find(filter, &result, nil)
+	err := sa.db.sentNudges.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "sent nudge", nil, err)
 	}
@@ -258,7 +381,7 @@ func (sa *Adapter) FindSentNudges(nudgeID *string, userID *string, netID *string
 	}
 
 	var result []model.SentNudge
-	err := sa.db.sentNudges.Find(filter, &result, nil)
+	err := sa.db.sentNudges.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "sent nudge", nil, err)
 	}
@@ -275,7 +398,7 @@ func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
 		filter["mode"] = mode
 	}
 
-	result, err := sa.db.sentNudges.DeleteMany(filter, nil)
+	result, err := sa.db.sentNudges.DeleteMany(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": ids}, err)
 	}
@@ -296,7 +419,7 @@ func (sa *Adapter) FindNudgesProcesses(limit int, offset int) ([]model.NudgesPro
 	options := options.Find()
 	options.SetLimit(int64(limit))
 	options.SetSkip(int64(offset))
-	err := sa.db.nudgesProcesses.Find(filter, &result, options)
+	err := sa.db.nudgesProcesses.Find(sa.context, filter, &result, options)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudges_process", nil, err)
 	}
@@ -313,7 +436,7 @@ func (sa *Adapter) FindNudgesProcesses(limit int, offset int) ([]model.NudgesPro
 
 // InsertNudgesProcess inserts nudges process
 func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error {
-	_, err := sa.db.nudgesProcesses.InsertOne(nudgesProcess)
+	_, err := sa.db.nudgesProcesses.InsertOne(sa.context, nudgesProcess)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "nudges process", nil, err)
 	}
@@ -331,7 +454,7 @@ func (sa *Adapter) UpdateNudgesProcess(ID string, completedAt time.Time, status 
 		}},
 	}
 
-	result, err := sa.db.nudgesProcesses.UpdateOne(filter, update, nil)
+	result, err := sa.db.nudgesProcesses.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "nudges process", &logutils.FieldArgs{"id": ID}, err)
 	}
@@ -346,7 +469,7 @@ func (sa *Adapter) UpdateNudgesProcess(ID string, completedAt time.Time, status 
 func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 	filter := bson.D{primitive.E{Key: "status", Value: status}}
 
-	count, err := sa.db.nudgesProcesses.CountDocuments(filter)
+	count, err := sa.db.nudgesProcesses.CountDocuments(sa.context, filter)
 	if err != nil {
 		return nil, errors.WrapErrorAction("error counting nudges processes", "", nil, err)
 	}
@@ -355,7 +478,7 @@ func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 
 // InsertBlock adds a block to a nudges process
 func (sa *Adapter) InsertBlock(block model.Block) error {
-	_, err := sa.db.nudgesBlocks.InsertOne(block)
+	_, err := sa.db.nudgesBlocks.InsertOne(sa.context, block)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "nudge block", nil, err)
 	}
@@ -369,7 +492,7 @@ func (sa *Adapter) InsertBlocks(blocks []model.Block) error {
 		data[i] = sn
 	}
 
-	_, err := sa.db.nudgesBlocks.InsertMany(data, nil)
+	_, err := sa.db.nudgesBlocks.InsertMany(sa.context, data, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "blocks", nil, err)
 	}
@@ -382,7 +505,7 @@ func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, e
 	filter := bson.D{primitive.E{Key: "process_id", Value: processID},
 		primitive.E{Key: "number", Value: blockNumber}}
 	var result []model.Block
-	err := sa.db.nudgesBlocks.Find(filter, &result, nil)
+	err := sa.db.nudgesBlocks.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudge block", nil, err)
 	}
@@ -391,6 +514,11 @@ func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, e
 	}
 	block := result[0]
 	return &block, nil
+}
+
+// Creates a new Adapter with provided context
+func (sa *Adapter) withContext(context mongo.SessionContext) *Adapter {
+	return &Adapter{db: sa.db, context: context}
 }
 
 // NewStorageAdapter creates a new storage adapter instance

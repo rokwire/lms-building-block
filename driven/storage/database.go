@@ -16,6 +16,7 @@ package storage
 
 import (
 	"context"
+	"lms/core/interfaces"
 	"log"
 	"time"
 
@@ -26,13 +27,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// CollectionListener listens for collection updates
-type CollectionListener interface {
-	OnConfigsUpdated()
-}
-
 type database struct {
-	listener CollectionListener
+	listener interfaces.CollectionListener
 
 	mongoDBAuth  string
 	mongoDBName  string
@@ -44,6 +40,7 @@ type database struct {
 	dbClient *mongo.Client
 
 	configs         *collectionWrapper
+	users           *collectionWrapper
 	nudges          *collectionWrapper
 	sentNudges      *collectionWrapper
 	nudgesProcesses *collectionWrapper
@@ -80,6 +77,12 @@ func (m *database) start() error {
 		return err
 	}
 
+	users := &collectionWrapper{database: m, coll: db.Collection("adapter_pr_users")}
+	err = m.applyUsersChecks(users)
+	if err != nil {
+		return err
+	}
+
 	nudges := &collectionWrapper{database: m, coll: db.Collection("nudges")}
 	err = m.applyNudgesChecks(nudges)
 	if err != nil {
@@ -109,6 +112,7 @@ func (m *database) start() error {
 	m.dbClient = client
 
 	m.configs = configs
+	m.users = users
 	m.nudges = nudges
 	m.sentNudges = sentNudges
 	m.nudgesProcesses = nudgesProcesses
@@ -123,6 +127,25 @@ func (m *database) applyConfigsChecks(configs *collectionWrapper) error {
 	m.logger.Info("apply configs checks.....")
 
 	m.logger.Info("configs check passed")
+	return nil
+}
+
+func (m *database) applyUsersChecks(users *collectionWrapper) error {
+	m.logger.Info("apply adapter users checks.....")
+
+	//add net id index
+	err := users.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
+	//add user id index
+	err = users.AddIndex(bson.D{primitive.E{Key: "user.id", Value: 1}}, false)
+	if err != nil {
+		return err
+	}
+
+	m.logger.Info("adapter users check passed")
 	return nil
 }
 

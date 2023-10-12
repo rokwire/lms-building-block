@@ -21,11 +21,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"lms/core/interfaces"
 	"lms/core/model"
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -39,51 +39,9 @@ type Adapter struct {
 	token     string
 	tokenType string
 
-	db *database
+	storage interfaces.Storage
 
 	logger *logs.Logger
-}
-
-// User cache entity
-type User struct {
-	ID       string     `bson:"_id"`    //core BB account id
-	NetID    string     `bson:"net_id"` //core BB external system id
-	User     model.User `bson:"user"`
-	SyncDate time.Time  `bson:"sync_date"`
-
-	Courses *UserCourses `bson:"courses"`
-}
-
-// UserCourses cache entity
-type UserCourses struct {
-	Data     []UserCourse `bson:"data"`
-	SyncDate time.Time    `bson:"sync_date"`
-}
-
-// UserCourse cache entity
-type UserCourse struct {
-	Data        model.Course       `bson:"data"`
-	Assignments []CourseAssignment `bson:"assignments"`
-	SyncDate    time.Time          `bson:"sync_date"`
-}
-
-// CourseAssignment cache entity
-type CourseAssignment struct {
-	Data       model.Assignment `bson:"data"`
-	Submission *Submission      `bson:"submission"`
-	SyncDate   time.Time        `bson:"sync_date"`
-}
-
-// Submission cache entity
-type Submission struct {
-	Data     *model.Submission `bson:"data"`
-	SyncDate time.Time         `bson:"sync_date"`
-}
-
-// Start starts the storage
-func (a *Adapter) Start() error {
-	err := a.db.start()
-	return err
 }
 
 // GetCourses gets the user courses
@@ -276,7 +234,7 @@ func (a *Adapter) cacheUser(netID string, userID string) error {
 	a.logger.Infof("cache user - %s", netID)
 
 	// check if the user exist
-	exists, err := a.db.userExist(netID)
+	exists, err := a.storage.UserExist(netID)
 	if err != nil {
 		a.logger.Errorf("error checking if the user exists - %s", netID)
 		return err
@@ -295,8 +253,8 @@ func (a *Adapter) cacheUser(netID string, userID string) error {
 		return err
 	}
 	//store it
-	providerUser := User{ID: userID, NetID: netID, User: *loadedUser, SyncDate: time.Now()}
-	err = a.db.insertUser(providerUser)
+	providerUser := model.ProviderUser{ID: userID, NetID: netID, User: *loadedUser, SyncDate: time.Now()}
+	err = a.storage.InsertUser(providerUser)
 	if err != nil {
 		a.logger.Errorf("error inserting user - %s", netID)
 		return err
@@ -342,7 +300,7 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 
 	//We do not ask the provider for every user. The courses and the assignemnts are the same as entities for the different users
 	// and we use already what we have found
-	allCourses := map[int]UserCourse{}
+	allCourses := map[int]model.UserCourse{}
 
 	for netID := range usersIDs {
 		allCourses, err = a.cacheUserCoursesAndCoursesAssignments(netID, allCourses)
@@ -355,11 +313,11 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 	return nil
 }
 
-func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[int]UserCourse) (map[int]UserCourse, error) {
+func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[int]model.UserCourse) (map[int]model.UserCourse, error) {
 	a.logger.Infof("cache user courses and courses assignments - %s", netID)
 
 	//get the user from the cache
-	cachedUser, err := a.db.findUser(netID)
+	cachedUser, err := a.storage.FindUser(netID)
 	if err != nil {
 		a.logger.Errorf("error finding user for - %s", netID)
 		return nil, err
@@ -370,7 +328,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 		if cachedUser.Courses == nil {
 			a.logger.Infof("there is no cached courses for %s, so loading them", netID)
 
-			var userCourses *UserCourses
+			var userCourses *model.UserCourses
 			userCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
 			if err != nil {
 				a.logger.Errorf("error loading user courses for - %s", netID)
@@ -381,7 +339,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 			cachedUser.Courses = userCourses
 
 			//cache the user
-			err = a.db.saveUser(*cachedUser)
+			err = a.storage.SaveUser(*cachedUser)
 			if err != nil {
 				a.logger.Errorf("error saving user - %s", netID)
 				return nil, err
@@ -397,7 +355,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 				//if passedTimeInSecconds > 1 {
 				a.logger.Infof("we need to refresh courses for - %s", netID)
 
-				var loadedUserCourses *UserCourses
+				var loadedUserCourses *model.UserCourses
 				loadedUserCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
 				if err != nil {
 					a.logger.Errorf("error loading user courses for - %s on refresh", netID)
@@ -411,7 +369,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 				cachedUser.Courses = &readyUserCourses
 
 				//cache the user
-				err = a.db.saveUser(*cachedUser)
+				err = a.storage.SaveUser(*cachedUser)
 				if err != nil {
 					a.logger.Errorf("error saving user - %s", netID)
 					return nil, err
@@ -426,19 +384,19 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 }
 
 // puts the submissions data from the current to the new one. The new one does not have submissions in it, so we do not want to loose it.
-func (a *Adapter) getSubmissionsFromCurrent(current UserCourses, new UserCourses) UserCourses {
+func (a *Adapter) getSubmissionsFromCurrent(current model.UserCourses, new model.UserCourses) model.UserCourses {
 	userCourses := new.Data
 	if len(userCourses) == 0 {
 		//no courses
 		return new
 	}
 
-	resultUserCourses := make([]UserCourse, len(userCourses))
+	resultUserCourses := make([]model.UserCourse, len(userCourses))
 	for i, course := range userCourses {
 
 		assignments := course.Assignments
 
-		resultAssignments := make([]CourseAssignment, len(assignments))
+		resultAssignments := make([]model.CourseAssignment, len(assignments))
 		for j, assignment := range assignments {
 			assignment.Submission = a.findSubmission(assignment.Data.ID, current)
 			resultAssignments[j] = assignment
@@ -451,7 +409,7 @@ func (a *Adapter) getSubmissionsFromCurrent(current UserCourses, new UserCourses
 	return new
 }
 
-func (a *Adapter) findSubmission(assignmentID int, current UserCourses) *Submission {
+func (a *Adapter) findSubmission(assignmentID int, current model.UserCourses) *model.ProviderSubmission {
 	userCourses := current.Data
 	if len(userCourses) == 0 {
 		return nil
@@ -475,11 +433,11 @@ func (a *Adapter) findSubmission(assignmentID int, current UserCourses) *Submiss
 }
 
 // check if the courses are available in allCourses otherwise load them
-func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]UserCourse) (*UserCourses, map[int]UserCourse, error) {
+func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]model.UserCourse) (*model.UserCourses, map[int]model.UserCourse, error) {
 	//prepare the result variable
 	now := time.Now()
-	loadedUserCourses := UserCourses{SyncDate: now}
-	data := []UserCourse{} //to be loaded in the function
+	loadedUserCourses := model.UserCourses{SyncDate: now}
+	data := []model.UserCourse{} //to be loaded in the function
 
 	// first load the courses for the id
 	courses, err := a.loadCourses(netID)
@@ -518,9 +476,9 @@ func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]Use
 	return &loadedUserCourses, allCourses, nil
 }
 
-func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate time.Time) (*UserCourse, error) {
+func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate time.Time) (*model.UserCourse, error) {
 	now := time.Now()
-	userCourse := UserCourse{Data: course, Assignments: nil, SyncDate: now}
+	userCourse := model.UserCourse{Data: course, Assignments: nil, SyncDate: now}
 	//to load the assignments
 
 	loadedAssignments, err := a.getAssignments(course.ID, netID, false)
@@ -529,9 +487,9 @@ func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate tim
 		// some cources have restricted access, so we do not have to fail if we meet a such course
 	}
 
-	assignments := make([]CourseAssignment, len(loadedAssignments))
+	assignments := make([]model.CourseAssignment, len(loadedAssignments))
 	for i, assignment := range loadedAssignments {
-		assignments[i] = CourseAssignment{Data: assignment, Submission: nil, SyncDate: syncDate}
+		assignments[i] = model.CourseAssignment{Data: assignment, Submission: nil, SyncDate: syncDate}
 	}
 
 	//add the loaded assignments
@@ -567,13 +525,13 @@ func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
 }
 
 // FindUsersByCanvasUserID finds cached users by canvas user ids
-func (a *Adapter) FindUsersByCanvasUserID(canvasUserIds []int) ([]User, error) {
-	return a.db.findUsersByCanvasUserID(canvasUserIds)
+func (a *Adapter) FindUsersByCanvasUserID(canvasUserIds []int) ([]model.ProviderUser, error) {
+	return a.storage.FindUsersByCanvasUserID(canvasUserIds)
 }
 
 // FindCachedData finds a cached data
-func (a *Adapter) FindCachedData(usersIDs []string) ([]User, error) {
-	return a.db.findUsers(usersIDs)
+func (a *Adapter) FindCachedData(usersIDs []string) ([]model.ProviderUser, error) {
+	return a.storage.FindUsers(usersIDs)
 }
 
 // GetLastLogin gives the last login date for the user
@@ -611,7 +569,7 @@ func (a *Adapter) GetLastLogin(userID string) (*time.Time, error) {
 }
 
 // CacheUserData caches the user object
-func (a *Adapter) CacheUserData(user User) (*User, error) {
+func (a *Adapter) CacheUserData(user model.ProviderUser) (*model.ProviderUser, error) {
 	//1. load the user from the provider
 	loadedUser, err := a.loadUser(user.NetID)
 	if err != nil {
@@ -621,7 +579,7 @@ func (a *Adapter) CacheUserData(user User) (*User, error) {
 	//2 update the new user and store it
 	user.User = *loadedUser
 	user.SyncDate = time.Now()
-	err = a.db.saveUser(user)
+	err = a.storage.SaveUser(user)
 	if err != nil {
 		return nil, err
 	}
@@ -630,7 +588,7 @@ func (a *Adapter) CacheUserData(user User) (*User, error) {
 }
 
 // CacheUserCoursesData caches the user courses data
-func (a *Adapter) CacheUserCoursesData(user User, coursesIDs []int) (*User, error) {
+func (a *Adapter) CacheUserCoursesData(user model.ProviderUser, coursesIDs []int) (*model.ProviderUser, error) {
 	if len(coursesIDs) == 0 {
 		return &user, nil
 	}
@@ -647,7 +605,7 @@ func (a *Adapter) CacheUserCoursesData(user User, coursesIDs []int) (*User, erro
 
 	//add the new data to the user object
 	currentUserCourses := user.Courses.Data
-	newUserCoursesData := []UserCourse{}
+	newUserCoursesData := []model.UserCourse{}
 	for _, uc := range currentUserCourses {
 		//get the data from the loaded ones
 		loadedAssignments, has := newData[uc.Data.ID]
@@ -655,16 +613,16 @@ func (a *Adapter) CacheUserCoursesData(user User, coursesIDs []int) (*User, erro
 			//use the new data
 
 			now := time.Now()
-			newCAs := make([]CourseAssignment, len(loadedAssignments))
+			newCAs := make([]model.CourseAssignment, len(loadedAssignments))
 			for j, assignment := range loadedAssignments {
 
-				submission := Submission{Data: assignment.Submission, SyncDate: now}
+				submission := model.ProviderSubmission{Data: assignment.Submission, SyncDate: now}
 
-				newCA := CourseAssignment{Data: assignment, Submission: &submission, SyncDate: now}
+				newCA := model.CourseAssignment{Data: assignment, Submission: &submission, SyncDate: now}
 				newCAs[j] = newCA
 			}
 
-			nuc := UserCourse{Data: uc.Data, Assignments: newCAs, SyncDate: now}
+			nuc := model.UserCourse{Data: uc.Data, Assignments: newCAs, SyncDate: now}
 			newUserCoursesData = append(newUserCoursesData, nuc)
 		} else {
 			//use the old one
@@ -675,7 +633,7 @@ func (a *Adapter) CacheUserCoursesData(user User, coursesIDs []int) (*User, erro
 	user.Courses.Data = newUserCoursesData
 
 	//save the updated user data
-	err := a.db.saveUser(user)
+	err := a.storage.SaveUser(user)
 	if err != nil {
 		return nil, err
 	}
@@ -880,16 +838,6 @@ func (a *Adapter) executeQuery(body io.Reader, pathAndParams string, method stri
 }
 
 // NewProviderAdapter creates a new provider adapter
-func NewProviderAdapter(host string, token string, tokenType string,
-	mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
-
-	timeout, err := strconv.Atoi(mongoTimeout)
-	if err != nil {
-		log.Println("Set default timeout - 500")
-		timeout = 500
-	}
-	timeoutMS := time.Millisecond * time.Duration(timeout)
-
-	db := &database{mongoDBAuth: mongoDBAuth, mongoDBName: mongoDBName, mongoTimeout: timeoutMS, logger: logger}
-	return &Adapter{host: host, token: token, tokenType: tokenType, db: db, logger: logger}
+func NewProviderAdapter(host string, token string, tokenType string, storage interfaces.Storage, logger *logs.Logger) *Adapter {
+	return &Adapter{host: host, token: token, tokenType: tokenType, storage: storage, logger: logger}
 }

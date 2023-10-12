@@ -76,11 +76,7 @@ func main() {
 	canvasBaseURL := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_BASE_URL", true, false)
 	canvasTokenType := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN_TYPE", true, false)
 	canvasToken := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN", true, true)
-	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType, mongoDBAuth, mongoDBName, mongoTimeout, logger)
-	err = providerAdapter.Start()
-	if err != nil {
-		log.Fatal("Cannot start the provider adapter - " + err.Error())
-	}
+	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType, storageAdapter, logger)
 
 	//groups BB adapter
 	groupsHost := envLoader.GetAndLogEnvVar(envPrefix+"GROUPS_BB_HOST", true, false)
