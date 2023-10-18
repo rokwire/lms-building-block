@@ -23,7 +23,7 @@
            schema:
              type: array
              items:
-               $ref: "../../../schemas/course/Course.yaml"
+               $ref: "../../../schemas/provider/Course.yaml"
      400:
       description: Bad request
      401:

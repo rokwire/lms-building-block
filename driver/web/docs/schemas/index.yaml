@@ -1,20 +1,16 @@
-# course
-Course:
-  $ref: "./course/Course.yaml"
-
-# assigment
-Assigment:
-  $ref: "./assigment/Assigment.yaml"
-AssigmentGroup:
-  $ref: "./assigment/AssigmentGroup.yaml"
-  
-# user
+# provider
 User:
-  $ref: "./user/User.yaml"
+  $ref: "./provider/User.yaml"
 Enrollment:
-  $ref: "./user/Enrollment.yaml"
+  $ref: "./provider/Enrollment.yaml"
 Grade:
- $ref: "./user/Grade.yaml"
+  $ref: "./provider/Grade.yaml"
+Course:
+  $ref: "./provider/Course.yaml"
+Assignment:
+  $ref: "./provider/Assignment.yaml"
+AssignmentGroup:
+  $ref: "./provider/AssignmentGroup.yaml"
 
 # nudge
 Nudge:

@@ -110,7 +110,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/AssigmentGroup'
+                  $ref: '#/components/schemas/AssignmentGroup'
         '400':
           description: Bad request
         '401':
@@ -556,37 +556,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    Course:
-      type: object
-      properties:
-        id:
-          type: string
-          readOnly: true
-        name:
-          type: string
-        access_restricted_by_date:
-          type: boolean
-    Assigment:
-      type: object
-      properties:
-        id:
-          readOnly: true
-          type: string
-        name:
-          type: string
-        course_id:
-          type: integer
-        html_url:
-          type: string
-        position:
-          type: integer
-    AssigmentGroup:
-      type: object
-      properties:
-        id:
-          type: string
-        assigments:
-          $ref: '#/components/schemas/Assigment'
     User:
       type: object
       properties:
@@ -610,6 +579,37 @@ components:
       properties:
         current_score:
           type: number
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        access_restricted_by_date:
+          type: boolean
+    Assignment:
+      type: object
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        course_id:
+          type: integer
+        html_url:
+          type: string
+        position:
+          type: integer
+    AssignmentGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        assigments:
+          $ref: '#/components/schemas/Assignment'
     Nudge:
       required:
         - id

@@ -3,5 +3,5 @@ properties:
   id:
     type: string
   assigments:
-    $ref: "./Assigment.yaml"
+    $ref: "./Assignment.yaml"
   

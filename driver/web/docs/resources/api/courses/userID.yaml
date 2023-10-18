@@ -31,7 +31,7 @@
             schema:
               type: array
               items:
-                $ref: "../../../schemas/user/User.yaml"
+                $ref: "../../../schemas/provider/User.yaml"
       400:
         description: Bad request
       401:

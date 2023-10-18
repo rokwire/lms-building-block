@@ -30,7 +30,7 @@
         application/json:
             schema:
               items:
-                $ref: "../../../schemas/assigment/AssigmentGroup.yaml"
+                $ref: "../../../schemas/provider/AssignmentGroup.yaml"
     400:
       description: Bad request
     401:
