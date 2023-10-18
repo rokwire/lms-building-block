@@ -39,7 +39,7 @@ type UserCourses struct {
 
 // UserCourse cache entity
 type UserCourse struct {
-	Data        Course             `bson:"data"`
+	Data        ProviderCourse     `bson:"data"`
 	Assignments []CourseAssignment `bson:"assignments"`
 	SyncDate    time.Time          `bson:"sync_date"`
 }

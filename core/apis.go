@@ -28,11 +28,11 @@ func (s *servicesImpl) GetVersion() string {
 	return s.app.getVersion()
 }
 
-func (s *servicesImpl) GetCourses(l *logs.Log, providerUserID string) ([]model.Course, error) {
+func (s *servicesImpl) GetCourses(l *logs.Log, providerUserID string) ([]model.ProviderCourse, error) {
 	return s.app.getCourses(l, providerUserID)
 }
 
-func (s *servicesImpl) GetCourse(l *logs.Log, providerUserID string, courseID int) (*model.Course, error) {
+func (s *servicesImpl) GetCourse(l *logs.Log, providerUserID string, courseID int) (*model.ProviderCourse, error) {
 	return s.app.getCourse(l, providerUserID, courseID)
 }
 

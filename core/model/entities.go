@@ -19,8 +19,8 @@ package model
 
 import "time"
 
-// Course entity
-type Course struct {
+// ProviderCourse entity
+type ProviderCourse struct {
 	ID                     int    `json:"id"  bson:"id"`
 	Name                   string `json:"name" bson:"name"`
 	AccessRestrictedByDate bool   `json:"access_restricted_by_date" bson:"access_restricted_by_date"`

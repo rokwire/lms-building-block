@@ -16,6 +16,8 @@ package interfaces
 
 import (
 	"lms/core/model"
+	"lms/driven/groups"
+	"lms/driven/notifications"
 	"time"
 )
 
@@ -56,6 +58,38 @@ type Storage interface {
 	InsertBlock(block model.Block) error
 	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
+}
+
+// Provider interface for LMS provider
+type Provider interface {
+	GetCourses(userID string) ([]model.ProviderCourse, error)
+	GetCourse(userID string, courseID int) (*model.ProviderCourse, error)
+	GetCourseUsers(courseID int) ([]model.User, error)
+	GetAssignmentGroups(userID string, courseID int, includeAssignments bool, includeSubmission bool) ([]model.AssignmentGroup, error)
+	GetCourseUser(userID string, courseID int, includeEnrolments bool, includeScores bool) (*model.User, error)
+	GetCurrentUser(userID string) (*model.User, error)
+
+	FindUsersByCanvasUserID(canvasUserIds []int) ([]model.ProviderUser, error)
+
+	CacheCommonData(usersIDs map[string]string) error
+	FindCachedData(usersIDs []string) ([]model.ProviderUser, error)
+	CacheUserData(user model.ProviderUser) (*model.ProviderUser, error)
+	CacheUserCoursesData(user model.ProviderUser, coursesIDs []int) (*model.ProviderUser, error)
+
+	GetLastLogin(userID string) (*time.Time, error)
+	GetMissedAssignments(userID string) ([]model.Assignment, error)
+	GetCompletedAssignments(userID string) ([]model.Assignment, error)
+	GetCalendarEvents(netID string, providerUserID int, courseID int, startAt time.Time, endAt time.Time) ([]model.CalendarEvent, error)
+}
+
+// GroupsBB interface for the Groups building block communication
+type GroupsBB interface {
+	GetUsers(groupName string, offset int, limit int) ([]groups.User, error)
+}
+
+// NotificationsBB interface for the Notifications building block communication
+type NotificationsBB interface {
+	SendNotifications(recipients []notifications.Recipient, text string, body string, data map[string]string) error
 }
 
 // CollectionListener listens for collection updates

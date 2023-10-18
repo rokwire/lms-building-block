@@ -45,12 +45,12 @@ type Adapter struct {
 }
 
 // GetCourses gets the user courses
-func (a *Adapter) GetCourses(userID string) ([]model.Course, error) {
+func (a *Adapter) GetCourses(userID string) ([]model.ProviderCourse, error) {
 	return a.loadCourses(userID)
 }
 
 // GetCourse gives the the course for the provided id
-func (a *Adapter) GetCourse(userID string, courseID int) (*model.Course, error) {
+func (a *Adapter) GetCourse(userID string, courseID int) (*model.ProviderCourse, error) {
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
@@ -67,7 +67,7 @@ func (a *Adapter) GetCourse(userID string, courseID int) (*model.Course, error) 
 	}
 
 	//prepare the response and return it
-	var course *model.Course
+	var course *model.ProviderCourse
 	err = json.Unmarshal(data, &course)
 	if err != nil {
 		log.Print("error converting course")
@@ -476,7 +476,7 @@ func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]mod
 	return &loadedUserCourses, allCourses, nil
 }
 
-func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate time.Time) (*model.UserCourse, error) {
+func (a *Adapter) loadCourseData(netID string, course model.ProviderCourse, syncDate time.Time) (*model.UserCourse, error) {
 	now := time.Now()
 	userCourse := model.UserCourse{Data: course, Assignments: nil, SyncDate: now}
 	//to load the assignments
@@ -498,7 +498,7 @@ func (a *Adapter) loadCourseData(netID string, course model.Course, syncDate tim
 	return &userCourse, nil
 }
 
-func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
+func (a *Adapter) loadCourses(userID string) ([]model.ProviderCourse, error) {
 	//params
 	queryParamsItems := map[string][]string{}
 	queryParamsItems["as_user_id"] = []string{fmt.Sprintf("sis_user_id:%s", userID)}
@@ -515,7 +515,7 @@ func (a *Adapter) loadCourses(userID string) ([]model.Course, error) {
 	}
 
 	//prepare the response and return it
-	var courses []model.Course
+	var courses []model.ProviderCourse
 	err = json.Unmarshal(data, &courses)
 	if err != nil {
 		log.Print("error converting courses")

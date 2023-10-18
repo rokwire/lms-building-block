@@ -27,7 +27,7 @@ func (app *Application) getVersion() string {
 	return app.version
 }
 
-func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.Course, error) {
+func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.ProviderCourse, error) {
 	courses, err := app.provider.GetCourses(providerUserID)
 	if err != nil {
 		l.Debugf("error getting courses - %s", err)
@@ -36,7 +36,7 @@ func (app *Application) getCourses(l *logs.Log, providerUserID string) ([]model.
 	return courses, nil
 }
 
-func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID int) (*model.Course, error) {
+func (app *Application) getCourse(l *logs.Log, providerUserID string, courseID int) (*model.ProviderCourse, error) {
 	course, err := app.provider.GetCourse(providerUserID, courseID)
 	if err != nil {
 		l.Debugf("error getting course - %s", err)
