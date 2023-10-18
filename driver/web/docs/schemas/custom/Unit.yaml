@@ -1,0 +1,37 @@
+required:
+  - id
+  - app_id
+  - org_id
+  - key
+  - course_key
+  - module_key
+  - name
+  - content
+  - schedule
+type: object
+properties:
+  id:
+    type: string
+    readOnly: true
+  app_id:
+    type: string
+    readOnly: true
+  org_id:
+    type: string
+    readOnly: true
+  course_key:
+    type: string
+  module_key:
+    type: string
+  key:
+    type: string
+  name:
+    type: string
+  content:
+    type: array
+    items:
+      $ref: "./Content.yaml"
+  schedule:
+    type: array
+    items:
+      $ref: "./ScheduleItem.yaml"

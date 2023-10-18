@@ -1,0 +1,12 @@
+required:
+  - name
+  - type
+  - reference_key
+type: object
+properties:
+  name:
+    type: string
+  type:
+    type: string
+  reference_key:
+    type: string

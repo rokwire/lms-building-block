@@ -1,0 +1,48 @@
+required:
+  - id
+  - app_id
+  - org_id
+  - course_key
+  - module_key
+  - unit_key
+  - key
+  - type
+  - name
+  - reference
+type: object
+properties:
+  id:
+    type: string
+    readOnly: true
+  app_id:
+    type: string
+    readOnly: true
+  org_id:
+    type: string
+    readOnly: true
+  course_key:
+    type: string
+  module_key:
+    type: string
+  unit_key:
+    type: string
+  key:
+    type: string
+  type:
+    type: string
+    enum:
+      - assignment
+      - resource
+      - reward
+      - evaluation
+  name:
+    type: string
+  details:
+    type: string
+  reference:
+    $ref: "./Reference.yaml"
+  linked_content:
+    type: array
+    items:
+      type: string
+    nullable: true

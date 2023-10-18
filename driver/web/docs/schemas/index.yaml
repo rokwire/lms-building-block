@@ -18,7 +18,21 @@ Nudge:
 NudgesConfig:
   $ref: "./nudges/nudges-config.yaml"
 UsersSources:
-  $ref: "./nudges/UsersSources.yaml"  
+  $ref: "./nudges/UsersSources.yaml"
+
+# custom
+CustomCourse:
+  $ref: "./custom/Course.yaml"
+Module:
+  $ref: "./custom/Module.yaml"
+Unit:
+  $ref: "./custom/Unit.yaml"
+Content:
+  $ref: "./custom/Content.yaml"
+ScheduleItem:
+  $ref: "./custom/ScheduleItem.yaml"
+Reference:
+  $ref: "./custom/Reference.yaml"
 
  ###nudges api
 _admin_req_create_nudge:

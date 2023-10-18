@@ -1,0 +1,14 @@
+required:
+  - name
+  - content
+  - duration
+type: object
+properties:
+  name:
+    type: string
+  content:
+    type: array
+    items:
+      $ref: "./Content.yaml"
+  duration:
+    type: integer
