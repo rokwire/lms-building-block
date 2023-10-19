@@ -1,0 +1,45 @@
+put:
+  tags:
+  - Api
+  summary: Update custom user course
+  description: |
+    Update custom user course
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: course-id
+      in: path
+      description: User course ID
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+    - name: unit-id
+      in: path
+      description: Unit ID
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+  requestBody:
+    description: creates one nudge
+    content:
+      application/json:
+        schema:
+         $ref: "../../../../schemas/custom/Unit.yaml"
+    required: true
+  responses:
+    200:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "../../../../schemas/custom/Unit.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error

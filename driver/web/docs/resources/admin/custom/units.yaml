@@ -1,6 +1,6 @@
- get:
+get:
   tags:
-  - Api
+  - Admin
   summary: Get custom units
   description: |
     Get custom units

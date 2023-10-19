@@ -1,14 +1,14 @@
 required:
   - name
-  - content
+  - content_keys
   - duration
 type: object
 properties:
   name:
     type: string
-  content:
+  content_keys:
     type: array
     items:
-      $ref: "./Content.yaml"
+      type: string
   duration:
     type: integer

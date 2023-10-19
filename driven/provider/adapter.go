@@ -300,7 +300,7 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 
 	//We do not ask the provider for every user. The courses and the assignemnts are the same as entities for the different users
 	// and we use already what we have found
-	allCourses := map[int]model.UserCourse{}
+	allCourses := map[int]model.ProviderUserCourse{}
 
 	for netID := range usersIDs {
 		allCourses, err = a.cacheUserCoursesAndCoursesAssignments(netID, allCourses)
@@ -313,7 +313,7 @@ func (a *Adapter) cacheUsersCoursesAndCoursesAssignments(usersIDs map[string]str
 	return nil
 }
 
-func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[int]model.UserCourse) (map[int]model.UserCourse, error) {
+func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses map[int]model.ProviderUserCourse) (map[int]model.ProviderUserCourse, error) {
 	a.logger.Infof("cache user courses and courses assignments - %s", netID)
 
 	//get the user from the cache
@@ -328,7 +328,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 		if cachedUser.Courses == nil {
 			a.logger.Infof("there is no cached courses for %s, so loading them", netID)
 
-			var userCourses *model.UserCourses
+			var userCourses *model.ProviderUserCourses
 			userCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
 			if err != nil {
 				a.logger.Errorf("error loading user courses for - %s", netID)
@@ -355,7 +355,7 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 				//if passedTimeInSecconds > 1 {
 				a.logger.Infof("we need to refresh courses for - %s", netID)
 
-				var loadedUserCourses *model.UserCourses
+				var loadedUserCourses *model.ProviderUserCourses
 				loadedUserCourses, allCourses, err = a.loadCoursesAndAssignments(netID, allCourses)
 				if err != nil {
 					a.logger.Errorf("error loading user courses for - %s on refresh", netID)
@@ -384,14 +384,14 @@ func (a *Adapter) cacheUserCoursesAndCoursesAssignments(netID string, allCourses
 }
 
 // puts the submissions data from the current to the new one. The new one does not have submissions in it, so we do not want to loose it.
-func (a *Adapter) getSubmissionsFromCurrent(current model.UserCourses, new model.UserCourses) model.UserCourses {
+func (a *Adapter) getSubmissionsFromCurrent(current model.ProviderUserCourses, new model.ProviderUserCourses) model.ProviderUserCourses {
 	userCourses := new.Data
 	if len(userCourses) == 0 {
 		//no courses
 		return new
 	}
 
-	resultUserCourses := make([]model.UserCourse, len(userCourses))
+	resultUserCourses := make([]model.ProviderUserCourse, len(userCourses))
 	for i, course := range userCourses {
 
 		assignments := course.Assignments
@@ -409,7 +409,7 @@ func (a *Adapter) getSubmissionsFromCurrent(current model.UserCourses, new model
 	return new
 }
 
-func (a *Adapter) findSubmission(assignmentID int, current model.UserCourses) *model.ProviderSubmission {
+func (a *Adapter) findSubmission(assignmentID int, current model.ProviderUserCourses) *model.ProviderSubmission {
 	userCourses := current.Data
 	if len(userCourses) == 0 {
 		return nil
@@ -433,11 +433,11 @@ func (a *Adapter) findSubmission(assignmentID int, current model.UserCourses) *m
 }
 
 // check if the courses are available in allCourses otherwise load them
-func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]model.UserCourse) (*model.UserCourses, map[int]model.UserCourse, error) {
+func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]model.ProviderUserCourse) (*model.ProviderUserCourses, map[int]model.ProviderUserCourse, error) {
 	//prepare the result variable
 	now := time.Now()
-	loadedUserCourses := model.UserCourses{SyncDate: now}
-	data := []model.UserCourse{} //to be loaded in the function
+	loadedUserCourses := model.ProviderUserCourses{SyncDate: now}
+	data := []model.ProviderUserCourse{} //to be loaded in the function
 
 	// first load the courses for the id
 	courses, err := a.loadCourses(netID)
@@ -476,9 +476,9 @@ func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]mod
 	return &loadedUserCourses, allCourses, nil
 }
 
-func (a *Adapter) loadCourseData(netID string, course model.ProviderCourse, syncDate time.Time) (*model.UserCourse, error) {
+func (a *Adapter) loadCourseData(netID string, course model.ProviderCourse, syncDate time.Time) (*model.ProviderUserCourse, error) {
 	now := time.Now()
-	userCourse := model.UserCourse{Data: course, Assignments: nil, SyncDate: now}
+	userCourse := model.ProviderUserCourse{Data: course, Assignments: nil, SyncDate: now}
 	//to load the assignments
 
 	loadedAssignments, err := a.getAssignments(course.ID, netID, false)
@@ -605,7 +605,7 @@ func (a *Adapter) CacheUserCoursesData(user model.ProviderUser, coursesIDs []int
 
 	//add the new data to the user object
 	currentUserCourses := user.Courses.Data
-	newUserCoursesData := []model.UserCourse{}
+	newUserCoursesData := []model.ProviderUserCourse{}
 	for _, uc := range currentUserCourses {
 		//get the data from the loaded ones
 		loadedAssignments, has := newData[uc.Data.ID]
@@ -622,7 +622,7 @@ func (a *Adapter) CacheUserCoursesData(user model.ProviderUser, coursesIDs []int
 				newCAs[j] = newCA
 			}
 
-			nuc := model.UserCourse{Data: uc.Data, Assignments: newCAs, SyncDate: now}
+			nuc := model.ProviderUserCourse{Data: uc.Data, Assignments: newCAs, SyncDate: now}
 			newUserCoursesData = append(newUserCoursesData, nuc)
 		} else {
 			//use the old one

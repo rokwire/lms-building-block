@@ -27,6 +27,18 @@ paths:
         Get courses
       security:
         - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          description: course type
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+            enum:
+              - custom
+              - provider
       responses:
         '200':
           description: Successful operation
@@ -35,7 +47,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Course'
+                  oneOf:
+                    - $ref: '#/components/schemas/Course'
+                    - $ref: '#/components/schemas/CustomCourse'
         '400':
           description: Bad request
         '401':
@@ -178,6 +192,185 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+  /api/users/courses:
+    get:
+      tags:
+        - Api
+      summary: Get custom user courses
+      description: |
+        Get custom user courses by search parameters
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          description: course ID
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: course name
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: key
+          in: query
+          description: course key
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  required:
+                    - id
+                    - app_id
+                    - org_id
+                    - user_id
+                    - course
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      readOnly: true
+                    app_id:
+                      type: string
+                      readOnly: true
+                    org_id:
+                      type: string
+                      readOnly: true
+                    user_id:
+                      type: string
+                      readOnly: true
+                    course:
+                      $ref: '#/components/schemas/CustomCourse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+  '/api/users/courses/{id}':
+    post:
+      tags:
+        - Api
+      summary: Create custom user course
+      description: |
+        Create custom user course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: course ID
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+    delete:
+      tags:
+        - Api
+      summary: Delete custom user course
+      description: |
+        Delete custom user course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User course ID
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+  '/api/users/courses/{course-id}/unit/{unit-id}':
+    put:
+      tags:
+        - Api
+      summary: Update custom user course
+      description: |
+        Update custom user course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: course-id
+          in: path
+          description: User course ID
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: unit-id
+          in: path
+          description: Unit ID
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: creates one nudge
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Unit'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
         '400':
           description: Bad request
         '401':
@@ -674,6 +867,178 @@ components:
         params:
           nullable: true
           type: object
+    CustomCourse:
+      required:
+        - id
+        - app_id
+        - org_id
+        - key
+        - name
+        - modules
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        key:
+          type: string
+        name:
+          type: string
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/Module'
+    Module:
+      required:
+        - id
+        - app_id
+        - org_id
+        - key
+        - course_key
+        - name
+        - units
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        course_key:
+          type: string
+        key:
+          type: string
+        name:
+          type: string
+        units:
+          type: array
+          items:
+            $ref: '#/components/schemas/Unit'
+    Unit:
+      required:
+        - id
+        - app_id
+        - org_id
+        - key
+        - course_key
+        - module_key
+        - name
+        - content
+        - schedule
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        course_key:
+          type: string
+        module_key:
+          type: string
+        key:
+          type: string
+        name:
+          type: string
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Content'
+        schedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleItem'
+    Content:
+      required:
+        - id
+        - app_id
+        - org_id
+        - course_key
+        - module_key
+        - unit_key
+        - key
+        - type
+        - name
+        - reference
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        course_key:
+          type: string
+        module_key:
+          type: string
+        unit_key:
+          type: string
+        key:
+          type: string
+        type:
+          type: string
+          enum:
+            - assignment
+            - resource
+            - reward
+            - evaluation
+        name:
+          type: string
+        details:
+          type: string
+        reference:
+          $ref: '#/components/schemas/Reference'
+        linked_content:
+          type: array
+          items:
+            type: string
+          nullable: true
+    ScheduleItem:
+      required:
+        - name
+        - content_keys
+        - duration
+      type: object
+      properties:
+        name:
+          type: string
+        content_keys:
+          type: array
+          items:
+            type: string
+        duration:
+          type: integer
+    Reference:
+      required:
+        - name
+        - type
+        - reference_key
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        reference_key:
+          type: string
     _admin_req_create_nudge:
       required:
         - id

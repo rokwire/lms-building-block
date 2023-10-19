@@ -28,17 +28,17 @@ type ProviderUser struct {
 	User     User      `bson:"user"`
 	SyncDate time.Time `bson:"sync_date"`
 
-	Courses *UserCourses `bson:"courses"`
+	Courses *ProviderUserCourses `bson:"courses"`
 }
 
-// UserCourses cache entity
-type UserCourses struct {
-	Data     []UserCourse `bson:"data"`
-	SyncDate time.Time    `bson:"sync_date"`
+// ProviderUserCourses cache entity
+type ProviderUserCourses struct {
+	Data     []ProviderUserCourse `bson:"data"`
+	SyncDate time.Time            `bson:"sync_date"`
 }
 
-// UserCourse cache entity
-type UserCourse struct {
+// ProviderUserCourse cache entity
+type ProviderUserCourse struct {
 	Data        ProviderCourse     `bson:"data"`
 	Assignments []CourseAssignment `bson:"assignments"`
 	SyncDate    time.Time          `bson:"sync_date"`

@@ -1,0 +1,22 @@
+required:
+  - id
+  - app_id
+  - org_id
+  - user_id
+  - course
+type: object
+properties:
+  id:
+    type: string
+    readOnly: true
+  app_id:
+    type: string
+    readOnly: true
+  org_id:
+    type: string
+    readOnly: true
+  user_id:
+    type: string
+    readOnly: true
+  course:
+    $ref: "./Course.yaml"

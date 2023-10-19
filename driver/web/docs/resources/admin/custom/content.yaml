@@ -1,9 +1,9 @@
- get:
+get:
   tags:
-  - Api
-  summary: Get custom modules
+  - Admin
+  summary: Get custom course content
   description: |
-    Get custom modules
+    Get custom course content
   security:
     - bearerAuth: []
   responses:
@@ -14,7 +14,7 @@
           schema:
             type: array
             items:
-              $ref: "../../../schemas/custom/Module.yaml"
+              $ref: "../../../schemas/custom/Unit.yaml"
     400:
       description: Bad request
     401:

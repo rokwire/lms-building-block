@@ -1,4 +1,4 @@
- get:
+get:
   tags:
   - Api
   summary: Get courses
@@ -6,6 +6,18 @@
     Get courses
   security:
     - bearerAuth: []
+  parameters:
+    - name: type
+      in: query
+      description: course type
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+        enum:
+          - custom
+          - provider
   responses:
       200:
         description: Successful operation
@@ -14,7 +26,9 @@
             schema:
               type: array
               items:
-                $ref: "../../../schemas/provider/Course.yaml"
+                oneOf:
+                  - $ref: "../../../schemas/provider/Course.yaml"
+                  - $ref: "../../../schemas/custom/Course.yaml"
       400:
         description: Bad request
       401:
