@@ -3,9 +3,42 @@ get:
   - Admin
   summary: Get custom units
   description: |
-    Get custom units
+    Get custom units by search parameters
   security:
     - bearerAuth: []
+  parameters:
+    - name: id
+      in: query
+      description: unit ID
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: name
+      in: query
+      description: unit name
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: key
+      in: query
+      description: unit key
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: content_id
+      in: query
+      description: comma separated list of content IDs
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
   responses:
     200:
       description: Successful operation
@@ -15,6 +48,34 @@ get:
             type: array
             items:
               $ref: "../../../schemas/custom/Unit.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+post:
+  tags:
+  - Admin
+  summary: Create custom unit
+  description: |
+    Create a custom unit
+  security:
+    - bearerAuth: []
+  requestBody:
+    description: custom unit
+    content:
+      application/json:
+        schema:
+         $ref: "../../../../schemas/custom/Unit.yaml"
+    required: true
+  responses:
+    200:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "../../../../schemas/custom/Unit.yaml"
     400:
       description: Bad request
     401:

@@ -358,7 +358,7 @@ paths:
           schema:
             type: string
       requestBody:
-        description: creates one nudge
+        description: updated course unit
         content:
           application/json:
             schema:

@@ -3,9 +3,42 @@ get:
   - Admin
   summary: Get custom courses
   description: |
-    Get custom courses
+    Get custom courses by search parameters
   security:
     - bearerAuth: []
+  parameters:
+    - name: id
+      in: query
+      description: course ID
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: name
+      in: query
+      description: course name
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: key
+      in: query
+      description: course key
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: module_id
+      in: query
+      description: comma separated list of module IDs
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
   responses:
     200:
       description: Successful operation
@@ -15,6 +48,34 @@ get:
             type: array
             items:
               $ref: "../../../schemas/custom/Course.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+post:
+  tags:
+  - Admin
+  summary: Create custom course
+  description: |
+    Create a custom course
+  security:
+    - bearerAuth: []
+  requestBody:
+    description: custom course
+    content:
+      application/json:
+        schema:
+         $ref: "../../../../schemas/custom/Course.yaml"
+    required: true
+  responses:
+    200:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "../../../../schemas/custom/Course.yaml"
     400:
       description: Bad request
     401:
