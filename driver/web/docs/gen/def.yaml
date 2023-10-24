@@ -520,7 +520,7 @@ paths:
       x-data-type: model.Nudge
       x-authentication-type: Permissions
       x-request-body: Def.AdminReqCreateNudge
-      x-conversion-function: nudgeFromDef
+      x-conversion-function: nudgeFromDefAdminReqCreate
   '/admin/nudges/{id}':
     put:
       tags:
@@ -564,7 +564,7 @@ paths:
       x-data-type: model.Nudge
       x-authentication-type: Permissions
       x-request-body: Def.AdminReqUpdateNudge
-      x-conversion-function: nudgeFromDef
+      x-conversion-function: nudgeFromDefAdminReqUpdate
     delete:
       tags:
         - Admin
@@ -892,7 +892,7 @@ components:
         users_sources:
           type: array
           items:
-            $ref: '#/components/schemas/UsersSources'
+            $ref: '#/components/schemas/UsersSource'
     NudgesConfig:
       required:
         - active
@@ -916,11 +916,12 @@ components:
           type: integer
         block_size:
           type: integer
-    UsersSources:
+    UsersSource:
+      required:
+        - type
       type: object
       properties:
         type:
-          nullable: true
           type: string
         params:
           nullable: true
@@ -1123,7 +1124,7 @@ components:
         users_sources:
           type: array
           items:
-            $ref: '#/components/schemas/UsersSources'
+            $ref: '#/components/schemas/UsersSource'
     _admin_req_update_nudge:
       required:
         - name
@@ -1147,4 +1148,4 @@ components:
         users_sources:
           type: array
           items:
-            $ref: '#/components/schemas/UsersSources'
+            $ref: '#/components/schemas/UsersSource'

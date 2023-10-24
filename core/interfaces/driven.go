@@ -41,7 +41,7 @@ type Storage interface {
 	LoadAllNudges() ([]model.Nudge, error)
 	LoadActiveNudges() ([]model.Nudge, error)
 	InsertNudge(item model.Nudge) error
-	UpdateNudge(ID string, name string, body string, deepLink string, params model.NudgeParams, active bool, usersSourse []model.UsersSources) error
+	UpdateNudge(item model.Nudge) error
 	DeleteNudge(ID string) error
 
 	InsertSentNudge(sentNudge model.SentNudge) error

@@ -105,7 +105,7 @@ type Nudge struct {
 		AccountIds *[]int `json:"account_ids,omitempty"`
 		CourseIds  *[]int `json:"course_ids,omitempty"`
 	} `json:"params"`
-	UsersSources *[]UsersSources `json:"users_sources,omitempty"`
+	UsersSources *[]UsersSource `json:"users_sources,omitempty"`
 }
 
 // NudgesConfig defines model for NudgesConfig.
@@ -155,10 +155,10 @@ type User struct {
 	Name        *string     `json:"name,omitempty"`
 }
 
-// UsersSources defines model for UsersSources.
-type UsersSources struct {
+// UsersSource defines model for UsersSource.
+type UsersSource struct {
 	Params *map[string]interface{} `json:"params"`
-	Type   *string                 `json:"type"`
+	Type   string                  `json:"type"`
 }
 
 // AdminReqCreateNudge defines model for _admin_req_create_nudge.
@@ -169,7 +169,7 @@ type AdminReqCreateNudge struct {
 	Id           string                 `json:"id"`
 	Name         string                 `json:"name"`
 	Params       map[string]interface{} `json:"params"`
-	UsersSources *[]UsersSources        `json:"users_sources,omitempty"`
+	UsersSources *[]UsersSource         `json:"users_sources,omitempty"`
 }
 
 // AdminReqUpdateNudge defines model for _admin_req_update_nudge.
@@ -179,7 +179,7 @@ type AdminReqUpdateNudge struct {
 	DeepLink     string                 `json:"deep_link"`
 	Name         string                 `json:"name"`
 	Params       map[string]interface{} `json:"params"`
-	UsersSources *[]UsersSources        `json:"users_sources,omitempty"`
+	UsersSources *[]UsersSource         `json:"users_sources,omitempty"`
 }
 
 // GetAdminNudgesProcessesParams defines parameters for GetAdminNudgesProcesses.
@@ -227,7 +227,7 @@ type GetApiCoursesIdAssignmentGroupsParams struct {
 // GetApiCoursesIdUsersParams defines parameters for GetApiCoursesIdUsers.
 type GetApiCoursesIdUsersParams struct {
 	// Include include = enrollments,scores
-	Include string `form:"include" json:"include"`
+	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
 // GetApiUsersCoursesParams defines parameters for GetApiUsersCourses.

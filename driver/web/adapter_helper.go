@@ -13,12 +13,12 @@ import (
 
 // apiDataType represents any stored data type that may be read/written by an API
 type apiDataType interface {
-	model.SentNudge | model.NudgesConfig | model.AssignmentGroup | model.Nudge | model.User | model.NudgesProcess | string | model.ProviderCourse
+	model.SentNudge | string | model.NudgesProcess | model.Nudge | model.ProviderCourse | model.User | model.NudgesConfig | model.AssignmentGroup
 }
 
 // requestDataType represents any data type that may be sent in an API request body
 type requestDataType interface {
-	Def.NudgesConfig | Def.AdminReqUpdateNudge | Def.AdminReqCreateNudge | apiDataType
+	Def.AdminReqCreateNudge | Def.NudgesConfig | Def.AdminReqUpdateNudge | apiDataType
 }
 
 func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method string, tag string, coreFunc string, dataType string, authType interface{},
@@ -50,6 +50,75 @@ func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method str
 		}
 
 		router.HandleFunc(pathStr, handleRequest[model.SentNudge, model.SentNudge](&handler, a.paths, a.logger)).Methods(method)
+	case "string":
+		handler := apiHandler[string, string]{authorization: authorization, messageDataType: logutils.MessageDataType(dataType)}
+		err = setCoreHandler[string, string](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[string, string](&handler, a.paths, a.logger)).Methods(method)
+	case "model.NudgesProcess":
+		handler := apiHandler[model.NudgesProcess, model.NudgesProcess]{authorization: authorization, messageDataType: model.TypeNudgesProcess}
+		err = setCoreHandler[model.NudgesProcess, model.NudgesProcess](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.NudgesProcess, model.NudgesProcess](&handler, a.paths, a.logger)).Methods(method)
+	case "model.Nudge":
+		switch requestBody {
+		case "Def.AdminReqCreateNudge":
+			convert, ok := convFunc.(func(*tokenauth.Claims, *Def.AdminReqCreateNudge) (*model.Nudge, error))
+			if !ok {
+				return errors.ErrorData(logutils.StatusInvalid, "request body conversion function", &logutils.FieldArgs{"x-conversion-function": conversionFunc})
+			}
+
+			handler := apiHandler[model.Nudge, Def.AdminReqCreateNudge]{authorization: authorization, conversionFunc: convert, messageDataType: model.TypeNudge}
+			err = setCoreHandler[model.Nudge, Def.AdminReqCreateNudge](&handler, coreHandler, method, tag, coreFunc)
+			if err != nil {
+				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+			}
+
+			router.HandleFunc(pathStr, handleRequest[model.Nudge, Def.AdminReqCreateNudge](&handler, a.paths, a.logger)).Methods(method)
+		case "Def.AdminReqUpdateNudge":
+			convert, ok := convFunc.(func(*tokenauth.Claims, *Def.AdminReqUpdateNudge) (*model.Nudge, error))
+			if !ok {
+				return errors.ErrorData(logutils.StatusInvalid, "request body conversion function", &logutils.FieldArgs{"x-conversion-function": conversionFunc})
+			}
+
+			handler := apiHandler[model.Nudge, Def.AdminReqUpdateNudge]{authorization: authorization, conversionFunc: convert, messageDataType: model.TypeNudge}
+			err = setCoreHandler[model.Nudge, Def.AdminReqUpdateNudge](&handler, coreHandler, method, tag, coreFunc)
+			if err != nil {
+				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+			}
+
+			router.HandleFunc(pathStr, handleRequest[model.Nudge, Def.AdminReqUpdateNudge](&handler, a.paths, a.logger)).Methods(method)
+		default:
+			handler := apiHandler[model.Nudge, model.Nudge]{authorization: authorization, messageDataType: model.TypeNudge}
+			err = setCoreHandler[model.Nudge, model.Nudge](&handler, coreHandler, method, tag, coreFunc)
+			if err != nil {
+				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+			}
+
+			router.HandleFunc(pathStr, handleRequest[model.Nudge, model.Nudge](&handler, a.paths, a.logger)).Methods(method)
+		}
+	case "model.ProviderCourse":
+		handler := apiHandler[model.ProviderCourse, model.ProviderCourse]{authorization: authorization, messageDataType: model.TypeProviderCourse}
+		err = setCoreHandler[model.ProviderCourse, model.ProviderCourse](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.ProviderCourse, model.ProviderCourse](&handler, a.paths, a.logger)).Methods(method)
+	case "model.User":
+		handler := apiHandler[model.User, model.User]{authorization: authorization, messageDataType: model.TypeUser}
+		err = setCoreHandler[model.User, model.User](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.User, model.User](&handler, a.paths, a.logger)).Methods(method)
 	case "model.NudgesConfig":
 		switch requestBody {
 		case "Def.NudgesConfig":
@@ -82,75 +151,6 @@ func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method str
 		}
 
 		router.HandleFunc(pathStr, handleRequest[model.AssignmentGroup, model.AssignmentGroup](&handler, a.paths, a.logger)).Methods(method)
-	case "model.Nudge":
-		switch requestBody {
-		case "Def.AdminReqUpdateNudge":
-			convert, ok := convFunc.(func(*tokenauth.Claims, *Def.AdminReqUpdateNudge) (*model.Nudge, error))
-			if !ok {
-				return errors.ErrorData(logutils.StatusInvalid, "request body conversion function", &logutils.FieldArgs{"x-conversion-function": conversionFunc})
-			}
-
-			handler := apiHandler[model.Nudge, Def.AdminReqUpdateNudge]{authorization: authorization, conversionFunc: convert, messageDataType: model.TypeNudge}
-			err = setCoreHandler[model.Nudge, Def.AdminReqUpdateNudge](&handler, coreHandler, method, tag, coreFunc)
-			if err != nil {
-				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-			}
-
-			router.HandleFunc(pathStr, handleRequest[model.Nudge, Def.AdminReqUpdateNudge](&handler, a.paths, a.logger)).Methods(method)
-		case "Def.AdminReqCreateNudge":
-			convert, ok := convFunc.(func(*tokenauth.Claims, *Def.AdminReqCreateNudge) (*model.Nudge, error))
-			if !ok {
-				return errors.ErrorData(logutils.StatusInvalid, "request body conversion function", &logutils.FieldArgs{"x-conversion-function": conversionFunc})
-			}
-
-			handler := apiHandler[model.Nudge, Def.AdminReqCreateNudge]{authorization: authorization, conversionFunc: convert, messageDataType: model.TypeNudge}
-			err = setCoreHandler[model.Nudge, Def.AdminReqCreateNudge](&handler, coreHandler, method, tag, coreFunc)
-			if err != nil {
-				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-			}
-
-			router.HandleFunc(pathStr, handleRequest[model.Nudge, Def.AdminReqCreateNudge](&handler, a.paths, a.logger)).Methods(method)
-		default:
-			handler := apiHandler[model.Nudge, model.Nudge]{authorization: authorization, messageDataType: model.TypeNudge}
-			err = setCoreHandler[model.Nudge, model.Nudge](&handler, coreHandler, method, tag, coreFunc)
-			if err != nil {
-				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-			}
-
-			router.HandleFunc(pathStr, handleRequest[model.Nudge, model.Nudge](&handler, a.paths, a.logger)).Methods(method)
-		}
-	case "model.User":
-		handler := apiHandler[model.User, model.User]{authorization: authorization, messageDataType: model.TypeUser}
-		err = setCoreHandler[model.User, model.User](&handler, coreHandler, method, tag, coreFunc)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-		}
-
-		router.HandleFunc(pathStr, handleRequest[model.User, model.User](&handler, a.paths, a.logger)).Methods(method)
-	case "model.NudgesProcess":
-		handler := apiHandler[model.NudgesProcess, model.NudgesProcess]{authorization: authorization, messageDataType: model.TypeNudgesProcess}
-		err = setCoreHandler[model.NudgesProcess, model.NudgesProcess](&handler, coreHandler, method, tag, coreFunc)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-		}
-
-		router.HandleFunc(pathStr, handleRequest[model.NudgesProcess, model.NudgesProcess](&handler, a.paths, a.logger)).Methods(method)
-	case "string":
-		handler := apiHandler[string, string]{authorization: authorization, messageDataType: logutils.MessageDataType(dataType)}
-		err = setCoreHandler[string, string](&handler, coreHandler, method, tag, coreFunc)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-		}
-
-		router.HandleFunc(pathStr, handleRequest[string, string](&handler, a.paths, a.logger)).Methods(method)
-	case "model.ProviderCourse":
-		handler := apiHandler[model.ProviderCourse, model.ProviderCourse]{authorization: authorization, messageDataType: model.TypeProviderCourse}
-		err = setCoreHandler[model.ProviderCourse, model.ProviderCourse](&handler, coreHandler, method, tag, coreFunc)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-		}
-
-		router.HandleFunc(pathStr, handleRequest[model.ProviderCourse, model.ProviderCourse](&handler, a.paths, a.logger)).Methods(method)
 	default:
 		return errors.ErrorData(logutils.StatusInvalid, "data type reference", nil)
 	}
@@ -234,8 +234,10 @@ func (a *Adapter) getConversionFunc(ref interface{}) (interface{}, error) {
 	switch ref {
 	case "nudgesConfigFromDef":
 		return nudgesConfigFromDef, nil
-	case "nudgeFromDef":
-		return nudgeFromDef, nil
+	case "nudgeFromDefAdminReqCreate":
+		return nudgeFromDefAdminReqCreate, nil
+	case "nudgeFromDefAdminReqUpdate":
+		return nudgeFromDefAdminReqUpdate, nil
 	default:
 		return nil, errors.ErrorData(logutils.StatusInvalid, "conversion function reference", &logutils.FieldArgs{"ref": ref})
 	}

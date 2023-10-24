@@ -266,26 +266,26 @@ func (sa *Adapter) InsertNudge(item model.Nudge) error {
 }
 
 // UpdateNudge updates nudge
-func (sa *Adapter) UpdateNudge(ID string, name string, body string, deepLink string, params model.NudgeParams, active bool, usersSourse []model.UsersSources) error {
+func (sa *Adapter) UpdateNudge(item model.Nudge) error {
 
-	nudgeFilter := bson.D{primitive.E{Key: "_id", Value: ID}}
+	nudgeFilter := bson.D{primitive.E{Key: "_id", Value: item.ID}}
 	updateNudge := bson.D{
 		primitive.E{Key: "$set", Value: bson.D{
-			primitive.E{Key: "name", Value: name},
-			primitive.E{Key: "body", Value: body},
-			primitive.E{Key: "deep_link", Value: deepLink},
-			primitive.E{Key: "params", Value: params},
-			primitive.E{Key: "active", Value: active},
-			primitive.E{Key: "users_sources", Value: usersSourse},
+			primitive.E{Key: "name", Value: item.Name},
+			primitive.E{Key: "body", Value: item.Body},
+			primitive.E{Key: "deep_link", Value: item.DeepLink},
+			primitive.E{Key: "params", Value: item.Params},
+			primitive.E{Key: "active", Value: item.Active},
+			primitive.E{Key: "users_sources", Value: item.UsersSources},
 		}},
 	}
 
 	result, err := sa.db.nudges.UpdateOne(sa.context, nudgeFilter, updateNudge, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": ID}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": item.ID}, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": ID}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": item.ID}, err)
 	}
 
 	return nil

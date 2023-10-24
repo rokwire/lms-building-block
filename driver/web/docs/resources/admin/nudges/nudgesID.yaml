@@ -40,7 +40,7 @@ put:
   x-data-type: model.Nudge
   x-authentication-type: Permissions
   x-request-body: Def.AdminReqUpdateNudge
-  x-conversion-function: nudgeFromDef
+  x-conversion-function: nudgeFromDefAdminReqUpdate
 delete:
   tags:
   - Admin

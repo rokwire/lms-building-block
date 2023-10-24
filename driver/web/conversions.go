@@ -38,20 +38,42 @@ func nudgesConfigFromDef(claims *tokenauth.Claims, item *Def.NudgesConfig) (*mod
 	return &nudgesConfig, errors.New(logutils.Unimplemented)
 }
 
-func nudgeFromDef(claims *tokenauth.Claims, item *Def.Nudge) (*model.Nudge, error) {
-	// if item == nil {
-	// 	return nil, nil
-	// }
+func nudgeFromDefAdminReqCreate(claims *tokenauth.Claims, item *Def.AdminReqCreateNudge) (*model.Nudge, error) {
+	if item == nil {
+		return nil, nil
+	}
 
-	// appID := claims.AppID
-	// if item.AllApps != nil && *item.AllApps {
-	// 	appID = authutils.AllApps
-	// }
-	// orgID := claims.OrgID
-	// if item.AllOrgs != nil && *item.AllOrgs {
-	// 	orgID = authutils.AllOrgs
-	// }
+	var usersSources []model.UsersSource
+	if item.UsersSources != nil {
+		usersSources := make([]model.UsersSource, len(*item.UsersSources))
+		for i, u := range *item.UsersSources {
+			usersSources[i] = model.UsersSource{Type: u.Type}
+			if u.Params != nil {
+				usersSources[i].Params = *u.Params
+			}
+		}
+	}
 
-	// return &model.Config{Type: item.Type, AppID: appID, OrgID: orgID, System: item.System, Data: item.Data}, nil
-	return nil, errors.New(logutils.Unimplemented)
+	nudge := model.Nudge{ID: item.Id, Name: item.Name, Body: item.Body, DeepLink: item.DeepLink, Params: item.Params, Active: item.Active, UsersSources: usersSources}
+	return &nudge, nil
+}
+
+func nudgeFromDefAdminReqUpdate(claims *tokenauth.Claims, item *Def.AdminReqUpdateNudge) (*model.Nudge, error) {
+	if item == nil {
+		return nil, nil
+	}
+
+	var usersSources []model.UsersSource
+	if item.UsersSources != nil {
+		usersSources := make([]model.UsersSource, len(*item.UsersSources))
+		for i, u := range *item.UsersSources {
+			usersSources[i] = model.UsersSource{Type: u.Type}
+			if u.Params != nil {
+				usersSources[i].Params = *u.Params
+			}
+		}
+	}
+
+	nudge := model.Nudge{Name: item.Name, Body: item.Body, DeepLink: item.DeepLink, Params: item.Params, Active: item.Active, UsersSources: usersSources}
+	return &nudge, nil
 }

@@ -19,14 +19,12 @@ import (
 	"fmt"
 	"lms/core"
 	"lms/core/model"
-	"lms/driver/web/rest"
 	"log"
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
 
 	"github.com/rokwire/core-auth-library-go/v3/authservice"
-	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logs"
 	"github.com/rokwire/logging-library-go/v2/logutils"
@@ -56,38 +54,33 @@ type Adapter struct {
 	serviceID     string
 	auth          *Auth
 
-	apisHandler      APIsHandler
-	adminApisHandler rest.AdminApisHandler
+	apisHandler APIsHandler
 
 	paths openapi3.Paths
-
-	app *core.Application
 
 	logger *logs.Logger
 }
 
-type handlerFunc = func(*logs.Log, *http.Request, *tokenauth.Claims) logs.HTTPResponse
-
 // Start starts the module
-func (we Adapter) Start() {
+func (a *Adapter) Start() {
 
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use()
 
-	subrouter := router.PathPrefix("/" + we.serviceID).Subrouter()
-	subrouter.PathPrefix("/doc/ui").Handler(we.serveDocUI())
-	subrouter.HandleFunc("/doc", we.serveDoc)
+	subrouter := router.PathPrefix("/" + a.serviceID).Subrouter()
+	subrouter.PathPrefix("/doc/ui").Handler(a.serveDocUI())
+	subrouter.HandleFunc("/doc", a.serveDoc)
 
-	we.routeAPIs(router)
+	a.routeAPIs(router)
 
-	log.Fatal(http.ListenAndServe(":"+we.port, router))
+	log.Fatal(http.ListenAndServe(":"+a.port, router))
 }
 
 // routeAPIs calls registerHandler for every path specified as auto-generated in docs
-func (we Adapter) routeAPIs(router *mux.Router) error {
-	pathStrs := we.paths.InMatchingOrder()
+func (a *Adapter) routeAPIs(router *mux.Router) error {
+	pathStrs := a.paths.InMatchingOrder()
 	for _, pathStr := range pathStrs {
-		path := we.paths.Find(pathStr)
+		path := a.paths.Find(pathStr)
 
 		operations := map[string]*openapi3.Operation{
 			http.MethodGet:    path.Get,
@@ -102,7 +95,7 @@ func (we Adapter) routeAPIs(router *mux.Router) error {
 			}
 
 			tag := operation.Tags[0]
-			err := we.registerHandler(router, pathStr, method, tag, operation.Extensions[XCoreFunction].(string), operation.Extensions[XDataType].(string),
+			err := a.registerHandler(router, pathStr, method, tag, operation.Extensions[XCoreFunction].(string), operation.Extensions[XDataType].(string),
 				operation.Extensions[XAuthType], operation.Extensions[XRequestBody], operation.Extensions[XConversionFunction])
 			if err != nil {
 				errArgs := logutils.FieldArgs(operation.Extensions)
@@ -116,45 +109,18 @@ func (we Adapter) routeAPIs(router *mux.Router) error {
 	return nil
 }
 
-func (we Adapter) serveDoc(w http.ResponseWriter, r *http.Request) {
+func (a *Adapter) serveDoc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("access-control-allow-origin", "*")
 	http.ServeFile(w, r, "./driver/web/docs/gen/def.yaml")
 }
 
-func (we Adapter) serveDocUI() http.Handler {
-	url := fmt.Sprintf("%s/doc", we.lmsServiceURL)
+func (a *Adapter) serveDocUI() http.Handler {
+	url := fmt.Sprintf("%s/doc", a.lmsServiceURL)
 	return httpSwagger.Handler(httpSwagger.URL(url))
 }
 
-func (we Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		logObj := we.logger.NewRequestLog(req)
-
-		logObj.RequestReceived()
-
-		var response logs.HTTPResponse
-		if authorization != nil {
-			responseStatus, claims, err := authorization.Check(req)
-			if err != nil {
-				logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.ActionValidate, logutils.TypeRequest, nil, err, responseStatus, true))
-				return
-			}
-
-			if claims != nil {
-				logObj.SetContext("account_id", claims.Subject)
-			}
-			response = handler(logObj, req, claims)
-		} else {
-			response = handler(logObj, req, nil)
-		}
-
-		logObj.SendHTTPResponse(w, response)
-		logObj.RequestComplete()
-	}
-}
-
-// func (we Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
-// 	route, pathParams, err := we.openAPIRouter.FindRoute(req)
+// func (a *Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
+// 	route, pathParams, err := a.openAPIRouter.FindRoute(req)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -204,17 +170,14 @@ func NewWebAdapter(port string, serviceID string, app *core.Application, config 
 	}
 
 	apisHandler := NewAPIsHandler(app)
-	adminApisHandler := rest.NewAdminApisHandler(app, config)
 	return Adapter{
-		lmsServiceURL:    config.LmsServiceURL,
-		port:             port,
-		serviceID:        serviceID,
-		auth:             auth,
-		paths:            paths,
-		apisHandler:      apisHandler,
-		adminApisHandler: adminApisHandler,
-		app:              app,
-		logger:           logger,
+		lmsServiceURL: config.LmsServiceURL,
+		port:          port,
+		serviceID:     serviceID,
+		auth:          auth,
+		paths:         paths,
+		apisHandler:   apisHandler,
+		logger:        logger,
 	}
 }
 

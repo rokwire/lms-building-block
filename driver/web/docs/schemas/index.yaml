@@ -17,8 +17,8 @@ Nudge:
   $ref: "./nudges/Nudge.yaml"
 NudgesConfig:
   $ref: "./nudges/NudgesConfig.yaml"
-UsersSources:
-  $ref: "./nudges/UsersSources.yaml"
+UsersSource:
+  $ref: "./nudges/UsersSource.yaml"
 
 # custom
 CustomCourse:

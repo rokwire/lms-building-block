@@ -69,7 +69,8 @@ func (s *adminImpl) CreateNudge(claims *tokenauth.Claims, item model.Nudge) (*mo
 
 // UpdateNudge(ID string, name string, body string, deepLink string, params model.NudgeParams, active bool, usersSourse []model.UsersSources) error
 func (s *adminImpl) UpdateNudge(claims *tokenauth.Claims, id string, item model.Nudge) (*model.Nudge, error) {
-	err := s.app.storage.UpdateNudge(item.ID, item.Name, item.Body, item.DeepLink, item.Params, item.Active, item.UsersSources)
+	item.ID = id
+	err := s.app.storage.UpdateNudge(item)
 	if err != nil {
 		return nil, err
 	}
