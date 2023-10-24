@@ -1,6 +1,6 @@
 get:
   tags:
-  - Api
+  - Client
   summary: Get custom user courses
   description: |
     Get custom user courses by search parameters

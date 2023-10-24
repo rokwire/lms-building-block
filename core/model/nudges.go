@@ -20,6 +20,19 @@ package model
 import (
 	"lms/utils"
 	"time"
+
+	"github.com/rokwire/logging-library-go/v2/logutils"
+)
+
+const (
+	//TypeNudge nudge type
+	TypeNudge logutils.MessageDataType = "nudge"
+	//TypeSentNudge sent nudge type
+	TypeSentNudge logutils.MessageDataType = "sent nudge"
+	//TypeNudgesConfig nudges config type
+	TypeNudgesConfig logutils.MessageDataType = "nudges config"
+	//TypeNudgesProcess nudges process type
+	TypeNudgesProcess logutils.MessageDataType = "nudges process"
 )
 
 // NudgesConfig entity

@@ -15,4 +15,7 @@ delete:
       description: Unauthorized
     500:
       description: Internal error     
+  x-core-function: ClearTestSentNudges
+  x-data-type: model.SentNudge
+  x-authentication-type: Permissions 
  

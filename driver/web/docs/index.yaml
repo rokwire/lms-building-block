@@ -18,6 +18,10 @@ tags:
   - name: Admin
     description: Clients administration APIs.
 paths:
+  #default
+  /version:
+    $ref: "./resources/default/version.yaml"
+
   #api
   /api/courses:
     $ref: "./resources/api/courses/courses.yaml"
@@ -28,7 +32,7 @@ paths:
   /api/courses/{id}/users:
     $ref: "./resources/api/courses/userID.yaml"
   /api/users/self:
-    $ref: "./resources/api/user/user.yaml"
+    $ref: "./resources/api/user/self.yaml"
   /api/users/courses:
     $ref: "./resources/api/user/courses.yaml"
   /api/users/courses/{id}:
@@ -44,11 +48,11 @@ paths:
   /admin/nudges/{id}:
     $ref: "./resources/admin/nudges/nudgesID.yaml"
   /admin/sent-nudges:
-    $ref: "./resources/admin/sentNudges/sentNudges.yaml"
+    $ref: "./resources/admin/sent-nudges.yaml"
   /admin/test-sent-nudges:
-    $ref: "./resources/admin/sentNudges/testSentNudges.yaml"
+    $ref: "./resources/admin/test-sent-nudges.yaml"
   /admin/nudges-processes:
-    $ref: "./resources/admin/nudgesProcess/nudges-process.yaml"
+    $ref: "./resources/admin/nudges-process.yaml"
 
 components:
   securitySchemes:

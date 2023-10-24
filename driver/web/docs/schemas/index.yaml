@@ -16,7 +16,7 @@ AssignmentGroup:
 Nudge:
   $ref: "./nudges/Nudge.yaml"
 NudgesConfig:
-  $ref: "./nudges/nudges-config.yaml"
+  $ref: "./nudges/NudgesConfig.yaml"
 UsersSources:
   $ref: "./nudges/UsersSources.yaml"
 

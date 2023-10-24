@@ -21,12 +21,6 @@ const (
 	Test   NudgesConfigMode = "test"
 )
 
-// Defines values for GetApiCoursesParamsType.
-const (
-	Custom   GetApiCoursesParamsType = "custom"
-	Provider GetApiCoursesParamsType = "provider"
-)
-
 // Assignment defines model for Assignment.
 type Assignment struct {
 	CourseId *int    `json:"course_id,omitempty"`
@@ -220,12 +214,9 @@ type GetAdminSentNudgesParams struct {
 
 // GetApiCoursesParams defines parameters for GetApiCourses.
 type GetApiCoursesParams struct {
-	// Type course type
-	Type *GetApiCoursesParamsType `form:"type,omitempty" json:"type,omitempty"`
+	// CourseType course type
+	CourseType *string `form:"course_type,omitempty" json:"course_type,omitempty"`
 }
-
-// GetApiCoursesParamsType defines parameters for GetApiCourses.
-type GetApiCoursesParamsType string
 
 // GetApiCoursesIdAssignmentGroupsParams defines parameters for GetApiCoursesIdAssignmentGroups.
 type GetApiCoursesIdAssignmentGroupsParams struct {

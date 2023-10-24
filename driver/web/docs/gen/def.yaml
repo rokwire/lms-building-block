@@ -18,17 +18,36 @@ tags:
   - name: Admin
     description: Clients administration APIs.
 paths:
+  /version:
+    get:
+      tags:
+        - Default
+      summary: Get version
+      description: |
+        Gets current version of this service
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: v1.0.0
+        '500':
+          description: Internal error
+      x-core-function: GetVersion
+      x-data-type: string
   /api/courses:
     get:
       tags:
-        - Api
+        - Client
       summary: Get courses
       description: |
         Get courses
       security:
         - bearerAuth: []
       parameters:
-        - name: type
+        - name: course_type
           in: query
           description: course type
           required: false
@@ -36,9 +55,6 @@ paths:
           explode: false
           schema:
             type: string
-            enum:
-              - custom
-              - provider
       responses:
         '200':
           description: Successful operation
@@ -47,19 +63,20 @@ paths:
               schema:
                 type: array
                 items:
-                  oneOf:
-                    - $ref: '#/components/schemas/Course'
-                    - $ref: '#/components/schemas/CustomCourse'
+                  $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCourses
+      x-data-type: model.ProviderCourse
+      x-authentication-type: User
   '/api/courses/{id}':
     get:
       tags:
-        - Api
+        - Client
       summary: Get course by ID
       description: |
         Gets course by ID
@@ -80,9 +97,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Course'
+                $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
@@ -91,10 +106,13 @@ paths:
           description: Not Found
         '500':
           description: Internal error
+      x-core-function: GetCourse
+      x-data-type: model.ProviderCourse
+      x-authentication-type: User
   '/api/courses/{id}/assignment-groups':
     get:
       tags:
-        - Api
+        - Client
       summary: Get assignment-groups by ID
       description: |
         Gets assignment-groups by ID
@@ -123,6 +141,7 @@ paths:
           content:
             application/json:
               schema:
+                type: array
                 items:
                   $ref: '#/components/schemas/AssignmentGroup'
         '400':
@@ -133,10 +152,13 @@ paths:
           description: Not Found
         '500':
           description: Internal error
+      x-core-function: GetAssignmentGroups
+      x-data-type: model.AssignmentGroup
+      x-authentication-type: User
   '/api/courses/{id}/users':
     get:
       tags:
-        - Api
+        - Client
       summary: Get user by ID
       description: |
         Get user by ID
@@ -154,7 +176,7 @@ paths:
         - name: include
           in: query
           description: 'include = enrollments,scores'
-          required: true
+          required: false
           style: form
           explode: false
           schema:
@@ -165,19 +187,20 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User'
         '400':
           description: Bad request
         '401':
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCourseUser
+      x-data-type: model.User
+      x-authentication-type: User
   /api/users/self:
     get:
       tags:
-        - Api
+        - Client
       summary: Get current user
       description: |
         Get current user
@@ -189,19 +212,20 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/User'
         '400':
           description: Bad request
         '401':
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCurrentUser
+      x-data-type: model.User
+      x-authentication-type: User
   /api/users/courses:
     get:
       tags:
-        - Api
+        - Client
       summary: Get custom user courses
       description: |
         Get custom user courses by search parameters
@@ -271,7 +295,7 @@ paths:
   '/api/users/courses/{id}':
     post:
       tags:
-        - Api
+        - Client
       summary: Create custom user course
       description: |
         Create custom user course
@@ -302,7 +326,7 @@ paths:
           description: Internal error
     delete:
       tags:
-        - Api
+        - Client
       summary: Delete custom user course
       description: |
         Delete custom user course
@@ -334,7 +358,7 @@ paths:
   '/api/users/courses/{course-id}/unit/{unit-id}':
     put:
       tags:
-        - Api
+        - Client
       summary: Update custom user course
       description: |
         Update custom user course
@@ -392,15 +416,16 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NudgesConfig'
+                $ref: '#/components/schemas/NudgesConfig'
         '400':
           description: Bad request
         '401':
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetNudgesConfig
+      x-data-type: model.NudgesConfig
+      x-authentication-type: Permissions
     put:
       tags:
         - Admin
@@ -430,6 +455,11 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateNudgesConfig
+      x-data-type: model.NudgesConfig
+      x-authentication-type: Permissions
+      x-request-body: Def.NudgesConfig
+      x-conversion-function: nudgesConfigFromDef
   /admin/nudges:
     get:
       tags:
@@ -454,6 +484,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetNudges
+      x-data-type: model.Nudge
+      x-authentication-type: Permissions
     post:
       tags:
         - Admin
@@ -483,6 +516,11 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: CreateNudge
+      x-data-type: model.Nudge
+      x-authentication-type: Permissions
+      x-request-body: Def.AdminReqCreateNudge
+      x-conversion-function: nudgeFromDef
   '/admin/nudges/{id}':
     put:
       tags:
@@ -522,6 +560,11 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateNudge
+      x-data-type: model.Nudge
+      x-authentication-type: Permissions
+      x-request-body: Def.AdminReqUpdateNudge
+      x-conversion-function: nudgeFromDef
     delete:
       tags:
         - Admin
@@ -546,6 +589,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: DeleteNudge
+      x-data-type: model.Nudge
+      x-authentication-type: Permissions
   /admin/sent-nudges:
     get:
       tags:
@@ -625,6 +671,9 @@ paths:
           description: Not Found
         '500':
           description: Internal error
+      x-core-function: FindSentNudges
+      x-data-type: model.SentNudge
+      x-authentication-type: Permissions
     delete:
       tags:
         - Admin
@@ -650,6 +699,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: DeleteSentNudges
+      x-data-type: model.SentNudge
+      x-authentication-type: Permissions
   /admin/test-sent-nudges:
     delete:
       tags:
@@ -668,6 +720,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: ClearTestSentNudges
+      x-data-type: model.SentNudge
+      x-authentication-type: Permissions
   /admin/nudges-processes:
     get:
       tags:
@@ -742,6 +797,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: FindNudgesProcesses
+      x-data-type: model.NudgesProcess
+      x-authentication-type: Permissions
 components:
   securitySchemes:
     bearerAuth:

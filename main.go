@@ -129,7 +129,7 @@ func main() {
 		CanvasTokenType: canvasTokenType,
 		CanvasToken:     canvasToken,
 	}
-	webAdapter := driver.NewWebAdapter(port, application, &config, serviceRegManager, logger)
+	webAdapter := driver.NewWebAdapter(port, serviceID, application, &config, serviceRegManager, logger)
 	webAdapter.Start()
 }
 

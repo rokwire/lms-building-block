@@ -1,6 +1,6 @@
 put:
   tags:
-  - Api
+  - Client
   summary: Update custom user course
   description: |
     Update custom user course

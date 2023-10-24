@@ -27,6 +27,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/rokwire/logging-library-go/v2/errors"
+	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 // Filter represents find filter for finding entities by the their fields
@@ -370,4 +372,19 @@ func AnyToArrayOfInt(val any) []int {
 		return result
 	}
 	return result
+}
+
+// GetValue returns the value corresponding to key in items; returns an error if missing and required or not the expected type
+func GetValue[T any](items map[string]interface{}, key string, required bool) (T, error) {
+	mapValue, ok := items[key]
+	if required && !ok {
+		return *new(T), errors.ErrorData(logutils.StatusMissing, "map value", &logutils.FieldArgs{"key": key, "required": required})
+	}
+
+	value, ok := mapValue.(T)
+	if !ok {
+		return *new(T), errors.ErrorData(logutils.StatusInvalid, "map value", &logutils.FieldArgs{"key": key, "required": required})
+	}
+
+	return value, nil
 }

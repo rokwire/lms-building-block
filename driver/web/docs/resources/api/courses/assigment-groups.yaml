@@ -1,6 +1,6 @@
  get:
   tags:
-  - Api
+  - Client
   summary: Get assignment-groups by ID
   description: |
     Gets assignment-groups by ID
@@ -28,9 +28,10 @@
       description: successful operation
       content:
         application/json:
-            schema:
-              items:
-                $ref: "../../../schemas/provider/AssignmentGroup.yaml"
+          schema:
+            type: array
+            items:
+              $ref: "../../../schemas/provider/AssignmentGroup.yaml"
     400:
       description: Bad request
     401:
@@ -39,3 +40,6 @@
       description: Not Found
     500:
       description: Internal error
+  x-core-function: GetAssignmentGroups
+  x-data-type: model.AssignmentGroup
+  x-authentication-type: User

@@ -31,10 +31,13 @@ get:
           schema:
             type: array
             items:
-              $ref: "../../../schemas/nudges/NudgesProcess.yaml"
+              $ref: "../../schemas/nudges/NudgesProcess.yaml"
     400:
       description: Bad request
     401:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: FindNudgesProcesses
+  x-data-type: model.NudgesProcess
+  x-authentication-type: Permissions

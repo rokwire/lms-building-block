@@ -1,6 +1,6 @@
 post:
   tags:
-  - Api
+  - Client
   summary: Create custom user course
   description: |
     Create custom user course
@@ -31,7 +31,7 @@ post:
       description: Internal error
 delete:
   tags:
-  - Api
+  - Client
   summary: Delete custom user course
   description: |
     Delete custom user course
