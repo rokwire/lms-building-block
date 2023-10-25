@@ -264,28 +264,7 @@ paths:
               schema:
                 type: array
                 items:
-                  required:
-                    - id
-                    - app_id
-                    - org_id
-                    - user_id
-                    - course
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      readOnly: true
-                    app_id:
-                      type: string
-                      readOnly: true
-                    org_id:
-                      type: string
-                      readOnly: true
-                    user_id:
-                      type: string
-                      readOnly: true
-                    course:
-                      $ref: '#/components/schemas/CustomCourse'
+                  $ref: '#/components/schemas/UserCourse'
         '400':
           description: Bad request
         '401':
@@ -293,6 +272,36 @@ paths:
         '500':
           description: Internal error
   '/api/users/courses/{id}':
+    get:
+      tags:
+        - Client
+      summary: Get user course
+      description: |
+        Get user course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: User course ID
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCourse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
     post:
       tags:
         - Client
@@ -382,12 +391,12 @@ paths:
           schema:
             type: string
       requestBody:
-        description: updated course unit
+        description: updated unit schedule item
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Unit'
-        required: true
+              $ref: '#/components/schemas/ScheduleItem'
+        required: false
       responses:
         '200':
           description: Success
@@ -1073,16 +1082,16 @@ components:
     ScheduleItem:
       required:
         - name
-        - content_keys
+        - contents
         - duration
       type: object
       properties:
         name:
           type: string
-        content_keys:
+        contents:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/UserReference'
         duration:
           type: integer
     Reference:
@@ -1098,6 +1107,46 @@ components:
           type: string
         reference_key:
           type: string
+    UserCourse:
+      required:
+        - id
+        - app_id
+        - org_id
+        - user_id
+        - course
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        user_id:
+          type: string
+          readOnly: true
+        course:
+          $ref: '#/components/schemas/CustomCourse'
+    UserReference:
+      allOf:
+        - $ref: '#/components/schemas/Reference'
+        - required:
+            - date_started
+          type: object
+          properties:
+            user_data:
+              type: object
+              nullable: true
+            date_started:
+              type: string
+              format: date-time
+            date_completed:
+              type: string
+              format: date-time
+              nullable: true
     _admin_req_create_nudge:
       required:
         - id

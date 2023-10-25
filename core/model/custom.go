@@ -55,9 +55,6 @@ type Module struct {
 	Name      string
 	Units     []Unit
 
-	Completed *bool
-	UserData  map[string]interface{}
-
 	DateCreated time.Time
 	DateUpdated *time.Time
 }
@@ -75,18 +72,15 @@ type Unit struct {
 	Contents  []Content
 	Schedule  []ScheduleItem
 
-	Completed *bool
-	UserData  map[string]interface{}
-
 	DateCreated time.Time
 	DateUpdated *time.Time
 }
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time
 type ScheduleItem struct {
-	Name        string   `bson:"name"`
-	ContentKeys []string `bson:"content_keys"`
-	Duration    int      `bson:"duration"`
+	Name        string          `bson:"name"`
+	ContentKeys []UserReference `bson:"contents"`
+	Duration    int             `bson:"duration"`
 }
 
 // Content represents some Unit content
@@ -105,9 +99,6 @@ type Content struct {
 	ContentReference Reference
 	LinkedContent    []Content
 
-	Completed *bool
-	UserData  map[string]interface{}
-
 	DateCreated time.Time
 	DateUpdated *time.Time
 }
@@ -117,4 +108,14 @@ type Reference struct {
 	Name         string `bson:"name"`
 	Type         string `bson:"type"` // content item, video, PDF, survey, web URL
 	ReferenceKey string `bson:"reference_key"`
+}
+
+// UserReference represents a reference with some additional data about user interactions
+type UserReference struct {
+	Reference
+
+	// user fields (populated as user takes a course)
+	UserData      map[string]interface{} `bson:"user_data,omitempty"`
+	DateStarted   *time.Time             `bson:"date_started,omitempty"`
+	DateCompleted *time.Time             `bson:"date_completed,omitempty"`
 }

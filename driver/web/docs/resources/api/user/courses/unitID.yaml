@@ -24,12 +24,12 @@ put:
       schema:
         type: string
   requestBody:
-    description: updated course unit
+    description: updated unit schedule item
     content:
       application/json:
         schema:
-         $ref: "../../../../schemas/custom/Unit.yaml"
-    required: true
+          $ref: "../../../../schemas/custom/ScheduleItem.yaml"
+    required: false
   responses:
     200:
       description: Success

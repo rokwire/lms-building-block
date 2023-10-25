@@ -1,14 +1,14 @@
 required:
   - name
-  - content_keys
+  - contents
   - duration
 type: object
 properties:
   name:
     type: string
-  content_keys:
+  contents:
     type: array
     items:
-      type: string
+      $ref: "./UserReference.yaml"
   duration:
     type: integer

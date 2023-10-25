@@ -33,6 +33,10 @@ ScheduleItem:
   $ref: "./custom/ScheduleItem.yaml"
 Reference:
   $ref: "./custom/Reference.yaml"
+UserCourse:
+  $ref: "./custom/UserCourse.yaml"
+UserReference:
+  $ref: "./custom/UserReference.yaml"
 
  ###nudges api
 _admin_req_create_nudge:
