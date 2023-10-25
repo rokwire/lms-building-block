@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"lms/core"
-	"lms/core/model"
 	"log"
 	"net/http"
 
@@ -143,7 +142,7 @@ func (a *Adapter) serveDocUI() http.Handler {
 // }
 
 // NewWebAdapter creates new WebAdapter instance
-func NewWebAdapter(port string, serviceID string, app *core.Application, config *model.Config, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
+func NewWebAdapter(baseURL string, port string, serviceID string, app *core.Application, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
 	//openAPI doc
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile("driver/web/docs/gen/def.yaml")
@@ -164,14 +163,14 @@ func NewWebAdapter(port string, serviceID string, app *core.Application, config 
 		paths["/"+serviceID+path] = obj
 	}
 
-	auth, err := NewAuth(serviceRegManager, app, config)
+	auth, err := NewAuth(serviceRegManager, app)
 	if err != nil {
 		logger.Fatalf("error creating auth - %s", err.Error())
 	}
 
 	apisHandler := NewAPIsHandler(app)
 	return Adapter{
-		lmsServiceURL: config.LmsServiceURL,
+		lmsServiceURL: baseURL,
 		port:          port,
 		serviceID:     serviceID,
 		auth:          auth,

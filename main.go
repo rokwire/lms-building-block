@@ -16,7 +16,6 @@ package main
 
 import (
 	"lms/core"
-	"lms/core/model"
 	cacheadapter "lms/driven/cache"
 	"lms/driven/corebb"
 	"lms/driven/groups"
@@ -119,17 +118,8 @@ func main() {
 	application.Start()
 
 	// web adapter
-	coreBBHost := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_HOST", true, false)
 	lmsServiceURL := envLoader.GetAndLogEnvVar(envPrefix+"SERVICE_URL", true, false)
-	config := model.Config{
-		InternalAPIKey:  internalAPIKey,
-		CoreBBHost:      coreBBHost,
-		LmsServiceURL:   lmsServiceURL,
-		CanvasBaseURL:   canvasBaseURL,
-		CanvasTokenType: canvasTokenType,
-		CanvasToken:     canvasToken,
-	}
-	webAdapter := driver.NewWebAdapter(port, serviceID, application, &config, serviceRegManager, logger)
+	webAdapter := driver.NewWebAdapter(lmsServiceURL, port, serviceID, application, serviceRegManager, logger)
 	webAdapter.Start()
 }
 
