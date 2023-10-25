@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"lms/core"
-	"lms/core/model"
 	"lms/driver/web/rest"
 	"log"
 	"net/http"
@@ -174,7 +173,7 @@ func (we Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler)
 // }
 
 // NewWebAdapter creates new WebAdapter instance
-func NewWebAdapter(port string, app *core.Application, config *model.Config, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
+func NewWebAdapter(baseURL string, port string, app *core.Application, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
 	//openAPI doc
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile("driver/web/docs/gen/def.yaml")
@@ -201,12 +200,12 @@ func NewWebAdapter(port string, app *core.Application, config *model.Config, ser
 		logger.Fatalf("error on openapi3 gorillamux router - %s", err.Error())
 	}
 
-	auth, err := NewAuth(serviceRegManager, app, config)
+	auth, err := NewAuth(serviceRegManager, app)
 
-	apisHandler := rest.NewApisHandler(app, config)
-	adminApisHandler := rest.NewAdminApisHandler(app, config)
+	apisHandler := rest.NewApisHandler(app)
+	adminApisHandler := rest.NewAdminApisHandler(app)
 	return Adapter{
-		lmsServiceURL:    config.LmsServiceURL,
+		lmsServiceURL:    baseURL,
 		port:             port,
 		auth:             auth,
 		apisHandler:      apisHandler,

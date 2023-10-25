@@ -17,7 +17,6 @@ package rest
 import (
 	"encoding/json"
 	"lms/core"
-	"lms/core/model"
 	"lms/utils"
 	"net/http"
 	"strconv"
@@ -31,8 +30,7 @@ import (
 
 // ApisHandler handles the rest APIs implementation
 type ApisHandler struct {
-	app    *core.Application
-	config *model.Config
+	app *core.Application
 }
 
 // Version gets version
@@ -199,11 +197,11 @@ func (h ApisHandler) getProviderUserID(claims *tokenauth.Claims) string {
 }
 
 // NewApisHandler creates new rest Handler instance
-func NewApisHandler(app *core.Application, config *model.Config) ApisHandler {
-	return ApisHandler{app: app, config: config}
+func NewApisHandler(app *core.Application) ApisHandler {
+	return ApisHandler{app: app}
 }
 
 // NewAdminApisHandler creates new rest Handler instance
-func NewAdminApisHandler(app *core.Application, config *model.Config) AdminApisHandler {
-	return AdminApisHandler{app: app, config: config}
+func NewAdminApisHandler(app *core.Application) AdminApisHandler {
+	return AdminApisHandler{app: app}
 }

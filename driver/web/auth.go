@@ -16,7 +16,6 @@ package web
 
 import (
 	"lms/core"
-	"lms/core/model"
 	"net/http"
 
 	"github.com/rokwire/core-auth-library-go/v3/authorization"
@@ -35,7 +34,7 @@ type Auth struct {
 }
 
 // NewAuth creates new auth handler
-func NewAuth(serviceRegManager *authservice.ServiceRegManager, app *core.Application, config *model.Config) (*Auth, error) {
+func NewAuth(serviceRegManager *authservice.ServiceRegManager, app *core.Application) (*Auth, error) {
 	client, err := newClientAuth(serviceRegManager)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionCreate, "client auth", nil, err)

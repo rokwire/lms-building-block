@@ -32,8 +32,7 @@ import (
 
 // AdminApisHandler handles the rest Admin APIs implementation
 type AdminApisHandler struct {
-	app    *core.Application
-	config *model.Config
+	app *core.Application
 }
 
 // GetNudgesConfig gets the nudges config
