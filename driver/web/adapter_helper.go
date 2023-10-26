@@ -13,12 +13,12 @@ import (
 
 // apiDataType represents any stored data type that may be read/written by an API
 type apiDataType interface {
-	model.AssignmentGroup | model.Nudge | string | model.ProviderCourse | model.User | model.NudgesConfig | model.NudgesProcess | model.SentNudge
+	model.Content | model.NudgesConfig | model.User | model.AssignmentGroup | model.Course | model.Unit | model.NudgesProcess | model.Module | model.SentNudge | model.Nudge | string | model.ProviderCourse
 }
 
 // requestDataType represents any data type that may be sent in an API request body
 type requestDataType interface {
-	Def.AdminReqUpdateNudge | Def.AdminReqCreateNudge | Def.NudgesConfig | apiDataType
+	Def.AdminReqUpdateNudge | Def.NudgesConfig | Def.AdminReqCreateNudge | apiDataType
 }
 
 func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method string, tag string, coreFunc string, dataType string, authType interface{},
@@ -42,6 +42,46 @@ func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method str
 	}
 
 	switch dataType {
+	case "model.Content":
+		handler := apiHandler[model.Content, model.Content]{authorization: authorization, messageDataType: model.TypeContent}
+		err = setCoreHandler[model.Content, model.Content](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.Content, model.Content](&handler, a.paths, a.logger)).Methods(method)
+	case "model.NudgesConfig":
+		switch requestBody {
+		case "#/components/schemas/NudgesConfig":
+			convert, ok := convFunc.(func(*tokenauth.Claims, *Def.NudgesConfig) (*model.NudgesConfig, error))
+			if !ok {
+				return errors.ErrorData(logutils.StatusInvalid, "request body conversion function", &logutils.FieldArgs{"x-conversion-function": conversionFunc})
+			}
+
+			handler := apiHandler[model.NudgesConfig, Def.NudgesConfig]{authorization: authorization, conversionFunc: convert, messageDataType: model.TypeNudgesConfig}
+			err = setCoreHandler[model.NudgesConfig, Def.NudgesConfig](&handler, coreHandler, method, tag, coreFunc)
+			if err != nil {
+				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+			}
+
+			router.HandleFunc(pathStr, handleRequest[model.NudgesConfig, Def.NudgesConfig](&handler, a.paths, a.logger)).Methods(method)
+		default:
+			handler := apiHandler[model.NudgesConfig, model.NudgesConfig]{authorization: authorization, messageDataType: model.TypeNudgesConfig}
+			err = setCoreHandler[model.NudgesConfig, model.NudgesConfig](&handler, coreHandler, method, tag, coreFunc)
+			if err != nil {
+				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+			}
+
+			router.HandleFunc(pathStr, handleRequest[model.NudgesConfig, model.NudgesConfig](&handler, a.paths, a.logger)).Methods(method)
+		}
+	case "model.User":
+		handler := apiHandler[model.User, model.User]{authorization: authorization, messageDataType: model.TypeUser}
+		err = setCoreHandler[model.User, model.User](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.User, model.User](&handler, a.paths, a.logger)).Methods(method)
 	case "model.AssignmentGroup":
 		handler := apiHandler[model.AssignmentGroup, model.AssignmentGroup]{authorization: authorization, messageDataType: model.TypeAssignmentGroup}
 		err = setCoreHandler[model.AssignmentGroup, model.AssignmentGroup](&handler, coreHandler, method, tag, coreFunc)
@@ -50,6 +90,46 @@ func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method str
 		}
 
 		router.HandleFunc(pathStr, handleRequest[model.AssignmentGroup, model.AssignmentGroup](&handler, a.paths, a.logger)).Methods(method)
+	case "model.Course":
+		handler := apiHandler[model.Course, model.Course]{authorization: authorization, messageDataType: model.TypeCourse}
+		err = setCoreHandler[model.Course, model.Course](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.Course, model.Course](&handler, a.paths, a.logger)).Methods(method)
+	case "model.Unit":
+		handler := apiHandler[model.Unit, model.Unit]{authorization: authorization, messageDataType: model.TypeUnit}
+		err = setCoreHandler[model.Unit, model.Unit](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.Unit, model.Unit](&handler, a.paths, a.logger)).Methods(method)
+	case "model.NudgesProcess":
+		handler := apiHandler[model.NudgesProcess, model.NudgesProcess]{authorization: authorization, messageDataType: model.TypeNudgesProcess}
+		err = setCoreHandler[model.NudgesProcess, model.NudgesProcess](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.NudgesProcess, model.NudgesProcess](&handler, a.paths, a.logger)).Methods(method)
+	case "model.Module":
+		handler := apiHandler[model.Module, model.Module]{authorization: authorization, messageDataType: model.TypeModule}
+		err = setCoreHandler[model.Module, model.Module](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.Module, model.Module](&handler, a.paths, a.logger)).Methods(method)
+	case "model.SentNudge":
+		handler := apiHandler[model.SentNudge, model.SentNudge]{authorization: authorization, messageDataType: model.TypeSentNudge}
+		err = setCoreHandler[model.SentNudge, model.SentNudge](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.SentNudge, model.SentNudge](&handler, a.paths, a.logger)).Methods(method)
 	case "model.Nudge":
 		switch requestBody {
 		case "#/components/schemas/_admin_req_update_nudge":
@@ -103,54 +183,6 @@ func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method str
 		}
 
 		router.HandleFunc(pathStr, handleRequest[model.ProviderCourse, model.ProviderCourse](&handler, a.paths, a.logger)).Methods(method)
-	case "model.User":
-		handler := apiHandler[model.User, model.User]{authorization: authorization, messageDataType: model.TypeUser}
-		err = setCoreHandler[model.User, model.User](&handler, coreHandler, method, tag, coreFunc)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-		}
-
-		router.HandleFunc(pathStr, handleRequest[model.User, model.User](&handler, a.paths, a.logger)).Methods(method)
-	case "model.NudgesConfig":
-		switch requestBody {
-		case "#/components/schemas/NudgesConfig":
-			convert, ok := convFunc.(func(*tokenauth.Claims, *Def.NudgesConfig) (*model.NudgesConfig, error))
-			if !ok {
-				return errors.ErrorData(logutils.StatusInvalid, "request body conversion function", &logutils.FieldArgs{"x-conversion-function": conversionFunc})
-			}
-
-			handler := apiHandler[model.NudgesConfig, Def.NudgesConfig]{authorization: authorization, conversionFunc: convert, messageDataType: model.TypeNudgesConfig}
-			err = setCoreHandler[model.NudgesConfig, Def.NudgesConfig](&handler, coreHandler, method, tag, coreFunc)
-			if err != nil {
-				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-			}
-
-			router.HandleFunc(pathStr, handleRequest[model.NudgesConfig, Def.NudgesConfig](&handler, a.paths, a.logger)).Methods(method)
-		default:
-			handler := apiHandler[model.NudgesConfig, model.NudgesConfig]{authorization: authorization, messageDataType: model.TypeNudgesConfig}
-			err = setCoreHandler[model.NudgesConfig, model.NudgesConfig](&handler, coreHandler, method, tag, coreFunc)
-			if err != nil {
-				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-			}
-
-			router.HandleFunc(pathStr, handleRequest[model.NudgesConfig, model.NudgesConfig](&handler, a.paths, a.logger)).Methods(method)
-		}
-	case "model.NudgesProcess":
-		handler := apiHandler[model.NudgesProcess, model.NudgesProcess]{authorization: authorization, messageDataType: model.TypeNudgesProcess}
-		err = setCoreHandler[model.NudgesProcess, model.NudgesProcess](&handler, coreHandler, method, tag, coreFunc)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-		}
-
-		router.HandleFunc(pathStr, handleRequest[model.NudgesProcess, model.NudgesProcess](&handler, a.paths, a.logger)).Methods(method)
-	case "model.SentNudge":
-		handler := apiHandler[model.SentNudge, model.SentNudge]{authorization: authorization, messageDataType: model.TypeSentNudge}
-		err = setCoreHandler[model.SentNudge, model.SentNudge](&handler, coreHandler, method, tag, coreFunc)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
-		}
-
-		router.HandleFunc(pathStr, handleRequest[model.SentNudge, model.SentNudge](&handler, a.paths, a.logger)).Methods(method)
 	default:
 		return errors.ErrorData(logutils.StatusInvalid, "data type reference", nil)
 	}
@@ -221,6 +253,46 @@ func (a *Adapter) getCoreHandler(tag string, ref string) (interface{}, error) {
 		return a.apisHandler.adminClearTestSentNudges, nil
 	case "AdminFindNudgesProcesses":
 		return a.apisHandler.adminFindNudgesProcesses, nil
+	case "AdminGetCustomCourses":
+		return a.apisHandler.adminGetCustomCourses, nil
+	case "AdminCreateCustomCourse":
+		return a.apisHandler.adminCreateCustomCourse, nil
+	case "AdminGetCustomCourse":
+		return a.apisHandler.adminGetCustomCourse, nil
+	case "AdminUpdateCustomCourse":
+		return a.apisHandler.adminUpdateCustomCourse, nil
+	case "AdminDeleteCustomCourse":
+		return a.apisHandler.adminDeleteCustomCourse, nil
+	case "AdminGetCustomModules":
+		return a.apisHandler.adminGetCustomModules, nil
+	case "AdminCreateCustomModule":
+		return a.apisHandler.adminCreateCustomModule, nil
+	case "AdminGetCustomModule":
+		return a.apisHandler.adminGetCustomModule, nil
+	case "AdminUpdateCustomModule":
+		return a.apisHandler.adminUpdateCustomModule, nil
+	case "AdminDeleteCustomModule":
+		return a.apisHandler.adminDeleteCustomModule, nil
+	case "AdminGetCustomUnits":
+		return a.apisHandler.adminGetCustomUnits, nil
+	case "AdminCreateCustomUnit":
+		return a.apisHandler.adminCreateCustomUnit, nil
+	case "AdminGetCustomUnit":
+		return a.apisHandler.adminGetCustomUnit, nil
+	case "AdminUpdateCustomUnit":
+		return a.apisHandler.adminUpdateCustomUnit, nil
+	case "AdminDeleteCustomUnit":
+		return a.apisHandler.adminDeleteCustomUnit, nil
+	case "AdminGetCustomContents":
+		return a.apisHandler.adminGetCustomContents, nil
+	case "AdminCreateCustomContent":
+		return a.apisHandler.adminCreateCustomContent, nil
+	case "AdminGetCustomContent":
+		return a.apisHandler.adminGetCustomContent, nil
+	case "AdminUpdateCustomContent":
+		return a.apisHandler.adminUpdateCustomContent, nil
+	case "AdminDeleteCustomContent":
+		return a.apisHandler.adminDeleteCustomContent, nil
 	default:
 		return nil, errors.ErrorData(logutils.StatusInvalid, "core function", logutils.StringArgs(tag+ref))
 	}

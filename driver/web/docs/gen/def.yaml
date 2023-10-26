@@ -863,6 +863,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCustomCourses
+      x-data-type: model.Course
+      x-authentication-type: Permissions
     post:
       tags:
         - Admin
@@ -891,6 +894,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: CreateCustomCourse
+      x-data-type: model.Course
+      x-authentication-type: Permissions
   '/admin/courses/{id}':
     get:
       tags:
@@ -922,6 +928,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCustomCourse
+      x-data-type: model.Course
+      x-authentication-type: Permissions
     put:
       tags:
         - Admin
@@ -960,6 +969,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateCustomCourse
+      x-data-type: model.Course
+      x-authentication-type: Permissions
     delete:
       tags:
         - Admin
@@ -991,6 +1003,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: DeleteCustomCourse
+      x-data-type: model.Course
+      x-authentication-type: Permissions
   /admin/modules:
     get:
       tags:
@@ -1048,6 +1063,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCustomModules
+      x-data-type: model.Module
+      x-authentication-type: Permissions
     post:
       tags:
         - Admin
@@ -1076,6 +1094,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: CreateCustomModule
+      x-data-type: model.Module
+      x-authentication-type: Permissions
   '/admin/modules/{id}':
     get:
       tags:
@@ -1107,6 +1128,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCustomModule
+      x-data-type: model.Module
+      x-authentication-type: Permissions
     put:
       tags:
         - Admin
@@ -1145,6 +1169,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateCustomModule
+      x-data-type: model.Module
+      x-authentication-type: Permissions
     delete:
       tags:
         - Admin
@@ -1176,6 +1203,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: DeleteCustomModule
+      x-data-type: model.Module
+      x-authentication-type: Permissions
   /admin/units:
     get:
       tags:
@@ -1233,6 +1263,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCustomUnits
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
     post:
       tags:
         - Admin
@@ -1261,6 +1294,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: CreateCustomUnit
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
   '/admin/units/{id}':
     get:
       tags:
@@ -1292,6 +1328,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCustomUnit
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
     put:
       tags:
         - Admin
@@ -1330,6 +1369,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateCustomUnit
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
     delete:
       tags:
         - Admin
@@ -1361,6 +1403,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: DeleteCustomUnit
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
   /admin/content:
     get:
       tags:
@@ -1410,6 +1455,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCustomContents
+      x-data-type: model.Content
+      x-authentication-type: Permissions
     post:
       tags:
         - Admin
@@ -1438,6 +1486,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: CreateCustomContent
+      x-data-type: model.Content
+      x-authentication-type: Permissions
   '/admin/content/{id}':
     get:
       tags:
@@ -1469,6 +1520,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCustomContent
+      x-data-type: model.Content
+      x-authentication-type: Permissions
     put:
       tags:
         - Admin
@@ -1507,6 +1561,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateCustomContent
+      x-data-type: model.Content
+      x-authentication-type: Permissions
     delete:
       tags:
         - Admin
@@ -1538,6 +1595,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: DeleteCustomContent
+      x-data-type: model.Content
+      x-authentication-type: Permissions
 components:
   securitySchemes:
     bearerAuth:

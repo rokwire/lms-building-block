@@ -46,6 +46,9 @@ get:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: GetCustomContents
+  x-data-type: model.Content
+  x-authentication-type: Permissions
 post:
   tags:
   - Admin
@@ -74,3 +77,6 @@ post:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: CreateCustomContent
+  x-data-type: model.Content
+  x-authentication-type: Permissions

@@ -54,6 +54,9 @@ get:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: GetCustomCourses
+  x-data-type: model.Course
+  x-authentication-type: Permissions
 post:
   tags:
   - Admin
@@ -82,3 +85,6 @@ post:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: CreateCustomCourse
+  x-data-type: model.Course
+  x-authentication-type: Permissions

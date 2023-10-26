@@ -14,7 +14,24 @@
 
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/rokwire/logging-library-go/v2/logutils"
+)
+
+const (
+	//TypeUserCourse user course type
+	TypeUserCourse logutils.MessageDataType = "user course"
+	//TypeCourse course type
+	TypeCourse logutils.MessageDataType = "course"
+	//TypeModule module type
+	TypeModule logutils.MessageDataType = "module"
+	//TypeUnit unit type
+	TypeUnit logutils.MessageDataType = "unit"
+	//TypeContent content type
+	TypeContent logutils.MessageDataType = "content"
+)
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
 type UserCourse struct {

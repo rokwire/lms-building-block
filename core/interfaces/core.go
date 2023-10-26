@@ -54,4 +54,36 @@ type Admin interface {
 	// model.NudgesProcess
 
 	FindNudgesProcesses(claims *tokenauth.Claims, limit *int, offset *int) ([]model.NudgesProcess, error)
+
+	// model.Course
+
+	GetCustomCourses(claims *tokenauth.Claims, id *string, name *string, key *string, moduleID *string) ([]model.Course, error)
+	CreateCustomCourse(claims *tokenauth.Claims, item model.Course) (*model.Course, error)
+	GetCustomCourse(claims *tokenauth.Claims, id string) (*model.Course, error)
+	UpdateCustomCourse(claims *tokenauth.Claims, id string, item model.Course) (*model.Course, error)
+	DeleteCustomCourse(claims *tokenauth.Claims, id string) error
+
+	// model.Module
+
+	GetCustomModules(claims *tokenauth.Claims, id *string, name *string, key *string, unitID *string) ([]model.Module, error)
+	CreateCustomModule(claims *tokenauth.Claims, item model.Module) (*model.Module, error)
+	GetCustomModule(claims *tokenauth.Claims, id string) (*model.Module, error)
+	UpdateCustomModule(claims *tokenauth.Claims, id string, item model.Module) (*model.Module, error)
+	DeleteCustomModule(claims *tokenauth.Claims, id string) error
+
+	// model.Unit
+
+	GetCustomUnits(claims *tokenauth.Claims, id *string, name *string, key *string, contentID *string) ([]model.Unit, error)
+	CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) (*model.Unit, error)
+	GetCustomUnit(claims *tokenauth.Claims, id string) (*model.Unit, error)
+	UpdateCustomUnit(claims *tokenauth.Claims, id string, item model.Unit) (*model.Unit, error)
+	DeleteCustomUnit(claims *tokenauth.Claims, id string) error
+
+	// model.Content
+
+	GetCustomContents(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.Content, error)
+	CreateCustomContent(claims *tokenauth.Claims, item model.Content) (*model.Content, error)
+	GetCustomContent(claims *tokenauth.Claims, id string) (*model.Content, error)
+	UpdateCustomContent(claims *tokenauth.Claims, id string, item model.Content) (*model.Content, error)
+	DeleteCustomContent(claims *tokenauth.Claims, id string) error
 }

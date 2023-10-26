@@ -28,6 +28,9 @@ get:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: GetCustomModule
+  x-data-type: model.Module
+  x-authentication-type: Permissions
 put:
   tags:
   - Admin
@@ -66,6 +69,9 @@ put:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: UpdateCustomModule
+  x-data-type: model.Module
+  x-authentication-type: Permissions
 delete:
   tags:
   - Admin
@@ -97,3 +103,6 @@ delete:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: DeleteCustomModule
+  x-data-type: model.Module
+  x-authentication-type: Permissions

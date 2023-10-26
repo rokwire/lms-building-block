@@ -18,10 +18,12 @@
 package core
 
 import (
+	"errors"
 	"lms/core/model"
 	"strings"
 
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
+	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 type adminImpl struct {
@@ -130,4 +132,104 @@ func (s *adminImpl) FindNudgesProcesses(claims *tokenauth.Claims, limit *int, of
 		return nil, err
 	}
 	return nudgesProcess, nil
+}
+
+func (s *adminImpl) GetCustomCourses(claims *tokenauth.Claims, id *string, name *string, key *string, moduleID *string) ([]model.Course, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Course) (*model.Course, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) GetCustomCourse(claims *tokenauth.Claims, id string) (*model.Course, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, id string, item model.Course) (*model.Course, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) DeleteCustomCourse(claims *tokenauth.Claims, id string) error {
+	//TODO: implement
+	return errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) GetCustomModules(claims *tokenauth.Claims, id *string, name *string, key *string, unitID *string) ([]model.Module, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Module) (*model.Module, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) GetCustomModule(claims *tokenauth.Claims, id string) (*model.Module, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, id string, item model.Module) (*model.Module, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) DeleteCustomModule(claims *tokenauth.Claims, id string) error {
+	//TODO: implement
+	return errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *string, key *string, contentID *string) ([]model.Unit, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) (*model.Unit, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, id string) (*model.Unit, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, id string, item model.Unit) (*model.Unit, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, id string) error {
+	//TODO: implement
+	return errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) GetCustomContents(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.Content, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) CreateCustomContent(claims *tokenauth.Claims, item model.Content) (*model.Content, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) GetCustomContent(claims *tokenauth.Claims, id string) (*model.Content, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, id string, item model.Content) (*model.Content, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, id string) error {
+	//TODO: implement
+	return errors.New(logutils.Unimplemented)
 }
