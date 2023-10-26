@@ -47,11 +47,11 @@ class APIHandlerGenerator:
         data = '// requestDataType represents any data type that may be sent in an API request body\n'
         data += 'type requestDataType interface {\n'
         for i, request_body in enumerate(self.request_bodies):
-            if data.count(request_body[0]) == 0:
+            if data.count(request_body[1]) == 0:
                 if i > 0:
-                    data += f' | {request_body[0]}'
+                    data += f' | {request_body[1]}'
                 else:
-                    data += request_body[0]
+                    data += request_body[1]
         
         if len(self.request_bodies) > 0:
             data += '| '
@@ -82,14 +82,14 @@ class APIHandlerGenerator:
 
             request_cases = ''
             for request_body in self.request_bodies:
-                if request_body[1] == data_type:
+                if request_body[2] == data_type:
                     request_cases += f'case "{request_body[0]}":\n'
-                    request_cases += f'convert, ok := convFunc.(func(*tokenauth.Claims, *{request_body[0]}) (*{data_type}, error))\n'
+                    request_cases += f'convert, ok := convFunc.(func(*tokenauth.Claims, *{request_body[1]}) (*{data_type}, error))\n'
                     request_cases += 'if !ok {\nreturn errors.ErrorData(logutils.StatusInvalid, "request body conversion function", &logutils.FieldArgs{"x-conversion-function": conversionFunc})\n}\n\n'
-                    request_cases += f'handler := apiHandler[{data_type}, {request_body[0]}]{{authorization: authorization, conversionFunc: convert, messageDataType: {message_data_type}}}\n'
-                    request_cases += f'err = setCoreHandler[{data_type}, {request_body[0]}](&handler, coreHandler, method, tag, coreFunc)\n'
+                    request_cases += f'handler := apiHandler[{data_type}, {request_body[1]}]{{authorization: authorization, conversionFunc: convert, messageDataType: {message_data_type}}}\n'
+                    request_cases += f'err = setCoreHandler[{data_type}, {request_body[1]}](&handler, coreHandler, method, tag, coreFunc)\n'
                     request_cases += 'if err != nil {\nreturn errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)\n}\n\n'
-                    request_cases += f'router.HandleFunc(pathStr, handleRequest[{data_type}, {request_body[0]}](&handler, a.paths, a.logger)).Methods(method)\n'
+                    request_cases += f'router.HandleFunc(pathStr, handleRequest[{data_type}, {request_body[1]}](&handler, a.paths, a.logger)).Methods(method)\n'
             if request_cases != '':
                 request_cases += f'default:\nhandler := apiHandler[{data_type}, {data_type}]{{authorization: authorization, messageDataType: {message_data_type}}}\n'
                 request_cases += f'err = setCoreHandler[{data_type}, {data_type}](&handler, coreHandler, method, tag, coreFunc)\n'

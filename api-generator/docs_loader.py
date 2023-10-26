@@ -1,12 +1,15 @@
 import yaml
+from utils import Utils
 
 class DocsLoader:
-    def __init__(self, file_path, docs_ext_core_function_key, docs_ext_data_type_key, docs_ext_auth_type_key, docs_ext_request_body_key, docs_ext_conv_function_key):
+    camel_caps = ['id']
+
+    def __init__(self, file_path, gen_types_package, docs_ext_core_function_key, docs_ext_data_type_key, docs_ext_auth_type_key, docs_ext_conv_function_key):
         self.docs = self.load_docs(file_path)
+        self.gen_types_package = gen_types_package
         self.docs_ext_core_function_key = docs_ext_core_function_key
         self.docs_ext_data_type_key = docs_ext_data_type_key
         self.docs_ext_auth_type_key = docs_ext_auth_type_key
-        self.docs_ext_request_body_key = docs_ext_request_body_key
         self.docs_ext_conv_function_key = docs_ext_conv_function_key
     
     def load_docs(self, file_path):
@@ -28,8 +31,21 @@ class DocsLoader:
         request_bodies = set()
         for methods in self.docs['paths'].values():
             for method_data in methods.values():
-                if self.docs_ext_request_body_key in method_data:
-                    request_bodies.add((method_data[self.docs_ext_request_body_key], method_data[self.docs_ext_data_type_key]))
+                if self.docs_ext_conv_function_key in method_data:
+                    try:
+                        request_body_ref = method_data['requestBody']['content']['application/json']['schema']['$ref']
+                    except:
+                        print(f'{method_data[self.docs_ext_core_function_key]}: failed to parse request body from docs')
+                        continue
+                    
+                    request_body_ref_parts = request_body_ref.split('/')
+                    request_body_snake = request_body_ref_parts[-1]
+                    request_body = Utils.get_camel_case_from_snake(request_body_snake, self.camel_caps)
+                    if self.gen_types_package != 'web':
+                        request_body = f'{self.gen_types_package}.{request_body[0].upper() + request_body[1:]}'
+                    else:
+                        request_body = request_body[0].lower() + request_body[1:]
+                    request_bodies.add((request_body_ref, request_body, method_data[self.docs_ext_data_type_key]))
         return request_bodies
 
     def get_core_functions(self):
@@ -58,7 +74,6 @@ class DocsLoader:
                             'param_names': param_names,
                             'data_type': method_data.get(self.docs_ext_data_type_key, None),
                             'auth_type': auth_type,
-                            'request_body': method_data.get(self.docs_ext_request_body_key, None),
                             'conv_function': method_data.get(self.docs_ext_conv_function_key, None)
                         })
         return core_functions
@@ -88,9 +103,8 @@ class DocsLoader:
                 if i > 0:
                     param_prototype += ', '
 
-                param_name = param["name"].replace('-', "_")
-                snake_split = str(param_name).split('_')
-                camel_name = snake_split[0] + ''.join(part.upper() if part == "id" else part.title() for part in snake_split[1:])
+                param_name = param["name"]
+                camel_name = Utils.get_camel_case_from_snake(param_name, self.camel_caps)
                 param_prototype += f'{camel_name} '
                 param_names[camel_name] = param["name"]
                 

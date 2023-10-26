@@ -39,7 +39,6 @@ put:
   x-core-function: UpdateNudge
   x-data-type: model.Nudge
   x-authentication-type: Permissions
-  x-request-body: Def.AdminReqUpdateNudge
   x-conversion-function: nudgeFromDefAdminReqUpdate
 delete:
   tags:

@@ -39,8 +39,6 @@ const (
 	XDataType = "x-data-type"
 	// XAuthType defines the auth type from docs
 	XAuthType = "x-authentication-type"
-	// XRequestBody defines the request body from docs
-	XRequestBody = "x-request-body"
 	// XConversionFunction defines the conversion function from docs
 	XConversionFunction = "x-conversion-function"
 )
@@ -93,9 +91,16 @@ func (a *Adapter) routeAPIs(router *mux.Router) error {
 				continue
 			}
 
+			var requestBody interface{}
 			tag := operation.Tags[0]
+			convFunc, ok := operation.Extensions[XConversionFunction]
+			if ok {
+				// allow a panic to occur if something goes wrong
+				// the service should be stopped anyway and the stack trace is logged without needing to recover and import runtime/debug to get the stack trace
+				requestBody = operation.RequestBody.Value.Content.Get("application/json").Schema.Ref
+			}
 			err := a.registerHandler(router, pathStr, method, tag, operation.Extensions[XCoreFunction].(string), operation.Extensions[XDataType].(string),
-				operation.Extensions[XAuthType], operation.Extensions[XRequestBody], operation.Extensions[XConversionFunction])
+				operation.Extensions[XAuthType], requestBody, convFunc)
 			if err != nil {
 				errArgs := logutils.FieldArgs(operation.Extensions)
 				errArgs["method"] = method

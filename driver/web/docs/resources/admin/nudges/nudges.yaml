@@ -56,5 +56,4 @@ post:
   x-core-function: CreateNudge
   x-data-type: model.Nudge
   x-authentication-type: Permissions
-  x-request-body: Def.AdminReqCreateNudge
   x-conversion-function: nudgeFromDefAdminReqCreate

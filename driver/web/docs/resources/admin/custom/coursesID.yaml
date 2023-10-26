@@ -50,7 +50,7 @@ put:
     content:
       application/json:
         schema:
-         $ref: "../../../../schemas/custom/Course.yaml"
+         $ref: "../../../schemas/custom/Course.yaml"
     required: true
   responses:
     200:

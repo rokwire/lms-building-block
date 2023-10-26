@@ -49,7 +49,7 @@ type database struct {
 
 func (m *database) start() error {
 
-	log.Println("database -> start")
+	m.logger.Info("database -> start")
 
 	//connect to the database
 	clientOptions := options.Client().ApplyURI(m.mongoDBAuth)

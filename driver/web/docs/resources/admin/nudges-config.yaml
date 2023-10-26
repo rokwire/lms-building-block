@@ -54,5 +54,4 @@ put:
   x-core-function: UpdateNudgesConfig
   x-data-type: model.NudgesConfig
   x-authentication-type: Permissions
-  x-request-body: Def.NudgesConfig
   x-conversion-function: nudgesConfigFromDef

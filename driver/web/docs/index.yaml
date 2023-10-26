@@ -53,6 +53,22 @@ paths:
     $ref: "./resources/admin/test-sent-nudges.yaml"
   /admin/nudges-processes:
     $ref: "./resources/admin/nudges-process.yaml"
+  /admin/courses:
+    $ref: "./resources/admin/custom/courses.yaml"
+  /admin/courses/{id}:
+    $ref: "./resources/admin/custom/coursesID.yaml"
+  /admin/modules:
+    $ref: "./resources/admin/custom/modules.yaml"
+  /admin/modules/{id}:
+    $ref: "./resources/admin/custom/modulesID.yaml"
+  /admin/units:
+    $ref: "./resources/admin/custom/units.yaml"
+  /admin/units/{id}:
+    $ref: "./resources/admin/custom/unitsID.yaml"
+  /admin/content:
+    $ref: "./resources/admin/custom/content.yaml"
+  /admin/content/{id}:
+    $ref: "./resources/admin/custom/contentID.yaml"
 
 components:
   securitySchemes:

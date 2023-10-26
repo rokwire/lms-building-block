@@ -67,7 +67,7 @@ post:
     content:
       application/json:
         schema:
-         $ref: "../../../../schemas/custom/Unit.yaml"
+         $ref: "../../../schemas/custom/Unit.yaml"
     required: true
   responses:
     200:
@@ -75,7 +75,7 @@ post:
       content:
         application/json:
           schema:
-            $ref: "../../../../schemas/custom/Unit.yaml"
+            $ref: "../../../schemas/custom/Unit.yaml"
     400:
       description: Bad request
     401:

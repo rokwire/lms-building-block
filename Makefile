@@ -121,7 +121,7 @@ gen-apis: ; $(info $(M) generating api handlers...) @ ## Generate API handlers a
 	python3 api-generator/main.py
 	$(GOFMT) -l -w $(BASE)/driver/web/adapter_helper.go
 	$(GOFMT) -l -w $(BASE)/driver/web/apis.go
-	$(GOFMT) -l -w $(BASE)/core/interfaces/core_gen.go
+	$(GOFMT) -l -w $(BASE)/core/interfaces/core.go
 
 .PHONY: log-variables
 log-variables: ; $(info $(M) logging variables...) @ ## Log the variables values

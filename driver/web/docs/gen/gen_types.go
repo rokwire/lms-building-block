@@ -205,6 +205,48 @@ type AdminReqUpdateNudge struct {
 	UsersSources *[]UsersSource         `json:"users_sources,omitempty"`
 }
 
+// GetAdminContentParams defines parameters for GetAdminContent.
+type GetAdminContentParams struct {
+	// Id content ID
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Name content name
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// Key content key
+	Key *string `form:"key,omitempty" json:"key,omitempty"`
+}
+
+// GetAdminCoursesParams defines parameters for GetAdminCourses.
+type GetAdminCoursesParams struct {
+	// Id course ID
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Name course name
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// Key course key
+	Key *string `form:"key,omitempty" json:"key,omitempty"`
+
+	// ModuleId comma separated list of module IDs
+	ModuleId *string `form:"module_id,omitempty" json:"module_id,omitempty"`
+}
+
+// GetAdminModulesParams defines parameters for GetAdminModules.
+type GetAdminModulesParams struct {
+	// Id module ID
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Name module name
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// Key module key
+	Key *string `form:"key,omitempty" json:"key,omitempty"`
+
+	// UnitId comma separated list of unit IDs
+	UnitId *string `form:"unit_id,omitempty" json:"unit_id,omitempty"`
+}
+
 // GetAdminNudgesProcessesParams defines parameters for GetAdminNudgesProcesses.
 type GetAdminNudgesProcessesParams struct {
 	// Limit The maximum number  to return
@@ -233,6 +275,21 @@ type GetAdminSentNudgesParams struct {
 
 	// Mode mode
 	Mode *string `form:"mode,omitempty" json:"mode,omitempty"`
+}
+
+// GetAdminUnitsParams defines parameters for GetAdminUnits.
+type GetAdminUnitsParams struct {
+	// Id unit ID
+	Id *string `form:"id,omitempty" json:"id,omitempty"`
+
+	// Name unit name
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
+
+	// Key unit key
+	Key *string `form:"key,omitempty" json:"key,omitempty"`
+
+	// ContentId comma separated list of content IDs
+	ContentId *string `form:"content_id,omitempty" json:"content_id,omitempty"`
 }
 
 // GetApiCoursesParams defines parameters for GetApiCourses.
@@ -265,6 +322,24 @@ type GetApiUsersCoursesParams struct {
 	Key *string `form:"key,omitempty" json:"key,omitempty"`
 }
 
+// PostAdminContentJSONRequestBody defines body for PostAdminContent for application/json ContentType.
+type PostAdminContentJSONRequestBody = Content
+
+// PutAdminContentIdJSONRequestBody defines body for PutAdminContentId for application/json ContentType.
+type PutAdminContentIdJSONRequestBody = Content
+
+// PostAdminCoursesJSONRequestBody defines body for PostAdminCourses for application/json ContentType.
+type PostAdminCoursesJSONRequestBody = CustomCourse
+
+// PutAdminCoursesIdJSONRequestBody defines body for PutAdminCoursesId for application/json ContentType.
+type PutAdminCoursesIdJSONRequestBody = CustomCourse
+
+// PostAdminModulesJSONRequestBody defines body for PostAdminModules for application/json ContentType.
+type PostAdminModulesJSONRequestBody = Module
+
+// PutAdminModulesIdJSONRequestBody defines body for PutAdminModulesId for application/json ContentType.
+type PutAdminModulesIdJSONRequestBody = Module
+
 // PostAdminNudgesJSONRequestBody defines body for PostAdminNudges for application/json ContentType.
 type PostAdminNudgesJSONRequestBody = AdminReqCreateNudge
 
@@ -273,6 +348,12 @@ type PutAdminNudgesConfigJSONRequestBody = NudgesConfig
 
 // PutAdminNudgesIdJSONRequestBody defines body for PutAdminNudgesId for application/json ContentType.
 type PutAdminNudgesIdJSONRequestBody = AdminReqUpdateNudge
+
+// PostAdminUnitsJSONRequestBody defines body for PostAdminUnits for application/json ContentType.
+type PostAdminUnitsJSONRequestBody = Unit
+
+// PutAdminUnitsIdJSONRequestBody defines body for PutAdminUnitsId for application/json ContentType.
+type PutAdminUnitsIdJSONRequestBody = Unit
 
 // PutApiUsersCoursesCourseIdUnitUnitIdJSONRequestBody defines body for PutApiUsersCoursesCourseIdUnitUnitId for application/json ContentType.
 type PutApiUsersCoursesCourseIdUnitUnitIdJSONRequestBody = ScheduleItem

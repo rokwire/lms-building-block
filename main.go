@@ -16,11 +16,6 @@ package main
 
 import (
 	"lms/core"
-	cacheadapter "lms/driven/cache"
-	"lms/driven/corebb"
-	"lms/driven/groups"
-	"lms/driven/notifications"
-	"lms/driven/provider"
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
 	"log"
@@ -56,7 +51,7 @@ func main() {
 		port = "80"
 	}
 
-	internalAPIKey := envLoader.GetAndLogEnvVar(envPrefix+"INTERNAL_API_KEY", true, true)
+	// internalAPIKey := envLoader.GetAndLogEnvVar(envPrefix+"INTERNAL_API_KEY", true, true)
 
 	// mongoDB adapter
 	mongoDBAuth := envLoader.GetAndLogEnvVar(envPrefix+"MONGO_AUTH", true, true)
@@ -68,24 +63,24 @@ func main() {
 		logger.Fatalf("Cannot start the mongoDB adapter: %v", err)
 	}
 
-	defaultCacheExpirationSeconds := envLoader.GetAndLogEnvVar(envPrefix+"DEFAULT_CACHE_EXPIRATION_SECONDS", false, false)
-	cacheAdapter := cacheadapter.NewCacheAdapter(defaultCacheExpirationSeconds)
+	// defaultCacheExpirationSeconds := envLoader.GetAndLogEnvVar(envPrefix+"DEFAULT_CACHE_EXPIRATION_SECONDS", false, false)
+	// cacheAdapter := cacheadapter.NewCacheAdapter(defaultCacheExpirationSeconds)
 
 	//provider adapter
-	canvasBaseURL := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_BASE_URL", true, false)
-	canvasTokenType := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN_TYPE", true, false)
-	canvasToken := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN", true, true)
-	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType, storageAdapter, logger)
+	// canvasBaseURL := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_BASE_URL", true, false)
+	// canvasTokenType := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN_TYPE", true, false)
+	// canvasToken := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN", true, true)
+	// providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType, storageAdapter, logger)
 
 	//groups BB adapter
-	groupsHost := envLoader.GetAndLogEnvVar(envPrefix+"GROUPS_BB_HOST", true, false)
-	groupsBBAdapter := groups.NewGroupsAdapter(groupsHost, internalAPIKey)
+	// groupsHost := envLoader.GetAndLogEnvVar(envPrefix+"GROUPS_BB_HOST", true, false)
+	// groupsBBAdapter := groups.NewGroupsAdapter(groupsHost, internalAPIKey)
 
 	//notifications BB adapter
-	app := envLoader.GetAndLogEnvVar(envPrefix+"APP_ID", true, false)
-	org := envLoader.GetAndLogEnvVar(envPrefix+"ORG_ID", true, false)
-	notificationHost := envLoader.GetAndLogEnvVar(envPrefix+"NOTIFICATIONS_BB_HOST", true, false)
-	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey, app, org)
+	// app := envLoader.GetAndLogEnvVar(envPrefix+"APP_ID", true, false)
+	// org := envLoader.GetAndLogEnvVar(envPrefix+"ORG_ID", true, false)
+	// notificationHost := envLoader.GetAndLogEnvVar(envPrefix+"NOTIFICATIONS_BB_HOST", true, false)
+	// notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey, app, org)
 
 	// Service registration
 	baseURL := envLoader.GetAndLogEnvVar(envPrefix+"BASE_URL", true, false)
@@ -98,7 +93,7 @@ func main() {
 		AuthBaseURL: coreBBBaseURL,
 	}
 
-	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{"groups", "notifications"})
+	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{ /*"groups", "notifications"*/ })
 	if err != nil {
 		logger.Fatalf("Error initializing remote service registration loader: %v", err)
 	}
@@ -109,12 +104,13 @@ func main() {
 	}
 
 	//core adapter
-	cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID, serviceRegManager, envLoader, envPrefix)
-	coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager, org, app)
+	// cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID, serviceRegManager, envLoader, envPrefix)
+	// coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager, org, app)
 
 	// application
-	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
-		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, coreAdapter, logger)
+	// application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
+	// 	groupsBBAdapter, notificationsBBAdapter, cacheAdapter, coreAdapter, logger)
+	application := core.NewApplication(Version, Build, storageAdapter, nil, nil, nil, nil, nil, logger)
 	application.Start()
 
 	// web adapter
