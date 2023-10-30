@@ -1,20 +1,11 @@
 get:
   tags:
   - Client
-  summary: Get courses
+  summary: Get custom courses
   description: |
-    Get courses
+    Get custom courses
   security:
     - bearerAuth: []
-  parameters:
-    - name: course_type
-      in: query
-      description: course type
-      required: false
-      style: form
-      explode: false
-      schema:
-        type: string
   responses:
     200:
       description: Successful operation
@@ -23,13 +14,13 @@ get:
           schema:
             type: array
             items:
-              $ref: "../../../schemas/provider/Course.yaml"
+              $ref: "../../../schemas/custom/Course.yaml"
     400:
       description: Bad request
     401:
       description: Unauthorized
     500:
       description: Internal error
-  x-core-function: GetCourses
-  x-data-type: model.ProviderCourse
+  x-core-function: GetCustomCourses
+  x-data-type: model.Course
   x-authentication-type: User

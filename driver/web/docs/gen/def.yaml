@@ -271,6 +271,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetUserCourses
+      x-data-type: model.UserCourse
+      x-authentication-type: User
   '/api/users/courses/{id}':
     get:
       tags:
@@ -302,6 +305,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetUserCourse
+      x-data-type: model.UserCourse
+      x-authentication-type: User
     post:
       tags:
         - Client
@@ -333,6 +339,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: CreateUserCourse
+      x-data-type: model.UserCourse
+      x-authentication-type: User
     delete:
       tags:
         - Client
@@ -364,7 +373,10 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
-  '/api/users/courses/{course-id}/unit/{unit-id}':
+      x-core-function: DeleteUserCourse
+      x-data-type: model.UserCourse
+      x-authentication-type: User
+  '/api/users/courses/{course-id}/module/{module-id}':
     put:
       tags:
         - Client
@@ -382,20 +394,20 @@ paths:
           explode: false
           schema:
             type: string
-        - name: unit-id
+        - name: module-id
           in: path
-          description: Unit ID
+          description: Module ID
           required: true
           style: simple
           explode: false
           schema:
             type: string
       requestBody:
-        description: updated unit schedule item
+        description: updated unit
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ScheduleItem'
+              $ref: '#/components/schemas/Unit'
         required: false
       responses:
         '200':
@@ -410,6 +422,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateUserCourseUnitProgress
+      x-data-type: model.Unit
+      x-authentication-type: User
   /admin/nudges-config:
     get:
       tags:

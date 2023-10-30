@@ -28,6 +28,9 @@ get:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: GetUserCourse
+  x-data-type: model.UserCourse
+  x-authentication-type: User
 post:
   tags:
   - Client
@@ -59,6 +62,9 @@ post:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: CreateUserCourse
+  x-data-type: model.UserCourse
+  x-authentication-type: User
 delete:
   tags:
   - Client
@@ -90,3 +96,6 @@ delete:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: DeleteUserCourse
+  x-data-type: model.UserCourse
+  x-authentication-type: User

@@ -126,6 +126,31 @@ func (s *clientImpl) GetCurrentUser(claims *tokenauth.Claims) (*model.User, erro
 	return user, nil
 }
 
+func (s *clientImpl) GetUserCourses(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.UserCourse, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, id string) (*model.UserCourse, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, id string) (*model.UserCourse, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, id string) error {
+	//TODO: implement
+	return errors.New(logutils.Unimplemented)
+}
+
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseID string, moduleID string, item model.Unit) (*model.Unit, error) {
+	//TODO: implement
+	return nil, errors.New(logutils.Unimplemented)
+}
+
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
 	if claims == nil {
 		return ""

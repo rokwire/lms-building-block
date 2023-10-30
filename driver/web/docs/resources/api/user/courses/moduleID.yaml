@@ -15,20 +15,20 @@ put:
       explode: false
       schema:
         type: string
-    - name: unit-id
+    - name: module-id
       in: path
-      description: Unit ID
+      description: Module ID
       required: true
       style: simple
       explode: false
       schema:
         type: string
   requestBody:
-    description: updated unit schedule item
+    description: updated unit
     content:
       application/json:
         schema:
-          $ref: "../../../../schemas/custom/ScheduleItem.yaml"
+          $ref: "../../../../schemas/custom/Unit.yaml"
     required: false
   responses:
     200:
@@ -43,3 +43,6 @@ put:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: UpdateUserCourseUnitProgress
+  x-data-type: model.Unit
+  x-authentication-type: User

@@ -46,3 +46,6 @@ get:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: GetUserCourses
+  x-data-type: model.UserCourse
+  x-authentication-type: User

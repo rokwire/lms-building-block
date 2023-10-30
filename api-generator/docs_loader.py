@@ -58,11 +58,16 @@ class DocsLoader:
                         handler_prototype = self.get_api_handler_prototype(method, method_data)
 
                         parameters = method_data.get('parameters', [])
-                        param_prototype, param_names = self.get_core_interface_prototype(parameters)
+                        param_prototype, param_names = self.get_core_interface_param_prototype(parameters)
                         if param_prototype:
                             interface_prototype = handler_prototype.replace('params map[string]interface{}', param_prototype)
                         else:
                             interface_prototype = handler_prototype.replace('params map[string]interface{}', '').replace(', ,', ',').replace(', )', ')')
+                            
+                        if not method_data.get('requestBody', None) and (method == 'post' or method == 'put'):
+                            item_param_start = interface_prototype.index(', item')
+                            item_param_end = interface_prototype.index(')', item_param_start)
+                            interface_prototype = interface_prototype[:item_param_start] + interface_prototype[item_param_end:]
                         if not auth_type:
                             interface_prototype = interface_prototype.replace('claims *tokenauth.Claims', '').replace('( ,', '(')
 
@@ -94,7 +99,7 @@ class DocsLoader:
             return '(claims *tokenauth.Claims, params map[string]interface{}) error'
         return ''
     
-    def get_core_interface_prototype(self, parameters):
+    def get_core_interface_param_prototype(self, parameters):
         param_prototype = ''
         param_names = {}
         for i, param in enumerate(parameters):

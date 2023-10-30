@@ -74,6 +74,66 @@ func (a APIsHandler) clientGetCurrentUser(claims *tokenauth.Claims, params map[s
 	return a.app.Client.GetCurrentUser(claims)
 }
 
+func (a APIsHandler) clientGetUserCourses(claims *tokenauth.Claims, params map[string]interface{}) ([]model.UserCourse, error) {
+	id, err := utils.GetValue[*string](params, "id", false)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
+	}
+
+	name, err := utils.GetValue[*string](params, "name", false)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("name"), err)
+	}
+
+	key, err := utils.GetValue[*string](params, "key", false)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
+	}
+
+	return a.app.Client.GetUserCourses(claims, id, name, key)
+}
+
+func (a APIsHandler) clientGetUserCourse(claims *tokenauth.Claims, params map[string]interface{}) (*model.UserCourse, error) {
+	id, err := utils.GetValue[string](params, "id", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
+	}
+
+	return a.app.Client.GetUserCourse(claims, id)
+}
+
+func (a APIsHandler) clientCreateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item model.UserCourse) (*model.UserCourse, error) {
+	id, err := utils.GetValue[string](params, "id", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
+	}
+
+	return a.app.Client.CreateUserCourse(claims, id)
+}
+
+func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map[string]interface{}) error {
+	id, err := utils.GetValue[string](params, "id", true)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
+	}
+
+	return a.app.Client.DeleteUserCourse(claims, id)
+}
+
+func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item model.Unit) (*model.Unit, error) {
+	courseID, err := utils.GetValue[string](params, "course-id", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseID"), err)
+	}
+
+	moduleID, err := utils.GetValue[string](params, "module-id", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("moduleID"), err)
+	}
+
+	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseID, moduleID, item)
+}
+
 // Admin
 
 func (a APIsHandler) adminGetNudgesConfig(claims *tokenauth.Claims, params map[string]interface{}) (*model.NudgesConfig, error) {

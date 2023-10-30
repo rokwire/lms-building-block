@@ -355,5 +355,5 @@ type PostAdminUnitsJSONRequestBody = Unit
 // PutAdminUnitsIdJSONRequestBody defines body for PutAdminUnitsId for application/json ContentType.
 type PutAdminUnitsIdJSONRequestBody = Unit
 
-// PutApiUsersCoursesCourseIdUnitUnitIdJSONRequestBody defines body for PutApiUsersCoursesCourseIdUnitUnitId for application/json ContentType.
-type PutApiUsersCoursesCourseIdUnitUnitIdJSONRequestBody = ScheduleItem
+// PutApiUsersCoursesCourseIdModuleModuleIdJSONRequestBody defines body for PutApiUsersCoursesCourseIdModuleModuleId for application/json ContentType.
+type PutApiUsersCoursesCourseIdModuleModuleIdJSONRequestBody = Unit
