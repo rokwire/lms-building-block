@@ -70,7 +70,7 @@ class APIRoutesGenerator:
                             interface_params.append('claims')
                             continue
                         if param.startswith('item'):
-                            interface_params.append('item')
+                            interface_params.append('*item')
                             continue
 
                         param_parts = param.split(' ')

@@ -56,13 +56,14 @@ class DocsLoader:
                     for tag in method_data['tags']:
                         auth_type = method_data.get(self.docs_ext_auth_type_key, None)
                         handler_prototype = self.get_api_handler_prototype(method, method_data)
+                        interface_prototype = handler_prototype.replace('item *{data_type}', 'item {data_type}')
 
                         parameters = method_data.get('parameters', [])
                         param_prototype, param_names = self.get_core_interface_param_prototype(parameters)
                         if param_prototype:
-                            interface_prototype = handler_prototype.replace('params map[string]interface{}', param_prototype)
+                            interface_prototype = interface_prototype.replace('params map[string]interface{}', param_prototype)
                         else:
-                            interface_prototype = handler_prototype.replace('params map[string]interface{}', '').replace(', ,', ',').replace(', )', ')')
+                            interface_prototype = interface_prototype.replace('params map[string]interface{}', '').replace(', ,', ',').replace(', )', ')')
                             
                         if not method_data.get('requestBody', None) and (method == 'post' or method == 'put'):
                             item_param_start = interface_prototype.index(', item')
@@ -94,7 +95,7 @@ class DocsLoader:
             else:
                 return '(claims *tokenauth.Claims, params map[string]interface{}) (*{data_type}, error)'
         elif method == 'post' or method == 'put':
-            return '(claims *tokenauth.Claims, params map[string]interface{}, item {data_type}) (*{data_type}, error)'
+            return '(claims *tokenauth.Claims, params map[string]interface{}, item *{data_type}) (*{data_type}, error)'
         elif method == 'delete':
             return '(claims *tokenauth.Claims, params map[string]interface{}) error'
         return ''

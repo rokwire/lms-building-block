@@ -102,7 +102,7 @@ func (a APIsHandler) clientGetUserCourse(claims *tokenauth.Claims, params map[st
 	return a.app.Client.GetUserCourse(claims, id)
 }
 
-func (a APIsHandler) clientCreateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item model.UserCourse) (*model.UserCourse, error) {
+func (a APIsHandler) clientCreateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
 	id, err := utils.GetValue[string](params, "id", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
@@ -120,7 +120,7 @@ func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map
 	return a.app.Client.DeleteUserCourse(claims, id)
 }
 
-func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item model.Unit) (*model.Unit, error) {
+func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.Unit) (*model.Unit, error) {
 	courseID, err := utils.GetValue[string](params, "course-id", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseID"), err)
@@ -131,7 +131,7 @@ func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("moduleID"), err)
 	}
 
-	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseID, moduleID, item)
+	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseID, moduleID, *item)
 }
 
 // Admin
@@ -140,25 +140,25 @@ func (a APIsHandler) adminGetNudgesConfig(claims *tokenauth.Claims, params map[s
 	return a.app.Admin.GetNudgesConfig(claims)
 }
 
-func (a APIsHandler) adminUpdateNudgesConfig(claims *tokenauth.Claims, params map[string]interface{}, item model.NudgesConfig) (*model.NudgesConfig, error) {
-	return a.app.Admin.UpdateNudgesConfig(claims, item)
+func (a APIsHandler) adminUpdateNudgesConfig(claims *tokenauth.Claims, params map[string]interface{}, item *model.NudgesConfig) (*model.NudgesConfig, error) {
+	return a.app.Admin.UpdateNudgesConfig(claims, *item)
 }
 
 func (a APIsHandler) adminGetNudges(claims *tokenauth.Claims, params map[string]interface{}) ([]model.Nudge, error) {
 	return a.app.Admin.GetNudges(claims)
 }
 
-func (a APIsHandler) adminCreateNudge(claims *tokenauth.Claims, params map[string]interface{}, item model.Nudge) (*model.Nudge, error) {
-	return a.app.Admin.CreateNudge(claims, item)
+func (a APIsHandler) adminCreateNudge(claims *tokenauth.Claims, params map[string]interface{}, item *model.Nudge) (*model.Nudge, error) {
+	return a.app.Admin.CreateNudge(claims, *item)
 }
 
-func (a APIsHandler) adminUpdateNudge(claims *tokenauth.Claims, params map[string]interface{}, item model.Nudge) (*model.Nudge, error) {
+func (a APIsHandler) adminUpdateNudge(claims *tokenauth.Claims, params map[string]interface{}, item *model.Nudge) (*model.Nudge, error) {
 	id, err := utils.GetValue[string](params, "id", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
 	}
 
-	return a.app.Admin.UpdateNudge(claims, id, item)
+	return a.app.Admin.UpdateNudge(claims, id, *item)
 }
 
 func (a APIsHandler) adminDeleteNudge(claims *tokenauth.Claims, params map[string]interface{}) error {
@@ -245,8 +245,8 @@ func (a APIsHandler) adminGetCustomCourses(claims *tokenauth.Claims, params map[
 	return a.app.Admin.GetCustomCourses(claims, id, name, key, moduleID)
 }
 
-func (a APIsHandler) adminCreateCustomCourse(claims *tokenauth.Claims, params map[string]interface{}, item model.Course) (*model.Course, error) {
-	return a.app.Admin.CreateCustomCourse(claims, item)
+func (a APIsHandler) adminCreateCustomCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.Course) (*model.Course, error) {
+	return a.app.Admin.CreateCustomCourse(claims, *item)
 }
 
 func (a APIsHandler) adminGetCustomCourse(claims *tokenauth.Claims, params map[string]interface{}) (*model.Course, error) {
@@ -258,13 +258,13 @@ func (a APIsHandler) adminGetCustomCourse(claims *tokenauth.Claims, params map[s
 	return a.app.Admin.GetCustomCourse(claims, id)
 }
 
-func (a APIsHandler) adminUpdateCustomCourse(claims *tokenauth.Claims, params map[string]interface{}, item model.Course) (*model.Course, error) {
+func (a APIsHandler) adminUpdateCustomCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.Course) (*model.Course, error) {
 	id, err := utils.GetValue[string](params, "id", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
 	}
 
-	return a.app.Admin.UpdateCustomCourse(claims, id, item)
+	return a.app.Admin.UpdateCustomCourse(claims, id, *item)
 }
 
 func (a APIsHandler) adminDeleteCustomCourse(claims *tokenauth.Claims, params map[string]interface{}) error {
@@ -300,8 +300,8 @@ func (a APIsHandler) adminGetCustomModules(claims *tokenauth.Claims, params map[
 	return a.app.Admin.GetCustomModules(claims, id, name, key, unitID)
 }
 
-func (a APIsHandler) adminCreateCustomModule(claims *tokenauth.Claims, params map[string]interface{}, item model.Module) (*model.Module, error) {
-	return a.app.Admin.CreateCustomModule(claims, item)
+func (a APIsHandler) adminCreateCustomModule(claims *tokenauth.Claims, params map[string]interface{}, item *model.Module) (*model.Module, error) {
+	return a.app.Admin.CreateCustomModule(claims, *item)
 }
 
 func (a APIsHandler) adminGetCustomModule(claims *tokenauth.Claims, params map[string]interface{}) (*model.Module, error) {
@@ -313,13 +313,13 @@ func (a APIsHandler) adminGetCustomModule(claims *tokenauth.Claims, params map[s
 	return a.app.Admin.GetCustomModule(claims, id)
 }
 
-func (a APIsHandler) adminUpdateCustomModule(claims *tokenauth.Claims, params map[string]interface{}, item model.Module) (*model.Module, error) {
+func (a APIsHandler) adminUpdateCustomModule(claims *tokenauth.Claims, params map[string]interface{}, item *model.Module) (*model.Module, error) {
 	id, err := utils.GetValue[string](params, "id", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
 	}
 
-	return a.app.Admin.UpdateCustomModule(claims, id, item)
+	return a.app.Admin.UpdateCustomModule(claims, id, *item)
 }
 
 func (a APIsHandler) adminDeleteCustomModule(claims *tokenauth.Claims, params map[string]interface{}) error {
@@ -355,8 +355,8 @@ func (a APIsHandler) adminGetCustomUnits(claims *tokenauth.Claims, params map[st
 	return a.app.Admin.GetCustomUnits(claims, id, name, key, contentID)
 }
 
-func (a APIsHandler) adminCreateCustomUnit(claims *tokenauth.Claims, params map[string]interface{}, item model.Unit) (*model.Unit, error) {
-	return a.app.Admin.CreateCustomUnit(claims, item)
+func (a APIsHandler) adminCreateCustomUnit(claims *tokenauth.Claims, params map[string]interface{}, item *model.Unit) (*model.Unit, error) {
+	return a.app.Admin.CreateCustomUnit(claims, *item)
 }
 
 func (a APIsHandler) adminGetCustomUnit(claims *tokenauth.Claims, params map[string]interface{}) (*model.Unit, error) {
@@ -368,13 +368,13 @@ func (a APIsHandler) adminGetCustomUnit(claims *tokenauth.Claims, params map[str
 	return a.app.Admin.GetCustomUnit(claims, id)
 }
 
-func (a APIsHandler) adminUpdateCustomUnit(claims *tokenauth.Claims, params map[string]interface{}, item model.Unit) (*model.Unit, error) {
+func (a APIsHandler) adminUpdateCustomUnit(claims *tokenauth.Claims, params map[string]interface{}, item *model.Unit) (*model.Unit, error) {
 	id, err := utils.GetValue[string](params, "id", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
 	}
 
-	return a.app.Admin.UpdateCustomUnit(claims, id, item)
+	return a.app.Admin.UpdateCustomUnit(claims, id, *item)
 }
 
 func (a APIsHandler) adminDeleteCustomUnit(claims *tokenauth.Claims, params map[string]interface{}) error {
@@ -405,8 +405,8 @@ func (a APIsHandler) adminGetCustomContents(claims *tokenauth.Claims, params map
 	return a.app.Admin.GetCustomContents(claims, id, name, key)
 }
 
-func (a APIsHandler) adminCreateCustomContent(claims *tokenauth.Claims, params map[string]interface{}, item model.Content) (*model.Content, error) {
-	return a.app.Admin.CreateCustomContent(claims, item)
+func (a APIsHandler) adminCreateCustomContent(claims *tokenauth.Claims, params map[string]interface{}, item *model.Content) (*model.Content, error) {
+	return a.app.Admin.CreateCustomContent(claims, *item)
 }
 
 func (a APIsHandler) adminGetCustomContent(claims *tokenauth.Claims, params map[string]interface{}) (*model.Content, error) {
@@ -418,13 +418,13 @@ func (a APIsHandler) adminGetCustomContent(claims *tokenauth.Claims, params map[
 	return a.app.Admin.GetCustomContent(claims, id)
 }
 
-func (a APIsHandler) adminUpdateCustomContent(claims *tokenauth.Claims, params map[string]interface{}, item model.Content) (*model.Content, error) {
+func (a APIsHandler) adminUpdateCustomContent(claims *tokenauth.Claims, params map[string]interface{}, item *model.Content) (*model.Content, error) {
 	id, err := utils.GetValue[string](params, "id", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
 	}
 
-	return a.app.Admin.UpdateCustomContent(claims, id, item)
+	return a.app.Admin.UpdateCustomContent(claims, id, *item)
 }
 
 func (a APIsHandler) adminDeleteCustomContent(claims *tokenauth.Claims, params map[string]interface{}) error {

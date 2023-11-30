@@ -32,7 +32,7 @@ type apiHandler[A apiDataType, R requestDataType] struct {
 
 	getHandler     func(*tokenauth.Claims, map[string]interface{}) (*A, error)
 	getManyHandler func(*tokenauth.Claims, map[string]interface{}) ([]A, error)
-	saveHandler    func(*tokenauth.Claims, map[string]interface{}, A) (*A, error)
+	saveHandler    func(*tokenauth.Claims, map[string]interface{}, *A) (*A, error)
 	deleteHandler  func(*tokenauth.Claims, map[string]interface{}) error
 }
 
@@ -140,7 +140,7 @@ func handle[A apiDataType, R requestDataType](r *http.Request, handler *apiHandl
 	case http.MethodPost, http.MethodPut:
 		actionType = logutils.ActionSave
 		if handler.saveHandler != nil {
-			obj, err = handler.saveHandler(claims, paramMap, *data)
+			obj, err = handler.saveHandler(claims, paramMap, data)
 		}
 	case http.MethodDelete:
 		actionType = logutils.ActionDelete
@@ -175,7 +175,7 @@ func setCoreHandler[A apiDataType, R requestDataType](handler *apiHandler[A, R],
 			handler.getManyHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}) ([]A, error))
 		}
 	case http.MethodPost, http.MethodPut:
-		handler.saveHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}, A) (*A, error))
+		handler.saveHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}, *A) (*A, error))
 	case http.MethodDelete:
 		handler.deleteHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}) error)
 	}
