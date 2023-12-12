@@ -10,7 +10,7 @@ import (
 )
 
 // GetUserCourses finds user course by a set of parameters
-func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, userId string) ([]model.UserCourse, error) {
+func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, userID string) ([]model.UserCourse, error) {
 	filter := bson.M{}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
@@ -24,8 +24,8 @@ func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, user
 		filter["course.key"] = bson.M{"$in": key}
 	}
 
-	if len(userId) != 0 {
-		filter["user_id"] = userId
+	if len(userID) != 0 {
+		filter["user_id"] = userID
 	}
 
 	var result []userCourse
@@ -51,8 +51,8 @@ func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, user
 }
 
 // GetUserCourse finds a user course by id
-func (sa *Adapter) GetUserCourse(appId string, orgId string, userId string, courseKey string) (*model.UserCourse, error) {
-	filter := bson.M{"app_id": appId, "org_id": orgId, "user_id": userId, "course.key": courseKey}
+func (sa *Adapter) GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error) {
+	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
 	var result userCourse
 	err := sa.db.userCourse.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
@@ -144,8 +144,8 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 }
 
 // UpdateUserUnit updates shcedules in a user unit
-func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userId string, courseKey string, moduleKey string, item model.Unit) error {
-	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userId, "course_key": courseKey, "module_key": moduleKey}
+func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey string, item model.Unit) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "module_key": moduleKey}
 	update := bson.M{
 		"$set": bson.M{
 			"unit.schedule": item.Schedule,
@@ -163,8 +163,8 @@ func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userId string, cou
 }
 
 // DeleteUserCourse deletes a user course
-func (sa *Adapter) DeleteUserCourse(appId string, orgId string, userId string, courseKey string) error {
-	filter := bson.M{"app_id": appId, "org_id": orgId, "user_id": userId, "course.key": courseKey}
+func (sa *Adapter) DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error {
+	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
 	result, err := sa.db.userCourse.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"courseKey": courseKey}, err)

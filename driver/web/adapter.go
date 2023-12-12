@@ -53,7 +53,7 @@ type Adapter struct {
 
 	apisHandler APIsHandler
 
-	paths openapi3.Paths
+	paths map[string]*openapi3.PathItem
 
 	logger *logs.Logger
 }
@@ -75,15 +75,12 @@ func (a *Adapter) Start() {
 
 // routeAPIs calls registerHandler for every path specified as auto-generated in docs
 func (a *Adapter) routeAPIs(router *mux.Router) error {
-	pathStrs := a.paths.InMatchingOrder()
-	for _, pathStr := range pathStrs {
-		path := a.paths.Find(pathStr)
-
+	for path, pathItem := range a.paths {
 		operations := map[string]*openapi3.Operation{
-			http.MethodGet:    path.Get,
-			http.MethodPost:   path.Post,
-			http.MethodPut:    path.Put,
-			http.MethodDelete: path.Delete,
+			http.MethodGet:    pathItem.Get,
+			http.MethodPost:   pathItem.Post,
+			http.MethodPut:    pathItem.Put,
+			http.MethodDelete: pathItem.Delete,
 		}
 
 		for method, operation := range operations {
@@ -99,7 +96,7 @@ func (a *Adapter) routeAPIs(router *mux.Router) error {
 				// the service should be stopped anyway and the stack trace is logged without needing to recover and import runtime/debug to get the stack trace
 				requestBody = operation.RequestBody.Value.Content.Get("application/json").Schema.Ref
 			}
-			err := a.registerHandler(router, pathStr, method, tag, operation.Extensions[XCoreFunction].(string), operation.Extensions[XDataType].(string),
+			err := a.registerHandler(router, path, method, tag, operation.Extensions[XCoreFunction].(string), operation.Extensions[XDataType].(string),
 				operation.Extensions[XAuthType], requestBody, convFunc)
 			if err != nil {
 				errArgs := logutils.FieldArgs(operation.Extensions)
@@ -163,8 +160,8 @@ func NewWebAdapter(baseURL string, port string, serviceID string, app *core.Appl
 	doc.Servers = nil
 
 	//To correctly route traffic to base path, we must add to all paths since servers are ignored
-	paths := make(openapi3.Paths, len(doc.Paths))
-	for path, obj := range doc.Paths {
+	paths := make(map[string]*openapi3.PathItem, doc.Paths.Len())
+	for path, obj := range doc.Paths.Map() {
 		paths["/"+serviceID+path] = obj
 	}
 

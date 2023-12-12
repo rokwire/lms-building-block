@@ -65,7 +65,7 @@ type Course struct {
 	DateUpdated *time.Time
 }
 
-// userModule represents a copy of a module that the user modifies as progress is made
+// UserModule represents a copy of a module that the user modifies as progress is made
 type UserModule struct {
 	ID          string     `json:"_id"`
 	AppID       string     `json:"app_id"`
@@ -92,7 +92,7 @@ type Module struct {
 	DateUpdated *time.Time
 }
 
-// userUnit represents a copy of a unit that the user modifies as progress is made
+// UserUnit represents a copy of a unit that the user modifies as progress is made
 type UserUnit struct {
 	ID          string     `json:"_id"`
 	AppID       string     `json:"app_id"`

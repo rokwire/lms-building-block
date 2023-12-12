@@ -43,7 +43,7 @@ type openapi3Type interface {
 /* Replaces wrapFunc by taking in authorization and the core function corresponding to the path
 *  The obj pointer represents the pointer of the type of the request body
  */
-func handleRequest[A apiDataType, R requestDataType](handler *apiHandler[A, R], paths openapi3.Paths, logger *logs.Logger) http.HandlerFunc {
+func handleRequest[A apiDataType, R requestDataType](handler *apiHandler[A, R], paths map[string]*openapi3.PathItem, logger *logs.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		logObj := logger.NewRequestLog(req)
 		logObj.RequestReceived()
@@ -53,7 +53,7 @@ func handleRequest[A apiDataType, R requestDataType](handler *apiHandler[A, R], 
 			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), 404, true))
 			return
 		}
-		path := paths.Find(pathKey)
+		path := paths[pathKey]
 		if path == nil {
 			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), 404, true))
 			return
