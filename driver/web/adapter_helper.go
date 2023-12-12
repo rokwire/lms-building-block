@@ -20,6 +20,7 @@ type apiDataType interface {
 // requestDataType represents any data type that may be sent in an API request body
 type requestDataType interface {
 	Def.AdminReqCreateNudge | Def.AdminReqUpdateNudge | Def.NudgesConfig | apiDataType
+	Def.AdminReqCreateNudge | Def.AdminReqUpdateNudge | Def.NudgesConfig | apiDataType
 }
 
 func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method string, tag string, coreFunc string, dataType string, authType interface{},
@@ -111,6 +112,7 @@ func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method str
 			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)
 		}
 
+		router.HandleFunc(pathStr, handleRequest[model.Course, model.Course](&handler, a.paths, a.logger)).Methods(method)
 		router.HandleFunc(pathStr, handleRequest[model.Course, model.Course](&handler, a.paths, a.logger)).Methods(method)
 	case "model.ProviderCourse":
 		handler := apiHandler[model.ProviderCourse, model.ProviderCourse]{authorization: authorization, messageDataType: model.TypeProviderCourse}

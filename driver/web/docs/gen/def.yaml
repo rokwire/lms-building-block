@@ -386,17 +386,17 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: course-id
+        - name: course-key
           in: path
-          description: User course ID
+          description: course Key
           required: true
           style: simple
           explode: false
           schema:
             type: string
-        - name: module-id
+        - name: module-key
           in: path
-          description: Module ID
+          description: Module Key
           required: true
           style: simple
           explode: false

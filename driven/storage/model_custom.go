@@ -19,6 +19,16 @@ import (
 	"time"
 )
 
+type userCourse struct {
+	ID          string     `bson:"_id"`
+	AppID       string     `bson:"app_id"`
+	OrgID       string     `bson:"org_id"`
+	UserID      string     `bson:"user_id"`
+	Course      course     `bson:"course"`
+	DateCreated time.Time  `bson:"date_created"`
+	DateUpdated *time.Time `bson:"date_updated"`
+}
+
 type course struct {
 	ID    string `bson:"_id"`
 	AppID string `bson:"app_id"`
@@ -28,6 +38,17 @@ type course struct {
 	Name       string   `bson:"name"`
 	ModuleKeys []string `bson:"module_keys"`
 
+	DateCreated time.Time  `bson:"date_created"`
+	DateUpdated *time.Time `bson:"date_updated"`
+}
+
+type userModule struct {
+	ID          string     `bson:"_id"`
+	AppID       string     `bson:"app_id"`
+	OrgID       string     `bson:"org_id"`
+	UserID      string     `bson:"user_id"`
+	CourseKey   string     `bson:"course_key"`
+	Module      module     `bson:"module"`
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
 }
@@ -42,9 +63,18 @@ type module struct {
 	Name      string   `bson:"name"`
 	UnitKeys  []string `bson:"unit_keys"`
 
-	Completed *bool                  `bson:"completed,omitempty"`
-	UserData  map[string]interface{} `bson:"user_data,omitempty"`
+	DateCreated time.Time  `bson:"date_created"`
+	DateUpdated *time.Time `bson:"date_updated"`
+}
 
+type userUnit struct {
+	ID          string     `bson:"_id"`
+	AppID       string     `bson:"app_id"`
+	OrgID       string     `bson:"org_id"`
+	UserID      string     `bson:"user_id"`
+	CourseKey   string     `bson:"course_key"`
+	ModuleKey   string     `bson:"module_key"`
+	Unit        unit       `bson:"unit"`
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
 }
@@ -60,9 +90,6 @@ type unit struct {
 	Name        string               `bson:"name"`
 	ContentKeys []string             `bson:"content_keys"`
 	Schedule    []model.ScheduleItem `bson:"schedule"`
-
-	Completed *bool                  `bson:"completed,omitempty"`
-	UserData  map[string]interface{} `bson:"user_data,omitempty"`
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
@@ -82,9 +109,6 @@ type content struct {
 	Details          string          `bson:"details"`
 	ContentReference model.Reference `bson:"reference"`
 	LinkedContent    []string        `bson:"linked_content"` // Content Keys
-
-	Completed *bool                  `bson:"completed,omitempty"`
-	UserData  map[string]interface{} `bson:"user_data,omitempty"`
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`

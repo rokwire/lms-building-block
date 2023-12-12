@@ -45,6 +45,13 @@ type database struct {
 	sentNudges      *collectionWrapper
 	nudgesProcesses *collectionWrapper
 	nudgesBlocks    *collectionWrapper
+	customCourse    *collectionWrapper
+	customModule    *collectionWrapper
+	customUnit      *collectionWrapper
+	customContent   *collectionWrapper
+	userCourse      *collectionWrapper
+	userModule      *collectionWrapper
+	userUnit        *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -107,6 +114,47 @@ func (m *database) start() error {
 		return err
 	}
 
+	customCourse := &collectionWrapper{database: m, coll: db.Collection("custom_course")}
+	err = m.applyCustomCourseChecks(customCourse)
+	if err != nil {
+		return err
+	}
+
+	customModule := &collectionWrapper{database: m, coll: db.Collection("custom_module")}
+	err = m.applyCustomModuleChecks(customModule)
+	if err != nil {
+		return err
+	}
+
+	customUnit := &collectionWrapper{database: m, coll: db.Collection("custom_unit")}
+	err = m.applyCustomUnitChecks(customUnit)
+	if err != nil {
+		return err
+	}
+
+	customContent := &collectionWrapper{database: m, coll: db.Collection("custom_content")}
+	err = m.applyCustomContentChecks(customContent)
+	if err != nil {
+		return err
+	}
+
+	userCourse := &collectionWrapper{database: m, coll: db.Collection("user_course")}
+	err = m.applyUserCourseChecks(userCourse)
+	if err != nil {
+		return err
+	}
+
+	userModule := &collectionWrapper{database: m, coll: db.Collection("user_module")}
+	err = m.applyUserCourseChecks(userModule)
+	if err != nil {
+		return err
+	}
+
+	userUnit := &collectionWrapper{database: m, coll: db.Collection("user_unit")}
+	err = m.applyUserCourseChecks(userUnit)
+	if err != nil {
+		return err
+	}
 	//asign the db, db client and the collections
 	m.db = db
 	m.dbClient = client
@@ -117,6 +165,13 @@ func (m *database) start() error {
 	m.sentNudges = sentNudges
 	m.nudgesProcesses = nudgesProcesses
 	m.nudgesBlocks = nudgesBlocks
+	m.customCourse = customCourse
+	m.customModule = customModule
+	m.customUnit = customUnit
+	m.customContent = customContent
+	m.userCourse = userCourse
+	m.userModule = userModule
+	m.userUnit = userUnit
 
 	go m.configs.Watch(nil, m.logger)
 
@@ -219,8 +274,119 @@ func (m *database) applyNudgesBlocksChecks(nudgesProcesses *collectionWrapper) e
 	return nil
 }
 
-// Event
+// Custom Course
+func (m *database) applyCustomCourseChecks(customCourse *collectionWrapper) error {
+	m.logger.Info("apply custom course check.....")
+	err := customCourse.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "key", Value: 1},
+		}, true)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("custom course check passed")
+	return nil
+}
 
+// Custom Module
+func (m *database) applyCustomModuleChecks(customModule *collectionWrapper) error {
+	m.logger.Info("apply custom module check.....")
+	err := customModule.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "key", Value: 1},
+		}, true)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("custom module check passed")
+	return nil
+}
+
+// Custom Unit
+func (m *database) applyCustomUnitChecks(customUnit *collectionWrapper) error {
+	m.logger.Info("apply custom unit check.....")
+	err := customUnit.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "key", Value: 1},
+		}, true)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("custom unit check passed")
+	return nil
+}
+
+// Custom Content
+func (m *database) applyCustomContentChecks(customContent *collectionWrapper) error {
+	m.logger.Info("apply custom content check.....")
+	err := customContent.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "key", Value: 1},
+		}, true)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("custom content check passed")
+	return nil
+}
+
+// User Course
+func (m *database) applyUserCourseChecks(userCourse *collectionWrapper) error {
+	m.logger.Info("apply user course check.....")
+	err := userCourse.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "user_id", Value: 1},
+		}, false)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("user course check passed")
+	return nil
+}
+
+// User Course
+func (m *database) applyUserModuleChecks(userModule *collectionWrapper) error {
+	m.logger.Info("apply user module check.....")
+	err := userModule.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "user_id", Value: 1},
+		}, false)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("user module check passed")
+	return nil
+}
+
+// User Course
+func (m *database) applyUserUnitChecks(userUnit *collectionWrapper) error {
+	m.logger.Info("apply user unit check.....")
+	err := userUnit.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "user_id", Value: 1},
+		}, false)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("user unit check passed")
+	return nil
+}
+
+// Event
 func (m *database) onDataChanged(changeDoc map[string]interface{}) {
 	if changeDoc == nil {
 		return

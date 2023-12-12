@@ -121,17 +121,17 @@ func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map
 }
 
 func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.Unit) (*model.Unit, error) {
-	courseID, err := utils.GetValue[string](params, "course-id", true)
+	courseKey, err := utils.GetValue[string](params, "course-key", true)
 	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseID"), err)
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseKey"), err)
 	}
 
-	moduleID, err := utils.GetValue[string](params, "module-id", true)
+	moduleKey, err := utils.GetValue[string](params, "module-key", true)
 	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("moduleID"), err)
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("moduleKey"), err)
 	}
 
-	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseID, moduleID, *item)
+	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseKey, moduleKey, *item)
 }
 
 // Admin

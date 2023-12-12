@@ -22,7 +22,9 @@ import (
 	"lms/utils"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
@@ -127,26 +129,60 @@ func (s *clientImpl) GetCurrentUser(claims *tokenauth.Claims) (*model.User, erro
 }
 
 func (s *clientImpl) GetUserCourses(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.UserCourse, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	var idArr, nameArr, keyArr []string
+	userID := claims.Subject
+	//parse moduleID comma seperated string into array
+	if id != nil {
+		idArr = strings.Split(*id, ",")
+	}
+	if name != nil {
+		nameArr = strings.Split(*name, ",")
+	}
+	if key != nil {
+		keyArr = strings.Split(*key, ",")
+	}
+
+	userCourses, err := s.app.storage.GetUserCourses(idArr, nameArr, keyArr, userID)
+	if err != nil {
+		return nil, err
+	}
+	return userCourses, nil
 }
 
 func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, id string) (*model.UserCourse, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	userID := claims.Subject
+	userCourse, err := s.app.storage.GetUserCourse(id, userID)
+	if err != nil {
+		return nil, err
+	}
+	return userCourse, nil
 }
 
+// pass course id to create a new user course
 func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, id string) (*model.UserCourse, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	var item model.UserCourse
+	item.ID = uuid.NewString()
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.UserID = claims.Subject
+	item.DateCreated = time.Now()
+
+	err := s.app.storage.InsertUserCourse(item, id)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, id string) error {
-	//TODO: implement
-	return errors.New(logutils.Unimplemented)
+	err := s.app.storage.DeleteCustomModule(id)
+	if err != nil {
+		return nil
+	}
+	return err
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseID string, moduleID string, item model.Unit) (*model.Unit, error) {
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.Unit) (*model.Unit, error) {
 	//TODO: implement
 	return nil, errors.New(logutils.Unimplemented)
 }

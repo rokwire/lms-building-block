@@ -35,12 +35,12 @@ const (
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
 type UserCourse struct {
-	ID     string
-	AppID  string
-	OrgID  string
-	UserID string
+	ID     string `json:"_id"`
+	AppID  string `json:"app_id"`
+	OrgID  string `json:"org_id"`
+	UserID string `json:"user_id"`
 
-	Course Course
+	Course Course `json:"course"`
 
 	DateCreated time.Time
 	DateUpdated *time.Time
@@ -49,13 +49,13 @@ type UserCourse struct {
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
 type Course struct {
-	ID    string
-	AppID string
-	OrgID string
+	ID    string `json:"_id"`
+	AppID string `json:"app_id"`
+	OrgID string `json:"org_id"`
 
-	Key     string
-	Name    string
-	Modules []Module
+	Key     string   `json:"key"`
+	Name    string   `json:"name"`
+	Modules []Module `json:"modules"`
 
 	DateCreated time.Time
 	DateUpdated *time.Time
@@ -63,14 +63,14 @@ type Course struct {
 
 // Module represents an individual module of a Course (e.g. Conversational Skills)
 type Module struct {
-	ID    string
-	AppID string
-	OrgID string
+	ID    string `json:"_id"`
+	AppID string `json:"app_id"`
+	OrgID string `json:"org_id"`
 
-	CourseKey string
-	Key       string
-	Name      string
-	Units     []Unit
+	CourseKey string `json:"course_key"`
+	Key       string `json:"key"`
+	Name      string `json:"name"`
+	Units     []Unit `json:"units"`
 
 	DateCreated time.Time
 	DateUpdated *time.Time
@@ -78,16 +78,16 @@ type Module struct {
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
 type Unit struct {
-	ID    string
-	AppID string
-	OrgID string
+	ID    string `json:"_id"`
+	AppID string `json:"app_id"`
+	OrgID string `json:"org_id"`
 
-	CourseKey string
-	ModuleKey string
-	Key       string
-	Name      string
-	Contents  []Content
-	Schedule  []ScheduleItem
+	CourseKey string         `json:"course_key"`
+	ModuleKey string         `json:"module_key"`
+	Key       string         `json:"key"`
+	Name      string         `json:"name"`
+	Contents  []Content      `json:"content"`
+	Schedule  []ScheduleItem `json:"schedule"`
 
 	DateCreated time.Time
 	DateUpdated *time.Time
@@ -102,19 +102,19 @@ type ScheduleItem struct {
 
 // Content represents some Unit content
 type Content struct {
-	ID    string
-	AppID string
-	OrgID string
+	ID    string `json:"_id"`
+	AppID string `json:"app_id"`
+	OrgID string `json:"org_id"`
 
-	CourseKey        string
-	ModuleKey        string
-	UnitKey          string
-	Key              string
-	Type             string // assignment, resource, reward, evaluation
-	Name             string
-	Details          string
-	ContentReference Reference
-	LinkedContent    []Content
+	CourseKey        string    `json:"course_key"`
+	ModuleKey        string    `json:"module_key"`
+	UnitKey          string    `json:"unit_key"`
+	Key              string    `json:"key"`
+	Type             string    `json:"type"` // assignment, resource, reward, evaluation
+	Name             string    `json:"name"`
+	Details          string    `json:"details"`
+	ContentReference Reference `json:"reference"`
+	LinkedContent    []Content `json:"linked_content"`
 
 	DateCreated time.Time
 	DateUpdated *time.Time

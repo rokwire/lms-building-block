@@ -58,6 +58,36 @@ type Storage interface {
 	InsertBlock(block model.Block) error
 	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
+
+	GetCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
+	GetCustomCourse(id string) (*model.Course, error)
+	InsertCustomCourse(item model.Course) error
+	UpdateCustomCourse(id string, item model.Course) error
+	DeleteCustomCourse(id string) error
+
+	GetCustomModules(appID string, orgID string, id []string, name []string, key []string, unitKeys []string) ([]model.Module, error)
+	GetCustomModule(id string) (*model.Module, error)
+	InsertCustomModule(item model.Module) error
+	UpdateCustomModule(id string, item model.Module) error
+	DeleteCustomModule(id string) error
+
+	GetCustomUnits(appID string, orgID string, id []string, name []string, key []string) ([]model.Unit, error)
+	GetCustomUnit(appID string, orgID string, id string) (*model.Unit, error)
+	InsertCustomUnit(item model.Unit) error
+	UpdateCustomUnit(id string, item model.Unit) error
+	DeleteCustomUnit(id string) error
+
+	GetCustomContents(appID string, orgID string, id []string, name []string, key []string) ([]model.Content, error)
+	GetCustomContent(appID string, orgID string, id string) (*model.Content, error)
+	InsertCustomContent(item model.Content) error
+	UpdateCustomContent(id string, item model.Content) error
+	DeleteCustomContent(id string) error
+
+	GetUserCourses(id []string, name []string, key []string, userId string) ([]model.UserCourse, error)
+	GetUserCourse(id string, userId string) (*model.UserCourse, error)
+	InsertUserCourse(item model.UserCourse, courseKey string) error
+	UpdateUserUnit(appID string, orgID string, userId string, courseKey string, moduleKey string, item model.Unit) error
+	DeleteUserCourse(id string) error
 }
 
 // Provider interface for LMS provider

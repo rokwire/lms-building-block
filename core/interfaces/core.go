@@ -39,7 +39,7 @@ type Client interface {
 
 	// model.Unit
 
-	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseID string, moduleID string, item model.Unit) (*model.Unit, error)
+	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.Unit) (*model.Unit, error)
 }
 
 // Admin exposes administrative APIs to the driver adapters

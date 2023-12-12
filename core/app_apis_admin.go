@@ -18,12 +18,12 @@
 package core
 
 import (
-	"errors"
 	"lms/core/model"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
-	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 type adminImpl struct {
@@ -135,101 +135,230 @@ func (s *adminImpl) FindNudgesProcesses(claims *tokenauth.Claims, limit *int, of
 }
 
 func (s *adminImpl) GetCustomCourses(claims *tokenauth.Claims, id *string, name *string, key *string, moduleID *string) ([]model.Course, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	var idArr, nameArr, keyArr, moduleKeys []string
+
+	//parse moduleID comma seperated string into array
+	if id != nil {
+		idArr = strings.Split(*id, ",")
+	}
+	if name != nil {
+		nameArr = strings.Split(*name, ",")
+	}
+	if key != nil {
+		keyArr = strings.Split(*key, ",")
+	}
+	if moduleID != nil {
+		moduleKeys = strings.Split(*moduleID, ",")
+	}
+
+	courses, err := s.app.storage.GetCustomCourses(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, moduleKeys)
+	if err != nil {
+		return nil, err
+	}
+	return courses, nil
 }
 
 func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Course) (*model.Course, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	item.ID = uuid.NewString()
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.DateCreated = time.Now()
+	err := s.app.storage.InsertCustomCourse(item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *adminImpl) GetCustomCourse(claims *tokenauth.Claims, id string) (*model.Course, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	course, err := s.app.storage.GetCustomCourse(id)
+	if err != nil {
+		return nil, err
+	}
+	return course, nil
 }
 
 func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, id string, item model.Course) (*model.Course, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	err := s.app.storage.UpdateCustomCourse(id, item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *adminImpl) DeleteCustomCourse(claims *tokenauth.Claims, id string) error {
-	//TODO: implement
-	return errors.New(logutils.Unimplemented)
+	err := s.app.storage.DeleteCustomCourse(id)
+	if err != nil {
+		return nil
+	}
+	return err
 }
 
 func (s *adminImpl) GetCustomModules(claims *tokenauth.Claims, id *string, name *string, key *string, unitID *string) ([]model.Module, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	var idArr, nameArr, keyArr, unitKeys []string
+
+	//parse moduleID comma seperated string into array
+	if id != nil {
+		idArr = strings.Split(*id, ",")
+	}
+	if name != nil {
+		nameArr = strings.Split(*name, ",")
+	}
+	if key != nil {
+		keyArr = strings.Split(*key, ",")
+	}
+	if unitID != nil {
+		unitKeys = strings.Split(*unitID, ",")
+	}
+
+	modules, err := s.app.storage.GetCustomModules(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, unitKeys)
+	if err != nil {
+		return nil, err
+	}
+	return modules, nil
 }
 
 func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Module) (*model.Module, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	item.ID = uuid.NewString()
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.DateCreated = time.Now()
+	err := s.app.storage.InsertCustomModule(item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *adminImpl) GetCustomModule(claims *tokenauth.Claims, id string) (*model.Module, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	modules, err := s.app.storage.GetCustomModule(id)
+	if err != nil {
+		return nil, err
+	}
+	return modules, nil
 }
 
 func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, id string, item model.Module) (*model.Module, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	err := s.app.storage.UpdateCustomModule(id, item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *adminImpl) DeleteCustomModule(claims *tokenauth.Claims, id string) error {
-	//TODO: implement
-	return errors.New(logutils.Unimplemented)
+	err := s.app.storage.DeleteCustomModule(id)
+	if err != nil {
+		return nil
+	}
+	return err
 }
 
 func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *string, key *string, contentID *string) ([]model.Unit, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	var idArr, nameArr, keyArr []string
+	if id != nil {
+		idArr = strings.Split(*id, ",")
+	}
+	if name != nil {
+		nameArr = strings.Split(*name, ",")
+	}
+	if key != nil {
+		keyArr = strings.Split(*key, ",")
+	}
+	result, err := s.app.storage.GetCustomUnits(claims.AppID, claims.OrgID, idArr, nameArr, keyArr)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) (*model.Unit, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	item.ID = uuid.NewString()
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.DateCreated = time.Now()
+	err := s.app.storage.InsertCustomUnit(item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, id string) (*model.Unit, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	result, err := s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, id)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, id string, item model.Unit) (*model.Unit, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	err := s.app.storage.UpdateCustomUnit(id, item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, id string) error {
-	//TODO: implement
-	return errors.New(logutils.Unimplemented)
+	err := s.app.storage.DeleteCustomUnit(id)
+	if err != nil {
+		return nil
+	}
+	return err
 }
 
 func (s *adminImpl) GetCustomContents(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.Content, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	var idArr, nameArr, keyArr []string
+	if id != nil {
+		idArr = strings.Split(*id, ",")
+	}
+	if name != nil {
+		nameArr = strings.Split(*name, ",")
+	}
+	if key != nil {
+		keyArr = strings.Split(*key, ",")
+	}
+
+	result, err := s.app.storage.GetCustomContents(claims.AppID, claims.OrgID, idArr, nameArr, keyArr)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *adminImpl) CreateCustomContent(claims *tokenauth.Claims, item model.Content) (*model.Content, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	item.ID = uuid.NewString()
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.DateCreated = time.Now()
+	err := s.app.storage.InsertCustomContent(item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *adminImpl) GetCustomContent(claims *tokenauth.Claims, id string) (*model.Content, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	result, err := s.app.storage.GetCustomContent(claims.AppID, claims.OrgID, id)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, id string, item model.Content) (*model.Content, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	err := s.app.storage.UpdateCustomContent(id, item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, id string) error {
-	//TODO: implement
-	return errors.New(logutils.Unimplemented)
+	err := s.app.storage.DeleteCustomContent(id)
+	if err != nil {
+		return nil
+	}
+	return err
 }
