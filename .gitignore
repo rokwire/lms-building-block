@@ -5,8 +5,10 @@ build/
 .idea/
 .git
 .env
-.pem
+*.pem
 node_modules/
+package-lock.json
+package.json
 docker-compose.env
 docker-compose.yml
 run.sh
