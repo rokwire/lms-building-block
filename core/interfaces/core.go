@@ -32,10 +32,10 @@ type Client interface {
 
 	// model.UserCourse
 
-	GetUserCourses(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.UserCourse, error)
-	GetUserCourse(claims *tokenauth.Claims, id string) (*model.UserCourse, error)
-	CreateUserCourse(claims *tokenauth.Claims, id string) (*model.UserCourse, error)
-	DeleteUserCourse(claims *tokenauth.Claims, id string) error
+	GetUserCourses(claims *tokenauth.Claims, id *string, name *string, courseKey *string) ([]model.UserCourse, error)
+	GetUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error)
+	CreateUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error)
+	DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error
 
 	// model.Unit
 
@@ -70,31 +70,31 @@ type Admin interface {
 
 	GetCustomCourses(claims *tokenauth.Claims, id *string, name *string, key *string, moduleID *string) ([]model.Course, error)
 	CreateCustomCourse(claims *tokenauth.Claims, item model.Course) (*model.Course, error)
-	GetCustomCourse(claims *tokenauth.Claims, id string) (*model.Course, error)
-	UpdateCustomCourse(claims *tokenauth.Claims, id string, item model.Course) (*model.Course, error)
-	DeleteCustomCourse(claims *tokenauth.Claims, id string) error
+	GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error)
+	UpdateCustomCourse(claims *tokenauth.Claims, key string, item model.Course) (*model.Course, error)
+	DeleteCustomCourse(claims *tokenauth.Claims, key string) error
 
 	// model.Module
 
 	GetCustomModules(claims *tokenauth.Claims, id *string, name *string, key *string, unitID *string) ([]model.Module, error)
 	CreateCustomModule(claims *tokenauth.Claims, item model.Module) (*model.Module, error)
-	GetCustomModule(claims *tokenauth.Claims, id string) (*model.Module, error)
-	UpdateCustomModule(claims *tokenauth.Claims, id string, item model.Module) (*model.Module, error)
-	DeleteCustomModule(claims *tokenauth.Claims, id string) error
+	GetCustomModule(claims *tokenauth.Claims, key string) (*model.Module, error)
+	UpdateCustomModule(claims *tokenauth.Claims, key string, item model.Module) (*model.Module, error)
+	DeleteCustomModule(claims *tokenauth.Claims, key string) error
 
 	// model.Unit
 
 	GetCustomUnits(claims *tokenauth.Claims, id *string, name *string, key *string, contentID *string) ([]model.Unit, error)
 	CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) (*model.Unit, error)
-	GetCustomUnit(claims *tokenauth.Claims, id string) (*model.Unit, error)
-	UpdateCustomUnit(claims *tokenauth.Claims, id string, item model.Unit) (*model.Unit, error)
-	DeleteCustomUnit(claims *tokenauth.Claims, id string) error
+	GetCustomUnit(claims *tokenauth.Claims, key string) (*model.Unit, error)
+	UpdateCustomUnit(claims *tokenauth.Claims, key string, item model.Unit) (*model.Unit, error)
+	DeleteCustomUnit(claims *tokenauth.Claims, key string) error
 
 	// model.Content
 
 	GetCustomContents(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.Content, error)
 	CreateCustomContent(claims *tokenauth.Claims, item model.Content) (*model.Content, error)
-	GetCustomContent(claims *tokenauth.Claims, id string) (*model.Content, error)
-	UpdateCustomContent(claims *tokenauth.Claims, id string, item model.Content) (*model.Content, error)
-	DeleteCustomContent(claims *tokenauth.Claims, id string) error
+	GetCustomContent(claims *tokenauth.Claims, key string) (*model.Content, error)
+	UpdateCustomContent(claims *tokenauth.Claims, key string, item model.Content) (*model.Content, error)
+	DeleteCustomContent(claims *tokenauth.Claims, key string) error
 }

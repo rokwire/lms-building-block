@@ -2,11 +2,11 @@ package storage
 
 import (
 	"lms/core/model"
+	"time"
 
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // GetCustomCourses finds courses by a set of parameters
@@ -41,7 +41,7 @@ func (sa *Adapter) GetCustomCourses(appID string, orgID string, id []string, nam
 
 	var convertedResult []model.Course
 	for _, retrievedCourse := range result {
-		singleConverted, err := sa.customCourseConversionHelper(retrievedCourse)
+		singleConverted, err := sa.customCourseConversionStorageToAPI(retrievedCourse)
 		if err != nil {
 			return nil, err
 		}
@@ -52,15 +52,15 @@ func (sa *Adapter) GetCustomCourses(appID string, orgID string, id []string, nam
 }
 
 // GetCustomCourse finds a course by id
-func (sa *Adapter) GetCustomCourse(id string) (*model.Course, error) {
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
+func (sa *Adapter) GetCustomCourse(appID string, orgID string, key string) (*model.Course, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result course
 	err := sa.db.customCourse.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	convertedResult, err := sa.customCourseConversionHelper(result)
+	convertedResult, err := sa.customCourseConversionStorageToAPI(result)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +68,8 @@ func (sa *Adapter) GetCustomCourse(id string) (*model.Course, error) {
 	return &convertedResult, nil
 }
 
-// customCourseConversionHelper formats storage struct to appropirate struct for API request
-func (sa *Adapter) customCourseConversionHelper(item course) (model.Course, error) {
+// customCourseConversionStorageToAPI formats storage struct to appropirate struct for API request
+func (sa *Adapter) customCourseConversionStorageToAPI(item course) (model.Course, error) {
 	var result model.Course
 	result.ID = item.ID
 	result.AppID = item.AppID
@@ -88,7 +88,7 @@ func (sa *Adapter) customCourseConversionHelper(item course) (model.Course, erro
 		}
 
 		for _, singleContent := range linked {
-			convertedContent, err := sa.customModuleConversionHelper(singleContent)
+			convertedContent, err := sa.customModuleConversionStorageToAPI(singleContent)
 			if err != nil {
 				return result, err
 			}
@@ -100,6 +100,19 @@ func (sa *Adapter) customCourseConversionHelper(item course) (model.Course, erro
 
 // InsertCustomCourse inserts a course
 func (sa *Adapter) InsertCustomCourse(item model.Course) error {
+	item.DateCreated = time.Now()
+	item.DateUpdated = nil
+	course := sa.customCourseConversionAPIToStorage(item)
+
+	_, err := sa.db.customCourse.InsertOne(sa.context, course)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+	}
+	return nil
+}
+
+// customCourseConversionAPIToStorage formats API struct to stroage struct
+func (sa *Adapter) customCourseConversionAPIToStorage(item model.Course) course {
 	//parse into the storage format and pass parameters
 	var moduleKeys []string
 	for _, val := range item.Modules {
@@ -116,25 +129,21 @@ func (sa *Adapter) InsertCustomCourse(item model.Course) error {
 	course.DateCreated = item.DateCreated
 	course.DateUpdated = item.DateUpdated
 
-	_, err := sa.db.customCourse.InsertOne(sa.context, course)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
-	}
-	return nil
+	return course
 }
 
 // UpdateCustomCourse updates a course
-func (sa *Adapter) UpdateCustomCourse(id string, item model.Course) error {
+func (sa *Adapter) UpdateCustomCourse(key string, item model.Course) error {
 	//parse into the storage format and pass parameters
 	var moduleKeys []string
 	for _, val := range item.Modules {
 		moduleKeys = append(moduleKeys, val.Key)
 	}
 
-	filter := bson.M{"_id": id}
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
 	update := bson.M{
 		"$set": bson.M{
-			"date_updated": item.DateUpdated,
+			"date_updated": time.Now(),
 			"key":          item.Key,
 			"name":         item.Name,
 			"module_keys":  moduleKeys,
@@ -142,27 +151,27 @@ func (sa *Adapter) UpdateCustomCourse(id string, item model.Course) error {
 	}
 	result, err := sa.db.customCourse.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": id}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": id}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
 
 // DeleteCustomCourse deletes a course
-func (sa *Adapter) DeleteCustomCourse(id string) error {
-	filter := bson.M{"_id": id}
+func (sa *Adapter) DeleteCustomCourse(appID string, orgID string, key string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	result, err := sa.db.customCourse.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
@@ -199,7 +208,7 @@ func (sa *Adapter) GetCustomModules(appID string, orgID string, id []string, nam
 
 	var convertedResult []model.Module
 	for _, retrievedModule := range result {
-		singleConverted, err := sa.customModuleConversionHelper(retrievedModule)
+		singleConverted, err := sa.customModuleConversionStorageToAPI(retrievedModule)
 		if err != nil {
 			return nil, err
 		}
@@ -210,15 +219,15 @@ func (sa *Adapter) GetCustomModules(appID string, orgID string, id []string, nam
 }
 
 // GetCustomModule finds a module by id
-func (sa *Adapter) GetCustomModule(id string) (*model.Module, error) {
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
+func (sa *Adapter) GetCustomModule(appID string, orgID string, key string) (*model.Module, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result module
 	err := sa.db.customModule.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	convertedResult, err := sa.customModuleConversionHelper(result)
+	convertedResult, err := sa.customModuleConversionStorageToAPI(result)
 	if err != nil {
 		return nil, err
 	}
@@ -226,8 +235,8 @@ func (sa *Adapter) GetCustomModule(id string) (*model.Module, error) {
 	return &convertedResult, nil
 }
 
-// customModuleConversionHelper formats storage struct to appropirate struct for API request
-func (sa *Adapter) customModuleConversionHelper(item module) (model.Module, error) {
+// customModuleConversionStorageToAPI formats storage struct to appropirate struct for API request
+func (sa *Adapter) customModuleConversionStorageToAPI(item module) (model.Module, error) {
 	var result model.Module
 	result.ID = item.ID
 	result.AppID = item.AppID
@@ -247,7 +256,7 @@ func (sa *Adapter) customModuleConversionHelper(item module) (model.Module, erro
 		}
 
 		for _, singleContent := range linked {
-			convertedContent, err := sa.customUnitConversionHelper(singleContent)
+			convertedContent, err := sa.customUnitConversionStorageToAPI(singleContent)
 			if err != nil {
 				return result, err
 			}
@@ -259,6 +268,18 @@ func (sa *Adapter) customModuleConversionHelper(item module) (model.Module, erro
 
 // InsertCustomModule inserts a module
 func (sa *Adapter) InsertCustomModule(item model.Module) error {
+	item.DateCreated = time.Now()
+	item.DateUpdated = nil
+	module := sa.customModuleConversionAPIToStorage(item)
+	_, err := sa.db.customModule.InsertOne(sa.context, module)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+	}
+	return nil
+}
+
+// customModuleConversionAPIToStorage formats API struct to stroage struct
+func (sa *Adapter) customModuleConversionAPIToStorage(item model.Module) module {
 	//parse into the storage format and pass parameters
 	var unitKeys []string
 	for _, val := range item.Units {
@@ -276,25 +297,21 @@ func (sa *Adapter) InsertCustomModule(item model.Module) error {
 	module.DateCreated = item.DateCreated
 	module.DateUpdated = item.DateUpdated
 
-	_, err := sa.db.customModule.InsertOne(sa.context, module)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
-	}
-	return nil
+	return module
 }
 
 // UpdateCustomModule updates a module
-func (sa *Adapter) UpdateCustomModule(id string, item model.Module) error {
+func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 	//parse into the storage format and pass parameters
 	var unitKeys []string
 	for _, val := range item.Units {
 		unitKeys = append(unitKeys, val.Key)
 	}
 
-	filter := bson.M{"_id": id}
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
 	update := bson.M{
 		"$set": bson.M{
-			"date_updated": item.DateUpdated,
+			"date_updated": time.Now(),
 			"course_key":   item.CourseKey,
 			"key":          item.Key,
 			"name":         item.Name,
@@ -303,27 +320,27 @@ func (sa *Adapter) UpdateCustomModule(id string, item model.Module) error {
 	}
 	result, err := sa.db.customModule.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": id}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": id}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
 
 // DeleteCustomModule deletes a module
-func (sa *Adapter) DeleteCustomModule(id string) error {
-	filter := bson.M{"_id": id}
+func (sa *Adapter) DeleteCustomModule(appID string, orgID string, key string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	result, err := sa.db.customModule.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
@@ -354,7 +371,7 @@ func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name 
 
 	var convertedResult []model.Unit
 	for _, retrievedUnit := range result {
-		singleConverted, err := sa.customUnitConversionHelper(retrievedUnit)
+		singleConverted, err := sa.customUnitConversionStorageToAPI(retrievedUnit)
 		if err != nil {
 			return nil, err
 		}
@@ -365,15 +382,15 @@ func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name 
 }
 
 // GetCustomUnit finds a unit by id
-func (sa *Adapter) GetCustomUnit(appID string, orgID string, id string) (*model.Unit, error) {
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
+func (sa *Adapter) GetCustomUnit(appID string, orgID string, key string) (*model.Unit, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result unit
 	err := sa.db.customUnit.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	convertedResult, err := sa.customUnitConversionHelper(result)
+	convertedResult, err := sa.customUnitConversionStorageToAPI(result)
 	if err != nil {
 		return nil, err
 	}
@@ -381,8 +398,8 @@ func (sa *Adapter) GetCustomUnit(appID string, orgID string, id string) (*model.
 	return &convertedResult, nil
 }
 
-// customUnitConversionHelper formats storage struct to appropirate struct for API request
-func (sa *Adapter) customUnitConversionHelper(item unit) (model.Unit, error) {
+// customUnitConversionStorageToAPI formats storage struct to appropirate struct for API request
+func (sa *Adapter) customUnitConversionStorageToAPI(item unit) (model.Unit, error) {
 	var result model.Unit
 	result.ID = item.ID
 	result.AppID = item.AppID
@@ -404,7 +421,7 @@ func (sa *Adapter) customUnitConversionHelper(item unit) (model.Unit, error) {
 			return result, err
 		}
 		for _, singleContent := range linked {
-			convertedContent, err := sa.customContentConversionHelper(singleContent)
+			convertedContent, err := sa.customContentConversionStorageToAPI(singleContent)
 			if err != nil {
 				return result, err
 			}
@@ -416,6 +433,18 @@ func (sa *Adapter) customUnitConversionHelper(item unit) (model.Unit, error) {
 
 // InsertCustomUnit inserts a unit
 func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
+	item.DateCreated = time.Now()
+	item.DateUpdated = nil
+	result := sa.customUnitConversionAPIToStorage(item)
+	_, err := sa.db.customUnit.InsertOne(sa.context, result)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+	}
+	return nil
+}
+
+// customUnitConversionAPIToStorage formats API struct to stroage struct
+func (sa *Adapter) customUnitConversionAPIToStorage(item model.Unit) unit {
 	//parse into the storage format and pass parameters
 	var extractedKey []string
 	for _, val := range item.Contents {
@@ -435,22 +464,18 @@ func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated
 
-	_, err := sa.db.customUnit.InsertOne(sa.context, result)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
-	}
-	return nil
+	return result
 }
 
 // UpdateCustomUnit updates a unit
-func (sa *Adapter) UpdateCustomUnit(id string, item model.Unit) error {
+func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 	//parse into the storage format and pass parameters
 	var extractedKey []string
 	for _, val := range item.Contents {
 		extractedKey = append(extractedKey, val.Key)
 	}
 
-	filter := bson.M{"_id": id}
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
 	update := bson.M{
 		"$set": bson.M{
 			"course_key":   item.CourseKey,
@@ -459,32 +484,32 @@ func (sa *Adapter) UpdateCustomUnit(id string, item model.Unit) error {
 			"name":         item.Name,
 			"content_keys": extractedKey,
 			"schedule":     item.Schedule,
-			"date_updated": item.DateUpdated,
+			"date_updated": time.Now(),
 		},
 	}
 	result, err := sa.db.customUnit.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": id}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": id}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
 
 // DeleteCustomUnit deletes a unit
-func (sa *Adapter) DeleteCustomUnit(id string) error {
-	filter := bson.M{"_id": id}
+func (sa *Adapter) DeleteCustomUnit(appID string, orgID string, key string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	result, err := sa.db.customUnit.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
@@ -515,7 +540,7 @@ func (sa *Adapter) GetCustomContents(appID string, orgID string, id []string, na
 
 	var convertedResult []model.Content
 	for _, retrievedContent := range result {
-		singleConverted, err := sa.customContentConversionHelper(retrievedContent)
+		singleConverted, err := sa.customContentConversionStorageToAPI(retrievedContent)
 		if err != nil {
 			return nil, err
 		}
@@ -526,15 +551,15 @@ func (sa *Adapter) GetCustomContents(appID string, orgID string, id []string, na
 }
 
 // GetCustomContent finds a content by id
-func (sa *Adapter) GetCustomContent(appID string, orgID string, id string) (*model.Content, error) {
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
+func (sa *Adapter) GetCustomContent(appID string, orgID string, key string) (*model.Content, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result content
 	err := sa.db.customContent.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	convertedResult, err := sa.customContentConversionHelper(result)
+	convertedResult, err := sa.customContentConversionStorageToAPI(result)
 	if err != nil {
 		return nil, err
 	}
@@ -542,8 +567,8 @@ func (sa *Adapter) GetCustomContent(appID string, orgID string, id string) (*mod
 	return &convertedResult, nil
 }
 
-// customContentConversionHelper formats storage struct to appropirate struct for API request
-func (sa *Adapter) customContentConversionHelper(item content) (model.Content, error) {
+// customContentConversionStorageToAPI formats storage struct to appropirate struct for API request
+func (sa *Adapter) customContentConversionStorageToAPI(item content) (model.Content, error) {
 	var result model.Content
 	result.ID = item.ID
 	result.AppID = item.AppID
@@ -568,7 +593,7 @@ func (sa *Adapter) customContentConversionHelper(item content) (model.Content, e
 			return result, err
 		}
 		for _, singleContent := range linkedContents {
-			convertedContent, err := sa.customContentConversionHelper(singleContent)
+			convertedContent, err := sa.customContentConversionStorageToAPI(singleContent)
 			if err != nil {
 				return result, err
 			}
@@ -580,6 +605,18 @@ func (sa *Adapter) customContentConversionHelper(item content) (model.Content, e
 
 // InsertCustomContent inserts a content
 func (sa *Adapter) InsertCustomContent(item model.Content) error {
+	item.DateCreated = time.Now()
+	item.DateUpdated = nil
+	content := sa.customContentConversionAPIToStorage(item)
+	_, err := sa.db.customContent.InsertOne(sa.context, content)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+	}
+	return nil
+}
+
+// customContentConversionAPIToStorage formats API struct to stroage struct
+func (sa *Adapter) customContentConversionAPIToStorage(item model.Content) content {
 	//parse into the storage format and pass parameters
 	var extractedKey []string
 	for _, val := range item.LinkedContent {
@@ -602,22 +639,18 @@ func (sa *Adapter) InsertCustomContent(item model.Content) error {
 	content.DateCreated = item.DateCreated
 	content.DateUpdated = item.DateUpdated
 
-	_, err := sa.db.customContent.InsertOne(sa.context, content)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
-	}
-	return nil
+	return content
 }
 
 // UpdateCustomContent updates a content
-func (sa *Adapter) UpdateCustomContent(id string, item model.Content) error {
+func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 	//parse into the storage format and pass parameters
 	var extractedKey []string
 	for _, val := range item.LinkedContent {
 		extractedKey = append(extractedKey, val.Key)
 	}
 
-	filter := bson.M{"_id": id}
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
 	update := bson.M{
 		"$set": bson.M{
 			"course_key":     item.CourseKey,
@@ -629,32 +662,32 @@ func (sa *Adapter) UpdateCustomContent(id string, item model.Content) error {
 			"name":           item.Name,
 			"reference":      item.ContentReference,
 			"linked_content": extractedKey,
-			"date_updated":   item.DateUpdated,
+			"date_updated":   time.Now(),
 		},
 	}
 	result, err := sa.db.customContent.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": id}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": id}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
 
 // DeleteCustomContent deletes a content
-func (sa *Adapter) DeleteCustomContent(id string) error {
-	filter := bson.M{"_id": id}
+func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	result, err := sa.db.customContent.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": id}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }

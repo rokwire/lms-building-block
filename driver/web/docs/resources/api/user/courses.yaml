@@ -9,7 +9,7 @@ get:
   parameters:
     - name: id
       in: query
-      description: course ID
+      description: userCourse ID
       required: false
       style: form
       explode: false
@@ -23,7 +23,7 @@ get:
       explode: false
       schema:
         type: string
-    - name: key
+    - name: courseKey
       in: query
       description: course key
       required: false

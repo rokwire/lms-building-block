@@ -35,9 +35,9 @@ paths:
     $ref: "./resources/api/user/self.yaml"
   /api/users/courses:
     $ref: "./resources/api/user/courses.yaml"
-  /api/users/courses/{id}:
+  /api/users/courses/{courseKey}:
     $ref: "./resources/api/user/coursesID.yaml"
-  /api/users/courses/{course-id}/module/{module-id}:
+  /api/users/courses/{course-key}/module/{module-key}:
     $ref: "./resources/api/user/courses/moduleID.yaml"
 
   #admin
@@ -55,20 +55,20 @@ paths:
     $ref: "./resources/admin/nudges-process.yaml"
   /admin/courses:
     $ref: "./resources/admin/custom/courses.yaml"
-  /admin/courses/{id}:
-    $ref: "./resources/admin/custom/coursesID.yaml"
+  /admin/courses/{key}:
+    $ref: "./resources/admin/custom/courses-key.yaml"
   /admin/modules:
     $ref: "./resources/admin/custom/modules.yaml"
-  /admin/modules/{id}:
-    $ref: "./resources/admin/custom/modulesID.yaml"
+  /admin/modules/{key}:
+    $ref: "./resources/admin/custom/modules-key.yaml"
   /admin/units:
     $ref: "./resources/admin/custom/units.yaml"
-  /admin/units/{id}:
-    $ref: "./resources/admin/custom/unitsID.yaml"
+  /admin/units/{key}:
+    $ref: "./resources/admin/custom/units-key.yaml"
   /admin/content:
     $ref: "./resources/admin/custom/content.yaml"
-  /admin/content/{id}:
-    $ref: "./resources/admin/custom/contentID.yaml"
+  /admin/content/{key}:
+    $ref: "./resources/admin/custom/content-key.yaml"
 
 components:
   securitySchemes:

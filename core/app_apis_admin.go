@@ -20,10 +20,11 @@ package core
 import (
 	"lms/core/model"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
+	"github.com/rokwire/logging-library-go/v2/errors"
+	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 type adminImpl struct {
@@ -162,7 +163,6 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
-	item.DateCreated = time.Now()
 	err := s.app.storage.InsertCustomCourse(item)
 	if err != nil {
 		return nil, err
@@ -170,24 +170,35 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 	return &item, nil
 }
 
-func (s *adminImpl) GetCustomCourse(claims *tokenauth.Claims, id string) (*model.Course, error) {
-	course, err := s.app.storage.GetCustomCourse(id)
+func (s *adminImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error) {
+	appID := claims.AppID
+	orgID := claims.OrgID
+	course, err := s.app.storage.GetCustomCourse(appID, orgID, key)
 	if err != nil {
 		return nil, err
 	}
 	return course, nil
 }
 
-func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, id string, item model.Course) (*model.Course, error) {
-	err := s.app.storage.UpdateCustomCourse(id, item)
+func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, key string, item model.Course) (*model.Course, error) {
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+
+	if item.Key == "" {
+		return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"item key empty": item.Key}, nil)
+	}
+
+	err := s.app.storage.UpdateCustomCourse(key, item)
 	if err != nil {
 		return nil, err
 	}
 	return &item, nil
 }
 
-func (s *adminImpl) DeleteCustomCourse(claims *tokenauth.Claims, id string) error {
-	err := s.app.storage.DeleteCustomCourse(id)
+func (s *adminImpl) DeleteCustomCourse(claims *tokenauth.Claims, key string) error {
+	appID := claims.AppID
+	orgID := claims.OrgID
+	err := s.app.storage.DeleteCustomCourse(appID, orgID, key)
 	if err != nil {
 		return nil
 	}
@@ -222,7 +233,6 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
-	item.DateCreated = time.Now()
 	err := s.app.storage.InsertCustomModule(item)
 	if err != nil {
 		return nil, err
@@ -230,24 +240,46 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 	return &item, nil
 }
 
-func (s *adminImpl) GetCustomModule(claims *tokenauth.Claims, id string) (*model.Module, error) {
-	modules, err := s.app.storage.GetCustomModule(id)
+func (s *adminImpl) GetCustomModule(claims *tokenauth.Claims, key string) (*model.Module, error) {
+	appID := claims.AppID
+	orgID := claims.OrgID
+	module, err := s.app.storage.GetCustomModule(appID, orgID, key)
 	if err != nil {
 		return nil, err
 	}
-	return modules, nil
+	return module, nil
 }
 
-func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, id string, item model.Module) (*model.Module, error) {
-	err := s.app.storage.UpdateCustomModule(id, item)
+func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, key string, item model.Module) (*model.Module, error) {
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+
+	if item.Key == "" {
+		return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"item key empty": item.Key}, nil)
+	}
+	// checks if updated key correctly associate with existing struct in db
+	module, err := s.app.storage.GetCustomModule(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, err
+	}
+	if module.CourseKey != item.CourseKey {
+		_, err = s.app.storage.GetCustomCourse(claims.AppID, claims.OrgID, item.CourseKey)
+		if err != nil {
+			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"course key non-exist": item.CourseKey}, err)
+		}
+	}
+
+	err = s.app.storage.UpdateCustomModule(key, item)
 	if err != nil {
 		return nil, err
 	}
 	return &item, nil
 }
 
-func (s *adminImpl) DeleteCustomModule(claims *tokenauth.Claims, id string) error {
-	err := s.app.storage.DeleteCustomModule(id)
+func (s *adminImpl) DeleteCustomModule(claims *tokenauth.Claims, key string) error {
+	appID := claims.AppID
+	orgID := claims.OrgID
+	err := s.app.storage.DeleteCustomModule(appID, orgID, key)
 	if err != nil {
 		return nil
 	}
@@ -276,7 +308,7 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
-	item.DateCreated = time.Now()
+
 	err := s.app.storage.InsertCustomUnit(item)
 	if err != nil {
 		return nil, err
@@ -284,24 +316,49 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 	return &item, nil
 }
 
-func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, id string) (*model.Unit, error) {
-	result, err := s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, id)
+func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, key string) (*model.Unit, error) {
+	result, err := s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, key)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, id string, item model.Unit) (*model.Unit, error) {
-	err := s.app.storage.UpdateCustomUnit(id, item)
+func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item model.Unit) (*model.Unit, error) {
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+
+	if item.Key == "" {
+		return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"item key empty": item.Key}, nil)
+	}
+	// checks if updated key correctly associate with existing struct in db
+	unit, err := s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, err
+	}
+	if unit.CourseKey != item.CourseKey {
+		_, err = s.app.storage.GetCustomCourse(claims.AppID, claims.OrgID, item.CourseKey)
+		if err != nil {
+			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"course key non-exist": item.CourseKey}, err)
+		}
+	}
+
+	if unit.ModuleKey != item.ModuleKey {
+		_, err = s.app.storage.GetCustomModule(claims.AppID, claims.OrgID, item.ModuleKey)
+		if err != nil {
+			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"module key non-exist": item.ModuleKey}, err)
+		}
+	}
+
+	err = s.app.storage.UpdateCustomUnit(key, item)
 	if err != nil {
 		return nil, err
 	}
 	return &item, nil
 }
 
-func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, id string) error {
-	err := s.app.storage.DeleteCustomUnit(id)
+func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, key string) error {
+	err := s.app.storage.DeleteCustomUnit(claims.AppID, claims.OrgID, key)
 	if err != nil {
 		return nil
 	}
@@ -331,7 +388,6 @@ func (s *adminImpl) CreateCustomContent(claims *tokenauth.Claims, item model.Con
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
-	item.DateCreated = time.Now()
 	err := s.app.storage.InsertCustomContent(item)
 	if err != nil {
 		return nil, err
@@ -339,24 +395,56 @@ func (s *adminImpl) CreateCustomContent(claims *tokenauth.Claims, item model.Con
 	return &item, nil
 }
 
-func (s *adminImpl) GetCustomContent(claims *tokenauth.Claims, id string) (*model.Content, error) {
-	result, err := s.app.storage.GetCustomContent(claims.AppID, claims.OrgID, id)
+func (s *adminImpl) GetCustomContent(claims *tokenauth.Claims, key string) (*model.Content, error) {
+	result, err := s.app.storage.GetCustomContent(claims.AppID, claims.OrgID, key)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, id string, item model.Content) (*model.Content, error) {
-	err := s.app.storage.UpdateCustomContent(id, item)
+func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, key string, item model.Content) (*model.Content, error) {
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+
+	if item.Key == "" {
+		return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"item key empty": item.Key}, nil)
+	}
+	// checks if updated key correctly associate with existing struct in db
+	content, err := s.app.storage.GetCustomContent(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, err
+	}
+	if content.CourseKey != item.CourseKey {
+		_, err = s.app.storage.GetCustomCourse(claims.AppID, claims.OrgID, item.CourseKey)
+		if err != nil {
+			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"course key non-exist": item.CourseKey}, err)
+		}
+	}
+
+	if content.ModuleKey != item.ModuleKey {
+		_, err = s.app.storage.GetCustomModule(claims.AppID, claims.OrgID, item.ModuleKey)
+		if err != nil {
+			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"module key non-exist": item.ModuleKey}, err)
+		}
+	}
+
+	if content.UnitKey != item.UnitKey {
+		_, err = s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, item.UnitKey)
+		if err != nil {
+			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"unit key non-exist": item.UnitKey}, err)
+		}
+	}
+
+	err = s.app.storage.UpdateCustomContent(key, item)
 	if err != nil {
 		return nil, err
 	}
 	return &item, nil
 }
 
-func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, id string) error {
-	err := s.app.storage.DeleteCustomContent(id)
+func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, key string) error {
+	err := s.app.storage.DeleteCustomContent(claims.AppID, claims.OrgID, key)
 	if err != nil {
 		return nil
 	}

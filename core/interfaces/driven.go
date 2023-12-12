@@ -60,34 +60,36 @@ type Storage interface {
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
 
 	GetCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
-	GetCustomCourse(id string) (*model.Course, error)
+	GetCustomCourse(appID string, orgID string, key string) (*model.Course, error)
 	InsertCustomCourse(item model.Course) error
-	UpdateCustomCourse(id string, item model.Course) error
-	DeleteCustomCourse(id string) error
+	UpdateCustomCourse(key string, item model.Course) error
+	DeleteCustomCourse(appID string, orgID string, key string) error
 
 	GetCustomModules(appID string, orgID string, id []string, name []string, key []string, unitKeys []string) ([]model.Module, error)
-	GetCustomModule(id string) (*model.Module, error)
+	GetCustomModule(appID string, orgID string, key string) (*model.Module, error)
 	InsertCustomModule(item model.Module) error
-	UpdateCustomModule(id string, item model.Module) error
-	DeleteCustomModule(id string) error
+	UpdateCustomModule(key string, item model.Module) error
+	DeleteCustomModule(appID string, orgID string, key string) error
 
 	GetCustomUnits(appID string, orgID string, id []string, name []string, key []string) ([]model.Unit, error)
-	GetCustomUnit(appID string, orgID string, id string) (*model.Unit, error)
+	GetCustomUnit(appID string, orgID string, key string) (*model.Unit, error)
 	InsertCustomUnit(item model.Unit) error
-	UpdateCustomUnit(id string, item model.Unit) error
-	DeleteCustomUnit(id string) error
+	UpdateCustomUnit(key string, item model.Unit) error
+	DeleteCustomUnit(appID string, orgID string, key string) error
 
 	GetCustomContents(appID string, orgID string, id []string, name []string, key []string) ([]model.Content, error)
-	GetCustomContent(appID string, orgID string, id string) (*model.Content, error)
+	GetCustomContent(appID string, orgID string, key string) (*model.Content, error)
 	InsertCustomContent(item model.Content) error
-	UpdateCustomContent(id string, item model.Content) error
-	DeleteCustomContent(id string) error
+	UpdateCustomContent(key string, item model.Content) error
+	DeleteCustomContent(appID string, orgID string, key string) error
 
 	GetUserCourses(id []string, name []string, key []string, userId string) ([]model.UserCourse, error)
-	GetUserCourse(id string, userId string) (*model.UserCourse, error)
-	InsertUserCourse(item model.UserCourse, courseKey string) error
+	GetUserCourse(appId string, OrgId string, userId string, courseKey string) (*model.UserCourse, error)
+	InsertUserCourse(item model.UserCourse) error
+	InsertUserModule(item model.UserModule) error
+	InsertUserUnit(item model.UserUnit) error
 	UpdateUserUnit(appID string, orgID string, userId string, courseKey string, moduleKey string, item model.Unit) error
-	DeleteUserCourse(id string) error
+	DeleteUserCourse(appId string, OrgId string, userId string, courseKey string) error
 }
 
 // Provider interface for LMS provider

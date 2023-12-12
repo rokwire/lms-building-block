@@ -23,6 +23,10 @@ import (
 const (
 	//TypeUserCourse user course type
 	TypeUserCourse logutils.MessageDataType = "user course"
+	//TypeUserModule user module type
+	TypeUserModule logutils.MessageDataType = "user module"
+	//TypeUserUnit user unit type
+	TypeUserUnit logutils.MessageDataType = "user unit"
 	//TypeCourse course type
 	TypeCourse logutils.MessageDataType = "course"
 	//TypeModule module type
@@ -61,6 +65,18 @@ type Course struct {
 	DateUpdated *time.Time
 }
 
+// userModule represents a copy of a module that the user modifies as progress is made
+type UserModule struct {
+	ID          string     `json:"_id"`
+	AppID       string     `json:"app_id"`
+	OrgID       string     `json:"org_id"`
+	UserID      string     `json:"user_id"`
+	CourseKey   string     `json:"course_key"`
+	Module      Module     `json:"module"`
+	DateCreated time.Time  `json:"date_created"`
+	DateUpdated *time.Time `json:"date_updated"`
+}
+
 // Module represents an individual module of a Course (e.g. Conversational Skills)
 type Module struct {
 	ID    string `json:"_id"`
@@ -74,6 +90,19 @@ type Module struct {
 
 	DateCreated time.Time
 	DateUpdated *time.Time
+}
+
+// userUnit represents a copy of a unit that the user modifies as progress is made
+type UserUnit struct {
+	ID          string     `json:"_id"`
+	AppID       string     `json:"app_id"`
+	OrgID       string     `json:"org_id"`
+	UserID      string     `json:"user_id"`
+	CourseKey   string     `json:"course_key"`
+	ModuleKey   string     `json:"module_key"`
+	Unit        Unit       `json:"unit"`
+	DateCreated time.Time  `json:"date_created"`
+	DateUpdated *time.Time `json:"date_updated"`
 }
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
@@ -95,9 +124,9 @@ type Unit struct {
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time
 type ScheduleItem struct {
-	Name        string          `bson:"name"`
-	ContentKeys []UserReference `bson:"contents"`
-	Duration    int             `bson:"duration"`
+	Name        string          `bson:"name" json:"name"`
+	UserContent []UserReference `bson:"user_content" json:"user_content"`
+	Duration    int             `bson:"duration" json:"duration"`
 }
 
 // Content represents some Unit content
@@ -122,9 +151,9 @@ type Content struct {
 
 // Reference represents a reference to another entity
 type Reference struct {
-	Name         string `bson:"name"`
-	Type         string `bson:"type"` // content item, video, PDF, survey, web URL
-	ReferenceKey string `bson:"reference_key"`
+	Name         string `bson:"name" json:"name"`
+	Type         string `bson:"type" json:"type"` // content item, video, PDF, survey, web URL
+	ReferenceKey string `bson:"reference_key" json:"reference_key"`
 }
 
 // UserReference represents a reference with some additional data about user interactions
@@ -132,7 +161,7 @@ type UserReference struct {
 	Reference
 
 	// user fields (populated as user takes a course)
-	UserData      map[string]interface{} `bson:"user_data,omitempty"`
-	DateStarted   *time.Time             `bson:"date_started,omitempty"`
-	DateCompleted *time.Time             `bson:"date_completed,omitempty"`
+	UserData      map[string]interface{} `bson:"user_data,omitempty" json:"user_data,omitempty"`
+	DateStarted   *time.Time             `bson:"date_started,omitempty" json:"date_started,omitempty"`
+	DateCompleted *time.Time             `bson:"date_completed,omitempty" json:"date_completed,omitempty"`
 }

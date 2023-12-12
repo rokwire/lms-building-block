@@ -346,7 +346,8 @@ func (m *database) applyUserCourseChecks(userCourse *collectionWrapper) error {
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},
 			primitive.E{Key: "user_id", Value: 1},
-		}, false)
+			primitive.E{Key: "course.key", Value: 1},
+		}, true)
 	if err != nil {
 		return err
 	}

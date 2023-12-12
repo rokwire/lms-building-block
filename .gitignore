@@ -4,6 +4,7 @@ build/
 .vscode/
 .idea/
 .git
+private.pem
 docker-compose.env
 docker-compose.yml
 run.sh

@@ -128,7 +128,7 @@ func (s *clientImpl) GetCurrentUser(claims *tokenauth.Claims) (*model.User, erro
 	return user, nil
 }
 
-func (s *clientImpl) GetUserCourses(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.UserCourse, error) {
+func (s *clientImpl) GetUserCourses(claims *tokenauth.Claims, id *string, name *string, courseKey *string) ([]model.UserCourse, error) {
 	var idArr, nameArr, keyArr []string
 	userID := claims.Subject
 	//parse moduleID comma seperated string into array
@@ -138,8 +138,8 @@ func (s *clientImpl) GetUserCourses(claims *tokenauth.Claims, id *string, name *
 	if name != nil {
 		nameArr = strings.Split(*name, ",")
 	}
-	if key != nil {
-		keyArr = strings.Split(*key, ",")
+	if courseKey != nil {
+		keyArr = strings.Split(*courseKey, ",")
 	}
 
 	userCourses, err := s.app.storage.GetUserCourses(idArr, nameArr, keyArr, userID)
@@ -149,17 +149,17 @@ func (s *clientImpl) GetUserCourses(claims *tokenauth.Claims, id *string, name *
 	return userCourses, nil
 }
 
-func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, id string) (*model.UserCourse, error) {
-	userID := claims.Subject
-	userCourse, err := s.app.storage.GetUserCourse(id, userID)
+// pass usercourse id to retrieve usercourse struct
+func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error) {
+	userCourse, err := s.app.storage.GetUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
 	if err != nil {
 		return nil, err
 	}
 	return userCourse, nil
 }
 
-// pass course id to create a new user course
-func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, id string) (*model.UserCourse, error) {
+// pass course key to create a new user course
+func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error) {
 	var item model.UserCourse
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
@@ -167,15 +167,82 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, id string) (*mod
 	item.UserID = claims.Subject
 	item.DateCreated = time.Now()
 
-	err := s.app.storage.InsertUserCourse(item, id)
+	//retrieve course with coursekey
+	course, err := s.app.storage.GetCustomCourse(claims.AppID, claims.OrgID, courseKey)
 	if err != nil {
 		return nil, err
 	}
+	item.Course = *course
+	err = s.app.storage.InsertUserCourse(item)
+	if err != nil {
+		return nil, err
+	}
+
+	// create user module and user unit
+	for _, singleModule := range course.Modules {
+		for _, singleUnit := range singleModule.Units {
+			s.CreateUserUnit(claims, courseKey, singleModule.Key, singleUnit.Key)
+		}
+		s.CreateUserModule(claims, courseKey, singleModule.Key)
+	}
+
 	return &item, nil
 }
 
-func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, id string) error {
-	err := s.app.storage.DeleteCustomModule(id)
+// pass course key to create a new user course
+func (s *clientImpl) CreateUserModule(claims *tokenauth.Claims, courseKey string, moduleKey string) (*model.UserModule, error) {
+	var item model.UserModule
+	item.ID = uuid.NewString()
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.UserID = claims.Subject
+	item.CourseKey = courseKey
+	item.DateCreated = time.Now()
+
+	//retrieve moudle with moduleKey
+	module, err := s.app.storage.GetCustomModule(claims.AppID, claims.OrgID, moduleKey)
+	if err != nil {
+		return nil, err
+	}
+	item.Module = *module
+	err = s.app.storage.InsertUserModule(item)
+	if err != nil {
+		return nil, err
+	}
+
+	return &item, nil
+}
+
+// pass unit key to create a new user unit
+func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, moduleKey string, unitKey string) (*model.UserUnit, error) {
+	var item model.UserUnit
+	item.ID = uuid.NewString()
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.UserID = claims.Subject
+	item.CourseKey = courseKey
+	item.ModuleKey = moduleKey
+	item.DateCreated = time.Now()
+
+	//retrieve moudle with unitKey
+	unit, err := s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, unitKey)
+	if err != nil {
+		return nil, err
+	}
+	item.Unit = *unit
+	err = s.app.storage.InsertUserUnit(item)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error {
+
+	//item.UserID = claims.Subject
+
+	err := s.app.storage.DeleteUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
 	if err != nil {
 		return nil
 	}
@@ -183,8 +250,11 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, id string) error
 }
 
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.Unit) (*model.Unit, error) {
-	//TODO: implement
-	return nil, errors.New(logutils.Unimplemented)
+	err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, moduleKey, item)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
