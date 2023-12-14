@@ -39,10 +39,13 @@ const (
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
 type UserCourse struct {
-	ID     string `json:"_id"`
+	ID     string `json:"id"`
 	AppID  string `json:"app_id"`
 	OrgID  string `json:"org_id"`
 	UserID string `json:"user_id"`
+
+	TimezoneName   string `json:"timezone_name"`
+	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
 
 	Course Course `json:"course"`
 
@@ -53,7 +56,7 @@ type UserCourse struct {
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
 type Course struct {
-	ID    string `json:"_id"`
+	ID    string `json:"id"`
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
@@ -65,9 +68,46 @@ type Course struct {
 	DateUpdated *time.Time
 }
 
+// CourseConfig represents streak and notification settings for a course
+type CourseConfig struct {
+	ID        string `json:"id"`
+	CourseKey string `json:"course_key"`
+
+	InitialPauses     int `json:"initial_pauses"`
+	MaxPauses         int `json:"max_pauses"`
+	PauseRewardStreak int `json:"pause_reward_streak"`
+
+	NotificationsConfig NotificationsConfig `json:"notifications_config"`
+}
+
+// NotificationsConfig entity
+type NotificationsConfig struct {
+	TimezoneName   string `json:"timezone_name"`   // either an IANA timezone database identifier or "user" to for users' most recent known timezone
+	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
+
+	Active    bool   `json:"active" bson:"active"`         // if the notifications processing is "on" or "off"
+	BlockSize int    `json:"block_size" bson:"block_size"` // TODO: needed?
+	Mode      string `json:"mode" bson:"mode"`             // "normal" or "test"
+
+	Notifications []Notification `json:"notifications"`
+}
+
+// Notification entity
+type Notification struct {
+	Name        string             `json:"name" bson:"name"` // e.g., "Daily task reminder"
+	Body        string             `json:"body" bson:"body"` // e.g., "Remember to complete your daily task."
+	DeepLink    string             `json:"deep_link" bson:"deep_link"`
+	Params      NotificationParams `json:"params" bson:"params"` // Notification specific settings
+	Active      bool               `json:"active" bson:"active"`
+	ProcessTime int                `json:"process_time" bson:"process_time"` // seconds since midnight in selected timezone at which to process notifications
+}
+
+// NotificationParams entity
+type NotificationParams map[string]any
+
 // UserModule represents a copy of a module that the user modifies as progress is made
 type UserModule struct {
-	ID          string     `json:"_id"`
+	ID          string     `json:"id"`
 	AppID       string     `json:"app_id"`
 	OrgID       string     `json:"org_id"`
 	UserID      string     `json:"user_id"`
@@ -79,7 +119,7 @@ type UserModule struct {
 
 // Module represents an individual module of a Course (e.g. Conversational Skills)
 type Module struct {
-	ID    string `json:"_id"`
+	ID    string `json:"id"`
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
@@ -94,7 +134,7 @@ type Module struct {
 
 // UserUnit represents a copy of a unit that the user modifies as progress is made
 type UserUnit struct {
-	ID          string     `json:"_id"`
+	ID          string     `json:"id"`
 	AppID       string     `json:"app_id"`
 	OrgID       string     `json:"org_id"`
 	UserID      string     `json:"user_id"`
@@ -107,7 +147,7 @@ type UserUnit struct {
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
 type Unit struct {
-	ID    string `json:"_id"`
+	ID    string `json:"id"`
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
@@ -131,7 +171,7 @@ type ScheduleItem struct {
 
 // Content represents some Unit content
 type Content struct {
-	ID    string `json:"_id"`
+	ID    string `json:"id"`
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
