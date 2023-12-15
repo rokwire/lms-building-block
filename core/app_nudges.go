@@ -72,16 +72,6 @@ func (n nudgesLogic) start() {
 }
 
 func (n nudgesLogic) setupNudgesTimer() {
-	n.logger.Info("Setup nudges timer")
-
-	//cancel if active
-	if n.dailyNudgesTimer != nil {
-		n.logger.Info("setupNudgesTimer -> there is active timer, so cancel it")
-
-		n.timerDone <- true
-		n.dailyNudgesTimer.Stop()
-	}
-
 	//wait until it is the correct moment from the day
 	location, err := time.LoadLocation("America/Chicago")
 	if err != nil {
@@ -108,44 +98,8 @@ func (n nudgesLogic) setupNudgesTimer() {
 	}
 	//app.logger.Infof("%d", durationInSeconds)
 	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
-	n.logger.Infof("setupNudgesTimer -> first call after %s", duration)
-
-	n.dailyNudgesTimer = time.NewTimer(duration)
-	select {
-	case <-n.dailyNudgesTimer.C:
-		n.logger.Info("setupNudgesTimer -> nudges timer expired")
-		n.dailyNudgesTimer = nil
-
-		n.processNudges()
-	case <-n.timerDone:
-		// timer aborted
-		n.logger.Info("setupNudgesTimer -> nudges timer aborted")
-		n.dailyNudgesTimer = nil
-	}
-}
-
-func (n nudgesLogic) processNudges() {
-	n.logger.Info("processNudges")
-
-	//process nudges
-	n.processAllNudges()
-
-	//generate new processing after 24 hours
-	duration := time.Hour * 24
-	n.logger.Infof("processNudges -> next call after %s", duration)
-	n.dailyNudgesTimer = time.NewTimer(duration)
-	select {
-	case <-n.dailyNudgesTimer.C:
-		n.logger.Info("processNudges -> nudges timer expired")
-		n.dailyNudgesTimer = nil
-
-		n.processNudges()
-	case <-n.timerDone:
-		// timer aborted
-		n.logger.Info("processNudges -> nudges timer aborted")
-		n.dailyNudgesTimer = nil
-	}
+	initialDuration := time.Second * time.Duration(durationInSeconds)
+	utils.StartTimer(n.dailyNudgesTimer, n.timerDone, &initialDuration, time.Hour*24, n.processAllNudges, "processNudges", n.logger)
 }
 
 func (n nudgesLogic) processAllNudges() {

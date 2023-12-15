@@ -28,6 +28,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/rokwire/logging-library-go/v2/errors"
+	"github.com/rokwire/logging-library-go/v2/logs"
 	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
@@ -387,4 +388,59 @@ func GetValue[T any](items map[string]interface{}, key string, required bool) (T
 	}
 
 	return value, nil
+}
+
+// StartTimer starts a timer with the given name, period, and function to call when the timer goes off
+func StartTimer(timer *time.Timer, timerDone chan bool, initialDuration *time.Duration, period time.Duration, periodicFunc func(), name string, logger *logs.Logger) {
+	if logger != nil {
+		logger.Info("start timer for " + name)
+	}
+
+	//cancel if active
+	if timer != nil {
+		if logger != nil {
+			logger.Info(name + " -> there is active timer, so cancel it")
+		}
+
+		timerDone <- true
+		timer.Stop()
+	}
+
+	onTimer(timer, timerDone, initialDuration, period, periodicFunc, name, logger)
+}
+
+func onTimer(timer *time.Timer, timerDone chan bool, initialDuration *time.Duration, period time.Duration, periodicFunc func(), name string, logger *logs.Logger) {
+	hasLogger := (logger != nil)
+	if hasLogger {
+		logger.Info(name)
+	}
+
+	duration := period
+	if initialDuration != nil {
+		duration = *initialDuration
+	} else {
+		periodicFunc()
+	}
+	timer = time.NewTimer(duration)
+
+	if hasLogger {
+		logger.Infof(name+" -> next call after %s", duration)
+	}
+
+	select {
+	case <-timer.C:
+		// timer expired
+		if hasLogger {
+			logger.Info(name + " -> timer expired")
+		}
+		timer = nil
+
+		onTimer(timer, timerDone, nil, period, periodicFunc, name, logger)
+	case <-timerDone:
+		// timer aborted
+		if hasLogger {
+			logger.Info(name + " -> timer aborted")
+		}
+		timer = nil
+	}
 }
