@@ -37,8 +37,8 @@ paths:
     $ref: "./resources/api/user/courses.yaml"
   /api/users/courses/{courseKey}:
     $ref: "./resources/api/user/coursesID.yaml"
-  /api/users/courses/{course-key}/module/{module-key}:
-    $ref: "./resources/api/user/courses/moduleID.yaml"
+  /api/users/units/{key}:
+    $ref: "./resources/api/user/unitsKey.yaml"
 
   #admin
   /admin/nudges-config:

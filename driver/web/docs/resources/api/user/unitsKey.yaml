@@ -7,17 +7,9 @@ put:
   security:
     - bearerAuth: []
   parameters:
-    - name: course-key
+    - name: key
       in: path
-      description: course Key
-      required: true
-      style: simple
-      explode: false
-      schema:
-        type: string
-    - name: module-key
-      in: path
-      description: Module Key
+      description: Unit Key
       required: true
       style: simple
       explode: false
@@ -28,7 +20,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: "../../../../schemas/custom/Unit.yaml"
+          $ref: "../../../schemas/custom/Unit.yaml"
     required: true
   responses:
     200:
@@ -36,7 +28,7 @@ put:
       content:
         application/json:
           schema:
-            $ref: "../../../../schemas/custom/Unit.yaml"
+            $ref: "../../../schemas/custom/Unit.yaml"
     400:
       description: Bad request
     401:
