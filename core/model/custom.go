@@ -47,6 +47,9 @@ type UserCourse struct {
 	TimezoneName   string `json:"timezone_name"`
 	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
 
+	Streak int `json:"streak"`
+	Pauses int `json:"pauses"`
+
 	Course Course `json:"course"`
 
 	DateCreated time.Time
@@ -85,19 +88,18 @@ type NotificationsConfig struct {
 	TimezoneName   string `json:"timezone_name"`   // either an IANA timezone database identifier or "user" to for users' most recent known timezone
 	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
 
-	Active    bool   `json:"active" bson:"active"`         // if the notifications processing is "on" or "off"
-	BlockSize int    `json:"block_size" bson:"block_size"` // TODO: needed?
-	Mode      string `json:"mode" bson:"mode"`             // "normal" or "test"
+	Active bool `json:"active" bson:"active"` // if the notifications processing is "on" or "off"
+	// BlockSize int    `json:"block_size" bson:"block_size"` // TODO: needed?
+	// Mode      string `json:"mode" bson:"mode"`             // "normal" or "test"
 
 	Notifications []Notification `json:"notifications"`
 }
 
 // Notification entity
 type Notification struct {
-	Name        string             `json:"name" bson:"name"` // e.g., "Daily task reminder"
-	Body        string             `json:"body" bson:"body"` // e.g., "Remember to complete your daily task."
-	DeepLink    string             `json:"deep_link" bson:"deep_link"`
-	Params      NotificationParams `json:"params" bson:"params"` // Notification specific settings
+	Subject     string             `json:"subject" bson:"subject"` // e.g., "Daily task reminder" (a.k.a. "text")
+	Body        string             `json:"body" bson:"body"`       // e.g., "Remember to complete your daily task."
+	Params      NotificationParams `json:"params" bson:"params"`   // Notification specific settings (include deep link string if needed)
 	Active      bool               `json:"active" bson:"active"`
 	ProcessTime int                `json:"process_time" bson:"process_time"` // seconds since midnight in selected timezone at which to process notifications
 }
