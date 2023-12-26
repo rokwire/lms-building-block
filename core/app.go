@@ -43,6 +43,8 @@ type Application struct {
 
 	//nudges logic
 	nudgesLogic nudgesLogic
+	//streaks and notifications logic
+	streaksNotifications streaksNotifications
 }
 
 // Start starts the core part of the application
@@ -50,6 +52,7 @@ func (app *Application) Start() {
 	app.storage.SetListener(app)
 
 	app.nudgesLogic.start()
+	app.streaksNotifications.start()
 }
 
 // NewApplication creates new Application
@@ -67,17 +70,26 @@ func NewApplication(version string, build string, storage interfaces.Storage, pr
 		core:            coreBB,
 	}
 
+	notificationsTimerDone := make(chan bool)
+	streaksNotifications := streaksNotifications{
+		notificationsBB:        notificationsBB,
+		storage:                storage,
+		logger:                 logger,
+		notificationsTimerDone: notificationsTimerDone,
+	}
+
 	application := Application{
-		version:         version,
-		build:           build,
-		provider:        provider,
-		groupsBB:        groupsBB,
-		notificationsBB: notificationsBB,
-		storage:         storage,
-		cacheAdapter:    cacheadapter,
-		logger:          logger,
-		nudgesLogic:     nudgesLogic,
-		core:            coreBB,
+		version:              version,
+		build:                build,
+		provider:             provider,
+		groupsBB:             groupsBB,
+		notificationsBB:      notificationsBB,
+		storage:              storage,
+		cacheAdapter:         cacheadapter,
+		logger:               logger,
+		nudgesLogic:          nudgesLogic,
+		streaksNotifications: streaksNotifications,
+		core:                 coreBB,
 	}
 
 	// add the drivers ports/interfaces

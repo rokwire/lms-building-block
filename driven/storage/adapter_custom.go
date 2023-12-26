@@ -691,3 +691,13 @@ func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) e
 	}
 	return nil
 }
+
+// FindUserCourses finds user courses by the given search parameters
+func (sa *Adapter) FindUserCourses(id []string, name []string, key []string, userID *string, timezoneOffsets []int) ([]model.UserCourse, error) {
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+// FindCourseConfigs finds course configs by the given search parameters
+func (sa *Adapter) FindCourseConfigs(notificationsActive *bool) ([]model.CourseConfig, error) {
+	return nil, errors.New(logutils.Unimplemented)
+}

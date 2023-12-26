@@ -142,7 +142,7 @@ func (s *clientImpl) GetUserCourses(claims *tokenauth.Claims, id *string, name *
 		keyArr = strings.Split(*courseKey, ",")
 	}
 
-	userCourses, err := s.app.storage.GetUserCourses(idArr, nameArr, keyArr, userID)
+	userCourses, err := s.app.storage.FindUserCourses(idArr, nameArr, keyArr, &userID, nil)
 	if err != nil {
 		return nil, err
 	}

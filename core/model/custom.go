@@ -73,26 +73,26 @@ type Course struct {
 
 // CourseConfig represents streak and notification settings for a course
 type CourseConfig struct {
-	ID        string `json:"id"`
-	CourseKey string `json:"course_key"`
+	ID        string `json:"id" bson:"_id"`
+	CourseKey string `json:"course_key" bson:"course_key"`
 
-	InitialPauses     int `json:"initial_pauses"`
-	MaxPauses         int `json:"max_pauses"`
-	PauseRewardStreak int `json:"pause_reward_streak"`
+	InitialPauses     int `json:"initial_pauses" bson:"initial_pauses"`
+	MaxPauses         int `json:"max_pauses" bson:"max_pauses"`
+	PauseRewardStreak int `json:"pause_reward_streak" bson:"pause_reward_streak"`
 
-	NotificationsConfig NotificationsConfig `json:"notifications_config"`
+	NotificationsConfig NotificationsConfig `json:"notifications_config" bson:"notifications_config"`
 }
 
 // NotificationsConfig entity
 type NotificationsConfig struct {
-	TimezoneName   string `json:"timezone_name"`   // either an IANA timezone database identifier or "user" to for users' most recent known timezone
-	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
+	TimezoneName   string `json:"timezone_name" bson:"timezone_name"`     // either an IANA timezone database identifier or "user" to for users' most recent known timezone
+	TimezoneOffset int    `json:"timezone_offset" bson:"timezone_offset"` // in seconds east of UTC (only valid if TimezoneName is not "user")
 
 	Active bool `json:"active" bson:"active"` // if the notifications processing is "on" or "off"
 	// BlockSize int    `json:"block_size" bson:"block_size"` // TODO: needed?
 	// Mode      string `json:"mode" bson:"mode"`             // "normal" or "test"
 
-	Notifications []Notification `json:"notifications"`
+	Notifications []Notification `json:"notifications" bson:"notifications"`
 }
 
 // Notification entity

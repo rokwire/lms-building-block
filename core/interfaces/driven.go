@@ -83,13 +83,15 @@ type Storage interface {
 	UpdateCustomContent(key string, item model.Content) error
 	DeleteCustomContent(appID string, orgID string, key string) error
 
-	GetUserCourses(id []string, name []string, key []string, userID string) ([]model.UserCourse, error)
+	FindUserCourses(id []string, name []string, key []string, userID *string, timezoneOffsets []int) ([]model.UserCourse, error)
 	GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
 	InsertUserCourse(item model.UserCourse) error
 	InsertUserModule(item model.UserModule) error
 	InsertUserUnit(item model.UserUnit) error
 	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey string, item model.Unit) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
+
+	FindCourseConfigs(notificationsActive *bool) ([]model.CourseConfig, error)
 }
 
 // Provider interface for LMS provider
