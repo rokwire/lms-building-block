@@ -20,6 +20,7 @@ package core
 import (
 	"lms/core/interfaces"
 	"lms/core/model"
+	"lms/driven/notifications"
 	"lms/utils"
 	"time"
 
@@ -27,9 +28,8 @@ import (
 )
 
 const (
-	secondsInDay int = 86400
-	minTZOffset  int = -43200
-	maxTZOffset  int = 50400
+	minTZOffset int = -43200
+	maxTZOffset int = 50400
 )
 
 type streaksNotifications struct {
@@ -49,13 +49,13 @@ func (n streaksNotifications) start() {
 	//setup hourly notifications timer
 	go n.setupNotificationsTimer()
 
-	//TODO: setup daily streaks timer
+	//TODO: setup hourly streaks timer (streaks must be updated according to user timezone)
 }
 
 func (n streaksNotifications) setupNotificationsTimer() {
 	now := time.Now().UTC()
-	nowSecondsInHour := now.Second() // 60*now.Minute() + now.Second()
-	desiredMoment := 0               //default desired moment of the hour in seconds (beginning of the hour)
+	nowSecondsInHour := 60*now.Minute() + now.Second()
+	desiredMoment := 0 //default desired moment of the hour in seconds (beginning of the hour)
 
 	var durationInSeconds int
 	n.logger.Infof("setupNotificationsTimer -> nowSecondsInHour:%d", nowSecondsInHour)
@@ -64,80 +64,81 @@ func (n streaksNotifications) setupNotificationsTimer() {
 		durationInSeconds = desiredMoment - nowSecondsInHour
 	} else {
 		n.logger.Info("setupNotificationsTimer -> notifications have already been processed this hour")
-		// durationInSeconds = (3600 - nowSecondsInHour) + desiredMoment // the time which left this hour + desired moment from next hour
-		durationInSeconds = (60 - nowSecondsInHour) + desiredMoment // the time which left this hour + desired moment from next hour
+		durationInSeconds = (utils.SecondsInHour - nowSecondsInHour) + desiredMoment // the time which left this hour + desired moment from next hour
 	}
 
 	initialDuration := time.Second * time.Duration(durationInSeconds)
-	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Second, n.processHourlyNotifications, "processHourlyNotifications", n.logger)
+	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processHourlyNotifications, "processHourlyNotifications", n.logger)
 }
 
 func (n streaksNotifications) processHourlyNotifications() {
 	now := time.Now().UTC()
-	nowSeconds := (now.Second() % 24) * 3600 // 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
 
-	// active := true
-	// courseConfigs, err := n.storage.FindCourseConfigs(&active)
-	// if err != nil {
-	// 	n.logger.Errorf("processHourlyNotifications -> error finding active course configs: %v", err)
-	// 	return
-	// }
-	// if len(courseConfigs) == 0 {
-	// 	n.logger.Errorf("processHourlyNotifications -> no active course configs for notifications")
-	// 	return
-	// }
-
-	courseConfigs := []model.CourseConfig{
-		{CourseKey: "test1", NotificationsConfig: model.NotificationsConfig{
-			TimezoneName:   "America/Chicago",
-			TimezoneOffset: -21600, //CST (UTC-6)
-			Active:         true,
-			Notifications: []model.Notification{
-				{Subject: "notifyMorning", ProcessTime: 25200, Active: true}, // 7AM
-				{Subject: "notifyNoon", ProcessTime: 43200, Active: true},    // 12PM
-				{Subject: "notifyEvening", ProcessTime: 64800, Active: true}, // 6PM (not notifying for CST)
-			},
-		}},
+	active := true
+	courseConfigs, err := n.storage.FindCourseConfigs(&active)
+	if err != nil {
+		n.logger.Errorf("processHourlyNotifications -> error finding active course configs: %v", err)
+		return
+	}
+	if len(courseConfigs) == 0 {
+		n.logger.Errorf("processHourlyNotifications -> no active course configs for notifications")
+		return
 	}
 
 	for _, config := range courseConfigs {
-		offsets := make([]int, 0)
 		for _, notification := range config.NotificationsConfig.Notifications {
-			if config.NotificationsConfig.TimezoneName != "user" && config.NotificationsConfig.TimezoneOffset != 0 {
-				//TODO: handle single timezones other than UTC
-			}
-
-			lowerOffset := notification.ProcessTime - nowSeconds
-			if config.NotificationsConfig.TimezoneName == "user" {
-				if lowerOffset >= minTZOffset && lowerOffset <= maxTZOffset {
-					offsets = append(offsets, lowerOffset)
-				}
-
-				if lowerOffset+secondsInDay <= maxTZOffset {
-					offsets = append(offsets, lowerOffset+secondsInDay)
-				}
-				if lowerOffset-secondsInDay >= minTZOffset {
-					offsets = append(offsets, lowerOffset-secondsInDay)
-				}
-			} else {
-				configOffset := config.NotificationsConfig.TimezoneOffset
-				if lowerOffset == configOffset || lowerOffset+secondsInDay == configOffset || lowerOffset-secondsInDay == configOffset {
-					//TODO: get all user courses
-					n.logger.Infof("hour %d: notify %s %d", nowSeconds/3600, config.NotificationsConfig.TimezoneName, config.NotificationsConfig.TimezoneOffset)
-				}
-			}
-
-			// userCourses
-			// _, err := n.storage.FindUserCourses(nil, nil, []string{config.CourseKey}, nil, offsets)
-			// if err != nil {
-			// 	n.logger.Errorf("processHourlyNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
-			// 	continue
-			// }
-
 			if notification.Active {
-				//TODO: check whether userCourse meets requirements for notification to be sent
+				tzOffsets := make(model.TZOffsets, 0)
+				var userCourses []model.UserCourse
+
+				offset := notification.ProcessTime - nowSeconds
+				if config.NotificationsConfig.TimezoneName == "user" {
+					if offset >= minTZOffset && offset <= maxTZOffset {
+						tzOffsets = append(tzOffsets, offset)
+					}
+
+					if offset+utils.SecondsInDay <= maxTZOffset {
+						tzOffsets = append(tzOffsets, offset+utils.SecondsInDay)
+					}
+					if offset-utils.SecondsInDay >= minTZOffset {
+						tzOffsets = append(tzOffsets, offset-utils.SecondsInDay)
+					}
+
+					// load user courses for this course based on timezone offsets
+					userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, tzOffsets.GeneratePairs(notification.PreferEarly))
+					if err != nil {
+						n.logger.Errorf("processHourlyNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
+						continue
+					}
+				} else {
+					configOffset := config.NotificationsConfig.TimezoneOffset
+					if offset == configOffset || offset+utils.SecondsInDay == configOffset || offset-utils.SecondsInDay == configOffset {
+						// load all user courses for this course
+						userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, nil)
+						if err != nil {
+							n.logger.Errorf("processHourlyNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
+							continue
+						}
+					}
+				}
+
+				recipients := make([]notifications.Recipient, 0)
+				for _, userCourse := range userCourses {
+					recipients = append(recipients, notifications.Recipient{UserID: userCourse.UserID})
+				}
+				if len(recipients) == 0 {
+					n.logger.Infof("processHourlyNotifications -> no recipients for notification %s for course key %s", notification.Subject, config.CourseKey)
+					continue
+				}
+
+				err = n.notificationsBB.SendNotifications(recipients, notification.Subject, notification.Body, notification.Params)
+				if err != nil {
+					n.logger.Errorf("processHourlyNotifications -> error sending notification %s for course key %s: %v", notification.Subject, config.CourseKey, err)
+					continue
+				}
+				n.logger.Infof("processHourlyNotifications -> sent notification %s for course key %s", notification.Subject, config.CourseKey)
 			}
 		}
-		n.logger.Infof("hour %d: offsets: %v", nowSeconds/3600, offsets)
 	}
 }

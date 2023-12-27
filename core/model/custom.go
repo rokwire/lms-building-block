@@ -15,12 +15,15 @@
 package model
 
 import (
+	"lms/utils"
 	"time"
 
 	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 const (
+	//TypeCourseConfig course config type
+	TypeCourseConfig logutils.MessageDataType = "course config"
 	//TypeUserCourse user course type
 	TypeUserCourse logutils.MessageDataType = "user course"
 	//TypeUserModule user module type
@@ -74,6 +77,8 @@ type Course struct {
 // CourseConfig represents streak and notification settings for a course
 type CourseConfig struct {
 	ID        string `json:"id" bson:"_id"`
+	AppID     string `json:"app_id" bson:"app_id"`
+	OrgID     string `json:"org_id" bson:"org_id"`
 	CourseKey string `json:"course_key" bson:"course_key"`
 
 	InitialPauses     int `json:"initial_pauses" bson:"initial_pauses"`
@@ -97,15 +102,41 @@ type NotificationsConfig struct {
 
 // Notification entity
 type Notification struct {
-	Subject     string             `json:"subject" bson:"subject"` // e.g., "Daily task reminder" (a.k.a. "text")
-	Body        string             `json:"body" bson:"body"`       // e.g., "Remember to complete your daily task."
-	Params      NotificationParams `json:"params" bson:"params"`   // Notification specific settings (include deep link string if needed)
-	Active      bool               `json:"active" bson:"active"`
-	ProcessTime int                `json:"process_time" bson:"process_time"` // seconds since midnight in selected timezone at which to process notifications
+	Subject string             `json:"subject" bson:"subject"` // e.g., "Daily task reminder" (a.k.a. "text")
+	Body    string             `json:"body" bson:"body"`       // e.g., "Remember to complete your daily task."
+	Params  NotificationParams `json:"params" bson:"params"`   // Notification specific settings (include deep link string if needed)
+
+	ProcessTime int  `json:"process_time" bson:"process_time"` // seconds since midnight in selected timezone at which to process notifications
+	PreferEarly bool `json:"prefer_early" bson:"prefer_early"` // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
+
+	Active       bool     `json:"active" bson:"active"`
+	Requirements []string `json:"requirements" bson:"requirements"` // list of requirement identifiers to determine if a user should be sent this notification at ProcessTime
 }
 
 // NotificationParams entity
-type NotificationParams map[string]any
+type NotificationParams map[string]string
+
+// TZOffsets entity represents a set of single timezone offsets
+type TZOffsets []int
+
+// GeneratePairs gives the set of offset pairs to use for search according to preferEarly
+func (tz TZOffsets) GeneratePairs(preferEarly bool) []TZOffsetPair {
+	pairs := make([]TZOffsetPair, len(tz))
+	for i, offset := range tz {
+		if preferEarly {
+			pairs[i] = TZOffsetPair{Lower: offset, Upper: offset + utils.SecondsInHour - 1}
+		} else {
+			pairs[i] = TZOffsetPair{Lower: offset - utils.SecondsInHour + 1, Upper: offset}
+		}
+	}
+	return pairs
+}
+
+// TZOffsetPair represents a set of timezone offset ranges used to find users when sending notifications
+type TZOffsetPair struct {
+	Lower int
+	Upper int
+}
 
 // UserModule represents a copy of a module that the user modifies as progress is made
 type UserModule struct {

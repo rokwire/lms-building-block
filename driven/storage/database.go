@@ -45,13 +45,15 @@ type database struct {
 	sentNudges      *collectionWrapper
 	nudgesProcesses *collectionWrapper
 	nudgesBlocks    *collectionWrapper
-	customCourse    *collectionWrapper
-	customModule    *collectionWrapper
-	customUnit      *collectionWrapper
-	customContent   *collectionWrapper
-	userCourse      *collectionWrapper
-	userModule      *collectionWrapper
-	userUnit        *collectionWrapper
+
+	courseConfigs *collectionWrapper
+	customCourse  *collectionWrapper
+	customModule  *collectionWrapper
+	customUnit    *collectionWrapper
+	customContent *collectionWrapper
+	userCourse    *collectionWrapper
+	userModule    *collectionWrapper
+	userUnit      *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -114,6 +116,12 @@ func (m *database) start() error {
 		return err
 	}
 
+	courseConfigs := &collectionWrapper{database: m, coll: db.Collection("course_configs")}
+	err = m.applyCourseConfigsChecks(courseConfigs)
+	if err != nil {
+		return err
+	}
+
 	customCourse := &collectionWrapper{database: m, coll: db.Collection("custom_course")}
 	err = m.applyCustomCourseChecks(customCourse)
 	if err != nil {
@@ -165,6 +173,7 @@ func (m *database) start() error {
 	m.sentNudges = sentNudges
 	m.nudgesProcesses = nudgesProcesses
 	m.nudgesBlocks = nudgesBlocks
+	m.courseConfigs = courseConfigs
 	m.customCourse = customCourse
 	m.customModule = customModule
 	m.customUnit = customUnit
@@ -271,6 +280,22 @@ func (m *database) applyNudgesBlocksChecks(nudgesProcesses *collectionWrapper) e
 	}
 
 	m.logger.Info("nudges blocks check passed")
+	return nil
+}
+
+// ourse Configs
+func (m *database) applyCourseConfigsChecks(courseConfigs *collectionWrapper) error {
+	m.logger.Info("apply course configs check.....")
+	err := courseConfigs.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "course_key", Value: 1},
+		}, true)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("course configs check passed")
 	return nil
 }
 

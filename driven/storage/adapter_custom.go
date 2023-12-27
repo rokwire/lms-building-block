@@ -693,11 +693,41 @@ func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) e
 }
 
 // FindUserCourses finds user courses by the given search parameters
-func (sa *Adapter) FindUserCourses(id []string, name []string, key []string, userID *string, timezoneOffsets []int) ([]model.UserCourse, error) {
-	return nil, errors.New(logutils.Unimplemented)
+func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair) ([]model.UserCourse, error) {
+	filter := bson.M{}
+
+	if len(timezoneOffsetPairs) > 0 {
+		offsetFilters := make(bson.A, 0)
+		for _, offsetPair := range timezoneOffsetPairs {
+			offsetFilters = append(offsetFilters, bson.M{"$and": bson.A{bson.M{"$gte": offsetPair.Lower}, bson.M{"$lte": offsetPair.Upper}}})
+		}
+		filter["timezone_offset"] = bson.M{"$or": offsetFilters}
+	}
+
+	//TODO: populate the other fields in the filter
+
+	var userCourses []model.UserCourse
+	err := sa.db.userCourse.Find(sa.context, filter, &userCourses, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
+	}
+
+	return userCourses, nil
 }
 
 // FindCourseConfigs finds course configs by the given search parameters
 func (sa *Adapter) FindCourseConfigs(notificationsActive *bool) ([]model.CourseConfig, error) {
-	return nil, errors.New(logutils.Unimplemented)
+	filter := bson.M{}
+
+	if notificationsActive != nil {
+		filter["active"] = *notificationsActive
+	}
+
+	var configs []model.CourseConfig
+	err := sa.db.courseConfigs.Find(sa.context, filter, &configs, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
+	}
+
+	return configs, nil
 }

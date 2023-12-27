@@ -32,6 +32,13 @@ import (
 	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
+const (
+	// SecondsInDay is the number of seconds in one 24-hour day
+	SecondsInDay int = 24 * 60 * 60
+	// SecondsInHour is the number of seconds in one hour
+	SecondsInHour int = 60 * 60
+)
+
 // Filter represents find filter for finding entities by the their fields
 type Filter struct {
 	Items []FilterItem

@@ -83,7 +83,7 @@ type Storage interface {
 	UpdateCustomContent(key string, item model.Content) error
 	DeleteCustomContent(appID string, orgID string, key string) error
 
-	FindUserCourses(id []string, name []string, key []string, userID *string, timezoneOffsets []int) ([]model.UserCourse, error)
+	FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsets []model.TZOffsetPair) ([]model.UserCourse, error)
 	GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
 	InsertUserCourse(item model.UserCourse) error
 	InsertUserModule(item model.UserModule) error
