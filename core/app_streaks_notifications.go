@@ -42,14 +42,16 @@ type streaksNotifications struct {
 	//notifications timer
 	notificationsTimer     *time.Timer
 	notificationsTimerDone chan bool
-	//TODO: add streaks timer
+	//streaks timer
+	streaksTimer     *time.Timer
+	streaksTimerDone chan bool
 }
 
 func (n streaksNotifications) start() {
 	//setup hourly notifications timer
 	go n.setupNotificationsTimer()
-
-	//TODO: setup hourly streaks timer (streaks must be updated according to user timezone)
+	//setup hourly streaks timer
+	go n.setupStreaksTimer()
 }
 
 func (n streaksNotifications) setupNotificationsTimer() {
@@ -68,21 +70,21 @@ func (n streaksNotifications) setupNotificationsTimer() {
 	}
 
 	initialDuration := time.Second * time.Duration(durationInSeconds)
-	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processHourlyNotifications, "processHourlyNotifications", n.logger)
+	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processNotifications, "processNotifications", n.logger)
 }
 
-func (n streaksNotifications) processHourlyNotifications() {
+func (n streaksNotifications) processNotifications() {
 	now := time.Now().UTC()
 	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
 
 	active := true
 	courseConfigs, err := n.storage.FindCourseConfigs(&active)
 	if err != nil {
-		n.logger.Errorf("processHourlyNotifications -> error finding active course configs: %v", err)
+		n.logger.Errorf("processNotifications -> error finding active course configs: %v", err)
 		return
 	}
 	if len(courseConfigs) == 0 {
-		n.logger.Errorf("processHourlyNotifications -> no active course configs for notifications")
+		n.logger.Errorf("processNotifications -> no active course configs for notifications")
 		return
 	}
 
@@ -106,18 +108,18 @@ func (n streaksNotifications) processHourlyNotifications() {
 					}
 
 					// load user courses for this course based on timezone offsets
-					userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, tzOffsets.GeneratePairs(notification.PreferEarly))
+					userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, tzOffsets.GeneratePairs(notification.PreferEarly), notification.Requirements)
 					if err != nil {
-						n.logger.Errorf("processHourlyNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
+						n.logger.Errorf("processNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
 						continue
 					}
 				} else {
 					configOffset := config.NotificationsConfig.TimezoneOffset
 					if offset == configOffset || offset+utils.SecondsInDay == configOffset || offset-utils.SecondsInDay == configOffset {
 						// load all user courses for this course
-						userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, nil)
+						userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, nil, notification.Requirements)
 						if err != nil {
-							n.logger.Errorf("processHourlyNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
+							n.logger.Errorf("processNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
 							continue
 						}
 					}
@@ -128,17 +130,21 @@ func (n streaksNotifications) processHourlyNotifications() {
 					recipients = append(recipients, notifications.Recipient{UserID: userCourse.UserID})
 				}
 				if len(recipients) == 0 {
-					n.logger.Infof("processHourlyNotifications -> no recipients for notification %s for course key %s", notification.Subject, config.CourseKey)
+					n.logger.Infof("processNotifications -> no recipients for notification %s for course key %s", notification.Subject, config.CourseKey)
 					continue
 				}
 
 				err = n.notificationsBB.SendNotifications(recipients, notification.Subject, notification.Body, notification.Params)
 				if err != nil {
-					n.logger.Errorf("processHourlyNotifications -> error sending notification %s for course key %s: %v", notification.Subject, config.CourseKey, err)
+					n.logger.Errorf("processNotifications -> error sending notification %s for course key %s: %v", notification.Subject, config.CourseKey, err)
 					continue
 				}
-				n.logger.Infof("processHourlyNotifications -> sent notification %s for course key %s", notification.Subject, config.CourseKey)
+				n.logger.Infof("processNotifications -> sent notification %s for course key %s", notification.Subject, config.CourseKey)
 			}
 		}
 	}
+}
+
+func (n streaksNotifications) setupStreaksTimer() {
+	//TODO: setup hourly streaks timer (streaks must be updated according to user timezone)
 }

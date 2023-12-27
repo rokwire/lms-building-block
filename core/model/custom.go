@@ -50,8 +50,10 @@ type UserCourse struct {
 	TimezoneName   string `json:"timezone_name"`
 	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
 
-	Streak int `json:"streak"`
-	Pauses int `json:"pauses"`
+	// Notification Requirements fields (reset to the default every day in user's timezone using the hourly streaks timer)
+	Streak         int  `json:"streak"`
+	Pauses         int  `json:"pauses"`
+	CompletedTasks bool `json:"completed_tasks"` // whether the user has completed the currently assigned task(s) in the current unit schedule (default false)
 
 	Course Course `json:"course"`
 
@@ -109,8 +111,13 @@ type Notification struct {
 	ProcessTime int  `json:"process_time" bson:"process_time"` // seconds since midnight in selected timezone at which to process notifications
 	PreferEarly bool `json:"prefer_early" bson:"prefer_early"` // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
 
-	Active       bool     `json:"active" bson:"active"`
-	Requirements []string `json:"requirements" bson:"requirements"` // list of requirement identifiers to determine if a user should be sent this notification at ProcessTime
+	Active bool `json:"active" bson:"active"`
+
+	// list of requirement identifiers and values to determine if a user should be sent this notification
+	// example: {
+	//		completed_tasks: true (key must match the json (model.UserCourse) and bson (storage.userCourse) fields)
+	// }
+	Requirements map[string]interface{} `json:"requirements" bson:"requirements"`
 }
 
 // NotificationParams entity

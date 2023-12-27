@@ -20,11 +20,18 @@ import (
 )
 
 type userCourse struct {
-	ID          string     `bson:"_id"`
-	AppID       string     `bson:"app_id"`
-	OrgID       string     `bson:"org_id"`
-	UserID      string     `bson:"user_id"`
-	Course      course     `bson:"course"`
+	ID     string `bson:"_id"`
+	AppID  string `bson:"app_id"`
+	OrgID  string `bson:"org_id"`
+	UserID string `bson:"user_id"`
+
+	// Notification Requirements fields
+	Streak         int  `bson:"streak"`
+	Pauses         int  `bson:"pauses"`
+	CompletedTasks bool `bson:"completed_tasks"`
+
+	Course course `bson:"course"`
+
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
 }

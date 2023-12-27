@@ -693,9 +693,12 @@ func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) e
 }
 
 // FindUserCourses finds user courses by the given search parameters
-func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair) ([]model.UserCourse, error) {
-	filter := bson.M{}
+func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair, requirements map[string]interface{}) ([]model.UserCourse, error) {
+	filter := bson.M{"app_id": appID, "org_id": orgID}
 
+	//TODO: populate the missing fields in the filter
+
+	// timezone offsets
 	if len(timezoneOffsetPairs) > 0 {
 		offsetFilters := make(bson.A, 0)
 		for _, offsetPair := range timezoneOffsetPairs {
@@ -704,7 +707,10 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 		filter["timezone_offset"] = bson.M{"$or": offsetFilters}
 	}
 
-	//TODO: populate the other fields in the filter
+	// notification requirements
+	for reqKey, reqVal := range requirements {
+		filter[reqKey] = reqVal
+	}
 
 	var userCourses []model.UserCourse
 	err := sa.db.userCourse.Find(sa.context, filter, &userCourses, nil)

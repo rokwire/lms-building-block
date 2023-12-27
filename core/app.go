@@ -71,11 +71,13 @@ func NewApplication(version string, build string, storage interfaces.Storage, pr
 	}
 
 	notificationsTimerDone := make(chan bool)
+	streaksTimerDone := make(chan bool)
 	streaksNotifications := streaksNotifications{
 		notificationsBB:        notificationsBB,
 		storage:                storage,
 		logger:                 logger,
 		notificationsTimerDone: notificationsTimerDone,
+		streaksTimerDone:       streaksTimerDone,
 	}
 
 	application := Application{
