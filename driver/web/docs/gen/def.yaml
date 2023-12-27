@@ -376,7 +376,7 @@ paths:
       x-core-function: DeleteUserCourse
       x-data-type: model.UserCourse
       x-authentication-type: User
-  '/api/users/courses/{course-key}/module/{module-key}':
+  '/api/users/units/{key}':
     put:
       tags:
         - Client
@@ -386,17 +386,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: course-key
+        - name: key
           in: path
-          description: course Key
-          required: true
-          style: simple
-          explode: false
-          schema:
-            type: string
-        - name: module-key
-          in: path
-          description: Module Key
+          description: Unit Key
           required: true
           style: simple
           explode: false
