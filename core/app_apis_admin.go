@@ -743,7 +743,7 @@ func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, key string) er
 	return s.app.storage.PerformTransaction(transaction)
 }
 
-// sorts and tells if key arrays are identical
+// EqualKeyArrays sorts and tells if key arrays are identical
 func EqualKeyArrays(a, b []string) bool {
 	sort.Strings(a)
 	sort.Strings(b)
@@ -759,13 +759,13 @@ func EqualKeyArrays(a, b []string) bool {
 }
 
 // return those inside the array that are not present in database determined by key
-func (s *adminImpl) CoursesNotInDB(appId string, orgId string, courses []model.Course) ([]model.Course, error) {
+func (s *adminImpl) CoursesNotInDB(appID string, orgID string, courses []model.Course) ([]model.Course, error) {
 	var keys, returnedKeys []string
 	var resultStructs []model.Course
 	for _, val := range courses {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.GetCustomCourses(appId, orgId, nil, nil, keys, nil)
+	returnedStructs, err := s.app.storage.GetCustomCourses(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
 		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database courses": keys}, err)
 	}
@@ -782,13 +782,13 @@ func (s *adminImpl) CoursesNotInDB(appId string, orgId string, courses []model.C
 }
 
 // return those inside the array that are not present in database determined by key
-func (s *adminImpl) ModulesNotInDB(appId string, orgId string, modules []model.Module) ([]model.Module, error) {
+func (s *adminImpl) ModulesNotInDB(appID string, orgID string, modules []model.Module) ([]model.Module, error) {
 	var keys, returnedKeys []string
 	var resultStructs []model.Module
 	for _, val := range modules {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.GetCustomModules(appId, orgId, nil, nil, keys, nil)
+	returnedStructs, err := s.app.storage.GetCustomModules(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
 		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database modules": keys}, err)
 	}
@@ -806,13 +806,13 @@ func (s *adminImpl) ModulesNotInDB(appId string, orgId string, modules []model.M
 }
 
 // return those inside the array that are not present in database determined by key
-func (s *adminImpl) UnitsNotInDB(appId string, orgId string, units []model.Unit) ([]model.Unit, error) {
+func (s *adminImpl) UnitsNotInDB(appID string, orgID string, units []model.Unit) ([]model.Unit, error) {
 	var keys, returnedKeys []string
 	var resultStructs []model.Unit
 	for _, val := range units {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.GetCustomUnits(appId, orgId, nil, nil, keys, nil)
+	returnedStructs, err := s.app.storage.GetCustomUnits(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
 		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database units": keys}, err)
 	}
@@ -830,13 +830,13 @@ func (s *adminImpl) UnitsNotInDB(appId string, orgId string, units []model.Unit)
 }
 
 // return those inside the array that are not present in database determined by key
-func (s *adminImpl) ContentsNotInDB(appId string, orgId string, contents []model.Content) ([]model.Content, error) {
+func (s *adminImpl) ContentsNotInDB(appID string, orgID string, contents []model.Content) ([]model.Content, error) {
 	var keys, returnedKeys []string
 	var resultStructs []model.Content
 	for _, val := range contents {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.GetCustomContents(appId, orgId, nil, nil, keys)
+	returnedStructs, err := s.app.storage.GetCustomContents(appID, orgID, nil, nil, keys)
 	if err != nil {
 		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database contents": keys}, err)
 	}
