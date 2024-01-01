@@ -145,13 +145,13 @@ func (m *database) start() error {
 	}
 
 	userModule := &collectionWrapper{database: m, coll: db.Collection("user_module")}
-	err = m.applyUserCourseChecks(userModule)
+	err = m.applyUserModuleChecks(userModule)
 	if err != nil {
 		return err
 	}
 
 	userUnit := &collectionWrapper{database: m, coll: db.Collection("user_unit")}
-	err = m.applyUserCourseChecks(userUnit)
+	err = m.applyUserUnitChecks(userUnit)
 	if err != nil {
 		return err
 	}

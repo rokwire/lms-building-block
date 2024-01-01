@@ -27,6 +27,7 @@ type userCourse struct {
 	Course      course     `bson:"course"`
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
+	DateDeleted *time.Time `bson:"date_deleted"`
 }
 
 type course struct {
@@ -43,14 +44,15 @@ type course struct {
 }
 
 type userModule struct {
-	ID          string     `bson:"_id"`
-	AppID       string     `bson:"app_id"`
-	OrgID       string     `bson:"org_id"`
-	UserID      string     `bson:"user_id"`
-	CourseKey   string     `bson:"course_key"`
+	ID     string `bson:"_id"`
+	AppID  string `bson:"app_id"`
+	OrgID  string `bson:"org_id"`
+	UserID string `bson:"user_id"`
+	//CourseKey   string     `bson:"course_key"`
 	Module      module     `bson:"module"`
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
+	DateDeleted *time.Time `bson:"date_deleted"`
 }
 
 type module struct {
@@ -58,25 +60,26 @@ type module struct {
 	AppID string `bson:"app_id"`
 	OrgID string `bson:"org_id"`
 
-	CourseKey string   `bson:"course_key"`
-	Key       string   `bson:"key"`
-	Name      string   `bson:"name"`
-	UnitKeys  []string `bson:"unit_keys"`
+	//CourseKey string   `bson:"course_key"`
+	Key      string   `bson:"key"`
+	Name     string   `bson:"name"`
+	UnitKeys []string `bson:"unit_keys"`
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
 }
 
 type userUnit struct {
-	ID          string     `bson:"_id"`
-	AppID       string     `bson:"app_id"`
-	OrgID       string     `bson:"org_id"`
-	UserID      string     `bson:"user_id"`
-	CourseKey   string     `bson:"course_key"`
-	ModuleKey   string     `bson:"module_key"`
+	ID     string `bson:"_id"`
+	AppID  string `bson:"app_id"`
+	OrgID  string `bson:"org_id"`
+	UserID string `bson:"user_id"`
+	//CourseKey   string     `bson:"course_key"`
+	//ModuleKey   string     `bson:"module_key"`
 	Unit        unit       `bson:"unit"`
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
+	DateDeleted *time.Time `bson:"date_deleted"`
 }
 
 type unit struct {
@@ -84,8 +87,8 @@ type unit struct {
 	AppID string `bson:"app_id"`
 	OrgID string `bson:"org_id"`
 
-	CourseKey   string               `bson:"course_key"`
-	ModuleKey   string               `bson:"module_key"`
+	//CourseKey   string               `bson:"course_key"`
+	//ModuleKey   string               `bson:"module_key"`
 	Key         string               `bson:"key"`
 	Name        string               `bson:"name"`
 	ContentKeys []string             `bson:"content_keys"`
@@ -100,9 +103,9 @@ type content struct {
 	AppID string `bson:"app_id"`
 	OrgID string `bson:"org_id"`
 
-	CourseKey        string          `bson:"course_key"`
-	ModuleKey        string          `bson:"module_key"`
-	UnitKey          string          `bson:"unit_key"`
+	//CourseKey        string          `bson:"course_key"`
+	//ModuleKey        string          `bson:"module_key"`
+	//UnitKey          string          `bson:"unit_key"`
 	Key              string          `bson:"key"`
 	Type             string          `bson:"type"` // assignment, resource, reward, evaluation
 	Name             string          `bson:"name"`

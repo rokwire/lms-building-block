@@ -46,8 +46,10 @@ type UserCourse struct {
 
 	Course Course `json:"course"`
 
-	DateCreated time.Time
-	DateUpdated *time.Time
+	DateCreated time.Time  `json:"date_created"`
+	DateUpdated *time.Time `json:"date_updated"`
+	DateDeleted *time.Time `json:"dete_deleted"`
+
 	//TODO: add a timestamp for a user dropping a course?
 }
 
@@ -67,14 +69,15 @@ type Course struct {
 
 // UserModule represents a copy of a module that the user modifies as progress is made
 type UserModule struct {
-	ID          string     `json:"_id"`
-	AppID       string     `json:"app_id"`
-	OrgID       string     `json:"org_id"`
-	UserID      string     `json:"user_id"`
-	CourseKey   string     `json:"course_key"`
+	ID     string `json:"_id"`
+	AppID  string `json:"app_id"`
+	OrgID  string `json:"org_id"`
+	UserID string `json:"user_id"`
+	//CourseKey   string     `json:"course_key"`
 	Module      Module     `json:"module"`
 	DateCreated time.Time  `json:"date_created"`
 	DateUpdated *time.Time `json:"date_updated"`
+	DateDeleted *time.Time `json:"dete_deleted"`
 }
 
 // Module represents an individual module of a Course (e.g. Conversational Skills)
@@ -83,10 +86,10 @@ type Module struct {
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
-	CourseKey string `json:"course_key"`
-	Key       string `json:"key"`
-	Name      string `json:"name"`
-	Units     []Unit `json:"units"`
+	//CourseKey string `json:"course_key"`
+	Key   string `json:"key"`
+	Name  string `json:"name"`
+	Units []Unit `json:"units"`
 
 	DateCreated time.Time
 	DateUpdated *time.Time
@@ -94,15 +97,16 @@ type Module struct {
 
 // UserUnit represents a copy of a unit that the user modifies as progress is made
 type UserUnit struct {
-	ID          string     `json:"_id"`
-	AppID       string     `json:"app_id"`
-	OrgID       string     `json:"org_id"`
-	UserID      string     `json:"user_id"`
-	CourseKey   string     `json:"course_key"`
-	ModuleKey   string     `json:"module_key"`
+	ID     string `json:"_id"`
+	AppID  string `json:"app_id"`
+	OrgID  string `json:"org_id"`
+	UserID string `json:"user_id"`
+	//CourseKey   string     `json:"course_key"`
+	//ModuleKey   string     `json:"module_key"`
 	Unit        Unit       `json:"unit"`
 	DateCreated time.Time  `json:"date_created"`
 	DateUpdated *time.Time `json:"date_updated"`
+	DateDeleted *time.Time `json:"dete_deleted"`
 }
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
@@ -111,12 +115,12 @@ type Unit struct {
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
-	CourseKey string         `json:"course_key"`
-	ModuleKey string         `json:"module_key"`
-	Key       string         `json:"key"`
-	Name      string         `json:"name"`
-	Contents  []Content      `json:"content"`
-	Schedule  []ScheduleItem `json:"schedule"`
+	//CourseKey string         `json:"course_key"`
+	//ModuleKey string         `json:"module_key"`
+	Key      string         `json:"key"`
+	Name     string         `json:"name"`
+	Contents []Content      `json:"content"`
+	Schedule []ScheduleItem `json:"schedule"`
 
 	DateCreated time.Time
 	DateUpdated *time.Time
@@ -135,9 +139,9 @@ type Content struct {
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
-	CourseKey        string    `json:"course_key"`
-	ModuleKey        string    `json:"module_key"`
-	UnitKey          string    `json:"unit_key"`
+	//CourseKey        string    `json:"course_key"`
+	//ModuleKey        string    `json:"module_key"`
+	//UnitKey          string    `json:"unit_key"`
 	Key              string    `json:"key"`
 	Type             string    `json:"type"` // assignment, resource, reward, evaluation
 	Name             string    `json:"name"`

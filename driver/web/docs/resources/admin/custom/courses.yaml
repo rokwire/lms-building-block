@@ -31,9 +31,9 @@ get:
       explode: false
       schema:
         type: string
-    - name: module_id
+    - name: module_key
       in: query
-      description: comma separated list of module IDs
+      description: comma separated list of module keys
       required: false
       style: form
       explode: false

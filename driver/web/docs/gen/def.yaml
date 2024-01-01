@@ -847,9 +847,9 @@ paths:
           explode: false
           schema:
             type: string
-        - name: module_id
+        - name: module_key
           in: query
-          description: comma separated list of module IDs
+          description: comma separated list of module keys
           required: false
           style: form
           explode: false
@@ -1047,7 +1047,7 @@ paths:
           explode: false
           schema:
             type: string
-        - name: unit_id
+        - name: unit_key
           in: query
           description: comma separated list of unit IDs
           required: false
@@ -1247,9 +1247,9 @@ paths:
           explode: false
           schema:
             type: string
-        - name: content_id
+        - name: content_key
           in: query
-          description: comma separated list of content IDs
+          description: comma separated list of content keys
           required: false
           style: form
           explode: false

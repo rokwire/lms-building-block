@@ -28,6 +28,8 @@ func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, user
 		filter["user_id"] = userID
 	}
 
+	filter["date_deleted"] = nil
+
 	var result []userCourse
 	err := sa.db.userCourse.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -53,6 +55,7 @@ func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, user
 // GetUserCourse finds a user course by id
 func (sa *Adapter) GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
+	filter["date_deleted"] = nil
 	var result userCourse
 	err := sa.db.userCourse.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
@@ -111,7 +114,6 @@ func (sa *Adapter) InsertUserModule(item model.UserModule) error {
 	userModule.AppID = item.AppID
 	userModule.OrgID = item.OrgID
 	userModule.UserID = item.UserID
-	userModule.CourseKey = item.CourseKey
 	userModule.DateCreated = time.Now()
 	userModule.DateUpdated = nil
 	userModule.Module = sa.customModuleConversionAPIToStorage(item.Module)
@@ -130,8 +132,6 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 	userUnit.AppID = item.AppID
 	userUnit.OrgID = item.OrgID
 	userUnit.UserID = item.UserID
-	userUnit.CourseKey = item.CourseKey
-	userUnit.ModuleKey = item.ModuleKey
 	userUnit.DateCreated = time.Now()
 	userUnit.DateUpdated = nil
 	userUnit.Unit = sa.customUnitConversionAPIToStorage(item.Unit)
@@ -144,8 +144,8 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 }
 
 // UpdateUserUnit updates shcedules in a user unit
-func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey string, item model.Unit) error {
-	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "module_key": moduleKey}
+func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, item model.Unit) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID}
 	update := bson.M{
 		"$set": bson.M{
 			"unit.schedule": item.Schedule,

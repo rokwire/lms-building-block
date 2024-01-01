@@ -31,7 +31,7 @@ get:
       explode: false
       schema:
         type: string
-    - name: unit_id
+    - name: unit_key
       in: query
       description: comma separated list of unit IDs
       required: false

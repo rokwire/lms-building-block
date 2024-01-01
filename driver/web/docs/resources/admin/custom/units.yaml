@@ -31,9 +31,9 @@ get:
       explode: false
       schema:
         type: string
-    - name: content_id
+    - name: content_key
       in: query
-      description: comma separated list of content IDs
+      description: comma separated list of content keys
       required: false
       style: form
       explode: false

@@ -106,7 +106,24 @@ func (sa *Adapter) InsertCustomCourse(item model.Course) error {
 
 	_, err := sa.db.customCourse.InsertOne(sa.context, course)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting courses", nil, err)
+	}
+	return nil
+}
+
+// InsertCustomCourses insert an array of courses
+func (sa *Adapter) InsertCustomCourses(items []model.Course) error {
+	store_items := make([]interface{}, len(items))
+	for i, item := range items {
+		item.DateCreated = time.Now()
+		item.DateUpdated = nil
+		course := sa.customCourseConversionAPIToStorage(item)
+		store_items[i] = course
+	}
+
+	_, err := sa.db.customCourse.InsertMany(sa.context, store_items, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting courses", nil, err)
 	}
 	return nil
 }
@@ -144,7 +161,6 @@ func (sa *Adapter) UpdateCustomCourse(key string, item model.Course) error {
 	update := bson.M{
 		"$set": bson.M{
 			"date_updated": time.Now(),
-			"key":          item.Key,
 			"name":         item.Name,
 			"module_keys":  moduleKeys,
 		},
@@ -155,6 +171,29 @@ func (sa *Adapter) UpdateCustomCourse(key string, item model.Course) error {
 	}
 	if result.MatchedCount == 0 {
 		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// UpdateCourseToAllClients updates all user_course that matches given courseKey
+func (sa *Adapter) UpdateCourseToAllClients(key string, item model.Course) error {
+	//parse into the storage format and pass parameters
+	var moduleKeys []string
+	for _, val := range item.Modules {
+		moduleKeys = append(moduleKeys, val.Key)
+	}
+
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "course.key": key}
+	update := bson.M{
+		"$set": bson.M{
+			"course.date_updated": time.Now(),
+			"course.name":         item.Name,
+			"course.module_keys":  moduleKeys,
+		},
+	}
+	_, err := sa.db.userCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
@@ -241,7 +280,6 @@ func (sa *Adapter) customModuleConversionStorageToAPI(item module) (model.Module
 	result.ID = item.ID
 	result.AppID = item.AppID
 	result.OrgID = item.OrgID
-	result.CourseKey = item.CourseKey
 	result.Key = item.Key
 	result.Name = item.Name
 	result.DateCreated = item.DateCreated
@@ -273,7 +311,24 @@ func (sa *Adapter) InsertCustomModule(item model.Module) error {
 	module := sa.customModuleConversionAPIToStorage(item)
 	_, err := sa.db.customModule.InsertOne(sa.context, module)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting module", nil, err)
+	}
+	return nil
+}
+
+// InsertCustomModules insert an array of modules
+func (sa *Adapter) InsertCustomModules(items []model.Module) error {
+	store_items := make([]interface{}, len(items))
+	for i, item := range items {
+		item.DateCreated = time.Now()
+		item.DateUpdated = nil
+		module := sa.customModuleConversionAPIToStorage(item)
+		store_items[i] = module
+	}
+
+	_, err := sa.db.customModule.InsertMany(sa.context, store_items, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting modules", nil, err)
 	}
 	return nil
 }
@@ -290,7 +345,6 @@ func (sa *Adapter) customModuleConversionAPIToStorage(item model.Module) module 
 	module.ID = item.ID
 	module.AppID = item.AppID
 	module.OrgID = item.OrgID
-	module.CourseKey = item.CourseKey
 	module.Key = item.Key
 	module.Name = item.Name
 	module.UnitKeys = unitKeys
@@ -312,8 +366,6 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 	update := bson.M{
 		"$set": bson.M{
 			"date_updated": time.Now(),
-			"course_key":   item.CourseKey,
-			"key":          item.Key,
 			"name":         item.Name,
 			"unit_keys":    unitKeys,
 		},
@@ -324,6 +376,29 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 	}
 	if result.MatchedCount == 0 {
 		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// UpdateModuleToAllClients updates all user_module that matches given key
+func (sa *Adapter) UpdateModuleToAllClients(key string, item model.Module) error {
+	//parse into the storage format and pass parameters
+	var unitKeys []string
+	for _, val := range item.Units {
+		unitKeys = append(unitKeys, val.Key)
+	}
+
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "module.key": key}
+	update := bson.M{
+		"$set": bson.M{
+			"module.date_updated": time.Now(),
+			"module.name":         item.Name,
+			"module.unit_keys":    unitKeys,
+		},
+	}
+	_, err := sa.db.userModule.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }
@@ -346,7 +421,7 @@ func (sa *Adapter) DeleteCustomModule(appID string, orgID string, key string) er
 }
 
 // GetCustomUnits finds units by a set of parameters
-func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name []string, key []string) ([]model.Unit, error) {
+func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name []string, key []string, contentKeys []string) ([]model.Unit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
@@ -358,6 +433,9 @@ func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name 
 
 	if len(key) != 0 {
 		filter["key"] = bson.M{"$in": key}
+	}
+	if len(contentKeys) != 0 {
+		filter["content_keys"] = bson.M{"$in": contentKeys}
 	}
 	var result []unit
 	err := sa.db.customUnit.Find(sa.context, filter, &result, nil)
@@ -404,8 +482,6 @@ func (sa *Adapter) customUnitConversionStorageToAPI(item unit) (model.Unit, erro
 	result.ID = item.ID
 	result.AppID = item.AppID
 	result.OrgID = item.OrgID
-	result.CourseKey = item.CourseKey
-	result.ModuleKey = item.ModuleKey
 	result.Key = item.Key
 	result.Name = item.Name
 	result.Schedule = item.Schedule
@@ -435,10 +511,27 @@ func (sa *Adapter) customUnitConversionStorageToAPI(item unit) (model.Unit, erro
 func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
 	item.DateCreated = time.Now()
 	item.DateUpdated = nil
-	result := sa.customUnitConversionAPIToStorage(item)
-	_, err := sa.db.customUnit.InsertOne(sa.context, result)
+	unit := sa.customUnitConversionAPIToStorage(item)
+	_, err := sa.db.customUnit.InsertOne(sa.context, unit)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting unit", nil, err)
+	}
+	return nil
+}
+
+// InsertCustomUnits insert an array of units
+func (sa *Adapter) InsertCustomUnits(items []model.Unit) error {
+	store_items := make([]interface{}, len(items))
+	for i, item := range items {
+		item.DateCreated = time.Now()
+		item.DateUpdated = nil
+		unit := sa.customUnitConversionAPIToStorage(item)
+		store_items[i] = unit
+	}
+
+	_, err := sa.db.customUnit.InsertMany(sa.context, store_items, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting units", nil, err)
 	}
 	return nil
 }
@@ -455,8 +548,6 @@ func (sa *Adapter) customUnitConversionAPIToStorage(item model.Unit) unit {
 	result.ID = item.ID
 	result.AppID = item.AppID
 	result.OrgID = item.OrgID
-	result.CourseKey = item.CourseKey
-	result.ModuleKey = item.ModuleKey
 	result.Key = item.Key
 	result.Name = item.Name
 	result.ContentKeys = extractedKey
@@ -478,9 +569,6 @@ func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
 	update := bson.M{
 		"$set": bson.M{
-			"course_key":   item.CourseKey,
-			"module_key":   item.ModuleKey,
-			"key":          item.Key,
 			"name":         item.Name,
 			"content_keys": extractedKey,
 			"schedule":     item.Schedule,
@@ -493,6 +581,53 @@ func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 	}
 	if result.MatchedCount == 0 {
 		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// UpdateUnitToAllClients updates all user_unit that matches given key
+func (sa *Adapter) UpdateUnitToAllClients(key string, item model.Unit) error {
+	//parse into the storage format and pass parameters
+	var contentKeys []string
+	for _, val := range item.Contents {
+		contentKeys = append(contentKeys, val.Key)
+	}
+
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "unit.key": key}
+	update := bson.M{
+		"$set": bson.M{
+			"unit.name":         item.Name,
+			"unit.content_keys": contentKeys,
+			"unit.schedule":     item.Schedule,
+			"unit.date_updated": time.Now(),
+		},
+	}
+	_, err := sa.db.userUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// doesn't work
+func (sa *Adapter) UpdateReferenceKeyToClientUnits(oldCourseKey string, newCourseKey string) error {
+
+	filter := bson.M{}
+	update := bson.M{
+		"$set": bson.M{
+			"unit.course_key": bson.M{
+				"$replaceAll": bson.M{
+					"input":       "$course_key",
+					"find":        oldCourseKey,
+					"replacement": newCourseKey,
+				},
+			},
+		},
+	}
+
+	_, err := sa.db.userUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", nil, err)
 	}
 	return nil
 }
@@ -573,9 +708,6 @@ func (sa *Adapter) customContentConversionStorageToAPI(item content) (model.Cont
 	result.ID = item.ID
 	result.AppID = item.AppID
 	result.OrgID = item.OrgID
-	result.CourseKey = item.CourseKey
-	result.ModuleKey = item.ModuleKey
-	result.UnitKey = item.UnitKey
 	result.Key = item.Key
 	result.Type = item.Type
 	result.Name = item.Name
@@ -610,7 +742,24 @@ func (sa *Adapter) InsertCustomContent(item model.Content) error {
 	content := sa.customContentConversionAPIToStorage(item)
 	_, err := sa.db.customContent.InsertOne(sa.context, content)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting content", nil, err)
+	}
+	return nil
+}
+
+// InsertCustomContent insert an array of contents
+func (sa *Adapter) InsertCustomContents(items []model.Content) error {
+	store_items := make([]interface{}, len(items))
+	for i, item := range items {
+		item.DateCreated = time.Now()
+		item.DateUpdated = nil
+		content := sa.customContentConversionAPIToStorage(item)
+		store_items[i] = content
+	}
+
+	_, err := sa.db.customContent.InsertMany(sa.context, store_items, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting contents", nil, err)
 	}
 	return nil
 }
@@ -627,9 +776,6 @@ func (sa *Adapter) customContentConversionAPIToStorage(item model.Content) conte
 	content.ID = item.ID
 	content.AppID = item.AppID
 	content.OrgID = item.OrgID
-	content.CourseKey = item.CourseKey
-	content.ModuleKey = item.ModuleKey
-	content.UnitKey = item.UnitKey
 	content.Key = item.Key
 	content.Type = item.Type
 	content.Name = item.Name
@@ -653,10 +799,6 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
 	update := bson.M{
 		"$set": bson.M{
-			"course_key":     item.CourseKey,
-			"module_key":     item.ModuleKey,
-			"unit_key":       item.UnitKey,
-			"key":            item.Key,
 			"type":           item.Type,
 			"details":        item.Details,
 			"name":           item.Name,
@@ -688,6 +830,197 @@ func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) e
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
 		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// DeleteContentKeyFromLinkedContents deletes a content key from linkedContent field within customContent collection
+func (sa *Adapter) DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error {
+	var keyArr []string
+	keyArr = append(keyArr, key)
+	filter := bson.M{"org_id": orgID, "app_id": appID}
+	//delete key from linked_content
+	update := bson.M{
+		"$pull": bson.M{
+			"linked_content": bson.M{
+				"$in": keyArr,
+			},
+		},
+		// "$pull": bson.M{
+		// 	"linked_content": key,
+		// },
+	}
+
+	_, err := sa.db.customContent.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// DeleteContentKeyFromUnits deletes a content key from contentKey field within customUnit collection
+func (sa *Adapter) DeleteContentKeyFromUnits(appID string, orgID string, key string) error {
+	var keyArr []string
+	keyArr = append(keyArr, key)
+	filter := bson.M{"org_id": orgID, "app_id": appID}
+	update := bson.M{
+		"$pull": bson.M{
+			"content_keys": bson.M{
+				"$in": keyArr,
+			},
+		},
+	}
+	_, err := sa.db.customUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return err
+}
+
+// DeleteContentKeyFromUnits deletes given content key from all content.contentKey field within user_unit collection
+func (sa *Adapter) DeleteContentKeyFromUserUnits(appID string, orgID string, key string) error {
+	var keyArr []string
+	keyArr = append(keyArr, key)
+	filter := bson.M{"org_id": orgID, "app_id": appID}
+	update := bson.M{
+		"$pull": bson.M{
+			"unit.content_keys": bson.M{
+				"$in": keyArr,
+			},
+		},
+	}
+
+	_, err := sa.db.userUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// MarkUserUnitAsDelete mark given unit as deleted in user_unit collection
+func (sa *Adapter) MarkUserUnitAsDelete(appID string, orgID string, key string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "unit.key": key}
+	update := bson.M{
+		"$set": bson.M{
+			"date_deleted": time.Now(),
+		},
+	}
+
+	_, err := sa.db.userUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// DeleteUnitKeyFromModules deletes a unit key from unitKey field within customModule collection
+func (sa *Adapter) DeleteUnitKeyFromModules(appID string, orgID string, key string) error {
+	var keyArr []string
+	keyArr = append(keyArr, key)
+	filter := bson.M{"org_id": orgID, "app_id": appID}
+	update := bson.M{
+		"$pull": bson.M{
+			"unit_keys": bson.M{
+				"$in": keyArr,
+			},
+		},
+	}
+
+	_, err := sa.db.customModule.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// DeleteUnitKeyFromUserModules deletes given unit key from all unit.unitKey field within user_module collection
+func (sa *Adapter) DeleteUnitKeyFromUserModules(appID string, orgID string, key string) error {
+	var keyArr []string
+	keyArr = append(keyArr, key)
+	filter := bson.M{"org_id": orgID, "app_id": appID}
+	update := bson.M{
+		"$pull": bson.M{
+			"module.unit_keys": bson.M{
+				"$in": keyArr,
+			},
+		},
+	}
+
+	_, err := sa.db.userModule.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// MarkUserModuleAsDelete mark given module as deleted in user_module collection
+func (sa *Adapter) MarkUserModuleAsDelete(appID string, orgID string, key string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "module.key": key}
+	update := bson.M{
+		"$set": bson.M{
+			"date_deleted": time.Now(),
+		},
+	}
+
+	_, err := sa.db.userModule.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// DeleteModuleKeyFromCourses deletes a module key from moduleKey field within customCourse collection
+func (sa *Adapter) DeleteModuleKeyFromCourses(appID string, orgID string, key string) error {
+	var keyArr []string
+	keyArr = append(keyArr, key)
+	filter := bson.M{"org_id": orgID, "app_id": appID}
+	update := bson.M{
+		"$pull": bson.M{
+			"module_keys": bson.M{
+				"$in": keyArr,
+			},
+		},
+	}
+
+	_, err := sa.db.customCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// DeleteModuleKeyFromUserCourses deletes given module key from all module.moduleKey fields within user_course collection
+func (sa *Adapter) DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error {
+	var keyArr []string
+	keyArr = append(keyArr, key)
+	filter := bson.M{"org_id": orgID, "app_id": appID}
+	update := bson.M{
+		"$pull": bson.M{
+			"course.module_keys": bson.M{
+				"$in": keyArr,
+			},
+		},
+	}
+
+	_, err := sa.db.userCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+	}
+	return nil
+}
+
+// MarkUserCourseAsDelete mark given course as deleted in user_course collection
+func (sa *Adapter) MarkUserCourseAsDelete(appID string, orgID string, key string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "course.key": key}
+	update := bson.M{
+		"$set": bson.M{
+			"date_deleted": time.Now(),
+		},
+	}
+
+	_, err := sa.db.userCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
 	return nil
 }

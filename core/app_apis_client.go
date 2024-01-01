@@ -160,6 +160,7 @@ func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, courseKey string) (
 
 // pass course key to create a new user course
 func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error) {
+	//transaction := func(storage interfaces.Storage) (*model.UserCourse, error) {
 	var item model.UserCourse
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
@@ -187,6 +188,8 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 	}
 
 	return &item, nil
+	//}
+	//return s.app.storage.PerformTransaction(transaction)
 }
 
 // pass course key to create a new user course
@@ -196,7 +199,6 @@ func (s *clientImpl) CreateUserModule(claims *tokenauth.Claims, courseKey string
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
 	item.UserID = claims.Subject
-	item.CourseKey = courseKey
 	item.DateCreated = time.Now()
 
 	//retrieve moudle with moduleKey
@@ -220,8 +222,6 @@ func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, 
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
 	item.UserID = claims.Subject
-	item.CourseKey = courseKey
-	item.ModuleKey = moduleKey
 	item.DateCreated = time.Now()
 
 	//retrieve moudle with unitKey
@@ -244,13 +244,13 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 
 	err := s.app.storage.DeleteUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
 	if err != nil {
-		return nil
+		return err
 	}
-	return err
+	return nil
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.Unit) (*model.Unit, error) {
-	err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, moduleKey, item)
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, unitKey string, item model.Unit) (*model.Unit, error) {
+	err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, item)
 	if err != nil {
 		return nil, err
 	}

@@ -9,15 +9,13 @@ admin and client API testing notes
 
     | Test Response Code | Test Description                          | Remark |
     |--------------------|-------------------------------------------|--------|
-    | code 200           | correct input                             |        |
+    | code 200           | correct input without substruct           |        |
+    |                    | correct input with substruct              |        |
     | code 400           | bad format/wrong type                     |        |
     | code 500           | repeated {app_id, org_id,key combination} |        |
 
     ```
     {
-        "course_key": "course1",
-        "module_key": "module1",
-        "unit_key": "unit1",
         "key": "content1",
         "type": "assignment",
         "name": "test assignment",
@@ -29,9 +27,6 @@ admin and client API testing notes
         },
         "linked_content": [
             {
-                "course_key": "course1",
-                "module_key": "module1",
-                "unit_key": "unit1",
                 "key": "content2",
                 "type": "assignment",
                 "name": "test assignment",
@@ -87,21 +82,17 @@ admin and client API testing notes
 
     | Test Response Code | Test Description                          | Remark |
     |--------------------|-------------------------------------------|--------|
-    | code 200           | correct input                             |        |
+    | code 200           | correct input without substruct           |        |
+    |                    | correct input with substruct              |        |
     | code 400           | bad format/wrong type                     |        |
     | code 500           | repeated {app_id, org_id,key combination} |        |
 
     ```
     {
-        "course_key": "course1",
-        "module_key": "module1",
         "key": "unit1",
         "name": "unit1 test",
         "content": [
             {
-                "course_key": "course1",
-                "module_key": "module1",
-                "unit_key": "unit1",
                 "key": "content1",
                 "type": "assignment",
                 "name": "test assignment",
@@ -113,9 +104,6 @@ admin and client API testing notes
                 },
                 "linked_content": [
                     {
-                        "course_key": "course1",
-                        "module_key": "module1",
-                        "unit_key": "unit1",
                         "key": "content2",
                         "type": "assignment",
                         "name": "test assignment",
@@ -190,26 +178,21 @@ admin and client API testing notes
 
     | Test Response Code | Test Description                          | Remark |
     |--------------------|-------------------------------------------|--------|
-    | code 200           | correct input                             |        |
+    | code 200           | correct input without substruct           |        |
+    |                    | correct input with substruct              |        |
     | code 400           | bad format/wrong type                     |        |
     | code 500           | repeated {app_id, org_id,key combination} |        |
 
     ```
     {
-        "course_key": "course1",
         "key": "module1",
         "name": "module1 test",
         "units": [
             {
-                "course_key": "course1",
-                "module_key": "module1",
                 "key": "unit1",
                 "name": "unit1 test",
                 "content": [
                     {
-                        "course_key": "course1",
-                        "module_key": "module1",
-                        "unit_key": "unit1",
                         "key": "content1",
                         "type": "assignment",
                         "name": "test assignment",
@@ -221,9 +204,6 @@ admin and client API testing notes
                         },
                         "linked_content": [
                             {
-                                "course_key": "course1",
-                                "module_key": "module1",
-                                "unit_key": "unit1",
                                 "key": "content2",
                                 "type": "assignment",
                                 "name": "test assignment",
@@ -301,7 +281,8 @@ admin and client API testing notes
 
     | Test Response Code | Test Description                          | Remark |
     |--------------------|-------------------------------------------|--------|
-    | code 200           | correct input                             |        |
+    | code 200           | correct input without substruct           |        |
+    |                    | correct input with substruct              |        |
     | code 400           | bad format/wrong type                     |        |
     | code 500           | repeated {app_id, org_id,key combination} |        |
 
@@ -311,20 +292,14 @@ admin and client API testing notes
         "name": "course1 name",
         "modules": [
             {
-                "course_key": "course1",
                 "key": "module1",
                 "name": "module1 test",
                 "units": [
                     {
-                        "course_key": "course1",
-                        "module_key": "module1",
                         "key": "unit1",
                         "name": "unit1 test",
                         "content": [
                             {
-                                "course_key": "course1",
-                                "module_key": "module1",
-                                "unit_key": "unit1",
                                 "key": "content1",
                                 "type": "assignment",
                                 "name": "test assignment",
@@ -336,9 +311,6 @@ admin and client API testing notes
                                 },
                                 "linked_content": [
                                     {
-                                        "course_key": "course1",
-                                        "module_key": "module1",
-                                        "unit_key": "unit1",
                                         "key": "content2",
                                         "type": "assignment",
                                         "name": "test assignment",
@@ -350,25 +322,25 @@ admin and client API testing notes
                                         },
                                         "linked_content": []
                                     }
-                                ],
-                                "schedule": [
-                                    {
-                                        "name": "schedule name",
-                                        "user_content": [
-                                            {
-                                                "name": "content name",
-                                                "type": "string",
-                                                "reference_key": "string",
-                                                "user_data": {
-                                                    "test_1_score": 97,
-                                                    "homework_3_due": "2023-12-12T22:06:05.021Z"
-                                                },
-                                                "date_started": "2023-11-17T22:06:05.021Z"
-                                            }
-                                        ],
-                                        "duration": 0
-                                    }
                                 ]
+                            }
+                        ],
+                        "schedule": [
+                            {
+                                "name": "schedule name",
+                                "user_content": [
+                                    {
+                                        "name": "content name",
+                                        "type": "string",
+                                        "reference_key": "string",
+                                        "user_data": {
+                                            "test_1_score": 97,
+                                            "homework_3_due": "2023-12-12T22:06:05.021Z"
+                                        },
+                                        "date_started": "2023-11-17T22:06:05.021Z"
+                                    }
+                                ],
+                                "duration": 0
                             }
                         ]
                     }

@@ -18,13 +18,16 @@
 package core
 
 import (
+	"lms/core/interfaces"
 	"lms/core/model"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
+	"golang.org/x/exp/slices"
 )
 
 type adminImpl struct {
@@ -135,7 +138,7 @@ func (s *adminImpl) FindNudgesProcesses(claims *tokenauth.Claims, limit *int, of
 	return nudgesProcess, nil
 }
 
-func (s *adminImpl) GetCustomCourses(claims *tokenauth.Claims, id *string, name *string, key *string, moduleID *string) ([]model.Course, error) {
+func (s *adminImpl) GetCustomCourses(claims *tokenauth.Claims, id *string, name *string, key *string, moduleKey *string) ([]model.Course, error) {
 	var idArr, nameArr, keyArr, moduleKeys []string
 
 	//parse moduleID comma seperated string into array
@@ -148,8 +151,8 @@ func (s *adminImpl) GetCustomCourses(claims *tokenauth.Claims, id *string, name 
 	if key != nil {
 		keyArr = strings.Split(*key, ",")
 	}
-	if moduleID != nil {
-		moduleKeys = strings.Split(*moduleID, ",")
+	if moduleKey != nil {
+		moduleKeys = strings.Split(*moduleKey, ",")
 	}
 
 	courses, err := s.app.storage.GetCustomCourses(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, moduleKeys)
@@ -160,14 +163,86 @@ func (s *adminImpl) GetCustomCourses(claims *tokenauth.Claims, id *string, name 
 }
 
 func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Course) (*model.Course, error) {
-	item.ID = uuid.NewString()
-	item.AppID = claims.AppID
-	item.OrgID = claims.OrgID
-	err := s.app.storage.InsertCustomCourse(item)
-	if err != nil {
-		return nil, err
+	transaction := func(storageTransaction interfaces.Storage) error {
+		item.ID = uuid.NewString()
+		item.AppID = claims.AppID
+		item.OrgID = claims.OrgID
+
+		//extract sublayer(s) key and struct, insert those not yet present in db according to key
+		var modules, newModules []model.Module
+		var units, newUnits []model.Unit
+		var contents, newContents []model.Content
+
+		for _, module := range item.Modules {
+			for _, unit := range module.Units {
+				for _, content := range unit.Contents {
+					content.ID = uuid.NewString()
+					content.AppID = claims.AppID
+					content.OrgID = claims.OrgID
+					contents = append(contents, content)
+				}
+				unit.ID = uuid.NewString()
+				unit.AppID = claims.AppID
+				unit.OrgID = claims.OrgID
+				units = append(units, unit)
+			}
+			module.ID = uuid.NewString()
+			module.AppID = claims.AppID
+			module.OrgID = claims.OrgID
+			modules = append(modules, module)
+		}
+		newModules, err := s.ModulesNotInDB(claims.AppID, claims.OrgID, modules)
+		if err != nil {
+			return err
+		}
+		newUnits, err = s.UnitsNotInDB(claims.AppID, claims.OrgID, units)
+		if err != nil {
+			return err
+		}
+		newContents, err = s.ContentsNotInDB(claims.AppID, claims.OrgID, contents)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.InsertCustomCourse(item)
+		if err != nil {
+			return err
+		}
+
+		if len(newModules) != 0 {
+			err = storageTransaction.InsertCustomModules(newModules)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(newUnits) != 0 {
+			err = storageTransaction.InsertCustomUnits(newUnits)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(newContents) != 0 {
+			// this is meant to ensure every linkedContent is already present in database, but we will ignore this in current implementation
+			// for _, thisContent := range newContents{
+			// 	returnedLinkedContents, err := s.ContentsNotInDB(claims.AppID, claims.OrgID, thisContent.LinkedContent)
+			// 	if err != nil {
+			// 		return err
+			// 	}
+			// 	if len(returnedLinkedContents) != len(thisContent.LinkedContent){
+			// 		return errors.WrapErrorAction(logutils.ActionInsert, "not all linkedContents exist in db", nil, err)
+			// 	}
+			// }
+			err = storageTransaction.InsertCustomContents(newContents)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
-	return &item, nil
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *adminImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error) {
@@ -181,31 +256,74 @@ func (s *adminImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*mode
 }
 
 func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, key string, item model.Course) (*model.Course, error) {
-	item.AppID = claims.AppID
-	item.OrgID = claims.OrgID
+	transaction := func(storageTransaction interfaces.Storage) error {
+		item.AppID = claims.AppID
+		item.OrgID = claims.OrgID
 
-	if item.Key == "" {
-		return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"item key empty": item.Key}, nil)
-	}
+		// prevent empty key and key mismatch. current implementation disallow key update
+		if item.Key == "" || key == "" || item.Key != key {
+			return errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"key or item key invalid": item.Key}, nil)
+		}
 
-	err := s.app.storage.UpdateCustomCourse(key, item)
-	if err != nil {
-		return nil, err
+		course, err := storageTransaction.GetCustomCourse(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+
+		// checks if subcategory associated array keys are updated
+		var curKeys, newKeys []string
+		for _, val := range course.Modules {
+			curKeys = append(curKeys, val.Key)
+		}
+		for _, val := range item.Modules {
+			newKeys = append(newKeys, val.Key)
+		}
+
+		// checks if new associated array keys all present in database
+		if !EqualKeyArrays(curKeys, newKeys) {
+			returnedStructs, err := storageTransaction.GetCustomModules(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
+			if err != nil {
+				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
+			}
+			if len(newKeys) != len(returnedStructs) {
+				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"not all keys present in database": newKeys}, err)
+			}
+		}
+
+		err = storageTransaction.UpdateCustomCourse(key, item)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.UpdateCourseToAllClients(key, item)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	return &item, nil
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *adminImpl) DeleteCustomCourse(claims *tokenauth.Claims, key string) error {
-	appID := claims.AppID
-	orgID := claims.OrgID
-	err := s.app.storage.DeleteCustomCourse(appID, orgID, key)
-	if err != nil {
-		return nil
+	transaction := func(storageTransaction interfaces.Storage) error {
+		appID := claims.AppID
+		orgID := claims.OrgID
+		err := storageTransaction.DeleteCustomCourse(appID, orgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.MarkUserCourseAsDelete(appID, orgID, key)
+		if err != nil {
+			return err
+		}
+
+		return err
 	}
-	return err
+	return s.app.storage.PerformTransaction(transaction)
 }
 
-func (s *adminImpl) GetCustomModules(claims *tokenauth.Claims, id *string, name *string, key *string, unitID *string) ([]model.Module, error) {
+func (s *adminImpl) GetCustomModules(claims *tokenauth.Claims, id *string, name *string, key *string, unitKey *string) ([]model.Module, error) {
 	var idArr, nameArr, keyArr, unitKeys []string
 
 	//parse moduleID comma seperated string into array
@@ -218,8 +336,8 @@ func (s *adminImpl) GetCustomModules(claims *tokenauth.Claims, id *string, name 
 	if key != nil {
 		keyArr = strings.Split(*key, ",")
 	}
-	if unitID != nil {
-		unitKeys = strings.Split(*unitID, ",")
+	if unitKey != nil {
+		unitKeys = strings.Split(*unitKey, ",")
 	}
 
 	modules, err := s.app.storage.GetCustomModules(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, unitKeys)
@@ -230,14 +348,59 @@ func (s *adminImpl) GetCustomModules(claims *tokenauth.Claims, id *string, name 
 }
 
 func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Module) (*model.Module, error) {
-	item.ID = uuid.NewString()
-	item.AppID = claims.AppID
-	item.OrgID = claims.OrgID
-	err := s.app.storage.InsertCustomModule(item)
-	if err != nil {
-		return nil, err
+	transaction := func(storageTransaction interfaces.Storage) error {
+		item.ID = uuid.NewString()
+		item.AppID = claims.AppID
+		item.OrgID = claims.OrgID
+
+		//extract sublayer(s) key and struct, insert those not yet present in db according to key
+		var units, newUnits []model.Unit
+		var contents, newContents []model.Content
+
+		for _, unit := range item.Units {
+			for _, content := range unit.Contents {
+				content.ID = uuid.NewString()
+				content.AppID = claims.AppID
+				content.OrgID = claims.OrgID
+				contents = append(contents, content)
+			}
+			unit.ID = uuid.NewString()
+			unit.AppID = claims.AppID
+			unit.OrgID = claims.OrgID
+			units = append(units, unit)
+		}
+
+		newUnits, err := s.UnitsNotInDB(claims.AppID, claims.OrgID, units)
+		if err != nil {
+			return err
+		}
+		newContents, err = s.ContentsNotInDB(claims.AppID, claims.OrgID, contents)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.InsertCustomModule(item)
+		if err != nil {
+			return err
+		}
+
+		if len(newUnits) != 0 {
+			err = storageTransaction.InsertCustomUnits(newUnits)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(newContents) != 0 {
+			err = storageTransaction.InsertCustomContents(newContents)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
-	return &item, nil
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *adminImpl) GetCustomModule(claims *tokenauth.Claims, key string) (*model.Module, error) {
@@ -251,43 +414,87 @@ func (s *adminImpl) GetCustomModule(claims *tokenauth.Claims, key string) (*mode
 }
 
 func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, key string, item model.Module) (*model.Module, error) {
-	item.AppID = claims.AppID
-	item.OrgID = claims.OrgID
+	transaction := func(storageTransaction interfaces.Storage) error {
 
-	if item.Key == "" {
-		return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"item key empty": item.Key}, nil)
-	}
-	// checks if updated key correctly associate with existing struct in db
-	module, err := s.app.storage.GetCustomModule(claims.AppID, claims.OrgID, key)
-	if err != nil {
-		return nil, err
-	}
-	if module.CourseKey != item.CourseKey {
-		_, err = s.app.storage.GetCustomCourse(claims.AppID, claims.OrgID, item.CourseKey)
-		if err != nil {
-			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"course key non-exist": item.CourseKey}, err)
+		item.AppID = claims.AppID
+		item.OrgID = claims.OrgID
+
+		// prevent empty key and key mismatch. current implementation disallow key update
+		if item.Key == "" || key == "" || item.Key != key {
+			return errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"key or item key invalid": item.Key}, nil)
 		}
+		// checks if updated key correctly associate with existing struct in db
+		module, err := storageTransaction.GetCustomModule(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+
+		// checks if subcategory associated array keys are updated
+		var curKeys, newKeys []string
+		for _, val := range module.Units {
+			curKeys = append(curKeys, val.Key)
+		}
+		for _, val := range item.Units {
+			newKeys = append(newKeys, val.Key)
+		}
+
+		// checks if new associated array keys all present in database
+		if !EqualKeyArrays(curKeys, newKeys) {
+			returnedStructs, err := storageTransaction.GetCustomUnits(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
+			if err != nil {
+				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
+			}
+			if len(newKeys) != len(returnedStructs) {
+				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"not all keys present in database": newKeys}, err)
+			}
+		}
+
+		err = storageTransaction.UpdateCustomModule(key, item)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.UpdateModuleToAllClients(key, item)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	err = s.app.storage.UpdateCustomModule(key, item)
-	if err != nil {
-		return nil, err
-	}
-	return &item, nil
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *adminImpl) DeleteCustomModule(claims *tokenauth.Claims, key string) error {
-	appID := claims.AppID
-	orgID := claims.OrgID
-	err := s.app.storage.DeleteCustomModule(appID, orgID, key)
-	if err != nil {
-		return nil
+	transaction := func(storageTransaction interfaces.Storage) error {
+		appID := claims.AppID
+		orgID := claims.OrgID
+		err := storageTransaction.DeleteCustomModule(appID, orgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.DeleteModuleKeyFromCourses(appID, orgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.DeleteModuleKeyFromUserCourses(appID, orgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.MarkUserModuleAsDelete(appID, orgID, key)
+		if err != nil {
+			return err
+		}
+
+		return err
 	}
-	return err
+	return s.app.storage.PerformTransaction(transaction)
 }
 
-func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *string, key *string, contentID *string) ([]model.Unit, error) {
-	var idArr, nameArr, keyArr []string
+func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *string, key *string, contentKey *string) ([]model.Unit, error) {
+	var idArr, nameArr, keyArr, contentKeys []string
 	if id != nil {
 		idArr = strings.Split(*id, ",")
 	}
@@ -297,7 +504,11 @@ func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *s
 	if key != nil {
 		keyArr = strings.Split(*key, ",")
 	}
-	result, err := s.app.storage.GetCustomUnits(claims.AppID, claims.OrgID, idArr, nameArr, keyArr)
+	if contentKey != nil {
+		contentKeys = strings.Split(*contentKey, ",")
+	}
+
+	result, err := s.app.storage.GetCustomUnits(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, contentKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -305,15 +516,41 @@ func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *s
 }
 
 func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) (*model.Unit, error) {
-	item.ID = uuid.NewString()
-	item.AppID = claims.AppID
-	item.OrgID = claims.OrgID
+	transaction := func(storageTransaction interfaces.Storage) error {
+		item.ID = uuid.NewString()
+		item.AppID = claims.AppID
+		item.OrgID = claims.OrgID
 
-	err := s.app.storage.InsertCustomUnit(item)
-	if err != nil {
-		return nil, err
+		//extract sublayer(s) key and struct, insert those not yet present in db according to key
+		var contents, newContents []model.Content
+
+		//contents
+		for _, content := range item.Contents {
+			content.ID = uuid.NewString()
+			content.AppID = claims.AppID
+			content.OrgID = claims.OrgID
+			contents = append(contents, content)
+		}
+
+		newContents, err := s.ContentsNotInDB(claims.AppID, claims.OrgID, contents)
+		if err != nil {
+			return err
+		}
+
+		if len(newContents) != 0 {
+			err = storageTransaction.InsertCustomContents(newContents)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = storageTransaction.InsertCustomUnit(item)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	return &item, nil
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, key string) (*model.Unit, error) {
@@ -325,44 +562,77 @@ func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, key string) (*model.
 }
 
 func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item model.Unit) (*model.Unit, error) {
-	item.AppID = claims.AppID
-	item.OrgID = claims.OrgID
-
-	if item.Key == "" {
-		return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"item key empty": item.Key}, nil)
-	}
-	// checks if updated key correctly associate with existing struct in db
-	unit, err := s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, key)
-	if err != nil {
-		return nil, err
-	}
-	if unit.CourseKey != item.CourseKey {
-		_, err = s.app.storage.GetCustomCourse(claims.AppID, claims.OrgID, item.CourseKey)
-		if err != nil {
-			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"course key non-exist": item.CourseKey}, err)
+	transaction := func(storageTransaction interfaces.Storage) error {
+		item.AppID = claims.AppID
+		item.OrgID = claims.OrgID
+		// prevent empty key and key mismatch. current implementation disallow key update
+		if item.Key == "" || key == "" || item.Key != key {
+			return errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"key or item key invalid": item.Key}, nil)
 		}
-	}
 
-	if unit.ModuleKey != item.ModuleKey {
-		_, err = s.app.storage.GetCustomModule(claims.AppID, claims.OrgID, item.ModuleKey)
+		unit, err := storageTransaction.GetCustomUnit(claims.AppID, claims.OrgID, key)
 		if err != nil {
-			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"module key non-exist": item.ModuleKey}, err)
+			return err
 		}
-	}
 
-	err = s.app.storage.UpdateCustomUnit(key, item)
-	if err != nil {
-		return nil, err
+		// checks if subcategory associated array keys are updated
+		var curKeys, newKeys []string
+		for _, val := range unit.Contents {
+			curKeys = append(curKeys, val.Key)
+		}
+		for _, val := range item.Contents {
+			newKeys = append(newKeys, val.Key)
+		}
+
+		// checks if new associated array keys all present in database
+		if !EqualKeyArrays(curKeys, newKeys) {
+			returnedStructs, err := storageTransaction.GetCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
+			if err != nil {
+				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
+			}
+			if len(newKeys) != len(returnedStructs) {
+				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"not all keys present in database": newKeys}, err)
+			}
+		}
+
+		err = storageTransaction.UpdateCustomUnit(key, item)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.UpdateUnitToAllClients(key, item)
+		if err != nil {
+			return errors.WrapErrorData(logutils.MessageDataStatus(logutils.ActionInsert), "", &logutils.FieldArgs{"error updating client db": key}, err)
+		}
+
+		return nil
 	}
-	return &item, nil
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, key string) error {
-	err := s.app.storage.DeleteCustomUnit(claims.AppID, claims.OrgID, key)
-	if err != nil {
-		return nil
+	transaction := func(storageTransaction interfaces.Storage) error {
+		err := storageTransaction.DeleteCustomUnit(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return nil
+		}
+		err = storageTransaction.DeleteUnitKeyFromModules(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.DeleteUnitKeyFromUserModules(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.MarkUserUnitAsDelete(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+		return err
 	}
-	return err
+	return s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *adminImpl) GetCustomContents(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.Content, error) {
@@ -392,7 +662,7 @@ func (s *adminImpl) CreateCustomContent(claims *tokenauth.Claims, item model.Con
 	if err != nil {
 		return nil, err
 	}
-	return &item, nil
+	return nil, nil
 }
 
 func (s *adminImpl) GetCustomContent(claims *tokenauth.Claims, key string) (*model.Content, error) {
@@ -404,49 +674,181 @@ func (s *adminImpl) GetCustomContent(claims *tokenauth.Claims, key string) (*mod
 }
 
 func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, key string, item model.Content) (*model.Content, error) {
-	item.AppID = claims.AppID
-	item.OrgID = claims.OrgID
+	transaction := func(storageTransaction interfaces.Storage) error {
+		item.AppID = claims.AppID
+		item.OrgID = claims.OrgID
 
-	if item.Key == "" {
-		return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"item key empty": item.Key}, nil)
-	}
-	// checks if updated key correctly associate with existing struct in db
-	content, err := s.app.storage.GetCustomContent(claims.AppID, claims.OrgID, key)
-	if err != nil {
-		return nil, err
-	}
-	if content.CourseKey != item.CourseKey {
-		_, err = s.app.storage.GetCustomCourse(claims.AppID, claims.OrgID, item.CourseKey)
-		if err != nil {
-			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"course key non-exist": item.CourseKey}, err)
+		// prevent empty key and key mismatch. current implementation disallow key update
+		if item.Key == "" || key == "" || item.Key != key {
+			return errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"key or item key invalid": item.Key}, nil)
 		}
-	}
 
-	if content.ModuleKey != item.ModuleKey {
-		_, err = s.app.storage.GetCustomModule(claims.AppID, claims.OrgID, item.ModuleKey)
+		content, err := storageTransaction.GetCustomContent(claims.AppID, claims.OrgID, key)
 		if err != nil {
-			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"module key non-exist": item.ModuleKey}, err)
+			return err
 		}
-	}
 
-	if content.UnitKey != item.UnitKey {
-		_, err = s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, item.UnitKey)
+		// checks if subcategory associated array keys are updated
+		var curKeys, newKeys []string
+		for _, val := range content.LinkedContent {
+			curKeys = append(curKeys, val.Key)
+		}
+		for _, val := range item.LinkedContent {
+			newKeys = append(newKeys, val.Key)
+		}
+
+		// checks if new associated array keys all present in database
+		if !EqualKeyArrays(curKeys, newKeys) {
+			returnedStructs, err := storageTransaction.GetCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
+			if err != nil {
+				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
+			}
+			if len(newKeys) != len(returnedStructs) {
+				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"not all keys present in database": newKeys}, err)
+			}
+		}
+
+		err = storageTransaction.UpdateCustomContent(key, item)
 		if err != nil {
-			return nil, errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"unit key non-exist": item.UnitKey}, err)
+			return err
 		}
+		return nil
 	}
-
-	err = s.app.storage.UpdateCustomContent(key, item)
-	if err != nil {
-		return nil, err
-	}
-	return &item, nil
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, key string) error {
-	err := s.app.storage.DeleteCustomContent(claims.AppID, claims.OrgID, key)
-	if err != nil {
-		return nil
+	transaction := func(storageTransaction interfaces.Storage) error {
+		err := storageTransaction.DeleteCustomContent(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.DeleteContentKeyFromLinkedContents(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.DeleteContentKeyFromUnits(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+
+		err = storageTransaction.DeleteContentKeyFromUserUnits(claims.AppID, claims.OrgID, key)
+		if err != nil {
+			return err
+		}
+		return err
 	}
-	return err
+	return s.app.storage.PerformTransaction(transaction)
+}
+
+// sorts and tells if key arrays are identical
+func EqualKeyArrays(a, b []string) bool {
+	sort.Strings(a)
+	sort.Strings(b)
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// return those inside the array that are not present in database determined by key
+func (s *adminImpl) CoursesNotInDB(appId string, orgId string, courses []model.Course) ([]model.Course, error) {
+	var keys, returnedKeys []string
+	var resultStructs []model.Course
+	for _, val := range courses {
+		keys = append(keys, val.Key)
+	}
+	returnedStructs, err := s.app.storage.GetCustomCourses(appId, orgId, nil, nil, keys, nil)
+	if err != nil {
+		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database courses": keys}, err)
+	}
+	for _, val := range returnedStructs {
+		returnedKeys = append(returnedKeys, val.Key)
+	}
+
+	for _, dataStruct := range courses {
+		if !slices.Contains(returnedKeys, dataStruct.Key) {
+			resultStructs = append(resultStructs, dataStruct)
+		}
+	}
+	return resultStructs, nil
+}
+
+// return those inside the array that are not present in database determined by key
+func (s *adminImpl) ModulesNotInDB(appId string, orgId string, modules []model.Module) ([]model.Module, error) {
+	var keys, returnedKeys []string
+	var resultStructs []model.Module
+	for _, val := range modules {
+		keys = append(keys, val.Key)
+	}
+	returnedStructs, err := s.app.storage.GetCustomModules(appId, orgId, nil, nil, keys, nil)
+	if err != nil {
+		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database modules": keys}, err)
+	}
+
+	for _, val := range returnedStructs {
+		returnedKeys = append(returnedKeys, val.Key)
+	}
+
+	for _, dataStruct := range modules {
+		if !slices.Contains(returnedKeys, dataStruct.Key) {
+			resultStructs = append(resultStructs, dataStruct)
+		}
+	}
+	return resultStructs, nil
+}
+
+// return those inside the array that are not present in database determined by key
+func (s *adminImpl) UnitsNotInDB(appId string, orgId string, units []model.Unit) ([]model.Unit, error) {
+	var keys, returnedKeys []string
+	var resultStructs []model.Unit
+	for _, val := range units {
+		keys = append(keys, val.Key)
+	}
+	returnedStructs, err := s.app.storage.GetCustomUnits(appId, orgId, nil, nil, keys, nil)
+	if err != nil {
+		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database units": keys}, err)
+	}
+
+	for _, val := range returnedStructs {
+		returnedKeys = append(returnedKeys, val.Key)
+	}
+
+	for _, dataStruct := range units {
+		if !slices.Contains(returnedKeys, dataStruct.Key) {
+			resultStructs = append(resultStructs, dataStruct)
+		}
+	}
+	return resultStructs, nil
+}
+
+// return those inside the array that are not present in database determined by key
+func (s *adminImpl) ContentsNotInDB(appId string, orgId string, contents []model.Content) ([]model.Content, error) {
+	var keys, returnedKeys []string
+	var resultStructs []model.Content
+	for _, val := range contents {
+		keys = append(keys, val.Key)
+	}
+	returnedStructs, err := s.app.storage.GetCustomContents(appId, orgId, nil, nil, keys)
+	if err != nil {
+		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database contents": keys}, err)
+	}
+
+	for _, val := range returnedStructs {
+		returnedKeys = append(returnedKeys, val.Key)
+	}
+
+	for _, dataStruct := range contents {
+		if !slices.Contains(returnedKeys, dataStruct.Key) {
+			resultStructs = append(resultStructs, dataStruct)
+		}
+	}
+	return resultStructs, nil
 }
