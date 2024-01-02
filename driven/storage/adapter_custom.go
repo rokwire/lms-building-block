@@ -113,15 +113,15 @@ func (sa *Adapter) InsertCustomCourse(item model.Course) error {
 
 // InsertCustomCourses insert an array of courses
 func (sa *Adapter) InsertCustomCourses(items []model.Course) error {
-	store_items := make([]interface{}, len(items))
+	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
 		item.DateCreated = time.Now()
 		item.DateUpdated = nil
 		course := sa.customCourseConversionAPIToStorage(item)
-		store_items[i] = course
+		storeItems[i] = course
 	}
 
-	_, err := sa.db.customCourse.InsertMany(sa.context, store_items, nil)
+	_, err := sa.db.customCourse.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting courses", nil, err)
 	}
@@ -318,15 +318,15 @@ func (sa *Adapter) InsertCustomModule(item model.Module) error {
 
 // InsertCustomModules insert an array of modules
 func (sa *Adapter) InsertCustomModules(items []model.Module) error {
-	store_items := make([]interface{}, len(items))
+	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
 		item.DateCreated = time.Now()
 		item.DateUpdated = nil
 		module := sa.customModuleConversionAPIToStorage(item)
-		store_items[i] = module
+		storeItems[i] = module
 	}
 
-	_, err := sa.db.customModule.InsertMany(sa.context, store_items, nil)
+	_, err := sa.db.customModule.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting modules", nil, err)
 	}
@@ -521,15 +521,15 @@ func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
 
 // InsertCustomUnits insert an array of units
 func (sa *Adapter) InsertCustomUnits(items []model.Unit) error {
-	store_items := make([]interface{}, len(items))
+	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
 		item.DateCreated = time.Now()
 		item.DateUpdated = nil
 		unit := sa.customUnitConversionAPIToStorage(item)
-		store_items[i] = unit
+		storeItems[i] = unit
 	}
 
-	_, err := sa.db.customUnit.InsertMany(sa.context, store_items, nil)
+	_, err := sa.db.customUnit.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting units", nil, err)
 	}
@@ -609,7 +609,7 @@ func (sa *Adapter) UpdateUnitToAllClients(key string, item model.Unit) error {
 	return nil
 }
 
-// doesn't work
+// UpdateReferenceKeyToClientUnits doesn't work
 func (sa *Adapter) UpdateReferenceKeyToClientUnits(oldCourseKey string, newCourseKey string) error {
 
 	filter := bson.M{}
@@ -747,17 +747,17 @@ func (sa *Adapter) InsertCustomContent(item model.Content) error {
 	return nil
 }
 
-// InsertCustomContent insert an array of contents
+// InsertCustomContents insert an array of contents
 func (sa *Adapter) InsertCustomContents(items []model.Content) error {
-	store_items := make([]interface{}, len(items))
+	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
 		item.DateCreated = time.Now()
 		item.DateUpdated = nil
 		content := sa.customContentConversionAPIToStorage(item)
-		store_items[i] = content
+		storeItems[i] = content
 	}
 
-	_, err := sa.db.customContent.InsertMany(sa.context, store_items, nil)
+	_, err := sa.db.customContent.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting contents", nil, err)
 	}
@@ -877,7 +877,7 @@ func (sa *Adapter) DeleteContentKeyFromUnits(appID string, orgID string, key str
 	return err
 }
 
-// DeleteContentKeyFromUnits deletes given content key from all content.contentKey field within user_unit collection
+// DeleteContentKeyFromUserUnits deletes given content key from all content.contentKey field within user_unit collection
 func (sa *Adapter) DeleteContentKeyFromUserUnits(appID string, orgID string, key string) error {
 	var keyArr []string
 	keyArr = append(keyArr, key)
