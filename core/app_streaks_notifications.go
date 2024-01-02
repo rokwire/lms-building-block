@@ -147,4 +147,44 @@ func (n streaksNotifications) processNotifications() {
 
 func (n streaksNotifications) setupStreaksTimer() {
 	//TODO: setup hourly streaks timer (streaks must be updated according to user timezone)
+	now := time.Now().UTC()
+	nowSecondsInHour := 60*now.Minute() + now.Second()
+	desiredMoment := 0 //default desired moment of the hour in seconds (beginning of the hour)
+	var durationInSeconds int
+	n.logger.Infof("setupStreaksTimer -> nowSecondsInHour:%d", nowSecondsInHour)
+	if nowSecondsInHour <= desiredMoment {
+		n.logger.Info("setupStreaksTimer -> streaks not yet processed this hour")
+		durationInSeconds = desiredMoment - nowSecondsInHour
+	} else {
+		n.logger.Info("setupStreaksTimer -> streaks have already been processed this hour")
+		durationInSeconds = (utils.SecondsInHour - nowSecondsInHour) + desiredMoment // the time which left this hour + desired moment from next hour
+	}
+	initialDuration := time.Second * time.Duration(durationInSeconds)
+	utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Hour, n.processStreaks, "processStreaks", n.logger)
+}
+
+func (n streaksNotifications) processStreaks() {
+	courseConfigs, err := n.storage.FindCourseConfigs(nil)
+	if err != nil {
+		n.logger.Errorf("processStreaks -> error finding active course configs: %v", err)
+		return
+	}
+	if len(courseConfigs) == 0 {
+		n.logger.Errorf("processStreaks -> no active course configs for streaks")
+		return
+	}
+
+	// for every config in course_configs:
+	// 		retrieve usercourse that passes 12am local time (how?) (also what if china to usa, experiencing same day mightnight twice)
+	//		if date_updated is yesterday in local time(or do we use CompletedTasks?) (update == complete?):
+	//			streaks + 1; pause + 1
+	//			if usercourse's new pause > max_pause:
+	//				set to max_pause
+	//		else (incomplete task):
+	//			pause - 1
+	//			if pause < 0:
+	//				streak = 0; pause = initial pause
+	//		updateUserCourses([usercourses struct]) (why db usercourse doesn't have timezone?)
+	//		reset CompletedTasks?
+	// remember to assign initial pause when creating usercourse struct
 }
