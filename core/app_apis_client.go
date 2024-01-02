@@ -257,6 +257,17 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 	return nil, nil
 }
 
+func (s *clientImpl) UpdateUserCoursesStreaks(claims *tokenauth.Claims, UserCourses []model.UserCourse) error {
+	for _, userCourse := range UserCourses {
+		// do we use userCourse id or userID+coursekey
+		err := s.app.storage.UpdateUserCourseStreaks(claims.AppID, claims.OrgID, userCourse.ID, userCourse)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
 	if claims == nil {
 		return ""

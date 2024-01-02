@@ -178,3 +178,7 @@ func (sa *Adapter) DeleteUserCourse(appID string, orgID string, userID string, c
 	}
 	return nil
 }
+
+func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userCourseID string, userCourse model.UserCourse) error {
+
+}
