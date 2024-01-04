@@ -23,7 +23,7 @@ get:
       explode: false
       schema:
         type: string
-    - name: courseKey
+    - name: key
       in: query
       description: course key
       required: false

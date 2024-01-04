@@ -35,8 +35,8 @@ paths:
     $ref: "./resources/api/user/self.yaml"
   /api/users/courses:
     $ref: "./resources/api/user/courses.yaml"
-  /api/users/courses/{courseKey}:
-    $ref: "./resources/api/user/coursesID.yaml"
+  /api/users/courses/{key}:
+    $ref: "./resources/api/user/coursesKey.yaml"
   /api/users/units/{key}:
     $ref: "./resources/api/user/unitsKey.yaml"
 

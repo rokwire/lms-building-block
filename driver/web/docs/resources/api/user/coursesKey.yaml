@@ -7,7 +7,7 @@ get:
   security:
     - bearerAuth: []
   parameters:
-    - name: courseKey
+    - name: key
       in: path
       description: course key
       required: true
@@ -40,7 +40,7 @@ post:
   security:
     - bearerAuth: []
   parameters:
-    - name: courseKey
+    - name: key
       in: path
       description: course key
       required: true
@@ -74,7 +74,7 @@ delete:
   security:
     - bearerAuth: []
   parameters:
-    - name: courseKey
+    - name: key
       in: path
       description: course key
       required: true

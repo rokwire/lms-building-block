@@ -248,7 +248,7 @@ paths:
           explode: false
           schema:
             type: string
-        - name: courseKey
+        - name: key
           in: query
           description: course key
           required: false
@@ -274,7 +274,7 @@ paths:
       x-core-function: GetUserCourses
       x-data-type: model.UserCourse
       x-authentication-type: User
-  '/api/users/courses/{courseKey}':
+  '/api/users/courses/{key}':
     get:
       tags:
         - Client
@@ -284,7 +284,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: courseKey
+        - name: key
           in: path
           description: course key
           required: true
@@ -317,7 +317,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: courseKey
+        - name: key
           in: path
           description: course key
           required: true
@@ -351,7 +351,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: courseKey
+        - name: key
           in: path
           description: course key
           required: true

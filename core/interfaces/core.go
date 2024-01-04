@@ -32,10 +32,10 @@ type Client interface {
 
 	// model.UserCourse
 
-	GetUserCourses(claims *tokenauth.Claims, id *string, name *string, courseKey *string) ([]model.UserCourse, error)
-	GetUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error)
-	CreateUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error)
-	DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error
+	GetUserCourses(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.UserCourse, error)
+	GetUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
+	CreateUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
+	DeleteUserCourse(claims *tokenauth.Claims, key string) error
 
 	// model.Unit
 
