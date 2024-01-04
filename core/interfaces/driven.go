@@ -92,6 +92,7 @@ type Storage interface {
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 
 	FindCourseConfigs(notificationsActive *bool) ([]model.CourseConfig, error)
+	UpdateUserCourseStreaks(appID string, orgID string, userID *string, courseID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error
 }
 
 // Provider interface for LMS provider

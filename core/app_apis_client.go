@@ -250,22 +250,28 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 }
 
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.Unit) (*model.Unit, error) {
+
 	err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, moduleKey, item)
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
-}
 
-func (s *clientImpl) UpdateUserCoursesStreaks(claims *tokenauth.Claims, UserCourses []model.UserCourse) error {
-	for _, userCourse := range UserCourses {
-		// do we use userCourse id or userID+coursekey
-		err := s.app.storage.UpdateUserCourseStreaks(claims.AppID, claims.OrgID, userCourse.ID, userCourse)
-		if err != nil {
-			return err
-		}
+	// insert completed_task timestamp in user timezone
+	userCourse, err := s.app.storage.GetUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	tz, tzOffsets := userCourse.TimezoneName, userCourse.TimezoneOffset
+	userLoc := time.FixedZone(tz, tzOffsets)
+	now := time.Now()
+	userTime := now.In(userLoc)
+
+	// update userCourse CompletedTasks time
+	err = s.app.storage.UpdateUserCourseStreaks(claims.AppID, claims.OrgID, &claims.Subject, nil, courseKey, nil, nil, &userTime)
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {

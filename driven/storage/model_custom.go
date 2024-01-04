@@ -25,10 +25,13 @@ type userCourse struct {
 	OrgID  string `bson:"org_id"`
 	UserID string `bson:"user_id"`
 
+	TimezoneName   string `bson:"timezone_name"`
+	TimezoneOffset int    `bson:"timezone_offset"` // in seconds east of UTC
+
 	// Notification Requirements fields
-	Streak         int  `bson:"streak"`
-	Pauses         int  `bson:"pauses"`
-	CompletedTasks bool `bson:"completed_tasks"`
+	Streaks        int        `bson:"streaks"`
+	Pauses         int        `bson:"pauses"`
+	CompletedTasks *time.Time `bson:"completed_tasks"`
 
 	Course course `bson:"course"`
 

@@ -179,6 +179,32 @@ func (sa *Adapter) DeleteUserCourse(appID string, orgID string, userID string, c
 	return nil
 }
 
-func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userCourseID string, userCourse model.UserCourse) error {
+func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error {
+	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey}
+	if userID != nil {
+		filter["user_id"] = userID
+	}
 
+	updateVals := bson.M{}
+	if streaks != nil {
+		updateVals["streaks"] = streaks
+	}
+	if pauses != nil {
+		updateVals["pauses"] = pauses
+	}
+	if pauses != nil {
+		updateVals["completed_tasks"] = userTime
+	}
+
+	update := bson.M{
+		"$set": updateVals,
+	}
+	result, err := sa.db.userCourse.UpdateOne(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
+	}
+	if result.MatchedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{}, err)
+	}
+	return nil
 }

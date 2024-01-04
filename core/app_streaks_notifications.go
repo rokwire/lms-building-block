@@ -89,13 +89,13 @@ func (n streaksNotifications) processNotifications() {
 	}
 
 	for _, config := range courseConfigs {
-		for _, notification := range config.NotificationsConfig.Notifications {
+		for _, notification := range config.StreaksNotificationsConfig.Notifications {
 			if notification.Active {
 				tzOffsets := make(model.TZOffsets, 0)
 				var userCourses []model.UserCourse
 
 				offset := notification.ProcessTime - nowSeconds
-				if config.NotificationsConfig.TimezoneName == "user" {
+				if config.StreaksNotificationsConfig.TimezoneName == "user" {
 					if offset >= minTZOffset && offset <= maxTZOffset {
 						tzOffsets = append(tzOffsets, offset)
 					}
@@ -108,13 +108,13 @@ func (n streaksNotifications) processNotifications() {
 					}
 
 					// load user courses for this course based on timezone offsets
-					userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, tzOffsets.GeneratePairs(notification.PreferEarly), notification.Requirements)
+					userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, tzOffsets.GeneratePairs(config.StreaksNotificationsConfig.PreferEarly), notification.Requirements)
 					if err != nil {
 						n.logger.Errorf("processNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
 						continue
 					}
 				} else {
-					configOffset := config.NotificationsConfig.TimezoneOffset
+					configOffset := config.StreaksNotificationsConfig.TimezoneOffset
 					if offset == configOffset || offset+utils.SecondsInDay == configOffset || offset-utils.SecondsInDay == configOffset {
 						// load all user courses for this course
 						userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, nil, notification.Requirements)
@@ -164,6 +164,9 @@ func (n streaksNotifications) setupStreaksTimer() {
 }
 
 func (n streaksNotifications) processStreaks() {
+	now := time.Now().UTC()
+	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+
 	courseConfigs, err := n.storage.FindCourseConfigs(nil)
 	if err != nil {
 		n.logger.Errorf("processStreaks -> error finding active course configs: %v", err)
@@ -174,17 +177,110 @@ func (n streaksNotifications) processStreaks() {
 		return
 	}
 
+	// completedtask
+	// when complete usercourseunitprogress, get utc convert to local using timezone name and offset, store date
+	// when we revist in process streaks, if same date, we ignore. if yesterday then increment
+
 	// for every config in course_configs:
 	// 		retrieve usercourse that passes 12am local time (how?) (also what if china to usa, experiencing same day mightnight twice)
-	//		if date_updated is yesterday in local time(or do we use CompletedTasks?) (update == complete?):
+	//		if CompletedTasks? (refer to comments above):
 	//			streaks + 1; pause + 1
 	//			if usercourse's new pause > max_pause:
 	//				set to max_pause
 	//		else (incomplete task):
 	//			pause - 1
 	//			if pause < 0:
-	//				streak = 0; pause = initial pause
+	//				streak = 0; pause = 0
 	//		updateUserCourses([usercourses struct]) (why db usercourse doesn't have timezone?)
 	//		reset CompletedTasks?
 	// remember to assign initial pause when creating usercourse struct
+
+	for _, config := range courseConfigs {
+		tzOffsets := make(model.TZOffsets, 0)
+		var userCourses []model.UserCourse
+		// 0 for streak processtime
+		offset := 0 - nowSeconds
+		if config.StreaksNotificationsConfig.TimezoneName == "user" {
+			if offset >= minTZOffset && offset <= maxTZOffset {
+				tzOffsets = append(tzOffsets, offset)
+			}
+
+			if offset+utils.SecondsInDay <= maxTZOffset {
+				tzOffsets = append(tzOffsets, offset+utils.SecondsInDay)
+			}
+			if offset-utils.SecondsInDay >= minTZOffset {
+				tzOffsets = append(tzOffsets, offset-utils.SecondsInDay)
+			}
+
+			// load user courses for this course based on timezone offsets
+			userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, tzOffsets.GeneratePairs(config.StreaksNotificationsConfig.PreferEarly), nil)
+			if err != nil {
+				n.logger.Errorf("processStreaks -> error finding user courses for course key %s: %v", config.CourseKey, err)
+				continue
+			}
+		} else {
+			configOffset := config.StreaksNotificationsConfig.TimezoneOffset
+			if offset == configOffset || offset+utils.SecondsInDay == configOffset || offset-utils.SecondsInDay == configOffset {
+				// load all user courses for this course
+				userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, nil, nil)
+				if err != nil {
+					n.logger.Errorf("processStreaks -> error finding user courses for course key %s: %v", config.CourseKey, err)
+					continue
+				}
+			}
+		}
+
+		for _, userCourse := range userCourses {
+			if userCourse.CompletedTasks != nil {
+				uY, uM, uD := userCourse.CompletedTasks.Date()
+				y, m, d := now.Date()
+				pastY, pastM, pastD := now.AddDate(0, 0, -1).Date()
+				// edge case between time zone traveling
+				if uY == y && uM == m && uD == d {
+					continue
+					// yesterday
+				} else if uY == pastY && uM == pastM && uD == pastD {
+					userCourse.Streaks += 1
+					userCourse.Pauses += 1
+					if config.MaxPauses <= userCourse.Pauses {
+						userCourse.Pauses = config.MaxPauses
+					}
+					// date earlier than yesterday, streak is broken
+				} else {
+					userCourse.Pauses -= 1
+					if userCourse.Pauses <= 0 {
+						userCourse.Streaks = 0
+						userCourse.Pauses = 0
+					}
+				}
+				// User started a course and not never made any progress
+			} else {
+				userCourse.Pauses -= 1
+				if userCourse.Pauses <= 0 {
+					userCourse.Streaks = 0
+					userCourse.Pauses = 0
+				}
+			}
+		}
+		err = n.UpdateManyUserCoursesStreaks(config.AppID, config.OrgID, userCourses)
+		if err != nil {
+			n.logger.Errorf("processStreaks -> error updating user courses for course key %s: %v", config.CourseKey, err)
+		}
+	}
+
+}
+
+func (n streaksNotifications) UpdateManyUserCoursesStreaks(appID string, orgID string, UserCourses []model.UserCourse) error {
+	for _, userCourse := range UserCourses {
+		// do we use userCourse id or userID+coursekey
+		err := n.storage.UpdateUserCourseStreaks(appID, orgID, nil, &userCourse.ID, userCourse.Course.Key, &userCourse.Streaks, &userCourse.Pauses, nil)
+		if err != nil {
+			return err
+		}
+		if err != nil {
+			n.logger.Errorf("processStreaks -> error updating user courses for course id %s: %v", userCourse.ID, err)
+			continue
+		}
+	}
+	return nil
 }

@@ -51,9 +51,9 @@ type UserCourse struct {
 	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
 
 	// Notification Requirements fields (reset to the default every day in user's timezone using the hourly streaks timer)
-	Streak         int  `json:"streak"`
-	Pauses         int  `json:"pauses"`
-	CompletedTasks bool `json:"completed_tasks"` // whether the user has completed the currently assigned task(s) in the current unit schedule (default false)
+	Streaks        int        `json:"streaks"`
+	Pauses         int        `json:"pauses"`
+	CompletedTasks *time.Time `json:"completed_tasks"` // whether the user has completed the currently assigned task(s) in the current unit schedule (default false)
 
 	Course Course `json:"course"`
 
@@ -87,15 +87,16 @@ type CourseConfig struct {
 	MaxPauses         int `json:"max_pauses" bson:"max_pauses"`
 	PauseRewardStreak int `json:"pause_reward_streak" bson:"pause_reward_streak"`
 
-	NotificationsConfig NotificationsConfig `json:"notifications_config" bson:"notifications_config"`
+	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config" bson:"streaks_notifications_config"`
 }
 
-// NotificationsConfig entity
-type NotificationsConfig struct {
+// StreaksNotificationsConfig entity
+type StreaksNotificationsConfig struct {
 	TimezoneName   string `json:"timezone_name" bson:"timezone_name"`     // either an IANA timezone database identifier or "user" to for users' most recent known timezone
 	TimezoneOffset int    `json:"timezone_offset" bson:"timezone_offset"` // in seconds east of UTC (only valid if TimezoneName is not "user")
 
-	Active bool `json:"active" bson:"active"` // if the notifications processing is "on" or "off"
+	PreferEarly         bool `json:"prefer_early" bson:"prefer_early"`                 // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
+	NotificationsActive bool `json:"notifications_active" bson:"notifications_active"` // if the notifications processing is "on" or "off"
 	// BlockSize int    `json:"block_size" bson:"block_size"` // TODO: needed?
 	// Mode      string `json:"mode" bson:"mode"`             // "normal" or "test"
 
@@ -108,8 +109,8 @@ type Notification struct {
 	Body    string             `json:"body" bson:"body"`       // e.g., "Remember to complete your daily task."
 	Params  NotificationParams `json:"params" bson:"params"`   // Notification specific settings (include deep link string if needed)
 
-	ProcessTime int  `json:"process_time" bson:"process_time"` // seconds since midnight in selected timezone at which to process notifications
-	PreferEarly bool `json:"prefer_early" bson:"prefer_early"` // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
+	ProcessTime int `json:"process_time" bson:"process_time"` // seconds since midnight in selected timezone at which to process notifications
+	//PreferEarly bool `json:"prefer_early" bson:"prefer_early"` // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
 
 	Active bool `json:"active" bson:"active"`
 
