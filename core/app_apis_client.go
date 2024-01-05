@@ -249,9 +249,8 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 	return err
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.Unit) (*model.Unit, error) {
-
-	err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, moduleKey, item)
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.Unit) (*model.Unit, error) {
+	err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, item)
 	if err != nil {
 		return nil, err
 	}
