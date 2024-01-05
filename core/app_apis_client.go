@@ -250,7 +250,7 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 	return err
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.Unit) (*model.Unit, error) {
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, userUnitID string, item model.Unit) (*model.Unit, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
 
 		err := storageTransaction.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, item)
