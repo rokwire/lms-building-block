@@ -88,7 +88,7 @@ type Storage interface {
 	InsertUserCourse(item model.UserCourse) error
 	InsertUserModule(item model.UserModule) error
 	InsertUserUnit(item model.UserUnit) error
-	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey string, item model.Unit) error
+	UpdateUserUnit(appID string, orgID string, userID string, item model.Unit) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 
 	FindCourseConfigs(notificationsActive *bool) ([]model.CourseConfig, error)
