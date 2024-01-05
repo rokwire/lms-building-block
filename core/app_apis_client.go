@@ -18,6 +18,7 @@
 package core
 
 import (
+	"lms/core/interfaces"
 	"lms/core/model"
 	"lms/utils"
 	"strconv"
@@ -252,13 +253,13 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.Unit) (*model.Unit, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
 
-		err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, item)
+		err := storageTransaction.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, item)
 		if err != nil {
 			return err
 		}
 
 		// insert completed_task timestamp in user timezone
-		userCourse, err := s.app.storage.GetUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
+		userCourse, err := storageTransaction.GetUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
 		if err != nil {
 			return err
 		}
@@ -268,13 +269,13 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		userTime := now.In(userLoc)
 
 		// update userCourse CompletedTasks time
-		err = s.app.storage.UpdateUserCourseStreaks(claims.AppID, claims.OrgID, &claims.Subject, nil, courseKey, nil, nil, &userTime)
+		err = storageTransaction.UpdateUserCourseStreaks(claims.AppID, claims.OrgID, &claims.Subject, nil, courseKey, nil, nil, &userTime)
 		if err != nil {
 			return err
 		}
 		return nil
 	}
-		return nil, 
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
