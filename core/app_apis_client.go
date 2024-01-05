@@ -250,27 +250,31 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 }
 
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.Unit) (*model.Unit, error) {
-	err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, item)
-	if err != nil {
-		return nil, err
-	}
+	transaction := func(storageTransaction interfaces.Storage) error {
 
-	// insert completed_task timestamp in user timezone
-	userCourse, err := s.app.storage.GetUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
-	if err != nil {
-		return nil, err
-	}
-	tz, tzOffsets := userCourse.TimezoneName, userCourse.TimezoneOffset
-	userLoc := time.FixedZone(tz, tzOffsets)
-	now := time.Now()
-	userTime := now.In(userLoc)
+		err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, item)
+		if err != nil {
+			return err
+		}
 
-	// update userCourse CompletedTasks time
-	err = s.app.storage.UpdateUserCourseStreaks(claims.AppID, claims.OrgID, &claims.Subject, nil, courseKey, nil, nil, &userTime)
-	if err != nil {
-		return nil, err
+		// insert completed_task timestamp in user timezone
+		userCourse, err := s.app.storage.GetUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
+		if err != nil {
+			return err
+		}
+		tz, tzOffsets := userCourse.TimezoneName, userCourse.TimezoneOffset
+		userLoc := time.FixedZone(tz, tzOffsets)
+		now := time.Now()
+		userTime := now.In(userLoc)
+
+		// update userCourse CompletedTasks time
+		err = s.app.storage.UpdateUserCourseStreaks(claims.AppID, claims.OrgID, &claims.Subject, nil, courseKey, nil, nil, &userTime)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	return nil, nil
+		return nil, 
 }
 
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
