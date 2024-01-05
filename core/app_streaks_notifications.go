@@ -70,6 +70,7 @@ func (n streaksNotifications) setupNotificationsTimer() {
 	}
 
 	initialDuration := time.Second * time.Duration(durationInSeconds)
+	// change to minute for testing.
 	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processNotifications, "processNotifications", n.logger)
 }
 
@@ -160,7 +161,11 @@ func (n streaksNotifications) setupStreaksTimer() {
 		durationInSeconds = (utils.SecondsInHour - nowSecondsInHour) + desiredMoment // the time which left this hour + desired moment from next hour
 	}
 	initialDuration := time.Second * time.Duration(durationInSeconds)
-	utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Hour, n.processStreaks, "processStreaks", n.logger)
+	//change initialduration to 60 and time.hour to time.minute for testing purpose
+	initialDuration = 60
+	utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Minute, n.processStreaks, "processStreaks", n.logger)
+	//utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Hour, n.processStreaks, "processStreaks", n.logger)
+
 }
 
 func (n streaksNotifications) processStreaks() {
@@ -230,7 +235,7 @@ func (n streaksNotifications) processStreaks() {
 			}
 		}
 
-		for _, userCourse := range userCourses {
+		for i, userCourse := range userCourses {
 			if userCourse.CompletedTasks != nil {
 				uY, uM, uD := userCourse.CompletedTasks.Date()
 				y, m, d := now.Date()
@@ -248,7 +253,7 @@ func (n streaksNotifications) processStreaks() {
 					// date earlier than yesterday, streak is broken
 				} else {
 					userCourse.Pauses -= 1
-					if userCourse.Pauses <= 0 {
+					if userCourse.Pauses < 0 {
 						userCourse.Streaks = 0
 						userCourse.Pauses = 0
 					}
@@ -256,15 +261,18 @@ func (n streaksNotifications) processStreaks() {
 				// User started a course and not never made any progress
 			} else {
 				userCourse.Pauses -= 1
-				if userCourse.Pauses <= 0 {
+				if userCourse.Pauses < 0 {
 					userCourse.Streaks = 0
 					userCourse.Pauses = 0
 				}
 			}
+			userCourses[i] = userCourse
 		}
-		err = n.UpdateManyUserCoursesStreaks(config.AppID, config.OrgID, userCourses)
-		if err != nil {
-			n.logger.Errorf("processStreaks -> error updating user courses for course key %s: %v", config.CourseKey, err)
+		if len(userCourses) != 0 {
+			err = n.UpdateManyUserCoursesStreaks(config.AppID, config.OrgID, userCourses)
+			if err != nil {
+				n.logger.Errorf("processStreaks -> error updating user courses for course key %s: %v", config.CourseKey, err)
+			}
 		}
 	}
 

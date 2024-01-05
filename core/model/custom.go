@@ -114,9 +114,10 @@ type Notification struct {
 
 	Active bool `json:"active" bson:"active"`
 
+	// note: change completed_task from bool to time befoe FindUserCourses. apply less than or equal to yesterday.
 	// list of requirement identifiers and values to determine if a user should be sent this notification
 	// example: {
-	//		completed_tasks: true (key must match the json (model.UserCourse) and bson (storage.userCourse) fields)
+	//		completed_tasks: false (key must match the json (model.UserCourse) and bson (storage.userCourse) fields)
 	// }
 	Requirements map[string]interface{} `json:"requirements" bson:"requirements"`
 }

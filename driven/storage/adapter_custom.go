@@ -702,9 +702,23 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 	if len(timezoneOffsetPairs) > 0 {
 		offsetFilters := make(bson.A, 0)
 		for _, offsetPair := range timezoneOffsetPairs {
-			offsetFilters = append(offsetFilters, bson.M{"$and": bson.A{bson.M{"$gte": offsetPair.Lower}, bson.M{"$lte": offsetPair.Upper}}})
+			offsetFilters = append(offsetFilters,
+				bson.M{
+					"timezone_offset": bson.M{
+						"$gte": offsetPair.Lower,
+						"$lte": offsetPair.Upper,
+					},
+				},
+			)
 		}
-		filter["timezone_offset"] = bson.M{"$or": offsetFilters}
+		filter["$or"] = offsetFilters
+
+		//syntax cannot be used
+		// offsetFilters := make(bson.A, 0)
+		// for _, offsetPair := range timezoneOffsetPairs {
+		// 	offsetFilters = append(offsetFilters, bson.M{"$and": bson.A{bson.M{"$gte": offsetPair.Lower}, bson.M{"$lte": offsetPair.Upper}}})
+		// }
+		// filter["timezone_offset"] = bson.M{"$or": offsetFilters}
 	}
 
 	// notification requirements
@@ -712,13 +726,23 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 		filter[reqKey] = reqVal
 	}
 
-	var userCourses []model.UserCourse
-	err := sa.db.userCourse.Find(sa.context, filter, &userCourses, nil)
+	var dbUserCourses []userCourse
+	err := sa.db.userCourse.Find(sa.context, filter, &dbUserCourses, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
 	}
 
-	return userCourses, nil
+	var convertedResult []model.UserCourse
+	//convert storage format to desired return
+	for _, duUserCourse := range dbUserCourses {
+		singleResult, err := sa.userCourseConversionStorageToAPI(duUserCourse)
+		if err != nil {
+			return nil, err
+		}
+		convertedResult = append(convertedResult, singleResult)
+	}
+
+	return convertedResult, nil
 }
 
 // FindCourseConfigs finds course configs by the given search parameters

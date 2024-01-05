@@ -74,6 +74,11 @@ func (sa *Adapter) userCourseConversionStorageToAPI(item userCourse) (model.User
 	result.AppID = item.AppID
 	result.OrgID = item.OrgID
 	result.UserID = item.UserID
+	result.TimezoneName = item.TimezoneName
+	result.TimezoneOffset = item.TimezoneOffset
+	result.Streaks = item.Streaks
+	result.Pauses = item.Pauses
+	result.CompletedTasks = item.CompletedTasks
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated
 
@@ -179,10 +184,13 @@ func (sa *Adapter) DeleteUserCourse(appID string, orgID string, userID string, c
 	return nil
 }
 
-func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error {
+func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *string, userCourseID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey}
 	if userID != nil {
 		filter["user_id"] = userID
+	}
+	if userCourseID != nil {
+		filter["_id"] = userCourseID
 	}
 
 	updateVals := bson.M{}
@@ -192,7 +200,7 @@ func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *s
 	if pauses != nil {
 		updateVals["pauses"] = pauses
 	}
-	if pauses != nil {
+	if userTime != nil {
 		updateVals["completed_tasks"] = userTime
 	}
 
