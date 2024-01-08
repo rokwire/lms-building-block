@@ -37,7 +37,7 @@ const (
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
 type UserCourse struct {
-	ID     string `json:"_id"`
+	ID     string `json:"id"`
 	AppID  string `json:"app_id"`
 	OrgID  string `json:"org_id"`
 	UserID string `json:"user_id"`
@@ -46,14 +46,14 @@ type UserCourse struct {
 
 	DateCreated time.Time  `json:"date_created"`
 	DateUpdated *time.Time `json:"date_updated"`
-	DateDeleted *time.Time `json:"dete_deleted"`
+	DateDropped *time.Time `json:"dete_dropped"`
 
 	//TODO: add a timestamp for a user dropping a course?
 }
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
 type Course struct {
-	ID    string `json:"_id"`
+	ID    string `json:"id"`
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
@@ -67,7 +67,7 @@ type Course struct {
 
 // Module represents an individual module of a Course (e.g. Conversational Skills)
 type Module struct {
-	ID    string `json:"_id"`
+	ID    string `json:"id"`
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
@@ -82,7 +82,7 @@ type Module struct {
 
 // UserUnit represents a copy of a unit that the user modifies as progress is made
 type UserUnit struct {
-	ID     string `json:"_id"`
+	ID     string `json:"id"`
 	AppID  string `json:"app_id"`
 	OrgID  string `json:"org_id"`
 	UserID string `json:"user_id"`
@@ -91,12 +91,11 @@ type UserUnit struct {
 	Unit        Unit       `json:"unit"`
 	DateCreated time.Time  `json:"date_created"`
 	DateUpdated *time.Time `json:"date_updated"`
-	DateDeleted *time.Time `json:"dete_deleted"`
 }
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
 type Unit struct {
-	ID    string `json:"_id"`
+	ID    string `json:"id"`
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
@@ -120,7 +119,7 @@ type ScheduleItem struct {
 
 // Content represents some Unit content
 type Content struct {
-	ID    string `json:"_id"`
+	ID    string `json:"id"`
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 

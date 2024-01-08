@@ -27,7 +27,7 @@ type userCourse struct {
 	Course      course     `bson:"course"`
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
-	DateDeleted *time.Time `bson:"date_deleted"`
+	DateDropped *time.Time `bson:"date_dropped"`
 }
 
 type course struct {
@@ -67,7 +67,6 @@ type userUnit struct {
 	Unit        unit       `bson:"unit"`
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
-	DateDeleted *time.Time `bson:"date_deleted"`
 }
 
 type unit struct {
