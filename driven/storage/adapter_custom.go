@@ -30,7 +30,7 @@ func (sa *Adapter) GetCustomCourses(appID string, orgID string, id []string, nam
 
 	var result []course
 
-	err := sa.db.customCourse.Find(sa.context, filter, &result, nil)
+	err := sa.db.customCourses.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (sa *Adapter) GetCustomCourses(appID string, orgID string, id []string, nam
 func (sa *Adapter) GetCustomCourse(appID string, orgID string, key string) (*model.Course, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result course
-	err := sa.db.customCourse.FindOne(sa.context, filter, &result, nil)
+	err := sa.db.customCourses.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (sa *Adapter) customCourseConversionStorageToAPI(item course) (model.Course
 		var linked []module
 		subFilter := bson.M{"org_id": item.OrgID, "app_id": item.AppID}
 		subFilter["key"] = bson.M{"$in": item.ModuleKeys}
-		err := sa.db.customModule.Find(sa.context, subFilter, &linked, nil)
+		err := sa.db.customModules.Find(sa.context, subFilter, &linked, nil)
 		if err != nil {
 			return result, err
 		}
@@ -104,7 +104,7 @@ func (sa *Adapter) InsertCustomCourse(item model.Course) error {
 	item.DateUpdated = nil
 	course := sa.customCourseConversionAPIToStorage(item)
 
-	_, err := sa.db.customCourse.InsertOne(sa.context, course)
+	_, err := sa.db.customCourses.InsertOne(sa.context, course)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting courses", nil, err)
 	}
@@ -121,7 +121,7 @@ func (sa *Adapter) InsertCustomCourses(items []model.Course) error {
 		storeItems[i] = course
 	}
 
-	_, err := sa.db.customCourse.InsertMany(sa.context, storeItems, nil)
+	_, err := sa.db.customCourses.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting courses", nil, err)
 	}
@@ -165,7 +165,7 @@ func (sa *Adapter) UpdateCustomCourse(key string, item model.Course) error {
 			"module_keys":  moduleKeys,
 		},
 	}
-	result, err := sa.db.customCourse.UpdateOne(sa.context, filter, update, nil)
+	result, err := sa.db.customCourses.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -191,7 +191,7 @@ func (sa *Adapter) UpdateCourseToAllClients(key string, item model.Course) error
 			"course.module_keys":  moduleKeys,
 		},
 	}
-	_, err := sa.db.userCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -201,7 +201,7 @@ func (sa *Adapter) UpdateCourseToAllClients(key string, item model.Course) error
 // DeleteCustomCourse deletes a course
 func (sa *Adapter) DeleteCustomCourse(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
-	result, err := sa.db.customCourse.DeleteOne(sa.context, filter, nil)
+	result, err := sa.db.customCourses.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -236,7 +236,7 @@ func (sa *Adapter) GetCustomModules(appID string, orgID string, id []string, nam
 
 	var result []module
 
-	err := sa.db.customModule.Find(sa.context, filter, &result, nil)
+	err := sa.db.customModules.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +261,7 @@ func (sa *Adapter) GetCustomModules(appID string, orgID string, id []string, nam
 func (sa *Adapter) GetCustomModule(appID string, orgID string, key string) (*model.Module, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result module
-	err := sa.db.customModule.FindOne(sa.context, filter, &result, nil)
+	err := sa.db.customModules.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func (sa *Adapter) customModuleConversionStorageToAPI(item module) (model.Module
 		var linked []unit
 		subFilter := bson.M{"org_id": item.OrgID, "app_id": item.AppID}
 		subFilter["key"] = bson.M{"$in": item.UnitKeys}
-		err := sa.db.customUnit.Find(sa.context, subFilter, &linked, nil)
+		err := sa.db.customUnits.Find(sa.context, subFilter, &linked, nil)
 		if err != nil {
 			return result, err
 		}
@@ -309,7 +309,7 @@ func (sa *Adapter) InsertCustomModule(item model.Module) error {
 	item.DateCreated = time.Now()
 	item.DateUpdated = nil
 	module := sa.customModuleConversionAPIToStorage(item)
-	_, err := sa.db.customModule.InsertOne(sa.context, module)
+	_, err := sa.db.customModules.InsertOne(sa.context, module)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting module", nil, err)
 	}
@@ -326,7 +326,7 @@ func (sa *Adapter) InsertCustomModules(items []model.Module) error {
 		storeItems[i] = module
 	}
 
-	_, err := sa.db.customModule.InsertMany(sa.context, storeItems, nil)
+	_, err := sa.db.customModules.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting modules", nil, err)
 	}
@@ -370,7 +370,7 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 			"unit_keys":    unitKeys,
 		},
 	}
-	result, err := sa.db.customModule.UpdateOne(sa.context, filter, update, nil)
+	result, err := sa.db.customModules.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -380,33 +380,10 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 	return nil
 }
 
-// UpdateModuleToAllClients updates all user_module that matches given key
-func (sa *Adapter) UpdateModuleToAllClients(key string, item model.Module) error {
-	//parse into the storage format and pass parameters
-	var unitKeys []string
-	for _, val := range item.Units {
-		unitKeys = append(unitKeys, val.Key)
-	}
-
-	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "module.key": key}
-	update := bson.M{
-		"$set": bson.M{
-			"module.date_updated": time.Now(),
-			"module.name":         item.Name,
-			"module.unit_keys":    unitKeys,
-		},
-	}
-	_, err := sa.db.userModule.coll.UpdateMany(sa.context, filter, update, nil)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
-	}
-	return nil
-}
-
 // DeleteCustomModule deletes a module
 func (sa *Adapter) DeleteCustomModule(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
-	result, err := sa.db.customModule.DeleteOne(sa.context, filter, nil)
+	result, err := sa.db.customModules.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -438,7 +415,7 @@ func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name 
 		filter["content_keys"] = bson.M{"$in": contentKeys}
 	}
 	var result []unit
-	err := sa.db.customUnit.Find(sa.context, filter, &result, nil)
+	err := sa.db.customUnits.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +440,7 @@ func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name 
 func (sa *Adapter) GetCustomUnit(appID string, orgID string, key string) (*model.Unit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result unit
-	err := sa.db.customUnit.FindOne(sa.context, filter, &result, nil)
+	err := sa.db.customUnits.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -512,7 +489,7 @@ func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
 	item.DateCreated = time.Now()
 	item.DateUpdated = nil
 	unit := sa.customUnitConversionAPIToStorage(item)
-	_, err := sa.db.customUnit.InsertOne(sa.context, unit)
+	_, err := sa.db.customUnits.InsertOne(sa.context, unit)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting unit", nil, err)
 	}
@@ -529,7 +506,7 @@ func (sa *Adapter) InsertCustomUnits(items []model.Unit) error {
 		storeItems[i] = unit
 	}
 
-	_, err := sa.db.customUnit.InsertMany(sa.context, storeItems, nil)
+	_, err := sa.db.customUnits.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "error inserting units", nil, err)
 	}
@@ -575,7 +552,7 @@ func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 			"date_updated": time.Now(),
 		},
 	}
-	result, err := sa.db.customUnit.UpdateOne(sa.context, filter, update, nil)
+	result, err := sa.db.customUnits.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -602,7 +579,7 @@ func (sa *Adapter) UpdateUnitToAllClients(key string, item model.Unit) error {
 			"unit.date_updated": time.Now(),
 		},
 	}
-	_, err := sa.db.userUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -625,7 +602,7 @@ func (sa *Adapter) UpdateReferenceKeyToClientUnits(oldCourseKey string, newCours
 		},
 	}
 
-	_, err := sa.db.userUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", nil, err)
 	}
@@ -635,7 +612,7 @@ func (sa *Adapter) UpdateReferenceKeyToClientUnits(oldCourseKey string, newCours
 // DeleteCustomUnit deletes a unit
 func (sa *Adapter) DeleteCustomUnit(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
-	result, err := sa.db.customUnit.DeleteOne(sa.context, filter, nil)
+	result, err := sa.db.customUnits.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -851,7 +828,7 @@ func (sa *Adapter) DeleteContentKeyFromLinkedContents(appID string, orgID string
 		// },
 	}
 
-	_, err := sa.db.customContent.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.customContent.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -870,7 +847,7 @@ func (sa *Adapter) DeleteContentKeyFromUnits(appID string, orgID string, key str
 			},
 		},
 	}
-	_, err := sa.db.customUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.customUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -890,7 +867,7 @@ func (sa *Adapter) DeleteContentKeyFromUserUnits(appID string, orgID string, key
 		},
 	}
 
-	_, err := sa.db.userUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -906,7 +883,7 @@ func (sa *Adapter) MarkUserUnitAsDelete(appID string, orgID string, key string) 
 		},
 	}
 
-	_, err := sa.db.userUnit.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -926,43 +903,7 @@ func (sa *Adapter) DeleteUnitKeyFromModules(appID string, orgID string, key stri
 		},
 	}
 
-	_, err := sa.db.customModule.coll.UpdateMany(sa.context, filter, update, nil)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
-	}
-	return nil
-}
-
-// DeleteUnitKeyFromUserModules deletes given unit key from all unit.unitKey field within user_module collection
-func (sa *Adapter) DeleteUnitKeyFromUserModules(appID string, orgID string, key string) error {
-	var keyArr []string
-	keyArr = append(keyArr, key)
-	filter := bson.M{"org_id": orgID, "app_id": appID}
-	update := bson.M{
-		"$pull": bson.M{
-			"module.unit_keys": bson.M{
-				"$in": keyArr,
-			},
-		},
-	}
-
-	_, err := sa.db.userModule.coll.UpdateMany(sa.context, filter, update, nil)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
-	}
-	return nil
-}
-
-// MarkUserModuleAsDelete mark given module as deleted in user_module collection
-func (sa *Adapter) MarkUserModuleAsDelete(appID string, orgID string, key string) error {
-	filter := bson.M{"org_id": orgID, "app_id": appID, "module.key": key}
-	update := bson.M{
-		"$set": bson.M{
-			"date_deleted": time.Now(),
-		},
-	}
-
-	_, err := sa.db.userModule.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.customModules.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -982,7 +923,7 @@ func (sa *Adapter) DeleteModuleKeyFromCourses(appID string, orgID string, key st
 		},
 	}
 
-	_, err := sa.db.customCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.customCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -1002,7 +943,7 @@ func (sa *Adapter) DeleteModuleKeyFromUserCourses(appID string, orgID string, ke
 		},
 	}
 
-	_, err := sa.db.userCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}
@@ -1018,7 +959,7 @@ func (sa *Adapter) MarkUserCourseAsDelete(appID string, orgID string, key string
 		},
 	}
 
-	_, err := sa.db.userCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
 	}

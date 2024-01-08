@@ -43,18 +43,6 @@ type course struct {
 	DateUpdated *time.Time `bson:"date_updated"`
 }
 
-type userModule struct {
-	ID     string `bson:"_id"`
-	AppID  string `bson:"app_id"`
-	OrgID  string `bson:"org_id"`
-	UserID string `bson:"user_id"`
-	//CourseKey   string     `bson:"course_key"`
-	Module      module     `bson:"module"`
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
-	DateDeleted *time.Time `bson:"date_deleted"`
-}
-
 type module struct {
 	ID    string `bson:"_id"`
 	AppID string `bson:"app_id"`

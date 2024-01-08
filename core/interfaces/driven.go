@@ -90,7 +90,6 @@ type Storage interface {
 	GetUserCourses(id []string, name []string, key []string, userID string) ([]model.UserCourse, error)
 	GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
 	InsertUserCourse(item model.UserCourse) error
-	InsertUserModule(item model.UserModule) error
 	InsertUserUnit(item model.UserUnit) error
 	UpdateUserUnit(appID string, orgID string, userID string, item model.Unit) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
@@ -100,14 +99,11 @@ type Storage interface {
 	DeleteContentKeyFromUserUnits(appID string, orgID string, key string) error
 	MarkUserUnitAsDelete(appID string, orgID string, key string) error
 	DeleteUnitKeyFromModules(appID string, orgID string, key string) error
-	DeleteUnitKeyFromUserModules(appID string, orgID string, key string) error
-	MarkUserModuleAsDelete(appID string, orgID string, key string) error
 	DeleteModuleKeyFromCourses(appID string, orgID string, key string) error
 	DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error
 	MarkUserCourseAsDelete(appID string, orgID string, key string) error
 
 	UpdateCourseToAllClients(key string, item model.Course) error
-	UpdateModuleToAllClients(key string, item model.Module) error
 	UpdateUnitToAllClients(key string, item model.Unit) error
 	UpdateReferenceKeyToClientUnits(oldCourseKey string, newCourseKey string) error
 }

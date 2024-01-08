@@ -23,8 +23,6 @@ import (
 const (
 	//TypeUserCourse user course type
 	TypeUserCourse logutils.MessageDataType = "user course"
-	//TypeUserModule user module type
-	TypeUserModule logutils.MessageDataType = "user module"
 	//TypeUserUnit user unit type
 	TypeUserUnit logutils.MessageDataType = "user unit"
 	//TypeCourse course type
@@ -65,19 +63,6 @@ type Course struct {
 
 	DateCreated time.Time
 	DateUpdated *time.Time
-}
-
-// UserModule represents a copy of a module that the user modifies as progress is made
-type UserModule struct {
-	ID     string `json:"_id"`
-	AppID  string `json:"app_id"`
-	OrgID  string `json:"org_id"`
-	UserID string `json:"user_id"`
-	//CourseKey   string     `json:"course_key"`
-	Module      Module     `json:"module"`
-	DateCreated time.Time  `json:"date_created"`
-	DateUpdated *time.Time `json:"date_updated"`
-	DateDeleted *time.Time `json:"dete_deleted"`
 }
 
 // Module represents an individual module of a Course (e.g. Conversational Skills)

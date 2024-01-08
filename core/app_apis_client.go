@@ -184,35 +184,11 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 		for _, singleUnit := range singleModule.Units {
 			s.CreateUserUnit(claims, courseKey, singleModule.Key, singleUnit.Key)
 		}
-		s.CreateUserModule(claims, courseKey, singleModule.Key)
 	}
 
 	return &item, nil
 	//}
 	//return s.app.storage.PerformTransaction(transaction)
-}
-
-// pass course key to create a new user course
-func (s *clientImpl) CreateUserModule(claims *tokenauth.Claims, courseKey string, moduleKey string) (*model.UserModule, error) {
-	var item model.UserModule
-	item.ID = uuid.NewString()
-	item.AppID = claims.AppID
-	item.OrgID = claims.OrgID
-	item.UserID = claims.Subject
-	item.DateCreated = time.Now()
-
-	//retrieve moudle with moduleKey
-	module, err := s.app.storage.GetCustomModule(claims.AppID, claims.OrgID, moduleKey)
-	if err != nil {
-		return nil, err
-	}
-	item.Module = *module
-	err = s.app.storage.InsertUserModule(item)
-	if err != nil {
-		return nil, err
-	}
-
-	return &item, nil
 }
 
 // pass unit key to create a new user unit

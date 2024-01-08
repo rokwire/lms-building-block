@@ -45,13 +45,12 @@ type database struct {
 	sentNudges      *collectionWrapper
 	nudgesProcesses *collectionWrapper
 	nudgesBlocks    *collectionWrapper
-	customCourse    *collectionWrapper
-	customModule    *collectionWrapper
-	customUnit      *collectionWrapper
+	customCourses   *collectionWrapper
+	customModules   *collectionWrapper
+	customUnits     *collectionWrapper
 	customContent   *collectionWrapper
-	userCourse      *collectionWrapper
-	userModule      *collectionWrapper
-	userUnit        *collectionWrapper
+	userCourses     *collectionWrapper
+	userUnits       *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -114,20 +113,20 @@ func (m *database) start() error {
 		return err
 	}
 
-	customCourse := &collectionWrapper{database: m, coll: db.Collection("custom_course")}
-	err = m.applyCustomCourseChecks(customCourse)
+	customCourses := &collectionWrapper{database: m, coll: db.Collection("custom_courses")}
+	err = m.applyCustomCoursesChecks(customCourses)
 	if err != nil {
 		return err
 	}
 
-	customModule := &collectionWrapper{database: m, coll: db.Collection("custom_module")}
-	err = m.applyCustomModuleChecks(customModule)
+	customModules := &collectionWrapper{database: m, coll: db.Collection("custom_modules")}
+	err = m.applyCustomModulesChecks(customModules)
 	if err != nil {
 		return err
 	}
 
-	customUnit := &collectionWrapper{database: m, coll: db.Collection("custom_unit")}
-	err = m.applyCustomUnitChecks(customUnit)
+	customUnits := &collectionWrapper{database: m, coll: db.Collection("custom_units")}
+	err = m.applyCustomUnitsChecks(customUnits)
 	if err != nil {
 		return err
 	}
@@ -138,23 +137,18 @@ func (m *database) start() error {
 		return err
 	}
 
-	userCourse := &collectionWrapper{database: m, coll: db.Collection("user_course")}
-	err = m.applyUserCourseChecks(userCourse)
+	userCourses := &collectionWrapper{database: m, coll: db.Collection("user_courses")}
+	err = m.applyUserCoursesChecks(userCourses)
 	if err != nil {
 		return err
 	}
 
-	userModule := &collectionWrapper{database: m, coll: db.Collection("user_module")}
-	err = m.applyUserModuleChecks(userModule)
+	userUnits := &collectionWrapper{database: m, coll: db.Collection("user_units")}
+	err = m.applyUserUnitsChecks(userUnits)
 	if err != nil {
 		return err
 	}
 
-	userUnit := &collectionWrapper{database: m, coll: db.Collection("user_unit")}
-	err = m.applyUserUnitChecks(userUnit)
-	if err != nil {
-		return err
-	}
 	//asign the db, db client and the collections
 	m.db = db
 	m.dbClient = client
@@ -165,13 +159,12 @@ func (m *database) start() error {
 	m.sentNudges = sentNudges
 	m.nudgesProcesses = nudgesProcesses
 	m.nudgesBlocks = nudgesBlocks
-	m.customCourse = customCourse
-	m.customModule = customModule
-	m.customUnit = customUnit
+	m.customCourses = customCourses
+	m.customModules = customModules
+	m.customUnits = customUnits
 	m.customContent = customContent
-	m.userCourse = userCourse
-	m.userModule = userModule
-	m.userUnit = userUnit
+	m.userCourses = userCourses
+	m.userUnits = userUnits
 
 	go m.configs.Watch(nil, m.logger)
 
@@ -275,9 +268,9 @@ func (m *database) applyNudgesBlocksChecks(nudgesProcesses *collectionWrapper) e
 }
 
 // Custom Course
-func (m *database) applyCustomCourseChecks(customCourse *collectionWrapper) error {
+func (m *database) applyCustomCoursesChecks(customCourses *collectionWrapper) error {
 	m.logger.Info("apply custom course check.....")
-	err := customCourse.AddIndex(
+	err := customCourses.AddIndex(
 		bson.D{
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},
@@ -291,9 +284,9 @@ func (m *database) applyCustomCourseChecks(customCourse *collectionWrapper) erro
 }
 
 // Custom Module
-func (m *database) applyCustomModuleChecks(customModule *collectionWrapper) error {
+func (m *database) applyCustomModulesChecks(customModules *collectionWrapper) error {
 	m.logger.Info("apply custom module check.....")
-	err := customModule.AddIndex(
+	err := customModules.AddIndex(
 		bson.D{
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},
@@ -307,9 +300,9 @@ func (m *database) applyCustomModuleChecks(customModule *collectionWrapper) erro
 }
 
 // Custom Unit
-func (m *database) applyCustomUnitChecks(customUnit *collectionWrapper) error {
+func (m *database) applyCustomUnitsChecks(customUnits *collectionWrapper) error {
 	m.logger.Info("apply custom unit check.....")
-	err := customUnit.AddIndex(
+	err := customUnits.AddIndex(
 		bson.D{
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},
@@ -339,9 +332,9 @@ func (m *database) applyCustomContentChecks(customContent *collectionWrapper) er
 }
 
 // User Course
-func (m *database) applyUserCourseChecks(userCourse *collectionWrapper) error {
+func (m *database) applyUserCoursesChecks(userCourses *collectionWrapper) error {
 	m.logger.Info("apply user course check.....")
-	err := userCourse.AddIndex(
+	err := userCourses.AddIndex(
 		bson.D{
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},
@@ -355,26 +348,10 @@ func (m *database) applyUserCourseChecks(userCourse *collectionWrapper) error {
 	return nil
 }
 
-// User Course
-func (m *database) applyUserModuleChecks(userModule *collectionWrapper) error {
-	m.logger.Info("apply user module check.....")
-	err := userModule.AddIndex(
-		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "user_id", Value: 1},
-		}, false)
-	if err != nil {
-		return err
-	}
-	m.logger.Info("user module check passed")
-	return nil
-}
-
-// User Course
-func (m *database) applyUserUnitChecks(userUnit *collectionWrapper) error {
+// User Unit
+func (m *database) applyUserUnitsChecks(userUnits *collectionWrapper) error {
 	m.logger.Info("apply user unit check.....")
-	err := userUnit.AddIndex(
+	err := userUnits.AddIndex(
 		bson.D{
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},

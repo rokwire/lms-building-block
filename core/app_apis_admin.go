@@ -454,10 +454,6 @@ func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, key string, ite
 			return err
 		}
 
-		err = storageTransaction.UpdateModuleToAllClients(key, item)
-		if err != nil {
-			return err
-		}
 		return nil
 	}
 
@@ -479,11 +475,6 @@ func (s *adminImpl) DeleteCustomModule(claims *tokenauth.Claims, key string) err
 		}
 
 		err = storageTransaction.DeleteModuleKeyFromUserCourses(appID, orgID, key)
-		if err != nil {
-			return err
-		}
-
-		err = storageTransaction.MarkUserModuleAsDelete(appID, orgID, key)
 		if err != nil {
 			return err
 		}
@@ -617,11 +608,6 @@ func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, key string) error
 			return nil
 		}
 		err = storageTransaction.DeleteUnitKeyFromModules(claims.AppID, claims.OrgID, key)
-		if err != nil {
-			return err
-		}
-
-		err = storageTransaction.DeleteUnitKeyFromUserModules(claims.AppID, claims.OrgID, key)
 		if err != nil {
 			return err
 		}

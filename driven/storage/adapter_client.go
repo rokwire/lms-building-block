@@ -31,7 +31,7 @@ func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, user
 	filter["date_deleted"] = nil
 
 	var result []userCourse
-	err := sa.db.userCourse.Find(sa.context, filter, &result, nil)
+	err := sa.db.userCourses.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (sa *Adapter) GetUserCourse(appID string, orgID string, userID string, cour
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
 	filter["date_deleted"] = nil
 	var result userCourse
-	err := sa.db.userCourse.FindOne(sa.context, filter, &result, nil)
+	err := sa.db.userCourses.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -100,25 +100,7 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 	userCourse.DateUpdated = nil
 	userCourse.Course = sa.customCourseConversionAPIToStorage(item.Course)
 
-	_, err := sa.db.userCourse.InsertOne(sa.context, userCourse)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
-	}
-	return nil
-}
-
-// InsertUserModule inserts a user module
-func (sa *Adapter) InsertUserModule(item model.UserModule) error {
-	var userModule userModule
-	userModule.ID = item.ID
-	userModule.AppID = item.AppID
-	userModule.OrgID = item.OrgID
-	userModule.UserID = item.UserID
-	userModule.DateCreated = time.Now()
-	userModule.DateUpdated = nil
-	userModule.Module = sa.customModuleConversionAPIToStorage(item.Module)
-
-	_, err := sa.db.userModule.InsertOne(sa.context, userModule)
+	_, err := sa.db.userCourses.InsertOne(sa.context, userCourse)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
 	}
@@ -136,7 +118,7 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 	userUnit.DateUpdated = nil
 	userUnit.Unit = sa.customUnitConversionAPIToStorage(item.Unit)
 
-	_, err := sa.db.userUnit.InsertOne(sa.context, userUnit)
+	_, err := sa.db.userUnits.InsertOne(sa.context, userUnit)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
 	}
@@ -152,7 +134,7 @@ func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, ite
 			"date_updated":  time.Now(),
 		},
 	}
-	result, err := sa.db.userUnit.UpdateOne(sa.context, filter, update, nil)
+	result, err := sa.db.userUnits.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
 	}
@@ -165,7 +147,7 @@ func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, ite
 // DeleteUserCourse deletes a user course
 func (sa *Adapter) DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
-	result, err := sa.db.userCourse.DeleteOne(sa.context, filter, nil)
+	result, err := sa.db.userCourses.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"courseKey": courseKey}, err)
 	}
