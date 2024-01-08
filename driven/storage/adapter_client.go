@@ -28,8 +28,6 @@ func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, user
 		filter["user_id"] = userID
 	}
 
-	filter["date_deleted"] = nil
-
 	var result []userCourse
 	err := sa.db.userCourses.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -55,7 +53,6 @@ func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, user
 // GetUserCourse finds a user course by id
 func (sa *Adapter) GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
-	filter["date_deleted"] = nil
 	var result userCourse
 	err := sa.db.userCourses.FindOne(sa.context, filter, &result, nil)
 	if err != nil {

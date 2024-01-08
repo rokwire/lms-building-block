@@ -874,22 +874,6 @@ func (sa *Adapter) DeleteContentKeyFromUserUnits(appID string, orgID string, key
 	return nil
 }
 
-// MarkUserUnitAsDelete mark given unit as deleted in user_unit collection
-func (sa *Adapter) MarkUserUnitAsDelete(appID string, orgID string, key string) error {
-	filter := bson.M{"org_id": orgID, "app_id": appID, "unit.key": key}
-	update := bson.M{
-		"$set": bson.M{
-			"date_deleted": time.Now(),
-		},
-	}
-
-	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
-	}
-	return nil
-}
-
 // DeleteUnitKeyFromModules deletes a unit key from unitKey field within customModule collection
 func (sa *Adapter) DeleteUnitKeyFromModules(appID string, orgID string, key string) error {
 	var keyArr []string
@@ -955,7 +939,7 @@ func (sa *Adapter) MarkUserCourseAsDelete(appID string, orgID string, key string
 	filter := bson.M{"org_id": orgID, "app_id": appID, "course.key": key}
 	update := bson.M{
 		"$set": bson.M{
-			"date_deleted": time.Now(),
+			"date_dropped": time.Now(),
 		},
 	}
 

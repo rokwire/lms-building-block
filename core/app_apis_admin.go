@@ -612,10 +612,6 @@ func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, key string) error
 			return err
 		}
 
-		err = storageTransaction.MarkUserUnitAsDelete(claims.AppID, claims.OrgID, key)
-		if err != nil {
-			return err
-		}
 		return err
 	}
 	return s.app.storage.PerformTransaction(transaction)

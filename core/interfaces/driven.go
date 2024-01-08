@@ -97,7 +97,6 @@ type Storage interface {
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error
 	DeleteContentKeyFromUserUnits(appID string, orgID string, key string) error
-	MarkUserUnitAsDelete(appID string, orgID string, key string) error
 	DeleteUnitKeyFromModules(appID string, orgID string, key string) error
 	DeleteModuleKeyFromCourses(appID string, orgID string, key string) error
 	DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error
