@@ -195,6 +195,18 @@ type AdminReqCreateNudge struct {
 	UsersSources *[]UsersSource         `json:"users_sources,omitempty"`
 }
 
+// AdminReqUpdateCourse defines model for _admin_req_update_course.
+type AdminReqUpdateCourse struct {
+	ModuleKeys []string `json:"module_keys"`
+	Name       string   `json:"name"`
+}
+
+// AdminReqUpdateModule defines model for _admin_req_update_module.
+type AdminReqUpdateModule struct {
+	Name     string   `json:"name"`
+	UnitKeys []string `json:"unit_keys"`
+}
+
 // AdminReqUpdateNudge defines model for _admin_req_update_nudge.
 type AdminReqUpdateNudge struct {
 	Active       bool                   `json:"active"`
@@ -203,6 +215,13 @@ type AdminReqUpdateNudge struct {
 	Name         string                 `json:"name"`
 	Params       map[string]interface{} `json:"params"`
 	UsersSources *[]UsersSource         `json:"users_sources,omitempty"`
+}
+
+// AdminReqUpdateUnit defines model for _admin_req_update_unit.
+type AdminReqUpdateUnit struct {
+	ContentKeys []string       `json:"content_keys"`
+	Name        string         `json:"name"`
+	Schedule    []ScheduleItem `json:"schedule"`
 }
 
 // GetAdminContentParams defines parameters for GetAdminContent.
@@ -332,13 +351,13 @@ type PutAdminContentKeyJSONRequestBody = Content
 type PostAdminCoursesJSONRequestBody = CustomCourse
 
 // PutAdminCoursesKeyJSONRequestBody defines body for PutAdminCoursesKey for application/json ContentType.
-type PutAdminCoursesKeyJSONRequestBody = CustomCourse
+type PutAdminCoursesKeyJSONRequestBody = AdminReqUpdateCourse
 
 // PostAdminModulesJSONRequestBody defines body for PostAdminModules for application/json ContentType.
 type PostAdminModulesJSONRequestBody = Module
 
 // PutAdminModulesKeyJSONRequestBody defines body for PutAdminModulesKey for application/json ContentType.
-type PutAdminModulesKeyJSONRequestBody = Module
+type PutAdminModulesKeyJSONRequestBody = AdminReqUpdateModule
 
 // PostAdminNudgesJSONRequestBody defines body for PostAdminNudges for application/json ContentType.
 type PostAdminNudgesJSONRequestBody = AdminReqCreateNudge
@@ -353,7 +372,7 @@ type PutAdminNudgesIdJSONRequestBody = AdminReqUpdateNudge
 type PostAdminUnitsJSONRequestBody = Unit
 
 // PutAdminUnitsKeyJSONRequestBody defines body for PutAdminUnitsKey for application/json ContentType.
-type PutAdminUnitsKeyJSONRequestBody = Unit
+type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
 // PutApiUsersUnitsKeyJSONRequestBody defines body for PutApiUsersUnitsKey for application/json ContentType.
 type PutApiUsersUnitsKeyJSONRequestBody = Unit

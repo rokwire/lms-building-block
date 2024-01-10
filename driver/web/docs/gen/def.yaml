@@ -960,7 +960,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomCourse'
+              $ref: '#/components/schemas/_admin_req_update_course'
         required: true
       responses:
         '200':
@@ -979,6 +979,7 @@ paths:
       x-core-function: UpdateCustomCourse
       x-data-type: model.Course
       x-authentication-type: Permissions
+      x-conversion-function: customCourseUpdateFromDef
     delete:
       tags:
         - Admin
@@ -1160,7 +1161,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Module'
+              $ref: '#/components/schemas/_admin_req_update_module'
         required: true
       responses:
         '200':
@@ -1179,6 +1180,7 @@ paths:
       x-core-function: UpdateCustomModule
       x-data-type: model.Module
       x-authentication-type: Permissions
+      x-conversion-function: customModuleUpdateFromDef
     delete:
       tags:
         - Admin
@@ -1360,7 +1362,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Unit'
+              $ref: '#/components/schemas/_admin_req_update_unit'
         required: true
       responses:
         '200':
@@ -1379,6 +1381,7 @@ paths:
       x-core-function: UpdateCustomUnit
       x-data-type: model.Unit
       x-authentication-type: Permissions
+      x-conversion-function: customUnitUpdateFromDef
     delete:
       tags:
         - Admin
@@ -1994,3 +1997,44 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UsersSource'
+    _admin_req_update_course:
+      required:
+        - name
+        - module_keys
+      type: object
+      properties:
+        name:
+          type: string
+        module_keys:
+          type: array
+          items:
+            type: string
+    _admin_req_update_module:
+      required:
+        - name
+        - unit_keys
+      type: object
+      properties:
+        name:
+          type: string
+        unit_keys:
+          type: array
+          items:
+            type: string
+    _admin_req_update_unit:
+      required:
+        - name
+        - content_keys
+        - schedule
+      type: object
+      properties:
+        name:
+          type: string
+        content_keys:
+          type: array
+          items:
+            type: string
+        schedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleItem'

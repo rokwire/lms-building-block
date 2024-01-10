@@ -20,14 +20,13 @@ package core
 import (
 	"lms/core/interfaces"
 	"lms/core/model"
-	"sort"
+	"lms/utils"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
-	"golang.org/x/exp/slices"
 )
 
 type adminImpl struct {
@@ -280,7 +279,7 @@ func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, key string, ite
 		}
 
 		// checks if new associated array keys all present in database
-		if !EqualKeyArrays(curKeys, newKeys) {
+		if !utils.Equal(curKeys, newKeys, false) {
 			returnedStructs, err := storageTransaction.GetCustomModules(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
 			if err != nil {
 				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
@@ -439,7 +438,7 @@ func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, key string, ite
 		}
 
 		// checks if new associated array keys all present in database
-		if !EqualKeyArrays(curKeys, newKeys) {
+		if !utils.Equal(curKeys, newKeys, false) {
 			returnedStructs, err := storageTransaction.GetCustomUnits(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
 			if err != nil {
 				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
@@ -576,7 +575,7 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 		}
 
 		// checks if new associated array keys all present in database
-		if !EqualKeyArrays(curKeys, newKeys) {
+		if !utils.Equal(curKeys, newKeys, false) {
 			returnedStructs, err := storageTransaction.GetCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
 			if err != nil {
 				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
@@ -680,7 +679,7 @@ func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, key string, it
 		}
 
 		// checks if new associated array keys all present in database
-		if !EqualKeyArrays(curKeys, newKeys) {
+		if !utils.Equal(curKeys, newKeys, false) {
 			returnedStructs, err := storageTransaction.GetCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
 			if err != nil {
 				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
@@ -725,21 +724,6 @@ func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, key string) er
 	return s.app.storage.PerformTransaction(transaction)
 }
 
-// EqualKeyArrays sorts and tells if key arrays are identical
-func EqualKeyArrays(a, b []string) bool {
-	sort.Strings(a)
-	sort.Strings(b)
-	if len(a) != len(b) {
-		return false
-	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 // return those inside the array that are not present in database determined by key
 func (s *adminImpl) CoursesNotInDB(appID string, orgID string, courses []model.Course) ([]model.Course, error) {
 	var keys, returnedKeys []string
@@ -756,7 +740,7 @@ func (s *adminImpl) CoursesNotInDB(appID string, orgID string, courses []model.C
 	}
 
 	for _, dataStruct := range courses {
-		if !slices.Contains(returnedKeys, dataStruct.Key) {
+		if !utils.Exist(returnedKeys, dataStruct.Key) {
 			resultStructs = append(resultStructs, dataStruct)
 		}
 	}
@@ -780,7 +764,7 @@ func (s *adminImpl) ModulesNotInDB(appID string, orgID string, modules []model.M
 	}
 
 	for _, dataStruct := range modules {
-		if !slices.Contains(returnedKeys, dataStruct.Key) {
+		if !utils.Exist(returnedKeys, dataStruct.Key) {
 			resultStructs = append(resultStructs, dataStruct)
 		}
 	}
@@ -804,7 +788,7 @@ func (s *adminImpl) UnitsNotInDB(appID string, orgID string, units []model.Unit)
 	}
 
 	for _, dataStruct := range units {
-		if !slices.Contains(returnedKeys, dataStruct.Key) {
+		if !utils.Exist(returnedKeys, dataStruct.Key) {
 			resultStructs = append(resultStructs, dataStruct)
 		}
 	}
@@ -828,7 +812,7 @@ func (s *adminImpl) ContentsNotInDB(appID string, orgID string, contents []model
 	}
 
 	for _, dataStruct := range contents {
-		if !slices.Contains(returnedKeys, dataStruct.Key) {
+		if !utils.Exist(returnedKeys, dataStruct.Key) {
 			resultStructs = append(resultStructs, dataStruct)
 		}
 	}

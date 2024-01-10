@@ -1,0 +1,11 @@
+required:
+  - name
+  - module_keys
+type: object
+properties:
+  name:
+    type: string
+  module_keys:
+    type: array
+    items:
+      type: string
