@@ -294,7 +294,7 @@ func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, key string, ite
 			return err
 		}
 
-		err = storageTransaction.UpdateCourseToAllClients(key, item)
+		err = storageTransaction.UpdateUserCourses(key, item)
 		if err != nil {
 			return err
 		}
@@ -590,7 +590,7 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 			return err
 		}
 
-		err = storageTransaction.UpdateUnitToAllClients(key, item)
+		err = storageTransaction.UpdateUserUnits(key, item)
 		if err != nil {
 			return errors.WrapErrorData(logutils.MessageDataStatus(logutils.ActionInsert), "", &logutils.FieldArgs{"error updating client db": key}, err)
 		}

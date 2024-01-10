@@ -175,8 +175,8 @@ func (sa *Adapter) UpdateCustomCourse(key string, item model.Course) error {
 	return nil
 }
 
-// UpdateCourseToAllClients updates all user_course that matches given courseKey
-func (sa *Adapter) UpdateCourseToAllClients(key string, item model.Course) error {
+// UpdateUserCourses updates all user_course that matches given courseKey
+func (sa *Adapter) UpdateUserCourses(key string, item model.Course) error {
 	//parse into the storage format and pass parameters
 	var moduleKeys []string
 	for _, val := range item.Modules {
@@ -562,8 +562,8 @@ func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 	return nil
 }
 
-// UpdateUnitToAllClients updates all user_unit that matches given key
-func (sa *Adapter) UpdateUnitToAllClients(key string, item model.Unit) error {
+// UpdateUserUnits updates all user_unit that matches given key
+func (sa *Adapter) UpdateUserUnits(key string, item model.Unit) error {
 	//parse into the storage format and pass parameters
 	var contentKeys []string
 	for _, val := range item.Contents {
