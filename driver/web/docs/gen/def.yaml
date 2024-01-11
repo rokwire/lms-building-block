@@ -248,7 +248,7 @@ paths:
           explode: false
           schema:
             type: string
-        - name: courseKey
+        - name: key
           in: query
           description: course key
           required: false
@@ -274,7 +274,7 @@ paths:
       x-core-function: GetUserCourses
       x-data-type: model.UserCourse
       x-authentication-type: User
-  '/api/users/courses/{courseKey}':
+  '/api/users/courses/{key}':
     get:
       tags:
         - Client
@@ -284,7 +284,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: courseKey
+        - name: key
           in: path
           description: course key
           required: true
@@ -317,7 +317,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: courseKey
+        - name: key
           in: path
           description: course key
           required: true
@@ -351,7 +351,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: courseKey
+        - name: key
           in: path
           description: course key
           required: true
@@ -376,7 +376,7 @@ paths:
       x-core-function: DeleteUserCourse
       x-data-type: model.UserCourse
       x-authentication-type: User
-  '/api/users/courses/{courseKey}/units/{id}':
+  '/api/users/courses/{key}/units/{id}':
     put:
       tags:
         - Client
@@ -386,7 +386,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: courseKey
+        - name: key
           in: path
           description: course key of this unit
           required: true
@@ -866,9 +866,9 @@ paths:
           explode: false
           schema:
             type: string
-        - name: module_id
+        - name: module_key
           in: query
-          description: comma separated list of module IDs
+          description: comma separated list of module keys
           required: false
           style: form
           explode: false
@@ -979,7 +979,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomCourse'
+              $ref: '#/components/schemas/_admin_req_update_course'
         required: true
       responses:
         '200':
@@ -998,6 +998,7 @@ paths:
       x-core-function: UpdateCustomCourse
       x-data-type: model.Course
       x-authentication-type: Permissions
+      x-conversion-function: customCourseUpdateFromDef
     delete:
       tags:
         - Admin
@@ -1066,7 +1067,7 @@ paths:
           explode: false
           schema:
             type: string
-        - name: unit_id
+        - name: unit_key
           in: query
           description: comma separated list of unit IDs
           required: false
@@ -1179,7 +1180,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Module'
+              $ref: '#/components/schemas/_admin_req_update_module'
         required: true
       responses:
         '200':
@@ -1198,6 +1199,7 @@ paths:
       x-core-function: UpdateCustomModule
       x-data-type: model.Module
       x-authentication-type: Permissions
+      x-conversion-function: customModuleUpdateFromDef
     delete:
       tags:
         - Admin
@@ -1266,9 +1268,9 @@ paths:
           explode: false
           schema:
             type: string
-        - name: content_id
+        - name: content_key
           in: query
-          description: comma separated list of content IDs
+          description: comma separated list of content keys
           required: false
           style: form
           explode: false
@@ -1379,7 +1381,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Unit'
+              $ref: '#/components/schemas/_admin_req_update_unit'
         required: true
       responses:
         '200':
@@ -1398,6 +1400,7 @@ paths:
       x-core-function: UpdateCustomUnit
       x-data-type: model.Unit
       x-authentication-type: Permissions
+      x-conversion-function: customUnitUpdateFromDef
     delete:
       tags:
         - Admin
@@ -2013,3 +2016,44 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UsersSource'
+    _admin_req_update_course:
+      required:
+        - name
+        - module_keys
+      type: object
+      properties:
+        name:
+          type: string
+        module_keys:
+          type: array
+          items:
+            type: string
+    _admin_req_update_module:
+      required:
+        - name
+        - unit_keys
+      type: object
+      properties:
+        name:
+          type: string
+        unit_keys:
+          type: array
+          items:
+            type: string
+    _admin_req_update_unit:
+      required:
+        - name
+        - content_keys
+        - schedule
+      type: object
+      properties:
+        name:
+          type: string
+        content_keys:
+          type: array
+          items:
+            type: string
+        schedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleItem'

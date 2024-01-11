@@ -9,44 +9,89 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// GetUserCourses finds user course by a set of parameters
-func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, userID string) ([]model.UserCourse, error) {
-	filter := bson.M{}
+// FindUserCourses finds user courses by the given search parameters
+func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair, requirements map[string]interface{}) ([]model.UserCourse, error) {
+	filter := bson.M{"app_id": appID, "org_id": orgID}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
 	}
-
 	if len(name) != 0 {
 		filter["course.name"] = bson.M{"$in": name}
 	}
-
 	if len(key) != 0 {
 		filter["course.key"] = bson.M{"$in": key}
 	}
-
-	if len(userID) != 0 {
+	if userID != nil {
 		filter["user_id"] = userID
 	}
 
-	var result []userCourse
-	err := sa.db.userCourse.Find(sa.context, filter, &result, nil)
-	if err != nil {
-		return nil, err
+	// timezone offsets
+	if len(timezoneOffsetPairs) > 0 {
+		offsetFilters := make(bson.A, 0)
+		for _, offsetPair := range timezoneOffsetPairs {
+			offsetFilters = append(offsetFilters,
+				bson.M{
+					"timezone_offset": bson.M{
+						"$gte": offsetPair.Lower,
+						"$lte": offsetPair.Upper,
+					},
+				},
+			)
+		}
+		filter["$or"] = offsetFilters
 	}
-	if len(result) == 0 {
-		//no data
-		return nil, nil
+
+	// notification requirements
+	for reqKey, reqVal := range requirements {
+		if reqKey == "completed_tasks" {
+			now := time.Now()
+			y, m, d := now.Date()
+			todayStart := time.Date(y, m, d, 0, 0, 0, now.Nanosecond(), time.UTC)
+			if reqVal == true {
+				filter["completed_tasks"] = bson.M{
+					"$gte": todayStart,
+				}
+			} else if reqVal == false {
+				noneCompletedFilter := make(bson.A, 0)
+				noneCompletedFilter = append(noneCompletedFilter,
+					bson.M{
+						"completed_tasks": bson.M{
+							"$lt": todayStart,
+						},
+					},
+				)
+				noneCompletedFilter = append(noneCompletedFilter,
+					bson.M{
+						"completed_tasks": bson.M{
+							"$eq": nil,
+						},
+					},
+				)
+				filter["$or"] = noneCompletedFilter
+			} else {
+				// only accept boolean and nil
+				return nil, errors.ErrorData(logutils.StatusInvalid, "notification requirement", &logutils.FieldArgs{"completed_tasks": reqVal})
+			}
+		} else {
+			filter[reqKey] = reqVal
+		}
+	}
+
+	var dbUserCourses []userCourse
+	err := sa.db.userCourses.Find(sa.context, filter, &dbUserCourses, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
 	}
 
 	var convertedResult []model.UserCourse
-	for _, retrievedResult := range result {
-		singleConverted, err := sa.userCourseConversionStorageToAPI(retrievedResult)
+	//convert storage format to desired return
+	for _, duUserCourse := range dbUserCourses {
+		singleResult, err := sa.userCourseConversionStorageToAPI(duUserCourse)
 		if err != nil {
 			return nil, err
 		}
-		convertedResult = append(convertedResult, singleConverted)
+		convertedResult = append(convertedResult, singleResult)
 	}
-
 	return convertedResult, nil
 }
 
@@ -54,7 +99,7 @@ func (sa *Adapter) GetUserCourses(id []string, name []string, key []string, user
 func (sa *Adapter) GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
 	var result userCourse
-	err := sa.db.userCourse.FindOne(sa.context, filter, &result, nil)
+	err := sa.db.userCourses.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -102,26 +147,7 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 	userCourse.DateUpdated = nil
 	userCourse.Course = sa.customCourseConversionAPIToStorage(item.Course)
 
-	_, err := sa.db.userCourse.InsertOne(sa.context, userCourse)
-	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
-	}
-	return nil
-}
-
-// InsertUserModule inserts a user module
-func (sa *Adapter) InsertUserModule(item model.UserModule) error {
-	var userModule userModule
-	userModule.ID = item.ID
-	userModule.AppID = item.AppID
-	userModule.OrgID = item.OrgID
-	userModule.UserID = item.UserID
-	userModule.CourseKey = item.CourseKey
-	userModule.DateCreated = time.Now()
-	userModule.DateUpdated = nil
-	userModule.Module = sa.customModuleConversionAPIToStorage(item.Module)
-
-	_, err := sa.db.userModule.InsertOne(sa.context, userModule)
+	_, err := sa.db.userCourses.InsertOne(sa.context, userCourse)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
 	}
@@ -135,13 +161,11 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 	userUnit.AppID = item.AppID
 	userUnit.OrgID = item.OrgID
 	userUnit.UserID = item.UserID
-	userUnit.CourseKey = item.CourseKey
-	userUnit.ModuleKey = item.ModuleKey
 	userUnit.DateCreated = time.Now()
 	userUnit.DateUpdated = nil
 	userUnit.Unit = sa.customUnitConversionAPIToStorage(item.Unit)
 
-	_, err := sa.db.userUnit.InsertOne(sa.context, userUnit)
+	_, err := sa.db.userUnits.InsertOne(sa.context, userUnit)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
 	}
@@ -157,7 +181,7 @@ func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, use
 			"date_updated":  time.Now(),
 		},
 	}
-	result, err := sa.db.userUnit.UpdateOne(sa.context, filter, update, nil)
+	result, err := sa.db.userUnits.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
 	}
@@ -170,7 +194,7 @@ func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, use
 // DeleteUserCourse deletes a user course
 func (sa *Adapter) DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
-	result, err := sa.db.userCourse.DeleteOne(sa.context, filter, nil)
+	result, err := sa.db.userCourses.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"courseKey": courseKey}, err)
 	}
@@ -208,7 +232,7 @@ func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *s
 	update := bson.M{
 		"$set": updateVals,
 	}
-	result, err := sa.db.userCourse.UpdateOne(sa.context, filter, update, nil)
+	result, err := sa.db.userCourses.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
 	}
@@ -228,7 +252,7 @@ func (sa *Adapter) UpdateUserTimezone(appID string, orgID string, userID string,
 			"timezone_offset": timezoneOffset,
 		},
 	}
-	result, err := sa.db.userCourse.coll.UpdateMany(sa.context, filter, update, nil)
+	result, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
 	}

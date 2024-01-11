@@ -53,7 +53,7 @@ put:
     content:
       application/json:
         schema:
-         $ref: "../../../schemas/custom/Course.yaml"
+         $ref: "../../../schemas/apis/admin/custom/update-course.yaml"
     required: true
   responses:
     200:
@@ -72,6 +72,7 @@ put:
   x-core-function: UpdateCustomCourse
   x-data-type: model.Course
   x-authentication-type: Permissions
+  x-conversion-function: customCourseUpdateFromDef
 delete:
   tags:
   - Admin

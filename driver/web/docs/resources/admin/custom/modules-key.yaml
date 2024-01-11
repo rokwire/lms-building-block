@@ -53,7 +53,7 @@ put:
     content:
       application/json:
         schema:
-         $ref: "../../../schemas/custom/Module.yaml"
+         $ref: "../../../schemas/apis/admin/custom/update-module.yaml"
     required: true
   responses:
     200:
@@ -72,6 +72,7 @@ put:
   x-core-function: UpdateCustomModule
   x-data-type: model.Module
   x-authentication-type: Permissions
+  x-conversion-function: customModuleUpdateFromDef
 delete:
   tags:
   - Admin

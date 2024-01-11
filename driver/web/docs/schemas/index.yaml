@@ -38,12 +38,18 @@ UserCourse:
 UserReference:
   $ref: "./custom/UserReference.yaml"
 
- ###nudges api
+### nudges api
 _admin_req_create_nudge:
   $ref: "./apis/admin/create-nudge/request/Request.yaml"
 _admin_req_update_nudge:
   $ref: "./apis/admin/update-nudge/request/Request.yaml"
 
- ### api
+### custom courses api
+_admin_req_update_course:
+  $ref: "./apis/admin/custom/update-course.yaml"
+_admin_req_update_module:
+  $ref: "./apis/admin/custom/update-module.yaml"
+_admin_req_update_unit:
+  $ref: "./apis/admin/custom/update-unit.yaml"
 
 ## end ADMIN section

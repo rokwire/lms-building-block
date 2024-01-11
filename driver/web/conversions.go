@@ -77,3 +77,39 @@ func nudgeFromDefAdminReqUpdate(claims *tokenauth.Claims, item *Def.AdminReqUpda
 	nudge := model.Nudge{Name: item.Name, Body: item.Body, DeepLink: item.DeepLink, Params: item.Params, Active: item.Active, UsersSources: usersSources}
 	return &nudge, nil
 }
+
+func customCourseUpdateFromDef(claims *tokenauth.Claims, item *Def.AdminReqUpdateCourse) (*model.Course, error) {
+	if item == nil {
+		return nil, nil
+	}
+
+	modules := make([]model.Module, len(item.ModuleKeys))
+	for i, key := range item.ModuleKeys {
+		modules[i] = model.Module{Key: key}
+	}
+	return &model.Course{AppID: claims.AppID, OrgID: claims.OrgID, Name: item.Name, Modules: modules}, nil
+}
+
+func customModuleUpdateFromDef(claims *tokenauth.Claims, item *Def.AdminReqUpdateModule) (*model.Module, error) {
+	if item == nil {
+		return nil, nil
+	}
+
+	units := make([]model.Unit, len(item.UnitKeys))
+	for i, key := range item.UnitKeys {
+		units[i] = model.Unit{Key: key}
+	}
+	return &model.Module{AppID: claims.AppID, OrgID: claims.OrgID, Name: item.Name, Units: units}, nil
+}
+
+func customUnitUpdateFromDef(claims *tokenauth.Claims, item *Def.AdminReqUpdateUnit) (*model.Unit, error) {
+	if item == nil {
+		return nil, nil
+	}
+
+	contents := make([]model.Content, len(item.ContentKeys))
+	for i, key := range item.ContentKeys {
+		contents[i] = model.Content{Key: key}
+	}
+	return &model.Unit{AppID: claims.AppID, OrgID: claims.OrgID, Name: item.Name, Contents: contents}, nil
+}

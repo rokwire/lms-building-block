@@ -177,7 +177,12 @@ func GetLogValue(value string) string {
 }
 
 // Equal compares two slices
-func Equal(a, b []string) bool {
+func Equal(a, b []string, strict bool) bool {
+	if !strict {
+		sort.Strings(a)
+		sort.Strings(b)
+	}
+
 	if len(a) != len(b) {
 		return false
 	}
@@ -202,7 +207,7 @@ func EqualPointers(a, b *[]string) bool {
 	}
 
 	//both are not nil
-	return Equal(*a, *b)
+	return Equal(*a, *b, true)
 }
 
 // GetInt gives the value which this pointer points. Gives 0 if the pointer is nil

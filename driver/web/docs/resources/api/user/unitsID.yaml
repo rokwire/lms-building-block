@@ -7,7 +7,7 @@ put:
   security:
     - bearerAuth: []
   parameters:
-    - name: courseKey
+    - name: key
       in: path
       description: course key of this unit
       required: true

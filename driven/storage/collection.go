@@ -181,6 +181,21 @@ func (collWrapper *collectionWrapper) UpdateOne(ctx context.Context, filter inte
 	return updateResult, nil
 }
 
+func (collWrapper *collectionWrapper) UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts *options.UpdateOptions) (*mongo.UpdateResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
+	defer cancel()
+
+	updateResult, err := collWrapper.coll.UpdateMany(ctx, filter, update, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateResult, nil
+}
+
 func (collWrapper *collectionWrapper) CountDocuments(ctx context.Context, filter interface{}) (int64, error) {
 	if ctx == nil {
 		ctx = context.Background()

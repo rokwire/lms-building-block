@@ -32,14 +32,14 @@ type Client interface {
 
 	// model.UserCourse
 
-	GetUserCourses(claims *tokenauth.Claims, id *string, name *string, courseKey *string) ([]model.UserCourse, error)
-	GetUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error)
-	CreateUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error)
-	DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error
+	GetUserCourses(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.UserCourse, error)
+	GetUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
+	CreateUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
+	DeleteUserCourse(claims *tokenauth.Claims, key string) error
 
 	// model.UnitWithTimezone
 
-	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, id string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error)
+	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, key string, id string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error)
 }
 
 // Admin exposes administrative APIs to the driver adapters
@@ -68,7 +68,7 @@ type Admin interface {
 
 	// model.Course
 
-	GetCustomCourses(claims *tokenauth.Claims, id *string, name *string, key *string, moduleID *string) ([]model.Course, error)
+	GetCustomCourses(claims *tokenauth.Claims, id *string, name *string, key *string, moduleKey *string) ([]model.Course, error)
 	CreateCustomCourse(claims *tokenauth.Claims, item model.Course) (*model.Course, error)
 	GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error)
 	UpdateCustomCourse(claims *tokenauth.Claims, key string, item model.Course) (*model.Course, error)
@@ -76,7 +76,7 @@ type Admin interface {
 
 	// model.Module
 
-	GetCustomModules(claims *tokenauth.Claims, id *string, name *string, key *string, unitID *string) ([]model.Module, error)
+	GetCustomModules(claims *tokenauth.Claims, id *string, name *string, key *string, unitKey *string) ([]model.Module, error)
 	CreateCustomModule(claims *tokenauth.Claims, item model.Module) (*model.Module, error)
 	GetCustomModule(claims *tokenauth.Claims, key string) (*model.Module, error)
 	UpdateCustomModule(claims *tokenauth.Claims, key string, item model.Module) (*model.Module, error)
@@ -84,7 +84,7 @@ type Admin interface {
 
 	// model.Unit
 
-	GetCustomUnits(claims *tokenauth.Claims, id *string, name *string, key *string, contentID *string) ([]model.Unit, error)
+	GetCustomUnits(claims *tokenauth.Claims, id *string, name *string, key *string, contentKey *string) ([]model.Unit, error)
 	CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) (*model.Unit, error)
 	GetCustomUnit(claims *tokenauth.Claims, key string) (*model.Unit, error)
 	UpdateCustomUnit(claims *tokenauth.Claims, key string, item model.Unit) (*model.Unit, error)
