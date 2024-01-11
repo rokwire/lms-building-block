@@ -37,9 +37,9 @@ type Client interface {
 	CreateUserCourse(claims *tokenauth.Claims, courseKey string) (*model.UserCourse, error)
 	DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error
 
-	// model.Unit
+	// model.UnitWithTimezone
 
-	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.Unit) (*model.Unit, error)
+	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, id string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error)
 }
 
 // Admin exposes administrative APIs to the driver adapters

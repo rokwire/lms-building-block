@@ -695,8 +695,18 @@ func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) e
 // FindUserCourses finds user courses by the given search parameters
 func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair, requirements map[string]interface{}) ([]model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID}
-
-	//TODO: populate the missing fields in the filter
+	if len(id) != 0 {
+		filter["_id"] = bson.M{"$in": id}
+	}
+	if len(name) != 0 {
+		filter["course.name"] = bson.M{"$in": name}
+	}
+	if len(key) != 0 {
+		filter["course.key"] = bson.M{"$in": key}
+	}
+	if userID != nil {
+		filter["user_id"] = userID
+	}
 
 	// timezone offsets
 	if len(timezoneOffsetPairs) > 0 {
@@ -712,18 +722,42 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 			)
 		}
 		filter["$or"] = offsetFilters
-
-		//syntax cannot be used
-		// offsetFilters := make(bson.A, 0)
-		// for _, offsetPair := range timezoneOffsetPairs {
-		// 	offsetFilters = append(offsetFilters, bson.M{"$and": bson.A{bson.M{"$gte": offsetPair.Lower}, bson.M{"$lte": offsetPair.Upper}}})
-		// }
-		// filter["timezone_offset"] = bson.M{"$or": offsetFilters}
 	}
 
 	// notification requirements
 	for reqKey, reqVal := range requirements {
-		filter[reqKey] = reqVal
+		if reqKey == "completed_tasks" {
+			now := time.Now()
+			y, m, d := now.Date()
+			todayStart := time.Date(y, m, d, 0, 0, 0, now.Nanosecond(), time.UTC)
+			if reqVal == true {
+				filter["completed_tasks"] = bson.M{
+					"$gte": todayStart,
+				}
+			} else if reqVal == false {
+				noneCompletedFilter := make(bson.A, 0)
+				noneCompletedFilter = append(noneCompletedFilter,
+					bson.M{
+						"completed_tasks": bson.M{
+							"$lt": todayStart,
+						},
+					},
+				)
+				noneCompletedFilter = append(noneCompletedFilter,
+					bson.M{
+						"completed_tasks": bson.M{
+							"$eq": nil,
+						},
+					},
+				)
+				filter["$or"] = noneCompletedFilter
+			} else {
+				// only accept boolean and nil
+				return nil, errors.ErrorData(logutils.StatusInvalid, "notification requirement", &logutils.FieldArgs{"completed_tasks": reqVal})
+			}
+		} else {
+			filter[reqKey] = reqVal
+		}
 	}
 
 	var dbUserCourses []userCourse
@@ -741,7 +775,6 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 		}
 		convertedResult = append(convertedResult, singleResult)
 	}
-
 	return convertedResult, nil
 }
 
@@ -750,7 +783,7 @@ func (sa *Adapter) FindCourseConfigs(notificationsActive *bool) ([]model.CourseC
 	filter := bson.M{}
 
 	if notificationsActive != nil {
-		filter["active"] = *notificationsActive
+		filter["streaks_notifications_config.notifications_active"] = *notificationsActive
 	}
 
 	var configs []model.CourseConfig
@@ -758,6 +791,5 @@ func (sa *Adapter) FindCourseConfigs(notificationsActive *bool) ([]model.CourseC
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
 	}
-
 	return configs, nil
 }

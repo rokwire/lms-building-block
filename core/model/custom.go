@@ -36,6 +36,8 @@ const (
 	TypeModule logutils.MessageDataType = "module"
 	//TypeUnit unit type
 	TypeUnit logutils.MessageDataType = "unit"
+	//TypeUnitWithTimezone unit with timezone type
+	TypeUnitWithTimezone logutils.MessageDataType = "unit With timezone"
 	//TypeContent content type
 	TypeContent logutils.MessageDataType = "content"
 )
@@ -202,6 +204,12 @@ type Unit struct {
 
 	DateCreated time.Time
 	DateUpdated *time.Time
+}
+
+type UnitWithTimezone struct {
+	Unit           Unit   `json:"unit"`
+	TimezoneName   string `json:"timezone_name"`
+	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
 }
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time

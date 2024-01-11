@@ -149,8 +149,8 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 }
 
 // UpdateUserUnit updates shcedules in a user unit
-func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, item model.Unit) error {
-	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "unit._id": item.ID}
+func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, userUnitID string, item model.Unit) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "_id": userUnitID}
 	update := bson.M{
 		"$set": bson.M{
 			"unit.schedule": item.Schedule,
@@ -208,6 +208,25 @@ func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *s
 		"$set": updateVals,
 	}
 	result, err := sa.db.userCourse.UpdateOne(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
+	}
+	if result.MatchedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{}, err)
+	}
+	return nil
+}
+
+func (sa *Adapter) UpdateUserTimezone(appID string, orgID string, userID string, timezoneName string, timezoneOffset int) error {
+	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID}
+
+	update := bson.M{
+		"$set": bson.M{
+			"timezone_name":   timezoneName,
+			"timezone_offset": timezoneOffset,
+		},
+	}
+	result, err := sa.db.userCourse.coll.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
 	}

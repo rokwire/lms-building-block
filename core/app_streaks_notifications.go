@@ -71,7 +71,9 @@ func (n streaksNotifications) setupNotificationsTimer() {
 
 	initialDuration := time.Second * time.Duration(durationInSeconds)
 	// change to minute for testing.
-	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processNotifications, "processNotifications", n.logger)
+	initialDuration = 60
+	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Minute, n.processNotifications, "processNotifications", n.logger)
+	//utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processNotifications, "processNotifications", n.logger)
 }
 
 func (n streaksNotifications) processNotifications() {
@@ -137,6 +139,7 @@ func (n streaksNotifications) processNotifications() {
 
 				err = n.notificationsBB.SendNotifications(recipients, notification.Subject, notification.Body, notification.Params)
 				if err != nil {
+					// why would usercourse be modified here?
 					n.logger.Errorf("processNotifications -> error sending notification %s for course key %s: %v", notification.Subject, config.CourseKey, err)
 					continue
 				}
@@ -162,9 +165,9 @@ func (n streaksNotifications) setupStreaksTimer() {
 	}
 	initialDuration := time.Second * time.Duration(durationInSeconds)
 	//change initialduration to 60 and time.hour to time.minute for testing purpose
-	initialDuration = 60
-	utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Minute, n.processStreaks, "processStreaks", n.logger)
-	//utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Hour, n.processStreaks, "processStreaks", n.logger)
+	//initialDuration = 60
+	//utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Minute, n.processStreaks, "processStreaks", n.logger)
+	utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Hour, n.processStreaks, "processStreaks", n.logger)
 
 }
 
@@ -246,8 +249,10 @@ func (n streaksNotifications) processStreaks() {
 					// yesterday
 				} else if uY == pastY && uM == pastM && uD == pastD {
 					userCourse.Streaks += 1
-					userCourse.Pauses += 1
-					if config.MaxPauses <= userCourse.Pauses {
+					if userCourse.Streaks%config.PauseRewardStreak == 0 {
+						userCourse.Pauses += 1
+					}
+					if config.MaxPauses < userCourse.Pauses {
 						userCourse.Pauses = config.MaxPauses
 					}
 					// date earlier than yesterday, streak is broken

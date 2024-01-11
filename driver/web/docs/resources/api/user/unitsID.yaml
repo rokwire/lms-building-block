@@ -1,15 +1,23 @@
 put:
   tags:
   - Client
-  summary: Update custom user course
+  summary: Update custom user unit
   description: |
-    Update custom user course
+    Update custom user unit
   security:
     - bearerAuth: []
   parameters:
-    - name: key
+    - name: courseKey
       in: path
-      description: Unit Key
+      description: course key of this unit
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+    - name: id
+      in: path
+      description: user unit id
       required: true
       style: simple
       explode: false
@@ -20,7 +28,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: "../../../schemas/custom/Unit.yaml"
+          $ref: "../../../schemas/custom/UnitWithTimezone.yaml"
     required: true
   responses:
     200:
@@ -36,5 +44,5 @@ put:
     500:
       description: Internal error
   x-core-function: UpdateUserCourseUnitProgress
-  x-data-type: model.Unit
+  x-data-type: model.UnitWithTimezone
   x-authentication-type: User

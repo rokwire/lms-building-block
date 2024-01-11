@@ -376,19 +376,27 @@ paths:
       x-core-function: DeleteUserCourse
       x-data-type: model.UserCourse
       x-authentication-type: User
-  '/api/users/units/{key}':
+  '/api/users/courses/{courseKey}/units/{id}':
     put:
       tags:
         - Client
-      summary: Update custom user course
+      summary: Update custom user unit
       description: |
-        Update custom user course
+        Update custom user unit
       security:
         - bearerAuth: []
       parameters:
-        - name: key
+        - name: courseKey
           in: path
-          description: Unit Key
+          description: course key of this unit
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: user unit id
           required: true
           style: simple
           explode: false
@@ -399,7 +407,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Unit'
+              required:
+                - unit
+                - timezone_name
+                - timezone_offset
+              type: object
+              properties:
+                unit:
+                  $ref: '#/components/schemas/Unit'
+                timezone_name:
+                  type: string
+                timezone_offset:
+                  type: integer
         required: true
       responses:
         '200':
@@ -415,7 +434,7 @@ paths:
         '500':
           description: Internal error
       x-core-function: UpdateUserCourseUnitProgress
-      x-data-type: model.Unit
+      x-data-type: model.UnitWithTimezone
       x-authentication-type: User
   /admin/nudges-config:
     get:

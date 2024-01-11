@@ -88,11 +88,12 @@ type Storage interface {
 	InsertUserCourse(item model.UserCourse) error
 	InsertUserModule(item model.UserModule) error
 	InsertUserUnit(item model.UserUnit) error
-	UpdateUserUnit(appID string, orgID string, userID string, item model.Unit) error
+	UpdateUserUnit(appID string, orgID string, userID string, userUnitID string, item model.Unit) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 
 	FindCourseConfigs(notificationsActive *bool) ([]model.CourseConfig, error)
 	UpdateUserCourseStreaks(appID string, orgID string, userID *string, courseID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error
+	UpdateUserTimezone(appID string, orgID string, userID string, timezoneName string, timezoneOffset int) error
 }
 
 // Provider interface for LMS provider
