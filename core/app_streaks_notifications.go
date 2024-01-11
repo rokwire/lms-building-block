@@ -248,16 +248,16 @@ func (n streaksNotifications) processStreaks() {
 					continue
 					// yesterday
 				} else if uY == pastY && uM == pastM && uD == pastD {
-					userCourse.Streaks += 1
+					userCourse.Streaks++
 					if userCourse.Streaks%config.PauseRewardStreak == 0 {
-						userCourse.Pauses += 1
+						userCourse.Pauses++
 					}
 					if config.MaxPauses < userCourse.Pauses {
 						userCourse.Pauses = config.MaxPauses
 					}
 					// date earlier than yesterday, streak is broken
 				} else {
-					userCourse.Pauses -= 1
+					userCourse.Pauses--
 					if userCourse.Pauses < 0 {
 						userCourse.Streaks = 0
 						userCourse.Pauses = 0
@@ -265,7 +265,7 @@ func (n streaksNotifications) processStreaks() {
 				}
 				// User started a course and not never made any progress
 			} else {
-				userCourse.Pauses -= 1
+				userCourse.Pauses--
 				if userCourse.Pauses < 0 {
 					userCourse.Streaks = 0
 					userCourse.Pauses = 0

@@ -206,6 +206,7 @@ type Unit struct {
 	DateUpdated *time.Time
 }
 
+// UnitWithTimezone wraps unit with time information
 type UnitWithTimezone struct {
 	Unit           Unit   `json:"unit"`
 	TimezoneName   string `json:"timezone_name"`

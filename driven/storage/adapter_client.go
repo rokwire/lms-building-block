@@ -184,6 +184,7 @@ func (sa *Adapter) DeleteUserCourse(appID string, orgID string, userID string, c
 	return nil
 }
 
+// UpdateUserCourseStreaks updates streaks, pauses, and completed_tasks fieled
 func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *string, userCourseID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey}
 	if userID != nil {
@@ -217,6 +218,7 @@ func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *s
 	return nil
 }
 
+// UpdateUserTimezone updates a user's timezone information in all its related userCourse storage struct
 func (sa *Adapter) UpdateUserTimezone(appID string, orgID string, userID string, timezoneName string, timezoneOffset int) error {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID}
 
