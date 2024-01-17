@@ -282,10 +282,10 @@ func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, key string, ite
 		if !utils.Equal(curKeys, newKeys, false) {
 			returnedStructs, err := storageTransaction.GetCustomModules(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
 			if err != nil {
-				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
+				return errors.WrapErrorAction(logutils.ActionFind, model.TypeModule, nil, err)
 			}
 			if len(newKeys) != len(returnedStructs) {
-				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"not all keys present in database": newKeys}, err)
+				return errors.WrapErrorData(logutils.StatusMissing, model.TypeModule, nil, err)
 			}
 		}
 
@@ -441,10 +441,10 @@ func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, key string, ite
 		if !utils.Equal(curKeys, newKeys, false) {
 			returnedStructs, err := storageTransaction.GetCustomUnits(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
 			if err != nil {
-				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
+				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
 			}
 			if len(newKeys) != len(returnedStructs) {
-				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"not all keys present in database": newKeys}, err)
+				return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, nil, err)
 			}
 		}
 
@@ -578,10 +578,10 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 		if !utils.Equal(curKeys, newKeys, false) {
 			returnedStructs, err := storageTransaction.GetCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
 			if err != nil {
-				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
+				return errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, nil, err)
 			}
 			if len(newKeys) != len(returnedStructs) {
-				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"not all keys present in database": newKeys}, err)
+				return errors.WrapErrorData(logutils.StatusMissing, model.TypeContent, nil, err)
 			}
 		}
 
@@ -592,7 +592,7 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 
 		err = storageTransaction.UpdateUserUnits(key, item)
 		if err != nil {
-			return errors.WrapErrorData(logutils.MessageDataStatus(logutils.ActionInsert), "", &logutils.FieldArgs{"error updating client db": key}, err)
+			return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 		}
 
 		return nil
@@ -682,10 +682,10 @@ func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, key string, it
 		if !utils.Equal(curKeys, newKeys, false) {
 			returnedStructs, err := storageTransaction.GetCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
 			if err != nil {
-				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"error validating new array keys": newKeys}, err)
+				return errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, nil, err)
 			}
 			if len(newKeys) != len(returnedStructs) {
-				return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"not all keys present in database": newKeys}, err)
+				return errors.WrapErrorData(logutils.StatusMissing, model.TypeContent, nil, err)
 			}
 		}
 
@@ -733,7 +733,7 @@ func (s *adminImpl) CoursesNotInDB(appID string, orgID string, courses []model.C
 	}
 	returnedStructs, err := s.app.storage.GetCustomCourses(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
-		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database courses": keys}, err)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
 	}
 	for _, val := range returnedStructs {
 		returnedKeys = append(returnedKeys, val.Key)
@@ -756,7 +756,7 @@ func (s *adminImpl) ModulesNotInDB(appID string, orgID string, modules []model.M
 	}
 	returnedStructs, err := s.app.storage.GetCustomModules(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
-		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database modules": keys}, err)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeModule, nil, err)
 	}
 
 	for _, val := range returnedStructs {
@@ -780,7 +780,7 @@ func (s *adminImpl) UnitsNotInDB(appID string, orgID string, units []model.Unit)
 	}
 	returnedStructs, err := s.app.storage.GetCustomUnits(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
-		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database units": keys}, err)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
 	}
 
 	for _, val := range returnedStructs {
@@ -804,7 +804,7 @@ func (s *adminImpl) ContentsNotInDB(appID string, orgID string, contents []model
 	}
 	returnedStructs, err := s.app.storage.GetCustomContents(appID, orgID, nil, nil, keys)
 	if err != nil {
-		return nil, errors.WrapErrorData(logutils.StatusInvalid, "", &logutils.FieldArgs{"error fetching database contents": keys}, err)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, nil, err)
 	}
 
 	for _, val := range returnedStructs {

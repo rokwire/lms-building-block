@@ -32,7 +32,8 @@ func (sa *Adapter) GetCustomCourses(appID string, orgID string, id []string, nam
 
 	err := sa.db.customCourses.Find(sa.context, filter, &result, nil)
 	if err != nil {
-		return nil, err
+		errArgs := logutils.FieldArgs(filter)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, &errArgs, err)
 	}
 	if len(result) == 0 {
 		//no data
@@ -167,10 +168,10 @@ func (sa *Adapter) UpdateCustomCourse(key string, item model.Course) error {
 	}
 	result, err := sa.db.customCourses.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeCourse, &logutils.FieldArgs{"org_id": item.OrgID, "app_id": item.AppID, "key": key}, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeCourse, &logutils.FieldArgs{"org_id": item.OrgID, "app_id": item.AppID, "key": key}, err)
 	}
 	return nil
 }
@@ -193,7 +194,8 @@ func (sa *Adapter) UpdateUserCourses(key string, item model.Course) error {
 	}
 	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
 	}
 	return nil
 }
@@ -201,16 +203,17 @@ func (sa *Adapter) UpdateUserCourses(key string, item model.Course) error {
 // DeleteCustomCourse deletes a course
 func (sa *Adapter) DeleteCustomCourse(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
+	errArgs := logutils.FieldArgs(filter)
 	result, err := sa.db.customCourses.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeCourse, &errArgs, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "delete course result", &errArgs, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeCourse, &errArgs, err)
 	}
 	return nil
 }
@@ -238,7 +241,8 @@ func (sa *Adapter) GetCustomModules(appID string, orgID string, id []string, nam
 
 	err := sa.db.customModules.Find(sa.context, filter, &result, nil)
 	if err != nil {
-		return nil, err
+		errArgs := logutils.FieldArgs(filter)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeModule, &errArgs, err)
 	}
 	if len(result) == 0 {
 		//no data
@@ -363,6 +367,7 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 	}
 
 	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
+	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
 			"date_updated": time.Now(),
@@ -372,10 +377,10 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 	}
 	result, err := sa.db.customModules.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeModule, &errArgs, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeModule, &errArgs, err)
 	}
 	return nil
 }
@@ -383,16 +388,17 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 // DeleteCustomModule deletes a module
 func (sa *Adapter) DeleteCustomModule(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
+	errArgs := logutils.FieldArgs(filter)
 	result, err := sa.db.customModules.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeModule, &errArgs, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "delete module result", &errArgs, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeModule, &errArgs, err)
 	}
 	return nil
 }
@@ -417,7 +423,8 @@ func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name 
 	var result []unit
 	err := sa.db.customUnits.Find(sa.context, filter, &result, nil)
 	if err != nil {
-		return nil, err
+		errArgs := logutils.FieldArgs(filter)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, &errArgs, err)
 	}
 	if len(result) == 0 {
 		//no data
@@ -544,6 +551,7 @@ func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 	}
 
 	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
+	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
 			"name":         item.Name,
@@ -554,10 +562,10 @@ func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 	}
 	result, err := sa.db.customUnits.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUnit, &errArgs, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &errArgs, err)
 	}
 	return nil
 }
@@ -571,6 +579,7 @@ func (sa *Adapter) UpdateUserUnits(key string, item model.Unit) error {
 	}
 
 	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "unit.key": key}
+	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
 			"unit.name":         item.Name,
@@ -581,7 +590,7 @@ func (sa *Adapter) UpdateUserUnits(key string, item model.Unit) error {
 	}
 	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUnit, &errArgs, err)
 	}
 	return nil
 }
@@ -604,7 +613,8 @@ func (sa *Adapter) UpdateReferenceKeyToClientUnits(oldCourseKey string, newCours
 
 	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", nil, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, &errArgs, err)
 	}
 	return nil
 }
@@ -612,16 +622,17 @@ func (sa *Adapter) UpdateReferenceKeyToClientUnits(oldCourseKey string, newCours
 // DeleteCustomUnit deletes a unit
 func (sa *Adapter) DeleteCustomUnit(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
+	errArgs := logutils.FieldArgs(filter)
 	result, err := sa.db.customUnits.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeUnit, &errArgs, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "delete unit result", &errArgs, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &errArgs, err)
 	}
 	return nil
 }
@@ -643,7 +654,8 @@ func (sa *Adapter) GetCustomContents(appID string, orgID string, id []string, na
 	var result []content
 	err := sa.db.customContent.Find(sa.context, filter, &result, nil)
 	if err != nil {
-		return nil, err
+		errArgs := logutils.FieldArgs(filter)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, &errArgs, err)
 	}
 	if len(result) == 0 {
 		//no data
@@ -774,6 +786,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 	}
 
 	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
+	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
 			"type":           item.Type,
@@ -786,10 +799,10 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 	}
 	result, err := sa.db.customContent.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeContent, &errArgs, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeContent, &errArgs, err)
 	}
 	return nil
 }
@@ -797,16 +810,17 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 // DeleteCustomContent deletes a content
 func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
+	errArgs := logutils.FieldArgs(filter)
 	result, err := sa.db.customContent.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeContent, &errArgs, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "delete content result", &errArgs, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeContent, &errArgs, err)
 	}
 	return nil
 }
@@ -830,7 +844,8 @@ func (sa *Adapter) DeleteContentKeyFromLinkedContents(appID string, orgID string
 
 	_, err := sa.db.customContent.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeContent, &errArgs, err)
 	}
 	return nil
 }
@@ -849,7 +864,8 @@ func (sa *Adapter) DeleteContentKeyFromUnits(appID string, orgID string, key str
 	}
 	_, err := sa.db.customUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUnit, &errArgs, err)
 	}
 	return err
 }
@@ -869,7 +885,8 @@ func (sa *Adapter) DeleteContentKeyFromUserUnits(appID string, orgID string, key
 
 	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, &errArgs, err)
 	}
 	return nil
 }
@@ -889,7 +906,8 @@ func (sa *Adapter) DeleteUnitKeyFromModules(appID string, orgID string, key stri
 
 	_, err := sa.db.customModules.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeModule, &errArgs, err)
 	}
 	return nil
 }
@@ -909,7 +927,8 @@ func (sa *Adapter) DeleteModuleKeyFromCourses(appID string, orgID string, key st
 
 	_, err := sa.db.customCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeCourse, &errArgs, err)
 	}
 	return nil
 }
@@ -929,7 +948,8 @@ func (sa *Adapter) DeleteModuleKeyFromUserCourses(appID string, orgID string, ke
 
 	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
 	}
 	return nil
 }
@@ -945,7 +965,8 @@ func (sa *Adapter) MarkUserCourseAsDelete(appID string, orgID string, key string
 
 	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"key": key}, err)
+		errArgs := logutils.FieldArgs(filter)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
 	}
 	return nil
 }
