@@ -94,7 +94,7 @@ func (sa *Adapter) UserExist(netID string) (*bool, error) {
 
 	count, err := sa.db.users.CountDocuments(sa.context, filter)
 	if err != nil {
-		return nil, errors.WrapErrorAction("error counting user for net id", "", &logutils.FieldArgs{"net_id": netID}, err)
+		return nil, errors.WrapErrorAction(logutils.ActionCount, model.TypeUser, &logutils.FieldArgs{"net_id": netID}, err)
 	}
 
 	var result bool
@@ -222,7 +222,7 @@ func (sa *Adapter) SaveNudgesConfig(nudgesConfig model.NudgesConfig) error {
 	opts := options.UpdateOptions{Upsert: &upsert}
 	_, err := sa.db.configs.UpdateOne(sa.context, filter, update, &opts)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": "nudges"}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeNudgesConfig, &logutils.FieldArgs{"id": "nudges"}, err)
 	}
 
 	return nil
@@ -260,7 +260,7 @@ func (sa *Adapter) LoadActiveNudges() ([]model.Nudge, error) {
 func (sa *Adapter) InsertNudge(item model.Nudge) error {
 	_, err := sa.db.nudges.InsertOne(sa.context, item)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionInsert, "", nil, err)
+		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeNudge, nil, err)
 	}
 	return nil
 }
@@ -282,10 +282,10 @@ func (sa *Adapter) UpdateNudge(item model.Nudge) error {
 
 	result, err := sa.db.nudges.UpdateOne(sa.context, nudgeFilter, updateNudge, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{"id": item.ID}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeNudge, &logutils.FieldArgs{"id": item.ID}, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"id": item.ID}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeNudge, &logutils.FieldArgs{"id": item.ID}, err)
 	}
 
 	return nil
@@ -296,14 +296,14 @@ func (sa *Adapter) DeleteNudge(ID string) error {
 	filter := bson.M{"_id": ID}
 	result, err := sa.db.nudges.DeleteOne(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": ID}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeNudge, &logutils.FieldArgs{"_id": ID}, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": ID}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "delete nudge result", &logutils.FieldArgs{"_id": ID}, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": ID}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeNudge, &logutils.FieldArgs{"_id": ID}, err)
 	}
 	return nil
 }
@@ -400,14 +400,14 @@ func (sa *Adapter) DeleteSentNudges(ids []string, mode string) error {
 
 	result, err := sa.db.sentNudges.DeleteMany(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, "", &logutils.FieldArgs{"_id": ids}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeSentNudge, &logutils.FieldArgs{"_id": ids}, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"_id": ids}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "delete sent nudges result", &logutils.FieldArgs{"_id": ids}, err)
 	}
 	deletedCount := result.DeletedCount
 	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{"_id": ids}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeSentNudge, &logutils.FieldArgs{"_id": ids}, err)
 	}
 	return nil
 }
@@ -471,7 +471,7 @@ func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
 
 	count, err := sa.db.nudgesProcesses.CountDocuments(sa.context, filter)
 	if err != nil {
-		return nil, errors.WrapErrorAction("error counting nudges processes", "", nil, err)
+		return nil, errors.WrapErrorAction(logutils.ActionCount, model.TypeNudgesProcess, &logutils.FieldArgs{"status": status}, err)
 	}
 	return &count, nil
 }
