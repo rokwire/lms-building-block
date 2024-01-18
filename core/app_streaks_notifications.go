@@ -241,32 +241,33 @@ func (n streaksNotifications) processStreaks() {
 		for i, userCourse := range userCourses {
 			if userCourse.CompletedTasks != nil {
 				uY, uM, uD := userCourse.CompletedTasks.Date()
-				y, m, d := now.Date()
-				pastY, pastM, pastD := now.AddDate(0, 0, -1).Date()
+				userLoc := time.FixedZone(userCourse.TimezoneName, userCourse.TimezoneOffset)
+				now := time.Now()
+				userTime := now.In(userLoc)
+				y, m, d := userTime.Date()
+				pastY, pastM, pastD := userTime.AddDate(0, 0, -1).Date()
 				// edge case between time zone traveling
 				if uY == y && uM == m && uD == d {
 					continue
 					// yesterday
 				} else if uY == pastY && uM == pastM && uD == pastD {
 					userCourse.Streaks++
-					if userCourse.Streaks%config.PauseRewardStreak == 0 {
+					if userCourse.Streaks%config.PauseRewardStreak == 0 && userCourse.Pauses < config.MaxPauses {
 						userCourse.Pauses++
-					}
-					if config.MaxPauses < userCourse.Pauses {
-						userCourse.Pauses = config.MaxPauses
 					}
 					// date earlier than yesterday, streak is broken
 				} else {
-					userCourse.Pauses--
-					if userCourse.Pauses < 0 {
-						userCourse.Streaks = 0
-						userCourse.Pauses = 0
+					userCourse.Streaks = 0
+					if userCourse.Pauses > 0 {
+						userCourse.Pauses--
 					}
 				}
 				// User started a course and not never made any progress
 			} else {
-				userCourse.Pauses--
-				if userCourse.Pauses < 0 {
+				if userCourse.Pauses > 0 {
+					userCourse.Pauses--
+					// pauses = 0
+				} else {
 					userCourse.Streaks = 0
 					userCourse.Pauses = 0
 				}
@@ -286,7 +287,7 @@ func (n streaksNotifications) processStreaks() {
 func (n streaksNotifications) UpdateManyUserCoursesStreaks(appID string, orgID string, UserCourses []model.UserCourse) error {
 	for _, userCourse := range UserCourses {
 		// do we use userCourse id or userID+coursekey
-		err := n.storage.UpdateUserCourseStreaks(appID, orgID, nil, &userCourse.ID, userCourse.Course.Key, &userCourse.Streaks, &userCourse.Pauses, nil)
+		err := n.storage.UpdateUserCourse(appID, orgID, userCourse.UserID, &userCourse.ID, userCourse.Course.Key, &userCourse.Streaks, &userCourse.Pauses, nil)
 		if err != nil {
 			return err
 		}

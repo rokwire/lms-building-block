@@ -208,12 +208,9 @@ func (sa *Adapter) DeleteUserCourse(appID string, orgID string, userID string, c
 	return nil
 }
 
-// UpdateUserCourseStreaks updates streaks, pauses, and completed_tasks fieled
-func (sa *Adapter) UpdateUserCourseStreaks(appID string, orgID string, userID *string, userCourseID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error {
-	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey}
-	if userID != nil {
-		filter["user_id"] = userID
-	}
+// UpdateUserCourse updates streaks, pauses, and completed_tasks fieled
+func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, userCourseID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error {
+	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey, "user_id": userID}
 	if userCourseID != nil {
 		filter["_id"] = userCourseID
 	}

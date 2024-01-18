@@ -251,7 +251,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// update userCourse CompletedTasks time
-		err = storageTransaction.UpdateUserCourseStreaks(claims.AppID, claims.OrgID, &claims.Subject, nil, courseKey, nil, nil, &userTime)
+		err = storageTransaction.UpdateUserCourse(claims.AppID, claims.OrgID, claims.Subject, nil, courseKey, nil, nil, &userTime)
 		if err != nil {
 			return err
 		}
