@@ -256,7 +256,7 @@ func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
 }
 
 // marks a userCourse as deleted, as oppose to remove from database
-func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) error {
+func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
 		appID := claims.AppID
 		orgID := claims.OrgID
@@ -268,5 +268,5 @@ func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) error 
 
 		return err
 	}
-	return s.app.storage.PerformTransaction(transaction)
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
