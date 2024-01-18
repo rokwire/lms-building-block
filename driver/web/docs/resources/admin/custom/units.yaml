@@ -76,9 +76,10 @@ post:
     200:
       description: Success
       content:
-        application/json:
+        text/plain:
           schema:
-            $ref: "../../../schemas/custom/Unit.yaml"
+            type: string
+            example: Success
     400:
       description: Bad request
     401:

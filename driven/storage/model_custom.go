@@ -58,11 +58,11 @@ type module struct {
 }
 
 type userUnit struct {
-	ID     string `bson:"_id"`
-	AppID  string `bson:"app_id"`
-	OrgID  string `bson:"org_id"`
-	UserID string `bson:"user_id"`
-	//CourseKey   string     `bson:"course_key"`
+	ID        string `bson:"_id"`
+	AppID     string `bson:"app_id"`
+	OrgID     string `bson:"org_id"`
+	UserID    string `bson:"user_id"`
+	CourseKey string `bson:"course_key"`
 	//ModuleKey   string     `bson:"module_key"`
 	Unit        unit       `bson:"unit"`
 	DateCreated time.Time  `bson:"date_created"`
@@ -74,7 +74,7 @@ type unit struct {
 	AppID string `bson:"app_id"`
 	OrgID string `bson:"org_id"`
 
-	//CourseKey   string               `bson:"course_key"`
+	//CourseKey string `bson:"course_key"`
 	//ModuleKey   string               `bson:"module_key"`
 	Key         string               `bson:"key"`
 	Name        string               `bson:"name"`

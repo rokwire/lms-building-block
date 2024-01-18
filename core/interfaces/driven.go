@@ -62,7 +62,6 @@ type Storage interface {
 	GetCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
 	GetCustomCourse(appID string, orgID string, key string) (*model.Course, error)
 	InsertCustomCourse(item model.Course) error
-	InsertCustomCourses(items []model.Course) error
 	UpdateCustomCourse(key string, item model.Course) error
 	DeleteCustomCourse(appID string, orgID string, key string) error
 
@@ -91,11 +90,13 @@ type Storage interface {
 	GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
 	InsertUserCourse(item model.UserCourse) error
 	UpdateUserCourses(key string, item model.Course) error
-	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
+	DeleteUserCourse(appID string, orgID string, courseKey string) error
+	DeleteUserUnit(appID string, orgID string, key string) error
 
 	InsertUserUnit(item model.UserUnit) error
-	UpdateUserUnit(appID string, orgID string, userID string, item model.Unit) error
+	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.Unit) error
 	UpdateUserUnits(key string, item model.Unit) error
+	GetUserUnitExist(appID string, orgID string, userID string, courseKey string, unitKey string) (bool, error)
 
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error
@@ -104,8 +105,6 @@ type Storage interface {
 	DeleteModuleKeyFromCourses(appID string, orgID string, key string) error
 	DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error
 	MarkUserCourseAsDelete(appID string, orgID string, key string) error
-
-	UpdateReferenceKeyToClientUnits(oldCourseKey string, newCourseKey string) error
 }
 
 // Provider interface for LMS provider

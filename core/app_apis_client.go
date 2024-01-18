@@ -18,6 +18,7 @@
 package core
 
 import (
+	"lms/core/interfaces"
 	"lms/core/model"
 	"lms/utils"
 	"strconv"
@@ -180,11 +181,11 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 	}
 
 	// create user module and user unit
-	for _, singleModule := range course.Modules {
-		for _, singleUnit := range singleModule.Units {
-			s.CreateUserUnit(claims, courseKey, singleModule.Key, singleUnit.Key)
-		}
-	}
+	// for _, singleModule := range course.Modules {
+	// 	for _, singleUnit := range singleModule.Units {
+	// 		s.CreateUserUnit(claims, courseKey, singleUnit.Key)
+	// 	}
+	// }
 
 	return &item, nil
 	//}
@@ -192,12 +193,13 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 }
 
 // pass unit key to create a new user unit
-func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, moduleKey string, unitKey string) (*model.UserUnit, error) {
+func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, unitKey string) (*model.UserUnit, error) {
 	var item model.UserUnit
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
 	item.UserID = claims.Subject
+	item.CourseKey = courseKey
 	item.DateCreated = time.Now()
 
 	//retrieve moudle with unitKey
@@ -214,23 +216,36 @@ func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, 
 	return nil, nil
 }
 
+// delete all user course derieved from a custom course
 func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error {
 
 	//item.UserID = claims.Subject
 
-	err := s.app.storage.DeleteUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
+	err := s.app.storage.DeleteUserCourse(claims.AppID, claims.OrgID, courseKey)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, unitKey string, item model.Unit) (*model.Unit, error) {
-	err := s.app.storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, item)
-	if err != nil {
-		return nil, err
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.Unit) (*model.Unit, error) {
+	// create a userUnit here if it doesn't already exist
+	transaction := func(storage interfaces.Storage) error {
+		ifExist, err := storage.GetUserUnitExist(claims.AppID, claims.OrgID, claims.Id, courseKey, unitKey)
+		if err != nil {
+			return err
+		}
+		if !ifExist {
+			s.CreateUserUnit(claims, courseKey, item.Key)
+		}
+
+		err = storage.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, item)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	return nil, nil
+	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
@@ -238,4 +253,20 @@ func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
 		return ""
 	}
 	return claims.ExternalIDs["net_id"]
+}
+
+// marks a userCourse as deleted, as oppose to remove from database
+func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) error {
+	transaction := func(storageTransaction interfaces.Storage) error {
+		appID := claims.AppID
+		orgID := claims.OrgID
+
+		err := storageTransaction.MarkUserCourseAsDelete(appID, orgID, key)
+		if err != nil {
+			return err
+		}
+
+		return err
+	}
+	return s.app.storage.PerformTransaction(transaction)
 }

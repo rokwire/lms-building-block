@@ -120,13 +120,27 @@ func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map
 	return a.app.Client.DeleteUserCourse(claims, key)
 }
 
-func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.Unit) (*model.Unit, error) {
+func (a APIsHandler) clientDropUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
 	}
 
-	return a.app.Client.UpdateUserCourseUnitProgress(claims, key, *item)
+	return a.app.Client.DropUserCourse(claims, key)
+}
+
+func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.Unit) (*model.Unit, error) {
+	courseKey, err := utils.GetValue[string](params, "course_key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseKey"), err)
+	}
+
+	unitKey, err := utils.GetValue[string](params, "unit_key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("unitKey"), err)
+	}
+
+	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseKey, unitKey, *item)
 }
 
 // Admin

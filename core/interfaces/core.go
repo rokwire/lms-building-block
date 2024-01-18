@@ -36,10 +36,11 @@ type Client interface {
 	GetUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
 	CreateUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
 	DeleteUserCourse(claims *tokenauth.Claims, key string) error
+	DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
 
 	// model.Unit
 
-	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, key string, item model.Unit) (*model.Unit, error)
+	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.Unit) (*model.Unit, error)
 }
 
 // Admin exposes administrative APIs to the driver adapters

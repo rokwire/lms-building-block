@@ -7,9 +7,17 @@ put:
   security:
     - bearerAuth: []
   parameters:
-    - name: key
+    - name: course_key
       in: path
-      description: Unit Key
+      description: course key of this unit
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+    - name: unit_key
+      in: path
+      description: unit key
       required: true
       style: simple
       explode: false
