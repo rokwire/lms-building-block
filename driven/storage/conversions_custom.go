@@ -236,7 +236,7 @@ func (sa *Adapter) customContentConversionAPIToStorage(item model.Content) conte
 	return content
 }
 
-// userCourseConversionHelper formats storage struct to appropirate struct for API request
+// userCourseConversionStorageToAPI formats storage struct to appropirate struct for API request
 func (sa *Adapter) userCourseConversionStorageToAPI(item userCourse) (model.UserCourse, error) {
 	var result model.UserCourse
 	result.ID = item.ID
@@ -251,6 +251,26 @@ func (sa *Adapter) userCourseConversionStorageToAPI(item userCourse) (model.User
 		return result, err
 	}
 	result.Course = convertedCourse
+
+	return result, nil
+}
+
+// userUnitConversionStorageToAPI formats storage struct to appropirate struct for API request
+func (sa *Adapter) userUnitConversionStorageToAPI(item userUnit) (model.UserUnit, error) {
+	var result model.UserUnit
+	result.ID = item.ID
+	result.AppID = item.AppID
+	result.OrgID = item.OrgID
+	result.UserID = item.UserID
+	result.CourseKey = item.CourseKey
+	result.DateCreated = item.DateCreated
+	result.DateUpdated = item.DateUpdated
+
+	convertedUnit, err := sa.customUnitConversionStorageToAPI(item.Unit)
+	if err != nil {
+		return result, err
+	}
+	result.Unit = convertedUnit
 
 	return result, nil
 }

@@ -192,6 +192,15 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 	//return s.app.storage.PerformTransaction(transaction)
 }
 
+// get all userUnits from a user's given course
+func (s *clientImpl) GetUserCourseUnits(claims *tokenauth.Claims, courseKey string) ([]model.UserUnit, error) {
+	userUnits, err := s.app.storage.GetUserCourseUnits(claims.AppID, claims.OrgID, claims.Subject, courseKey)
+	if err != nil {
+		return nil, err
+	}
+	return userUnits, nil
+}
+
 // pass unit key to create a new user unit
 func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, unitKey string) (*model.UserUnit, error) {
 	var item model.UserUnit

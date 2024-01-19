@@ -92,6 +92,7 @@ type Storage interface {
 	UpdateUserCourses(key string, item model.Course) error
 	DeleteUserCourse(appID string, orgID string, courseKey string) error
 	DeleteUserUnit(appID string, orgID string, key string) error
+	GetUserCourseUnits(appID string, orgID string, userID string, courseKey string) ([]model.UserUnit, error)
 
 	InsertUserUnit(item model.UserUnit) error
 	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.Unit) error

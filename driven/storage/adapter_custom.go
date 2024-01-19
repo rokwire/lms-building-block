@@ -830,6 +830,31 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 	return nil
 }
 
+// get UserCourseUnits gets all userUnits within a user's course
+func (sa *Adapter) GetUserCourseUnits(appID string, orgID string, userID string, courseKey string) ([]model.UserUnit, error) {
+	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
+	var result []userUnit
+	err := sa.db.userUnits.Find(sa.context, filter, &result, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		//no data
+		return nil, nil
+	}
+
+	var convertedResult []model.UserUnit
+	for _, retrievedResult := range result {
+		singleConverted, err := sa.userUnitConversionStorageToAPI(retrievedResult)
+		if err != nil {
+			return nil, err
+		}
+		convertedResult = append(convertedResult, singleConverted)
+	}
+
+	return convertedResult, nil
+}
+
 // GetUserUnit finds a user unit
 func (sa *Adapter) GetUserUnitExist(appID string, orgID string, userID string, courseKey string, unitKey string) (bool, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "unit.key": unitKey}
