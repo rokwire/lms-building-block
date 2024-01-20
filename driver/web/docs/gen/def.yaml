@@ -1965,6 +1965,77 @@ components:
               type: string
               format: date-time
               nullable: true
+    CourseConfig:
+      required:
+        - id
+        - app_id
+        - org_id
+        - course_key
+        - initial_pauses
+        - max_pauses
+        - pause_reward_streak
+        - streaks_notifications_config
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+        org_id:
+          type: string
+        course_key:
+          type: string
+        initial_pauses:
+          type: integer
+        max_pauses:
+          type: integer
+        pause_reward_streak:
+          type: integer
+        streaks_notifications_config:
+          $ref: '#/components/schemas/StreaksNotificationsConfig'
+    StreaksNotificationsConfig:
+      required:
+        - timezone_name
+        - process_time
+        - prefer_early
+        - notifications_active
+        - notifications
+      type: object
+      properties:
+        timezone_name:
+          type: string
+        timezone_offset:
+          type: integer
+        process_time:
+          type: integer
+        prefer_early:
+          type: boolean
+        notifications_active:
+          type: boolean
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    Notification:
+      required:
+        - subject
+        - body
+        - process_time
+        - active
+        - requirements
+      type: object
+      properties:
+        subject:
+          type: string
+        body:
+          type: string
+        process_time:
+          type: integer
+        active:
+          type: boolean
+        requirements:
+          type: object
     _admin_req_create_nudge:
       required:
         - id

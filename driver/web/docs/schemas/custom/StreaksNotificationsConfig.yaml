@@ -1,0 +1,22 @@
+required:
+  - timezone_name
+  - process_time
+  - prefer_early
+  - notifications_active
+  - notifications
+type: object
+properties:
+  timezone_name:
+    type: string
+  timezone_offset:
+    type: integer
+  process_time:
+    type: integer
+  prefer_early:
+    type: boolean
+  notifications_active:
+    type: boolean
+  notifications:
+    type: array
+    items:
+      $ref: ./Notification.yaml

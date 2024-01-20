@@ -1,0 +1,28 @@
+required:
+  - id
+  - app_id
+  - org_id
+  - course_key
+  - initial_pauses
+  - max_pauses
+  - pause_reward_streak
+  - streaks_notifications_config
+type: object
+properties:
+  id:
+    type: string
+    readOnly: true
+  app_id:
+    type: string
+  org_id:
+    type: string
+  course_key:
+    type: string
+  initial_pauses:
+    type: integer
+  max_pauses:
+    type: integer
+  pause_reward_streak:
+    type: integer
+  streaks_notifications_config:
+    $ref: ./StreaksNotificationsConfig.yaml

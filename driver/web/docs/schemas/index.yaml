@@ -37,6 +37,12 @@ UserCourse:
   $ref: "./custom/UserCourse.yaml"
 UserReference:
   $ref: "./custom/UserReference.yaml"
+CourseConfig:
+  $ref: "./custom/CourseConfig.yaml"
+StreaksNotificationsConfig:
+  $ref: "./custom/StreaksNotificationsConfig.yaml"
+Notification:
+  $ref: "./custom/Notification.yaml"
 
 ### nudges api
 _admin_req_create_nudge:
