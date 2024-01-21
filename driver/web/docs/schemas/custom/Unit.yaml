@@ -3,8 +3,6 @@ required:
   - app_id
   - org_id
   - key
-  - course_key
-  - module_key
   - name
   - content
   - schedule
@@ -19,10 +17,6 @@ properties:
   org_id:
     type: string
     readOnly: true
-  course_key:
-    type: string
-  module_key:
-    type: string
   key:
     type: string
   name:

@@ -36,10 +36,11 @@ type Client interface {
 	GetUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
 	CreateUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
 	DeleteUserCourse(claims *tokenauth.Claims, key string) error
+	DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
 
 	// model.UnitWithTimezone
 
-	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, key string, id string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error)
+	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error)
 
 	// model.CourseConfig
 

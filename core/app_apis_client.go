@@ -181,11 +181,11 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 	}
 
 	// create user module and user unit
-	for _, singleModule := range course.Modules {
-		for _, singleUnit := range singleModule.Units {
-			s.CreateUserUnit(claims, courseKey, singleModule.Key, singleUnit.Key)
-		}
-	}
+	// for _, singleModule := range course.Modules {
+	// 	for _, singleUnit := range singleModule.Units {
+	// 		s.CreateUserUnit(claims, courseKey, singleUnit.Key)
+	// 	}
+	// }
 
 	return &item, nil
 	//}
@@ -193,12 +193,13 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 }
 
 // pass unit key to create a new user unit
-func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, moduleKey string, unitKey string) (*model.UserUnit, error) {
+func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, unitKey string) (*model.UserUnit, error) {
 	var item model.UserUnit
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
 	item.UserID = claims.Subject
+	item.CourseKey = courseKey
 	item.DateCreated = time.Now()
 
 	//retrieve moudle with unitKey
@@ -215,6 +216,7 @@ func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, 
 	return nil, nil
 }
 
+// delete all user course derieved from a custom course
 func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error {
 
 	//item.UserID = claims.Subject
@@ -226,13 +228,18 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 	return nil
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, userUnitID string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
-
-		err := storageTransaction.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, userUnitID, item.Unit)
+		// create a userUnit here if it doesn't already exist
+		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Id, courseKey, unitKey)
 		if err != nil {
 			return err
 		}
+		if userUnit == nil {
+			s.CreateUserUnit(claims, courseKey, unitKey)
+		}
+
+		err = storageTransaction.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, item.Unit)
 
 		// insert completed_task timestamp in user timezone
 		// userCourse, err := storageTransaction.GetUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
@@ -274,4 +281,20 @@ func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
 		return ""
 	}
 	return claims.ExternalIDs["net_id"]
+}
+
+// marks a userCourse as deleted, as oppose to remove from database
+func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error) {
+	transaction := func(storageTransaction interfaces.Storage) error {
+		appID := claims.AppID
+		orgID := claims.OrgID
+
+		err := storageTransaction.MarkUserCourseAsDelete(appID, orgID, key)
+		if err != nil {
+			return err
+		}
+
+		return err
+	}
+	return nil, s.app.storage.PerformTransaction(transaction)
 }

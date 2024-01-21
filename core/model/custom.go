@@ -169,11 +169,11 @@ type Module struct {
 
 // UserUnit represents a copy of a unit that the user modifies as progress is made
 type UserUnit struct {
-	ID     string `json:"id"`
-	AppID  string `json:"app_id"`
-	OrgID  string `json:"org_id"`
-	UserID string `json:"user_id"`
-	//CourseKey   string     `json:"course_key"`
+	ID        string `json:"id"`
+	AppID     string `json:"app_id"`
+	OrgID     string `json:"org_id"`
+	UserID    string `json:"user_id"`
+	CourseKey string `json:"course_key"`
 	//ModuleKey   string     `json:"module_key"`
 	Unit        Unit       `json:"unit"`
 	DateCreated time.Time  `json:"date_created"`
@@ -225,7 +225,7 @@ type Content struct {
 	Name             string    `json:"name"`
 	Details          string    `json:"details"`
 	ContentReference Reference `json:"reference"`
-	LinkedContent    []Content `json:"linked_content"`
+	LinkedContent    []string  `json:"linked_content"`
 
 	DateCreated time.Time
 	DateUpdated *time.Time

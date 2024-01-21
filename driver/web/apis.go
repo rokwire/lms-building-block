@@ -120,18 +120,27 @@ func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map
 	return a.app.Client.DeleteUserCourse(claims, key)
 }
 
-func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
+func (a APIsHandler) clientDropUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
 	}
 
-	id, err := utils.GetValue[string](params, "id", true)
+	return a.app.Client.DropUserCourse(claims, key)
+}
+
+func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
+	courseKey, err := utils.GetValue[string](params, "course_key", true)
 	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("id"), err)
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseKey"), err)
 	}
 
-	return a.app.Client.UpdateUserCourseUnitProgress(claims, key, id, *item)
+	unitKey, err := utils.GetValue[string](params, "unit_key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("unitKey"), err)
+	}
+
+	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseKey, unitKey, *item)
 }
 
 func (a APIsHandler) clientGetCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}) (*model.CourseConfig, error) {

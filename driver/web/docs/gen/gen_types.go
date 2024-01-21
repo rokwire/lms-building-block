@@ -43,17 +43,14 @@ type AssignmentGroup struct {
 // Content defines model for Content.
 type Content struct {
 	AppId         *string     `json:"app_id,omitempty"`
-	CourseKey     string      `json:"course_key"`
 	Details       *string     `json:"details,omitempty"`
 	Id            *string     `json:"id,omitempty"`
 	Key           string      `json:"key"`
 	LinkedContent *[]string   `json:"linked_content"`
-	ModuleKey     string      `json:"module_key"`
 	Name          string      `json:"name"`
 	OrgId         *string     `json:"org_id,omitempty"`
 	Reference     Reference   `json:"reference"`
 	Type          ContentType `json:"type"`
-	UnitKey       string      `json:"unit_key"`
 }
 
 // ContentType defines model for Content.Type.
@@ -102,13 +99,12 @@ type Grade struct {
 
 // Module defines model for Module.
 type Module struct {
-	AppId     *string `json:"app_id,omitempty"`
-	CourseKey string  `json:"course_key"`
-	Id        *string `json:"id,omitempty"`
-	Key       string  `json:"key"`
-	Name      string  `json:"name"`
-	OrgId     *string `json:"org_id,omitempty"`
-	Units     []Unit  `json:"units"`
+	AppId *string `json:"app_id,omitempty"`
+	Id    *string `json:"id,omitempty"`
+	Key   string  `json:"key"`
+	Name  string  `json:"name"`
+	OrgId *string `json:"org_id,omitempty"`
+	Units []Unit  `json:"units"`
 }
 
 // Notification defines model for Notification.
@@ -172,15 +168,13 @@ type StreaksNotificationsConfig struct {
 
 // Unit defines model for Unit.
 type Unit struct {
-	AppId     *string        `json:"app_id,omitempty"`
-	Content   []Content      `json:"content"`
-	CourseKey string         `json:"course_key"`
-	Id        *string        `json:"id,omitempty"`
-	Key       string         `json:"key"`
-	ModuleKey string         `json:"module_key"`
-	Name      string         `json:"name"`
-	OrgId     *string        `json:"org_id,omitempty"`
-	Schedule  []ScheduleItem `json:"schedule"`
+	AppId    *string        `json:"app_id,omitempty"`
+	Content  []Content      `json:"content"`
+	Id       *string        `json:"id,omitempty"`
+	Key      string         `json:"key"`
+	Name     string         `json:"name"`
+	OrgId    *string        `json:"org_id,omitempty"`
+	Schedule []ScheduleItem `json:"schedule"`
 }
 
 // User defines model for User.
@@ -372,8 +366,8 @@ type GetApiUsersCoursesParams struct {
 	Key *string `form:"key,omitempty" json:"key,omitempty"`
 }
 
-// PutApiUsersCoursesKeyUnitsIdJSONBody defines parameters for PutApiUsersCoursesKeyUnitsId.
-type PutApiUsersCoursesKeyUnitsIdJSONBody struct {
+// PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONBody defines parameters for PutApiUsersCoursesCourseKeyUnitsUnitKey.
+type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONBody struct {
 	TimezoneName   string `json:"timezone_name"`
 	TimezoneOffset int    `json:"timezone_offset"`
 	Unit           Unit   `json:"unit"`
@@ -418,5 +412,5 @@ type PostAdminUnitsJSONRequestBody = Unit
 // PutAdminUnitsKeyJSONRequestBody defines body for PutAdminUnitsKey for application/json ContentType.
 type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
-// PutApiUsersCoursesKeyUnitsIdJSONRequestBody defines body for PutApiUsersCoursesKeyUnitsId for application/json ContentType.
-type PutApiUsersCoursesKeyUnitsIdJSONRequestBody PutApiUsersCoursesKeyUnitsIdJSONBody
+// PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyUnitsUnitKey for application/json ContentType.
+type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONBody
