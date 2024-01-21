@@ -812,9 +812,15 @@ func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) e
 }
 
 // FindCourseConfigs finds course configs by the given search parameters
-func (sa *Adapter) FindCourseConfigs(notificationsActive *bool) ([]model.CourseConfig, error) {
+func (sa *Adapter) FindCourseConfigs(appID *string, orgID *string, notificationsActive *bool) ([]model.CourseConfig, error) {
 	filter := bson.M{}
 
+	if appID != nil {
+		filter["app_id"] = *appID
+	}
+	if orgID != nil {
+		filter["org_id"] = *orgID
+	}
 	if notificationsActive != nil {
 		filter["streaks_notifications_config.notifications_active"] = *notificationsActive
 	}
@@ -825,6 +831,75 @@ func (sa *Adapter) FindCourseConfigs(notificationsActive *bool) ([]model.CourseC
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
 	}
 	return configs, nil
+}
+
+// FindCourseConfig finds a single course config by course key
+func (sa *Adapter) FindCourseConfig(appID string, orgID string, key string) (*model.CourseConfig, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "course_key": key}
+	errArgs := logutils.FieldArgs(filter)
+
+	var config model.CourseConfig
+	err := sa.db.courseConfigs.FindOne(sa.context, filter, &config, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, &errArgs, err)
+	}
+
+	return &config, nil
+}
+
+// InsertCourseConfig inserts a new course config
+func (sa *Adapter) InsertCourseConfig(config model.CourseConfig) error {
+	_, err := sa.db.courseConfigs.InsertOne(sa.context, config)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeCourseConfig, &logutils.FieldArgs{"id": config.ID, "app_id": config.AppID, "org_id": config.OrgID, "course_key": config.CourseKey}, err)
+	}
+
+	return nil
+}
+
+// UpdateCourseConfig updates an existing course config
+func (sa *Adapter) UpdateCourseConfig(config model.CourseConfig) error {
+	filter := bson.M{"org_id": config.OrgID, "app_id": config.AppID, "course_key": config.CourseKey}
+	update := bson.M{
+		"$set": bson.M{
+			"initial_pauses":               config.InitialPauses,
+			"max_pauses":                   config.MaxPauses,
+			"pause_reward_streak":          config.PauseRewardStreak,
+			"streaks_notifications_config": config.StreaksNotificationsConfig,
+			"date_updated":                 time.Now().UTC(),
+		},
+	}
+	errArgs := logutils.FieldArgs(filter)
+
+	res, err := sa.db.courseConfigs.UpdateOne(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeCourseConfig, &errArgs, err)
+	}
+	if res.ModifiedCount != 1 {
+		errArgs["modified"] = res.ModifiedCount
+		return errors.ErrorAction(logutils.ActionUpdate, model.TypeCourseConfig, &errArgs)
+	}
+
+	return nil
+}
+
+// DeleteCourseConfig deletes an existing course config by course key
+func (sa *Adapter) DeleteCourseConfig(appID string, orgID string, key string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "course_key": key}
+	errArgs := logutils.FieldArgs(filter)
+
+	result, err := sa.db.courseConfigs.DeleteOne(sa.context, filter, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeCourseConfig, &errArgs, err)
+	}
+	if result == nil {
+		return errors.WrapErrorData(logutils.StatusInvalid, "delete course config result", &errArgs, err)
+	}
+
+	if result.DeletedCount == 0 {
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeCourseConfig, &errArgs, err)
+	}
+	return nil
 }
 
 // DeleteContentKeyFromLinkedContents deletes a content key from linkedContent field within customContent collection

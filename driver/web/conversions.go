@@ -15,12 +15,10 @@
 package web
 
 import (
-	"errors"
 	"lms/core/model"
 	Def "lms/driver/web/docs/gen"
 
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
-	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 func nudgesConfigFromDef(claims *tokenauth.Claims, item *Def.NudgesConfig) (*model.NudgesConfig, error) {
@@ -35,7 +33,7 @@ func nudgesConfigFromDef(claims *tokenauth.Claims, item *Def.NudgesConfig) (*mod
 
 	nudgesConfig := model.NudgesConfig{Active: item.Active, GroupName: item.GroupName, TestGroupName: item.TestGroupName, Mode: string(item.Mode),
 		ProcessTime: item.ProcessTime, BlockSize: blockSizeVal}
-	return &nudgesConfig, errors.New(logutils.Unimplemented)
+	return &nudgesConfig, nil
 }
 
 func nudgeFromDefAdminReqCreate(claims *tokenauth.Claims, item *Def.AdminReqCreateNudge) (*model.Nudge, error) {

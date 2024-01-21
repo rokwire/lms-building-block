@@ -261,7 +261,12 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 }
 
 func (s *clientImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {
-	return nil, errors.New(logutils.Unimplemented)
+	courseConfig, err := s.app.storage.FindCourseConfig(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
+	}
+
+	return courseConfig, nil
 }
 
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {

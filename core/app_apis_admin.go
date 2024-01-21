@@ -22,6 +22,7 @@ import (
 	"lms/core/model"
 	"lms/utils"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
@@ -725,23 +726,42 @@ func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, key string) er
 }
 
 func (s *adminImpl) GetCustomCourseConfigs(claims *tokenauth.Claims) ([]model.CourseConfig, error) {
-	return nil, errors.New(logutils.Unimplemented)
+	courseConfigs, err := s.app.storage.FindCourseConfigs(&claims.AppID, &claims.OrgID, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
+	}
+
+	return courseConfigs, nil
 }
 
 func (s *adminImpl) CreateCustomCourseConfig(claims *tokenauth.Claims, item model.CourseConfig) (*model.CourseConfig, error) {
-	return nil, errors.New(logutils.Unimplemented)
+	item.ID = uuid.NewString()
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.DateCreated = time.Now().UTC()
+
+	return nil, s.app.storage.InsertCourseConfig(item)
 }
 
 func (s *adminImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {
-	return nil, errors.New(logutils.Unimplemented)
+	courseConfig, err := s.app.storage.FindCourseConfig(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
+	}
+
+	return courseConfig, nil
 }
 
 func (s *adminImpl) UpdateCustomCourseConfig(claims *tokenauth.Claims, key string, item model.CourseConfig) (*model.CourseConfig, error) {
-	return nil, errors.New(logutils.Unimplemented)
+	item.AppID = claims.AppID
+	item.OrgID = claims.OrgID
+	item.CourseKey = key
+
+	return nil, s.app.storage.UpdateCourseConfig(item)
 }
 
 func (s *adminImpl) DeleteCustomCourseConfig(claims *tokenauth.Claims, key string) error {
-	return errors.New(logutils.Unimplemented)
+	return s.app.storage.DeleteCourseConfig(claims.AppID, claims.OrgID, key)
 }
 
 // return those inside the array that are not present in database determined by key
