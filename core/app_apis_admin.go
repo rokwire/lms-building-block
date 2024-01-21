@@ -724,6 +724,26 @@ func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, key string) er
 	return s.app.storage.PerformTransaction(transaction)
 }
 
+func (s *adminImpl) GetCustomCourseConfigs(claims *tokenauth.Claims) ([]model.CourseConfig, error) {
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) CreateCustomCourseConfig(claims *tokenauth.Claims, item model.CourseConfig) (*model.CourseConfig, error) {
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) UpdateCustomCourseConfig(claims *tokenauth.Claims, key string, item model.CourseConfig) (*model.CourseConfig, error) {
+	return nil, errors.New(logutils.Unimplemented)
+}
+
+func (s *adminImpl) DeleteCustomCourseConfig(claims *tokenauth.Claims, key string) error {
+	return errors.New(logutils.Unimplemented)
+}
+
 // return those inside the array that are not present in database determined by key
 func (s *adminImpl) CoursesNotInDB(appID string, orgID string, courses []model.Course) ([]model.Course, error) {
 	var keys, returnedKeys []string

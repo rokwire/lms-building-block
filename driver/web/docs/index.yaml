@@ -39,6 +39,8 @@ paths:
     $ref: "./resources/api/user/coursesKey.yaml"
   /api/users/courses/{key}/units/{id}:
     $ref: "./resources/api/user/unitsID.yaml"
+  /api/custom/course-configs/{key}:
+    $ref: "./resources/api/custom/course-configs-key.yaml"
 
   #admin
   /admin/nudges-config:
@@ -69,6 +71,10 @@ paths:
     $ref: "./resources/admin/custom/content.yaml"
   /admin/content/{key}:
     $ref: "./resources/admin/custom/content-key.yaml"
+  /admin/course-configs:
+    $ref: "./resources/admin/custom/course-configs.yaml"
+  /admin/course-configs/{key}:
+    $ref: "./resources/admin/custom/course-configs-key.yaml"
 
 components:
   securitySchemes:

@@ -40,6 +40,10 @@ type Client interface {
 	// model.UnitWithTimezone
 
 	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, key string, id string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error)
+
+	// model.CourseConfig
+
+	GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error)
 }
 
 // Admin exposes administrative APIs to the driver adapters
@@ -97,4 +101,12 @@ type Admin interface {
 	GetCustomContent(claims *tokenauth.Claims, key string) (*model.Content, error)
 	UpdateCustomContent(claims *tokenauth.Claims, key string, item model.Content) (*model.Content, error)
 	DeleteCustomContent(claims *tokenauth.Claims, key string) error
+
+	// model.CourseConfig
+
+	GetCustomCourseConfigs(claims *tokenauth.Claims) ([]model.CourseConfig, error)
+	CreateCustomCourseConfig(claims *tokenauth.Claims, item model.CourseConfig) (*model.CourseConfig, error)
+	GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error)
+	UpdateCustomCourseConfig(claims *tokenauth.Claims, key string, item model.CourseConfig) (*model.CourseConfig, error)
+	DeleteCustomCourseConfig(claims *tokenauth.Claims, key string) error
 }

@@ -260,6 +260,10 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
+func (s *clientImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {
+	return nil, errors.New(logutils.Unimplemented)
+}
+
 func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
 	if claims == nil {
 		return ""

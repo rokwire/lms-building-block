@@ -436,6 +436,40 @@ paths:
       x-core-function: UpdateUserCourseUnitProgress
       x-data-type: model.UnitWithTimezone
       x-authentication-type: User
+  '/api/custom/course-configs/{key}':
+    get:
+      tags:
+        - Client
+      summary: Get custom course config
+      description: |
+        Get custom course config by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseConfig'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourseConfig
+      x-data-type: model.CourseConfig
+      x-authentication-type: User
   /admin/nudges-config:
     get:
       tags:
@@ -1626,6 +1660,174 @@ paths:
           description: Internal error
       x-core-function: DeleteCustomContent
       x-data-type: model.Content
+      x-authentication-type: Permissions
+  /admin/course-configs:
+    get:
+      tags:
+        - Admin
+      summary: Get custom course configs
+      description: |
+        Get all custom course configs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseConfig'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourseConfigs
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
+    post:
+      tags:
+        - Admin
+      summary: Create custom course config
+      description: |
+        Create a custom course config
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: course config
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseConfig'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: CreateCustomCourseConfig
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
+  '/admin/course-configs/{key}':
+    get:
+      tags:
+        - Admin
+      summary: Get custom course config
+      description: |
+        Get custom course config by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseConfig'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourseConfig
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
+    put:
+      tags:
+        - Admin
+      summary: Update custom course config
+      description: |
+        Update custom course config
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course Key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: updated course config
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseConfig'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: UpdateCustomCourseConfig
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
+    delete:
+      tags:
+        - Admin
+      summary: Delete custom course config
+      description: |
+        Delete custom course config
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course Key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: DeleteCustomCourseConfig
+      x-data-type: model.CourseConfig
       x-authentication-type: Permissions
 components:
   securitySchemes:
