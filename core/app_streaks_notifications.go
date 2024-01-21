@@ -81,7 +81,7 @@ func (n streaksNotifications) processNotifications() {
 	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
 
 	active := true
-	courseConfigs, err := n.storage.FindCourseConfigs(&active)
+	courseConfigs, err := n.storage.FindCourseConfigs(nil, nil, &active)
 	if err != nil {
 		n.logger.Errorf("processNotifications -> error finding active course configs: %v", err)
 		return
@@ -175,7 +175,7 @@ func (n streaksNotifications) processStreaks() {
 	now := time.Now().UTC()
 	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
 
-	courseConfigs, err := n.storage.FindCourseConfigs(nil)
+	courseConfigs, err := n.storage.FindCourseConfigs(nil, nil, nil)
 	if err != nil {
 		n.logger.Errorf("processStreaks -> error finding active course configs: %v", err)
 		return

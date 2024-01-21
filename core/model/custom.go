@@ -90,6 +90,9 @@ type CourseConfig struct {
 	PauseRewardStreak int `json:"pause_reward_streak" bson:"pause_reward_streak"`
 
 	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config" bson:"streaks_notifications_config"`
+
+	DateCreated time.Time  `json:"date_created" bson:"date_created"`
+	DateUpdated *time.Time `json:"date_updated" bson:"date_updated"`
 }
 
 // StreaksNotificationsConfig entity
