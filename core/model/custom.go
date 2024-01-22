@@ -35,9 +35,11 @@ const (
 	//TypeUnit unit type
 	TypeUnit logutils.MessageDataType = "unit"
 	//TypeUnitWithTimezone unit with timezone type
-	TypeUnitWithTimezone logutils.MessageDataType = "unit With timezone"
+	TypeUnitWithTimezone logutils.MessageDataType = "unit with timezone"
 	//TypeContent content type
 	TypeContent logutils.MessageDataType = "content"
+	//TypeTimezone timezone type
+	TypeTimezone logutils.MessageDataType = "timezone"
 )
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
@@ -47,13 +49,11 @@ type UserCourse struct {
 	OrgID  string `json:"org_id"`
 	UserID string `json:"user_id"`
 
-	TimezoneName   string `json:"timezone_name"`
-	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
+	Timezone // include user timezone info
 
-	// Notification Requirements fields (reset to the default every day in user's timezone using the hourly streaks timer)
-	Streaks        int        `json:"streaks"`
-	Pauses         int        `json:"pauses"`
-	CompletedTasks *time.Time `json:"completed_tasks"` // whether the user has completed the currently assigned task(s) in the current unit schedule (default false)
+	// Notification Requirements fields (reset to the default every day in user's timezone using the hourly streak timer)
+	Streak int `json:"streak"`
+	Pauses int `json:"pauses"`
 
 	Course Course `json:"course"`
 
@@ -130,28 +130,6 @@ type Notification struct {
 // NotificationParams entity
 type NotificationParams map[string]string
 
-// TZOffsets entity represents a set of single timezone offsets
-type TZOffsets []int
-
-// GeneratePairs gives the set of offset pairs to use for search according to preferEarly
-func (tz TZOffsets) GeneratePairs(preferEarly bool) []TZOffsetPair {
-	pairs := make([]TZOffsetPair, len(tz))
-	for i, offset := range tz {
-		if preferEarly {
-			pairs[i] = TZOffsetPair{Lower: offset, Upper: offset + utils.SecondsInHour - 1}
-		} else {
-			pairs[i] = TZOffsetPair{Lower: offset - utils.SecondsInHour + 1, Upper: offset}
-		}
-	}
-	return pairs
-}
-
-// TZOffsetPair represents a set of timezone offset ranges used to find users when sending notifications
-type TZOffsetPair struct {
-	Lower int
-	Upper int
-}
-
 // Module represents an individual module of a Course (e.g. Conversational Skills)
 type Module struct {
 	ID    string `json:"id"`
@@ -175,7 +153,11 @@ type UserUnit struct {
 	UserID    string `json:"user_id"`
 	CourseKey string `json:"course_key"`
 	//ModuleKey   string     `json:"module_key"`
-	Unit        Unit       `json:"unit"`
+	Unit Unit `json:"unit"`
+
+	Completed int  `json:"completed"` // number of schedule items the user has completed
+	Current   bool `json:"current"`
+
 	DateCreated time.Time  `json:"date_created"`
 	DateUpdated *time.Time `json:"date_updated"`
 }
@@ -193,15 +175,16 @@ type Unit struct {
 	Contents []Content      `json:"content"`
 	Schedule []ScheduleItem `json:"schedule"`
 
+	Required int `json:"required"` // number of schedule items required to be completed (may add required flags to each schedule item in future)
+
 	DateCreated time.Time
 	DateUpdated *time.Time
 }
 
 // UnitWithTimezone wraps unit with time information
 type UnitWithTimezone struct {
-	Unit           Unit   `json:"unit"`
-	TimezoneName   string `json:"timezone_name"`
-	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
+	Unit     Unit `json:"unit"`
+	Timezone      // include user timezone info
 }
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time
@@ -246,4 +229,32 @@ type UserReference struct {
 	UserData      map[string]interface{} `bson:"user_data,omitempty" json:"user_data,omitempty"`
 	DateStarted   *time.Time             `bson:"date_started,omitempty" json:"date_started,omitempty"`
 	DateCompleted *time.Time             `bson:"date_completed,omitempty" json:"date_completed,omitempty"`
+}
+
+// Timezone represents user timezone information received from the client
+type Timezone struct {
+	TimezoneName   string `json:"timezone_name"`
+	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
+}
+
+// TZOffsets entity represents a set of single timezone offsets
+type TZOffsets []int
+
+// GeneratePairs gives the set of offset pairs to use for search according to preferEarly
+func (tz TZOffsets) GeneratePairs(preferEarly bool) []TZOffsetPair {
+	pairs := make([]TZOffsetPair, len(tz))
+	for i, offset := range tz {
+		if preferEarly {
+			pairs[i] = TZOffsetPair{Lower: offset, Upper: offset + utils.SecondsInHour - 1}
+		} else {
+			pairs[i] = TZOffsetPair{Lower: offset - utils.SecondsInHour + 1, Upper: offset}
+		}
+	}
+	return pairs
+}
+
+// TZOffsetPair represents a set of timezone offset ranges used to find users when sending notifications
+type TZOffsetPair struct {
+	Lower int
+	Upper int
 }

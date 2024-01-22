@@ -111,6 +111,7 @@ func (n streaksNotifications) processNotifications() {
 					}
 
 					// load user courses for this course based on timezone offsets
+					// requirements, err := n.processNotificationRequirements(notification.Requirements, "user")
 					userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, tzOffsets.GeneratePairs(config.StreaksNotificationsConfig.PreferEarly), notification.Requirements)
 					if err != nil {
 						n.logger.Errorf("processNotifications -> error finding user courses for course key %s: %v", config.CourseKey, err)
@@ -238,42 +239,42 @@ func (n streaksNotifications) processStreaks() {
 			}
 		}
 
-		for i, userCourse := range userCourses {
-			if userCourse.CompletedTasks != nil {
-				uY, uM, uD := userCourse.CompletedTasks.Date()
-				userLoc := time.FixedZone(userCourse.TimezoneName, userCourse.TimezoneOffset)
-				now := time.Now()
-				userTime := now.In(userLoc)
-				y, m, d := userTime.Date()
-				pastY, pastM, pastD := userTime.AddDate(0, 0, -1).Date()
-				// edge case between time zone traveling
-				if uY == y && uM == m && uD == d {
-					continue
-					// yesterday
-				} else if uY == pastY && uM == pastM && uD == pastD {
-					userCourse.Streaks++
-					if userCourse.Streaks%config.PauseRewardStreak == 0 && userCourse.Pauses < config.MaxPauses {
-						userCourse.Pauses++
-					}
-					// date earlier than yesterday, streak is broken
-				} else {
-					userCourse.Streaks = 0
-					if userCourse.Pauses > 0 {
-						userCourse.Pauses--
-					}
-				}
-				// User started a course and not never made any progress
-			} else {
-				if userCourse.Pauses > 0 {
-					userCourse.Pauses--
-					// pauses = 0
-				} else {
-					userCourse.Streaks = 0
-					userCourse.Pauses = 0
-				}
-			}
-			userCourses[i] = userCourse
-		}
+		// for i, userCourse := range userCourses {
+		// 	if userCourse.CompletedTasks != nil {
+		// 		uY, uM, uD := userCourse.CompletedTasks.Date()
+		// 		userLoc := time.FixedZone(userCourse.TimezoneName, userCourse.TimezoneOffset)
+		// 		now := time.Now()
+		// 		userTime := now.In(userLoc)
+		// 		y, m, d := userTime.Date()
+		// 		pastY, pastM, pastD := userTime.AddDate(0, 0, -1).Date()
+		// 		// edge case between time zone traveling
+		// 		if uY == y && uM == m && uD == d {
+		// 			continue
+		// 			// yesterday
+		// 		} else if uY == pastY && uM == pastM && uD == pastD {
+		// 			userCourse.Streak++
+		// 			if userCourse.Streak%config.PauseRewardStreak == 0 && userCourse.Pauses < config.MaxPauses {
+		// 				userCourse.Pauses++
+		// 			}
+		// 			// date earlier than yesterday, streak is broken
+		// 		} else {
+		// 			userCourse.Streak = 0
+		// 			if userCourse.Pauses > 0 {
+		// 				userCourse.Pauses--
+		// 			}
+		// 		}
+		// 		// User started a course and not never made any progress
+		// 	} else {
+		// 		if userCourse.Pauses > 0 {
+		// 			userCourse.Pauses--
+		// 			// pauses = 0
+		// 		} else {
+		// 			userCourse.Streak = 0
+		// 			userCourse.Pauses = 0
+		// 		}
+		// 	}
+		// 	userCourses[i] = userCourse
+		// }
 		if len(userCourses) != 0 {
 			err = n.UpdateManyUserCoursesStreaks(config.AppID, config.OrgID, userCourses)
 			if err != nil {
@@ -287,7 +288,7 @@ func (n streaksNotifications) processStreaks() {
 func (n streaksNotifications) UpdateManyUserCoursesStreaks(appID string, orgID string, UserCourses []model.UserCourse) error {
 	for _, userCourse := range UserCourses {
 		// do we use userCourse id or userID+coursekey
-		err := n.storage.UpdateUserCourse(appID, orgID, userCourse.UserID, &userCourse.ID, userCourse.Course.Key, &userCourse.Streaks, &userCourse.Pauses, nil)
+		err := n.storage.UpdateUserCourse(appID, orgID, userCourse.UserID, &userCourse.ID, userCourse.Course.Key, &userCourse.Streak, &userCourse.Pauses)
 		if err != nil {
 			return err
 		}
@@ -298,3 +299,19 @@ func (n streaksNotifications) UpdateManyUserCoursesStreaks(appID string, orgID s
 	}
 	return nil
 }
+
+// func (n streaksNotifications) processNotificationRequirements(requirements map[string]interface{}, timezoneName string, timezoneOffset int) (map[string]interface{}, error) {
+// 	newRequirements := make(map[string]interface{})
+// 	for reqKey, reqVal := range requirements {
+// 		newRequirements[reqKey] = reqVal
+// 		if reqKey == "completed_tasks" {
+// 			userLoc := time.FixedZone(timezoneName, timezoneOffset)
+// 			if userLoc == nil {
+// 				return nil, errors.ErrorData(logutils.StatusInvalid, "user timezone", &logutils.FieldArgs{"name": timezoneName, "offset": timezoneOffset})
+// 			}
+
+// 			newRequirements["completed_tasks_time"] = time.Now().In(userLoc)
+// 		}
+// 	}
+// 	return newRequirements, nil
+// }

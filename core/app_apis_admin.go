@@ -155,7 +155,7 @@ func (s *adminImpl) GetCustomCourses(claims *tokenauth.Claims, id *string, name 
 		moduleKeys = strings.Split(*moduleKey, ",")
 	}
 
-	courses, err := s.app.storage.GetCustomCourses(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, moduleKeys)
+	courses, err := s.app.storage.FindCustomCourses(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, moduleKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +248,7 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 func (s *adminImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error) {
 	appID := claims.AppID
 	orgID := claims.OrgID
-	course, err := s.app.storage.GetCustomCourse(appID, orgID, key)
+	course, err := s.app.storage.FindCustomCourse(appID, orgID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, key string, ite
 		// prevent empty key and key mismatch. current implementation disallow key update
 		item.Key = key
 
-		course, err := storageTransaction.GetCustomCourse(claims.AppID, claims.OrgID, key)
+		course, err := storageTransaction.FindCustomCourse(claims.AppID, claims.OrgID, key)
 		if err != nil {
 			return err
 		}
@@ -279,7 +279,7 @@ func (s *adminImpl) UpdateCustomCourse(claims *tokenauth.Claims, key string, ite
 
 		// checks if new associated array keys all present in database
 		if !utils.Equal(curKeys, newKeys, false) {
-			returnedStructs, err := storageTransaction.GetCustomModules(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
+			returnedStructs, err := storageTransaction.FindCustomModules(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeModule, nil, err)
 			}
@@ -339,7 +339,7 @@ func (s *adminImpl) GetCustomModules(claims *tokenauth.Claims, id *string, name 
 		unitKeys = strings.Split(*unitKey, ",")
 	}
 
-	modules, err := s.app.storage.GetCustomModules(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, unitKeys)
+	modules, err := s.app.storage.FindCustomModules(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, unitKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +405,7 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 func (s *adminImpl) GetCustomModule(claims *tokenauth.Claims, key string) (*model.Module, error) {
 	appID := claims.AppID
 	orgID := claims.OrgID
-	module, err := s.app.storage.GetCustomModule(appID, orgID, key)
+	module, err := s.app.storage.FindCustomModule(appID, orgID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +422,7 @@ func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, key string, ite
 		item.Key = key
 
 		// checks if updated key correctly associate with existing struct in db
-		module, err := storageTransaction.GetCustomModule(claims.AppID, claims.OrgID, key)
+		module, err := storageTransaction.FindCustomModule(claims.AppID, claims.OrgID, key)
 		if err != nil {
 			return err
 		}
@@ -438,7 +438,7 @@ func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, key string, ite
 
 		// checks if new associated array keys all present in database
 		if !utils.Equal(curKeys, newKeys, false) {
-			returnedStructs, err := storageTransaction.GetCustomUnits(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
+			returnedStructs, err := storageTransaction.FindCustomUnits(claims.AppID, claims.OrgID, nil, nil, newKeys, nil)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
 			}
@@ -497,7 +497,7 @@ func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *s
 		contentKeys = strings.Split(*contentKey, ",")
 	}
 
-	result, err := s.app.storage.GetCustomUnits(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, contentKeys)
+	result, err := s.app.storage.FindCustomUnits(claims.AppID, claims.OrgID, idArr, nameArr, keyArr, contentKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +543,7 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 }
 
 func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, key string) (*model.Unit, error) {
-	result, err := s.app.storage.GetCustomUnit(claims.AppID, claims.OrgID, key)
+	result, err := s.app.storage.FindCustomUnit(claims.AppID, claims.OrgID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +557,7 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 		// prevent empty key and key mismatch. current implementation disallow key update
 		item.Key = key
 
-		unit, err := storageTransaction.GetCustomUnit(claims.AppID, claims.OrgID, key)
+		unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, key)
 		if err != nil {
 			return err
 		}
@@ -573,7 +573,7 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 
 		// checks if new associated array keys all present in database
 		if !utils.Equal(curKeys, newKeys, false) {
-			returnedStructs, err := storageTransaction.GetCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
+			returnedStructs, err := storageTransaction.FindCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, nil, err)
 			}
@@ -631,7 +631,7 @@ func (s *adminImpl) GetCustomContents(claims *tokenauth.Claims, id *string, name
 		keyArr = strings.Split(*key, ",")
 	}
 
-	result, err := s.app.storage.GetCustomContents(claims.AppID, claims.OrgID, idArr, nameArr, keyArr)
+	result, err := s.app.storage.FindCustomContents(claims.AppID, claims.OrgID, idArr, nameArr, keyArr)
 	if err != nil {
 		return nil, err
 	}
@@ -650,7 +650,7 @@ func (s *adminImpl) CreateCustomContent(claims *tokenauth.Claims, item model.Con
 }
 
 func (s *adminImpl) GetCustomContent(claims *tokenauth.Claims, key string) (*model.Content, error) {
-	result, err := s.app.storage.GetCustomContent(claims.AppID, claims.OrgID, key)
+	result, err := s.app.storage.FindCustomContent(claims.AppID, claims.OrgID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -665,7 +665,7 @@ func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, key string, it
 		// prevent empty key and key mismatch. current implementation disallow key update
 		item.Key = key
 
-		content, err := storageTransaction.GetCustomContent(claims.AppID, claims.OrgID, key)
+		content, err := storageTransaction.FindCustomContent(claims.AppID, claims.OrgID, key)
 		if err != nil {
 			return err
 		}
@@ -677,7 +677,7 @@ func (s *adminImpl) UpdateCustomContent(claims *tokenauth.Claims, key string, it
 
 		// checks if new associated array keys all present in database
 		if !utils.Equal(curKeys, newKeys, false) {
-			returnedStructs, err := storageTransaction.GetCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
+			returnedStructs, err := storageTransaction.FindCustomContents(claims.AppID, claims.OrgID, nil, nil, newKeys)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, nil, err)
 			}
@@ -767,7 +767,7 @@ func (s *adminImpl) modulesNotInDB(appID string, orgID string, modules []model.M
 	for _, val := range modules {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.GetCustomModules(appID, orgID, nil, nil, keys, nil)
+	returnedStructs, err := s.app.storage.FindCustomModules(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeModule, nil, err)
 	}
@@ -791,7 +791,7 @@ func (s *adminImpl) unitsNotInDB(appID string, orgID string, units []model.Unit)
 	for _, val := range units {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.GetCustomUnits(appID, orgID, nil, nil, keys, nil)
+	returnedStructs, err := s.app.storage.FindCustomUnits(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
 	}
@@ -815,7 +815,7 @@ func (s *adminImpl) contentsNotInDB(appID string, orgID string, contents []model
 	for _, val := range contents {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.GetCustomContents(appID, orgID, nil, nil, keys)
+	returnedStructs, err := s.app.storage.FindCustomContents(appID, orgID, nil, nil, keys)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, nil, err)
 	}

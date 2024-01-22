@@ -29,9 +29,8 @@ type userCourse struct {
 	TimezoneOffset int    `bson:"timezone_offset"` // in seconds east of UTC
 
 	// Notification Requirements fields
-	Streaks        int        `bson:"streaks"`
-	Pauses         int        `bson:"pauses"`
-	CompletedTasks *time.Time `bson:"completed_tasks"`
+	Streak int `bson:"streak"`
+	Pauses int `bson:"pauses"`
 
 	Course course `bson:"course"`
 
@@ -74,7 +73,11 @@ type userUnit struct {
 	UserID    string `bson:"user_id"`
 	CourseKey string `bson:"course_key"`
 	//ModuleKey   string     `bson:"module_key"`
-	Unit        unit       `bson:"unit"`
+	Unit unit `bson:"unit"`
+
+	Completed int  `bson:"completed"` // number of schedule items the user has completed
+	Current   bool `bson:"current"`
+
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
 }
@@ -90,6 +93,8 @@ type unit struct {
 	Name        string               `bson:"name"`
 	ContentKeys []string             `bson:"content_keys"`
 	Schedule    []model.ScheduleItem `bson:"schedule"`
+
+	Required int `json:"required"` // number of schedule items required to be completed
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`

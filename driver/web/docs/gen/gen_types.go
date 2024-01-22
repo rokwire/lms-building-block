@@ -166,6 +166,12 @@ type StreaksNotificationsConfig struct {
 	TimezoneOffset      *int           `json:"timezone_offset,omitempty"`
 }
 
+// Timezone defines model for Timezone.
+type Timezone struct {
+	TimezoneName   string `json:"timezone_name"`
+	TimezoneOffset int    `json:"timezone_offset"`
+}
+
 // Unit defines model for Unit.
 type Unit struct {
 	AppId    *string        `json:"app_id,omitempty"`
@@ -175,6 +181,13 @@ type Unit struct {
 	Name     string         `json:"name"`
 	OrgId    *string        `json:"org_id,omitempty"`
 	Schedule []ScheduleItem `json:"schedule"`
+}
+
+// UnitWithTimezone defines model for UnitWithTimezone.
+type UnitWithTimezone struct {
+	TimezoneName   string `json:"timezone_name"`
+	TimezoneOffset int    `json:"timezone_offset"`
+	Unit           Unit   `json:"unit"`
 }
 
 // User defines model for User.
@@ -366,13 +379,6 @@ type GetApiUsersCoursesParams struct {
 	Key *string `form:"key,omitempty" json:"key,omitempty"`
 }
 
-// PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONBody defines parameters for PutApiUsersCoursesCourseKeyUnitsUnitKey.
-type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONBody struct {
-	TimezoneName   string `json:"timezone_name"`
-	TimezoneOffset int    `json:"timezone_offset"`
-	Unit           Unit   `json:"unit"`
-}
-
 // PostAdminContentJSONRequestBody defines body for PostAdminContent for application/json ContentType.
 type PostAdminContentJSONRequestBody = Content
 
@@ -413,4 +419,7 @@ type PostAdminUnitsJSONRequestBody = Unit
 type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
 // PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyUnitsUnitKey for application/json ContentType.
-type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONBody
+type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UnitWithTimezone
+
+// PostApiUsersCoursesKeyJSONRequestBody defines body for PostApiUsersCoursesKey for application/json ContentType.
+type PostApiUsersCoursesKeyJSONRequestBody = Timezone

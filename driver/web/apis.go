@@ -108,7 +108,7 @@ func (a APIsHandler) clientCreateUserCourse(claims *tokenauth.Claims, params map
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
 	}
 
-	return a.app.Client.CreateUserCourse(claims, key)
+	return a.app.Client.CreateUserCourse(claims, key, *item)
 }
 
 func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map[string]interface{}) error {

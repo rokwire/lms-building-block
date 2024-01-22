@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// GetCustomCourses finds courses by a set of parameters
-func (sa *Adapter) GetCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error) {
+// FindCustomCourses finds courses by a set of parameters
+func (sa *Adapter) FindCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
@@ -52,8 +52,8 @@ func (sa *Adapter) GetCustomCourses(appID string, orgID string, id []string, nam
 	return convertedResult, nil
 }
 
-// GetCustomCourse finds a course by id
-func (sa *Adapter) GetCustomCourse(appID string, orgID string, key string) (*model.Course, error) {
+// FindCustomCourse finds a course by id
+func (sa *Adapter) FindCustomCourse(appID string, orgID string, key string) (*model.Course, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result course
 	err := sa.db.customCourses.FindOne(sa.context, filter, &result, nil)
@@ -150,8 +150,8 @@ func (sa *Adapter) DeleteCustomCourse(appID string, orgID string, key string) er
 	return nil
 }
 
-// GetCustomModules finds courses by a set of parameters
-func (sa *Adapter) GetCustomModules(appID string, orgID string, id []string, name []string, key []string, unitKeys []string) ([]model.Module, error) {
+// FindCustomModules finds courses by a set of parameters
+func (sa *Adapter) FindCustomModules(appID string, orgID string, id []string, name []string, key []string, unitKeys []string) ([]model.Module, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
@@ -193,8 +193,8 @@ func (sa *Adapter) GetCustomModules(appID string, orgID string, id []string, nam
 	return convertedResult, nil
 }
 
-// GetCustomModule finds a module by id
-func (sa *Adapter) GetCustomModule(appID string, orgID string, key string) (*model.Module, error) {
+// FindCustomModule finds a module by id
+func (sa *Adapter) FindCustomModule(appID string, orgID string, key string) (*model.Module, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result module
 	err := sa.db.customModules.FindOne(sa.context, filter, &result, nil)
@@ -284,8 +284,8 @@ func (sa *Adapter) DeleteCustomModule(appID string, orgID string, key string) er
 	return nil
 }
 
-// GetCustomUnits finds units by a set of parameters
-func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name []string, key []string, contentKeys []string) ([]model.Unit, error) {
+// FindCustomUnits finds units by a set of parameters
+func (sa *Adapter) FindCustomUnits(appID string, orgID string, id []string, name []string, key []string, contentKeys []string) ([]model.Unit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
@@ -324,8 +324,8 @@ func (sa *Adapter) GetCustomUnits(appID string, orgID string, id []string, name 
 	return convertedResult, nil
 }
 
-// GetCustomUnit finds a unit by id
-func (sa *Adapter) GetCustomUnit(appID string, orgID string, key string) (*model.Unit, error) {
+// FindCustomUnit finds a unit by id
+func (sa *Adapter) FindCustomUnit(appID string, orgID string, key string) (*model.Unit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result unit
 	err := sa.db.customUnits.FindOne(sa.context, filter, &result, nil)
@@ -458,8 +458,8 @@ func (sa *Adapter) DeleteCustomUnit(appID string, orgID string, key string) erro
 	return nil
 }
 
-// GetCustomContents finds contents by a set of parameters
-func (sa *Adapter) GetCustomContents(appID string, orgID string, id []string, name []string, key []string) ([]model.Content, error) {
+// FindCustomContents finds contents by a set of parameters
+func (sa *Adapter) FindCustomContents(appID string, orgID string, id []string, name []string, key []string) ([]model.Content, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
@@ -495,8 +495,8 @@ func (sa *Adapter) GetCustomContents(appID string, orgID string, id []string, na
 	return convertedResult, nil
 }
 
-// GetCustomContent finds a content by id
-func (sa *Adapter) GetCustomContent(appID string, orgID string, key string) (*model.Content, error) {
+// FindCustomContent finds a content by id
+func (sa *Adapter) FindCustomContent(appID string, orgID string, key string) (*model.Content, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result content
 	err := sa.db.customContent.FindOne(sa.context, filter, &result, nil)
@@ -864,40 +864,40 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 	}
 
 	// notification requirements
-	for reqKey, reqVal := range requirements {
-		if reqKey == "completed_tasks" {
-			now := time.Now()
-			y, m, d := now.Date()
-			todayStart := time.Date(y, m, d, 0, 0, 0, now.Nanosecond(), time.UTC)
-			if reqVal == true {
-				filter["completed_tasks"] = bson.M{
-					"$gte": todayStart,
-				}
-			} else if reqVal == false {
-				noneCompletedFilter := make(bson.A, 0)
-				noneCompletedFilter = append(noneCompletedFilter,
-					bson.M{
-						"completed_tasks": bson.M{
-							"$lt": todayStart,
-						},
-					},
-				)
-				noneCompletedFilter = append(noneCompletedFilter,
-					bson.M{
-						"completed_tasks": bson.M{
-							"$eq": nil,
-						},
-					},
-				)
-				filter["$or"] = noneCompletedFilter
-			} else {
-				// only accept boolean and nil
-				return nil, errors.ErrorData(logutils.StatusInvalid, "notification requirement", &logutils.FieldArgs{"completed_tasks": reqVal})
-			}
-		} else {
-			filter[reqKey] = reqVal
-		}
-	}
+	// for reqKey, reqVal := range requirements {
+	// 	if reqKey == "completed_tasks" {
+	// 		now := time.Now()
+	// 		y, m, d := now.Date()
+	// 		todayStart := time.Date(y, m, d, 0, 0, 0, now.Nanosecond(), time.UTC)
+	// 		if reqVal == true {
+	// 			filter["completed_tasks"] = bson.M{
+	// 				"$gte": todayStart,
+	// 			}
+	// 		} else if reqVal == false {
+	// 			noneCompletedFilter := make(bson.A, 0)
+	// 			noneCompletedFilter = append(noneCompletedFilter,
+	// 				bson.M{
+	// 					"completed_tasks": bson.M{
+	// 						"$lt": todayStart,
+	// 					},
+	// 				},
+	// 			)
+	// 			noneCompletedFilter = append(noneCompletedFilter,
+	// 				bson.M{
+	// 					"completed_tasks": bson.M{
+	// 						"$eq": nil,
+	// 					},
+	// 				},
+	// 			)
+	// 			filter["$or"] = noneCompletedFilter
+	// 		} else {
+	// 			// only accept boolean and nil
+	// 			return nil, errors.ErrorData(logutils.StatusInvalid, "notification requirement", &logutils.FieldArgs{"completed_tasks": reqVal})
+	// 		}
+	// 	} else {
+	// 		filter[reqKey] = reqVal
+	// 	}
+	// }
 
 	var result []userCourse
 	err := sa.db.userCourses.Find(sa.context, filter, &result, nil)
@@ -921,8 +921,8 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 	return convertedResult, nil
 }
 
-// GetUserCourse finds a user course by id
-func (sa *Adapter) GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error) {
+// FindUserCourse finds a user course by id
+func (sa *Adapter) FindUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
 	var result userCourse
 	err := sa.db.userCourses.FindOne(sa.context, filter, &result, nil)
@@ -956,22 +956,19 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 	return nil
 }
 
-// UpdateUserCourse updates streaks, pauses, and completed_tasks fieled
-func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, userCourseID *string, courseKey string, streaks *int, pauses *int, userTime *time.Time) error {
+// UpdateUserCourse updates a user course
+func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, userCourseID *string, courseKey string, streak *int, pauses *int) error {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey, "user_id": userID}
 	if userCourseID != nil {
 		filter["_id"] = userCourseID
 	}
 
 	updateVals := bson.M{}
-	if streaks != nil {
-		updateVals["streaks"] = streaks
+	if streak != nil {
+		updateVals["streak"] = streak
 	}
 	if pauses != nil {
 		updateVals["pauses"] = pauses
-	}
-	if userTime != nil {
-		updateVals["completed_tasks"] = userTime
 	}
 
 	update := bson.M{
@@ -1043,8 +1040,12 @@ func (sa *Adapter) DeleteUserCourses(appID string, orgID string, key string) err
 }
 
 // FindUserUnit finds a user unit
-func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey string) (*model.UserUnit, error) {
+func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey string, current *bool) (*model.UserUnit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "unit.key": unitKey}
+	if current != nil {
+		filter["current"] = *current
+	}
+
 	var result userUnit
 	err := sa.db.userUnits.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
@@ -1080,20 +1081,23 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 }
 
 // UpdateUserUnit updates shcedules in a user unit
-func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.Unit) error {
+func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.UserUnit) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey}
+	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
-			"unit.schedule": item.Schedule,
+			"unit.schedule": item.Unit.Schedule,
+			"completed":     item.Completed,
+			"current":       item.Current,
 			"date_updated":  time.Now(),
 		},
 	}
 	result, err := sa.db.userUnits.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, &logutils.FieldArgs{"app_id": appID, "org_id": appID, "user_id": appID, "course_key": courseKey}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, &errArgs, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUserUnit, &logutils.FieldArgs{"app_id": appID, "org_id": appID, "user_id": appID, "course_key": courseKey}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUserUnit, &errArgs, err)
 	}
 	return nil
 }

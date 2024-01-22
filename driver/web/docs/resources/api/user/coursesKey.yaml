@@ -48,6 +48,13 @@ post:
       explode: false
       schema:
         type: string
+  requestBody:
+    description: user timezone information
+    content:
+      application/json:
+        schema:
+          $ref: "../../../schemas/custom/Timezone.yaml"
+    required: true
   responses:
     200:
       description: Success
@@ -103,7 +110,7 @@ put:
   - Client
   summary: client voluntarily drops a course
   description: |
-    mark custom user course as deleted
+    mark custom user course as dropped
   security:
     - bearerAuth: []
   parameters:

@@ -325,6 +325,13 @@ paths:
           explode: false
           schema:
             type: string
+      requestBody:
+        description: user timezone information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Timezone'
+        required: true
       responses:
         '200':
           description: Success
@@ -380,7 +387,7 @@ paths:
         - Client
       summary: client voluntarily drops a course
       description: |
-        mark custom user course as deleted
+        mark custom user course as dropped
       security:
         - bearerAuth: []
       parameters:
@@ -440,18 +447,7 @@ paths:
         content:
           application/json:
             schema:
-              required:
-                - unit
-                - timezone_name
-                - timezone_offset
-              type: object
-              properties:
-                unit:
-                  $ref: '#/components/schemas/Unit'
-                timezone_name:
-                  type: string
-                timezone_offset:
-                  type: integer
+              $ref: '#/components/schemas/UnitWithTimezone'
         required: true
       responses:
         '200':
@@ -2078,6 +2074,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ScheduleItem'
+    UnitWithTimezone:
+      required:
+        - unit
+        - timezone_name
+        - timezone_offset
+      type: object
+      properties:
+        unit:
+          $ref: '#/components/schemas/Unit'
+        timezone_name:
+          type: string
+        timezone_offset:
+          type: integer
     Content:
       required:
         - id
@@ -2186,6 +2195,16 @@ components:
               type: string
               format: date-time
               nullable: true
+    Timezone:
+      required:
+        - timezone_name
+        - timezone_offset
+      type: object
+      properties:
+        timezone_name:
+          type: string
+        timezone_offset:
+          type: integer
     CourseConfig:
       required:
         - id

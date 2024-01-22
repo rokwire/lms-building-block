@@ -87,7 +87,7 @@ func (sa *Adapter) customModuleConversionStorageToAPI(item module) (model.Module
 	// }
 	if len(item.UnitKeys) > 0 {
 		var units []model.Unit
-		units, err := sa.GetCustomUnits(item.AppID, item.OrgID, nil, nil, item.UnitKeys, nil)
+		units, err := sa.FindCustomUnits(item.AppID, item.OrgID, nil, nil, item.UnitKeys, nil)
 		if err != nil {
 			return result, err
 		}
@@ -119,35 +119,12 @@ func (sa *Adapter) customModuleConversionAPIToStorage(item model.Module) module 
 
 // customUnitConversionStorageToAPI formats storage struct to appropirate struct for API request
 func (sa *Adapter) customUnitConversionStorageToAPI(item unit) (model.Unit, error) {
-	var result model.Unit
-	result.ID = item.ID
-	result.AppID = item.AppID
-	result.OrgID = item.OrgID
-	result.Key = item.Key
-	result.Name = item.Name
-	result.Schedule = item.Schedule
-	result.DateCreated = item.DateCreated
-	result.DateUpdated = item.DateUpdated
-	// if len(item.ContentKeys) > 0 {
-	// 	var linked []content
-	// 	subFilter := bson.M{"org_id": item.OrgID, "app_id": item.AppID}
-	// 	subFilter["key"] = bson.M{"$in": item.ContentKeys}
-	// 	err := sa.db.customContent.Find(sa.context, subFilter, &linked, nil)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	for _, singleContent := range linked {
-	// 		convertedContent, err := sa.customContentConversionStorageToAPI(singleContent)
-	// 		if err != nil {
-	// 			return result, err
-	// 		}
-	// 		result.Contents = append(result.Contents, convertedContent)
-	// 	}
-	// }
+	result := model.Unit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, Key: item.Key, Name: item.Name, Schedule: item.Schedule,
+		Required: item.Required, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	if len(item.ContentKeys) > 0 {
 		var contents []model.Content
-		contents, err := sa.GetCustomContents(item.AppID, item.OrgID, nil, nil, item.ContentKeys)
+		contents, err := sa.FindCustomContents(item.AppID, item.OrgID, nil, nil, item.ContentKeys)
 		if err != nil {
 			return result, err
 		}
@@ -257,7 +234,7 @@ func (sa *Adapter) userCourseConversionStorageToAPI(item userCourse) (model.User
 
 func (sa *Adapter) userUnitConversionStorageToAPI(item userUnit) (model.UserUnit, error) {
 	result := model.UserUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey,
-		DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+		Completed: item.Completed, Current: item.Current, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	unit, err := sa.customUnitConversionStorageToAPI(item.Unit)
 	if err != nil {

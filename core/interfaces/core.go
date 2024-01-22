@@ -34,7 +34,7 @@ type Client interface {
 
 	GetUserCourses(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.UserCourse, error)
 	GetUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
-	CreateUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
+	CreateUserCourse(claims *tokenauth.Claims, key string, item model.UserCourse) (*model.UserCourse, error)
 	DeleteUserCourse(claims *tokenauth.Claims, key string) error
 	DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
 
