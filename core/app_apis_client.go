@@ -209,8 +209,7 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
 		// find the current user unit (this is managed by the streaks timer)
-		current := true
-		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Id, courseKey, unitKey, &current)
+		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Id, courseKey, unitKey)
 		if err != nil {
 			return err
 		}
@@ -231,8 +230,15 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
 			}
 		} else {
+			// only updates to the current user unit are allowed
+			if !userUnit.Current {
+				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
+			}
+
+			now := time.Now().UTC()
 			userUnit.Unit.Schedule = item.Unit.Schedule
 			userUnit.Completed++
+			userUnit.LastCompleted = &now
 
 			err = storageTransaction.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, *userUnit)
 			if err != nil {

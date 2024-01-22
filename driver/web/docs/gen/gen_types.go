@@ -161,7 +161,7 @@ type StreaksNotificationsConfig struct {
 	Notifications       []Notification `json:"notifications"`
 	NotificationsActive bool           `json:"notifications_active"`
 	PreferEarly         bool           `json:"prefer_early"`
-	ProcessTime         int            `json:"process_time"`
+	StreaksProcessTime  int            `json:"streaks_process_time"`
 	TimezoneName        string         `json:"timezone_name"`
 	TimezoneOffset      *int           `json:"timezone_offset,omitempty"`
 }

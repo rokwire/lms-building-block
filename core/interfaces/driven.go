@@ -104,7 +104,7 @@ type Storage interface {
 	InsertUserUnit(item model.UserUnit) error
 	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.UserUnit) error
 	UpdateUserUnits(key string, item model.Unit) error
-	FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey string, current *bool) (*model.UserUnit, error)
+	FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey string) (*model.UserUnit, error)
 	DeleteUserUnit(appID string, orgID string, key string) error
 
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error

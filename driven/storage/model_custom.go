@@ -78,8 +78,9 @@ type userUnit struct {
 	Completed int  `bson:"completed"` // number of schedule items the user has completed
 	Current   bool `bson:"current"`
 
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
+	LastCompleted *time.Time `bson:"last_completed"`
+	DateCreated   time.Time  `bson:"date_created"`
+	DateUpdated   *time.Time `bson:"date_updated"`
 }
 
 type unit struct {
@@ -95,25 +96,6 @@ type unit struct {
 	Schedule    []model.ScheduleItem `bson:"schedule"`
 
 	Required int `json:"required"` // number of schedule items required to be completed
-
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
-}
-
-type content struct {
-	ID    string `bson:"_id"`
-	AppID string `bson:"app_id"`
-	OrgID string `bson:"org_id"`
-
-	//CourseKey        string          `bson:"course_key"`
-	//ModuleKey        string          `bson:"module_key"`
-	//UnitKey          string          `bson:"unit_key"`
-	Key              string          `bson:"key"`
-	Type             string          `bson:"type"` // assignment, resource, reward, evaluation
-	Name             string          `bson:"name"`
-	Details          string          `bson:"details"`
-	ContentReference model.Reference `bson:"reference"`
-	LinkedContent    []string        `bson:"linked_content"` // Content Keys
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`

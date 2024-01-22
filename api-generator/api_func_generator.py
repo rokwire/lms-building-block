@@ -95,18 +95,18 @@ class APIHandlerGenerator:
                         conv_arg = 'conversionFunc: convert, '
                     request_cases += f'handler := apiHandler[{generic_params}]{{authorization: authorization, {conv_arg}messageDataType: {message_data_type}}}\n'
                     request_cases += f'err = setCoreHandler[{generic_params}](&handler, coreHandler, method, tag, coreFunc)\n'
-                    request_cases += 'if err != nil {\nreturn errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)\n}\n\n'
+                    request_cases += 'if err != nil {\nreturn errors.WrapErrorAction(logutils.ActionApply, "api core handler", &logutils.FieldArgs{"name": tag+"."+coreFunc}, err)\n}\n\n'
                     request_cases += f'router.HandleFunc(pathStr, handleRequest[{generic_params}](&handler, a.paths, a.logger)).Methods(method)\n'
             if request_cases != '':
                 request_cases += f'default:\nhandler := apiHandler[{data_type}, {data_type}, {data_type}]{{authorization: authorization, messageDataType: {message_data_type}}}\n'
                 request_cases += f'err = setCoreHandler[{data_type}, {data_type}, {data_type}](&handler, coreHandler, method, tag, coreFunc)\n'
-                request_cases += 'if err != nil {\nreturn errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)\n}\n\n'
+                request_cases += 'if err != nil {\nreturn errors.WrapErrorAction(logutils.ActionApply, "api core handler", &logutils.FieldArgs{"name": tag+"."+coreFunc}, err)\n}\n\n'
                 request_cases += f'router.HandleFunc(pathStr, handleRequest[{data_type}, {data_type}, {data_type}](&handler, a.paths, a.logger)).Methods(method)\n'
                 data += f'switch requestBody {{\n{request_cases}}}\n'
             else:
                 data += f'handler := apiHandler[{data_type}, {data_type}, {data_type}]{{authorization: authorization, messageDataType: {message_data_type}}}\n'
                 data += f'err = setCoreHandler[{data_type}, {data_type}, {data_type}](&handler, coreHandler, method, tag, coreFunc)\n'
-                data += 'if err != nil {\nreturn errors.WrapErrorAction(logutils.ActionApply, "api core handler", nil, err)\n}\n\n'
+                data += 'if err != nil {\nreturn errors.WrapErrorAction(logutils.ActionApply, "api core handler", &logutils.FieldArgs{"name": tag+"."+coreFunc}, err)\n}\n\n'
                 data += f'router.HandleFunc(pathStr, handleRequest[{data_type}, {data_type}, {data_type}](&handler, a.paths, a.logger)).Methods(method)\n'
         data += f'default:\nreturn errors.ErrorData(logutils.StatusInvalid, "data type reference", nil)\n}}\n\n'
         

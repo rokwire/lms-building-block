@@ -207,8 +207,8 @@ func (n streaksNotifications) processStreaks() {
 	for _, config := range courseConfigs {
 		tzOffsets := make(model.TZOffsets, 0)
 		var userCourses []model.UserCourse
-		// 0 for streak processtime
-		offset := 0 - nowSeconds
+
+		offset := config.StreaksNotificationsConfig.StreaksProcessTime - nowSeconds
 		if config.StreaksNotificationsConfig.TimezoneName == "user" {
 			if offset >= minTZOffset && offset <= maxTZOffset {
 				tzOffsets = append(tzOffsets, offset)

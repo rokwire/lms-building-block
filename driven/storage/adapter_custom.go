@@ -42,7 +42,7 @@ func (sa *Adapter) FindCustomCourses(appID string, orgID string, id []string, na
 
 	var convertedResult []model.Course
 	for _, retrievedCourse := range result {
-		singleConverted, err := sa.customCourseConversionStorageToAPI(retrievedCourse)
+		singleConverted, err := sa.customCourseFromStorage(retrievedCourse)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func (sa *Adapter) FindCustomCourse(appID string, orgID string, key string) (*mo
 		return nil, err
 	}
 
-	convertedResult, err := sa.customCourseConversionStorageToAPI(result)
+	convertedResult, err := sa.customCourseFromStorage(result)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (sa *Adapter) FindCustomCourse(appID string, orgID string, key string) (*mo
 func (sa *Adapter) InsertCustomCourse(item model.Course) error {
 	item.DateCreated = time.Now()
 	item.DateUpdated = nil
-	course := sa.customCourseConversionAPIToStorage(item)
+	course := sa.customCourseToStorage(item)
 
 	_, err := sa.db.customCourses.InsertOne(sa.context, course)
 	if err != nil {
@@ -183,7 +183,7 @@ func (sa *Adapter) FindCustomModules(appID string, orgID string, id []string, na
 
 	var convertedResult []model.Module
 	for _, retrievedModule := range result {
-		singleConverted, err := sa.customModuleConversionStorageToAPI(retrievedModule)
+		singleConverted, err := sa.customModuleFromStorage(retrievedModule)
 		if err != nil {
 			return nil, err
 		}
@@ -202,7 +202,7 @@ func (sa *Adapter) FindCustomModule(appID string, orgID string, key string) (*mo
 		return nil, err
 	}
 
-	convertedResult, err := sa.customModuleConversionStorageToAPI(result)
+	convertedResult, err := sa.customModuleFromStorage(result)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func (sa *Adapter) FindCustomModule(appID string, orgID string, key string) (*mo
 func (sa *Adapter) InsertCustomModule(item model.Module) error {
 	item.DateCreated = time.Now()
 	item.DateUpdated = nil
-	module := sa.customModuleConversionAPIToStorage(item)
+	module := sa.customModuleToStorage(item)
 	_, err := sa.db.customModules.InsertOne(sa.context, module)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeModule, nil, err)
@@ -228,7 +228,7 @@ func (sa *Adapter) InsertCustomModules(items []model.Module) error {
 	for i, item := range items {
 		item.DateCreated = time.Now()
 		item.DateUpdated = nil
-		module := sa.customModuleConversionAPIToStorage(item)
+		module := sa.customModuleToStorage(item)
 		storeItems[i] = module
 	}
 
@@ -314,7 +314,7 @@ func (sa *Adapter) FindCustomUnits(appID string, orgID string, id []string, name
 
 	var convertedResult []model.Unit
 	for _, retrievedUnit := range result {
-		singleConverted, err := sa.customUnitConversionStorageToAPI(retrievedUnit)
+		singleConverted, err := sa.customUnitFromStorage(retrievedUnit)
 		if err != nil {
 			return nil, err
 		}
@@ -333,7 +333,7 @@ func (sa *Adapter) FindCustomUnit(appID string, orgID string, key string) (*mode
 		return nil, err
 	}
 
-	convertedResult, err := sa.customUnitConversionStorageToAPI(result)
+	convertedResult, err := sa.customUnitFromStorage(result)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +345,7 @@ func (sa *Adapter) FindCustomUnit(appID string, orgID string, key string) (*mode
 func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
 	item.DateCreated = time.Now()
 	item.DateUpdated = nil
-	unit := sa.customUnitConversionAPIToStorage(item)
+	unit := sa.customUnitToStorage(item)
 	_, err := sa.db.customUnits.InsertOne(sa.context, unit)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUnit, nil, err)
@@ -359,7 +359,7 @@ func (sa *Adapter) InsertCustomUnits(items []model.Unit) error {
 	for i, item := range items {
 		item.DateCreated = time.Now()
 		item.DateUpdated = nil
-		unit := sa.customUnitConversionAPIToStorage(item)
+		unit := sa.customUnitToStorage(item)
 		storeItems[i] = unit
 	}
 
@@ -472,52 +472,33 @@ func (sa *Adapter) FindCustomContents(appID string, orgID string, id []string, n
 	if len(key) != 0 {
 		filter["key"] = bson.M{"$in": key}
 	}
-	var result []content
+	var result []model.Content
 	err := sa.db.customContent.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		errArgs := logutils.FieldArgs(filter)
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, &errArgs, err)
 	}
-	if len(result) == 0 {
-		//no data
-		return nil, nil
-	}
 
-	var convertedResult []model.Content
-	for _, retrievedContent := range result {
-		singleConverted, err := sa.customContentConversionStorageToAPI(retrievedContent)
-		if err != nil {
-			return nil, err
-		}
-		convertedResult = append(convertedResult, singleConverted)
-	}
-
-	return convertedResult, nil
+	return result, nil
 }
 
 // FindCustomContent finds a content by id
 func (sa *Adapter) FindCustomContent(appID string, orgID string, key string) (*model.Content, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
-	var result content
+	var result model.Content
 	err := sa.db.customContent.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
-		return nil, err
+		errArgs := logutils.FieldArgs(filter)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, &errArgs, err)
 	}
 
-	convertedResult, err := sa.customContentConversionStorageToAPI(result)
-	if err != nil {
-		return nil, err
-	}
-
-	return &convertedResult, nil
+	return &result, nil
 }
 
 // InsertCustomContent inserts a content
 func (sa *Adapter) InsertCustomContent(item model.Content) error {
 	item.DateCreated = time.Now()
-	item.DateUpdated = nil
-	content := sa.customContentConversionAPIToStorage(item)
-	_, err := sa.db.customContent.InsertOne(sa.context, content)
+	_, err := sa.db.customContent.InsertOne(sa.context, item)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeContent, nil, err)
 	}
@@ -529,9 +510,7 @@ func (sa *Adapter) InsertCustomContents(items []model.Content) error {
 	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
 		item.DateCreated = time.Now()
-		item.DateUpdated = nil
-		content := sa.customContentConversionAPIToStorage(item)
-		storeItems[i] = content
+		storeItems[i] = item
 	}
 
 	_, err := sa.db.customContent.InsertMany(sa.context, storeItems, nil)
@@ -863,42 +842,6 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 		filter["$or"] = offsetFilters
 	}
 
-	// notification requirements
-	// for reqKey, reqVal := range requirements {
-	// 	if reqKey == "completed_tasks" {
-	// 		now := time.Now()
-	// 		y, m, d := now.Date()
-	// 		todayStart := time.Date(y, m, d, 0, 0, 0, now.Nanosecond(), time.UTC)
-	// 		if reqVal == true {
-	// 			filter["completed_tasks"] = bson.M{
-	// 				"$gte": todayStart,
-	// 			}
-	// 		} else if reqVal == false {
-	// 			noneCompletedFilter := make(bson.A, 0)
-	// 			noneCompletedFilter = append(noneCompletedFilter,
-	// 				bson.M{
-	// 					"completed_tasks": bson.M{
-	// 						"$lt": todayStart,
-	// 					},
-	// 				},
-	// 			)
-	// 			noneCompletedFilter = append(noneCompletedFilter,
-	// 				bson.M{
-	// 					"completed_tasks": bson.M{
-	// 						"$eq": nil,
-	// 					},
-	// 				},
-	// 			)
-	// 			filter["$or"] = noneCompletedFilter
-	// 		} else {
-	// 			// only accept boolean and nil
-	// 			return nil, errors.ErrorData(logutils.StatusInvalid, "notification requirement", &logutils.FieldArgs{"completed_tasks": reqVal})
-	// 		}
-	// 	} else {
-	// 		filter[reqKey] = reqVal
-	// 	}
-	// }
-
 	var result []userCourse
 	err := sa.db.userCourses.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -911,7 +854,7 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 
 	var convertedResult []model.UserCourse
 	for _, retrievedResult := range result {
-		singleConverted, err := sa.userCourseConversionStorageToAPI(retrievedResult)
+		singleConverted, err := sa.userCourseFromStorage(retrievedResult)
 		if err != nil {
 			return nil, err
 		}
@@ -930,7 +873,7 @@ func (sa *Adapter) FindUserCourse(appID string, orgID string, userID string, cou
 		return nil, err
 	}
 
-	convertedResult, err := sa.userCourseConversionStorageToAPI(result)
+	convertedResult, err := sa.userCourseFromStorage(result)
 	if err != nil {
 		return nil, err
 	}
@@ -947,7 +890,7 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 	userCourse.UserID = item.UserID
 	userCourse.DateCreated = time.Now()
 	userCourse.DateUpdated = nil
-	userCourse.Course = sa.customCourseConversionAPIToStorage(item.Course)
+	userCourse.Course = sa.customCourseToStorage(item.Course)
 
 	_, err := sa.db.userCourses.InsertOne(sa.context, userCourse)
 	if err != nil {
@@ -1040,21 +983,21 @@ func (sa *Adapter) DeleteUserCourses(appID string, orgID string, key string) err
 }
 
 // FindUserUnit finds a user unit
-func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey string, current *bool) (*model.UserUnit, error) {
+func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey string) (*model.UserUnit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "unit.key": unitKey}
-	if current != nil {
-		filter["current"] = *current
-	}
 
-	var result userUnit
-	err := sa.db.userUnits.FindOne(sa.context, filter, &result, nil)
+	var results []userUnit
+	err := sa.db.userUnits.Find(sa.context, filter, &results, nil)
 	if err != nil {
 		errArgs := logutils.FieldArgs(filter)
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserUnit, &errArgs, err)
 	}
+	if len(results) == 0 {
+		return nil, nil
+	}
 
 	// no function needs to return UserUnit so not implementating this function yet
-	convertedResult, err := sa.userUnitConversionStorageToAPI(result)
+	convertedResult, err := sa.userUnitFromStorage(results[0])
 	if err != nil {
 		return nil, err
 	}
@@ -1071,7 +1014,7 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 	userUnit.DateCreated = time.Now()
 	userUnit.DateUpdated = nil
 	userUnit.CourseKey = item.CourseKey
-	userUnit.Unit = sa.customUnitConversionAPIToStorage(item.Unit)
+	userUnit.Unit = sa.customUnitToStorage(item.Unit)
 
 	_, err := sa.db.userUnits.InsertOne(sa.context, userUnit)
 	if err != nil {
@@ -1086,10 +1029,11 @@ func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, cou
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
-			"unit.schedule": item.Unit.Schedule,
-			"completed":     item.Completed,
-			"current":       item.Current,
-			"date_updated":  time.Now(),
+			"unit.schedule":  item.Unit.Schedule,
+			"completed":      item.Completed,
+			"current":        item.Current,
+			"last_completed": item.LastCompleted,
+			"date_updated":   time.Now().UTC(),
 		},
 	}
 	result, err := sa.db.userUnits.UpdateOne(sa.context, filter, update, nil)

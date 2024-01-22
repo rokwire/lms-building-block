@@ -2239,7 +2239,7 @@ components:
     StreaksNotificationsConfig:
       required:
         - timezone_name
-        - process_time
+        - streaks_process_time
         - prefer_early
         - notifications_active
         - notifications
@@ -2249,7 +2249,7 @@ components:
           type: string
         timezone_offset:
           type: integer
-        process_time:
+        streaks_process_time:
           type: integer
         prefer_early:
           type: boolean

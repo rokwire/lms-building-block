@@ -100,6 +100,7 @@ type StreaksNotificationsConfig struct {
 	TimezoneName   string `json:"timezone_name" bson:"timezone_name"`     // either an IANA timezone database identifier or "user" to for users' most recent known timezone
 	TimezoneOffset int    `json:"timezone_offset" bson:"timezone_offset"` // in seconds east of UTC (only valid if TimezoneName is not "user")
 
+	StreaksProcessTime  int  `json:"streaks_process_time" bson:"streaks_process_time"` // seconds since midnight in selected timezone at which to process streaks
 	PreferEarly         bool `json:"prefer_early" bson:"prefer_early"`                 // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
 	NotificationsActive bool `json:"notifications_active" bson:"notifications_active"` // if the notifications processing is "on" or "off"
 	// BlockSize int    `json:"block_size" bson:"block_size"` // TODO: needed?
@@ -158,8 +159,9 @@ type UserUnit struct {
 	Completed int  `json:"completed"` // number of schedule items the user has completed
 	Current   bool `json:"current"`
 
-	DateCreated time.Time  `json:"date_created"`
-	DateUpdated *time.Time `json:"date_updated"`
+	LastCompleted *time.Time `json:"last_completed"`
+	DateCreated   time.Time  `json:"date_created"`
+	DateUpdated   *time.Time `json:"date_updated"`
 }
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
@@ -191,27 +193,24 @@ type UnitWithTimezone struct {
 type ScheduleItem struct {
 	Name        string          `bson:"name" json:"name"`
 	UserContent []UserReference `bson:"user_content" json:"user_content"`
-	Duration    int             `bson:"duration" json:"duration"`
+	Duration    int             `bson:"duration" json:"duration"` // in days
 }
 
 // Content represents some Unit content
 type Content struct {
-	ID    string `json:"id"`
-	AppID string `json:"app_id"`
-	OrgID string `json:"org_id"`
+	ID    string `json:"id" bson:"_id"`
+	AppID string `json:"app_id" bson:"app_id"`
+	OrgID string `json:"org_id" bson:"org_id"`
+	// assignment, resource, reward, evaluation
+	Key              string    `json:"key" bson:"key"`
+	Type             string    `json:"type" bson:"type"`
+	Name             string    `json:"name" bson:"name"`
+	Details          string    `json:"details" bson:"details"`
+	ContentReference Reference `json:"reference" bson:"reference"`
+	LinkedContent    []string  `json:"linked_content" bson:"linked_content"`
 
-	//CourseKey        string    `json:"course_key"`
-	//ModuleKey        string    `json:"module_key"`
-	//UnitKey          string    `json:"unit_key"`
-	Key              string    `json:"key"`
-	Type             string    `json:"type"` // assignment, resource, reward, evaluation
-	Name             string    `json:"name"`
-	Details          string    `json:"details"`
-	ContentReference Reference `json:"reference"`
-	LinkedContent    []string  `json:"linked_content"`
-
-	DateCreated time.Time
-	DateUpdated *time.Time
+	DateCreated time.Time  `bson:"date_created"`
+	DateUpdated *time.Time `bson:"date_updated"`
 }
 
 // Reference represents a reference to another entity

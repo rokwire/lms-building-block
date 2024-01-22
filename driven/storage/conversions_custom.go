@@ -2,12 +2,10 @@ package storage
 
 import (
 	"lms/core/model"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
-// customCourseConversionAPIToStorage formats API struct to stroage struct
-func (sa *Adapter) customCourseConversionAPIToStorage(item model.Course) course {
+// customCourseToStorage formats API struct to storage struct
+func (sa *Adapter) customCourseToStorage(item model.Course) course {
 	//parse into the storage format and pass parameters
 	var moduleKeys []string
 	for _, val := range item.Modules {
@@ -27,8 +25,8 @@ func (sa *Adapter) customCourseConversionAPIToStorage(item model.Course) course 
 	return course
 }
 
-// customCourseConversionStorageToAPI formats storage struct to appropirate struct for API request
-func (sa *Adapter) customCourseConversionStorageToAPI(item course) (model.Course, error) {
+// customCourseFromStorage formats storage struct to appropriate struct for API request
+func (sa *Adapter) customCourseFromStorage(item course) (model.Course, error) {
 	var result model.Course
 	result.ID = item.ID
 	result.AppID = item.AppID
@@ -38,28 +36,17 @@ func (sa *Adapter) customCourseConversionStorageToAPI(item course) (model.Course
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated
 	if len(item.ModuleKeys) > 0 {
-		var linked []module
-		subFilter := bson.M{"org_id": item.OrgID, "app_id": item.AppID}
-		subFilter["key"] = bson.M{"$in": item.ModuleKeys}
-		//linked, err := sa.GetCustomModules(item.AppID, item.OrgID, nil, nil, item.ModuleKeys, nil)
-		err := sa.db.customModules.Find(sa.context, subFilter, &linked, nil)
+		modules, err := sa.FindCustomModules(item.AppID, item.OrgID, nil, nil, item.ModuleKeys, nil)
 		if err != nil {
 			return result, err
 		}
-
-		for _, singleContent := range linked {
-			convertedContent, err := sa.customModuleConversionStorageToAPI(singleContent)
-			if err != nil {
-				return result, err
-			}
-			result.Modules = append(result.Modules, convertedContent)
-		}
+		result.Modules = modules
 	}
 	return result, nil
 }
 
-// customModuleConversionStorageToAPI formats storage struct to appropirate struct for API request
-func (sa *Adapter) customModuleConversionStorageToAPI(item module) (model.Module, error) {
+// customModuleFromStorage formats storage struct to appropriate struct for API request
+func (sa *Adapter) customModuleFromStorage(item module) (model.Module, error) {
 	var result model.Module
 	result.ID = item.ID
 	result.AppID = item.AppID
@@ -68,25 +55,8 @@ func (sa *Adapter) customModuleConversionStorageToAPI(item module) (model.Module
 	result.Name = item.Name
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated
-	// if len(item.UnitKeys) > 0 {
-	// 	var linked []unit
-	// 	subFilter := bson.M{"org_id": item.OrgID, "app_id": item.AppID}
-	// 	subFilter["key"] = bson.M{"$in": item.UnitKeys}
-	// 	err := sa.db.customUnits.Find(sa.context, subFilter, &linked, nil)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
 
-	// 	for _, singleContent := range linked {
-	// 		convertedContent, err := sa.customUnitConversionStorageToAPI(singleContent)
-	// 		if err != nil {
-	// 			return result, err
-	// 		}
-	// 		result.Units = append(result.Units, convertedContent)
-	// 	}
-	// }
 	if len(item.UnitKeys) > 0 {
-		var units []model.Unit
 		units, err := sa.FindCustomUnits(item.AppID, item.OrgID, nil, nil, item.UnitKeys, nil)
 		if err != nil {
 			return result, err
@@ -96,8 +66,8 @@ func (sa *Adapter) customModuleConversionStorageToAPI(item module) (model.Module
 	return result, nil
 }
 
-// customModuleConversionAPIToStorage formats API struct to stroage struct
-func (sa *Adapter) customModuleConversionAPIToStorage(item model.Module) module {
+// customModuleToStorage formats API struct to storage struct
+func (sa *Adapter) customModuleToStorage(item model.Module) module {
 	//parse into the storage format and pass parameters
 	var unitKeys []string
 	for _, val := range item.Units {
@@ -117,13 +87,12 @@ func (sa *Adapter) customModuleConversionAPIToStorage(item model.Module) module 
 	return module
 }
 
-// customUnitConversionStorageToAPI formats storage struct to appropirate struct for API request
-func (sa *Adapter) customUnitConversionStorageToAPI(item unit) (model.Unit, error) {
+// customUnitFromStorage formats storage struct to appropriate struct for API request
+func (sa *Adapter) customUnitFromStorage(item unit) (model.Unit, error) {
 	result := model.Unit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, Key: item.Key, Name: item.Name, Schedule: item.Schedule,
 		Required: item.Required, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	if len(item.ContentKeys) > 0 {
-		var contents []model.Content
 		contents, err := sa.FindCustomContents(item.AppID, item.OrgID, nil, nil, item.ContentKeys)
 		if err != nil {
 			return result, err
@@ -133,8 +102,7 @@ func (sa *Adapter) customUnitConversionStorageToAPI(item unit) (model.Unit, erro
 	return result, nil
 }
 
-// customUnitConversionAPIToStorage formats API struct to stroage struct
-func (sa *Adapter) customUnitConversionAPIToStorage(item model.Unit) unit {
+func (sa *Adapter) customUnitToStorage(item model.Unit) unit {
 	//parse into the storage format and pass parameters
 	var extractedKey []string
 	for _, val := range item.Contents {
@@ -155,71 +123,13 @@ func (sa *Adapter) customUnitConversionAPIToStorage(item model.Unit) unit {
 	return result
 }
 
-// customContentConversionStorageToAPI formats storage struct to appropirate struct for API request
-func (sa *Adapter) customContentConversionStorageToAPI(item content) (model.Content, error) {
-	var result model.Content
-	result.ID = item.ID
-	result.AppID = item.AppID
-	result.OrgID = item.OrgID
-	result.Key = item.Key
-	result.Type = item.Type
-	result.Name = item.Name
-	result.Details = item.Details
-	result.ContentReference = item.ContentReference
-	result.DateCreated = item.DateCreated
-	result.DateUpdated = item.DateUpdated
-	result.LinkedContent = item.LinkedContent
-
-	// if len(item.LinkedContent) > 0 {
-	// 	var linkedContents []content
-	// 	subFilter := bson.M{"org_id": item.OrgID, "app_id": item.AppID}
-	// 	subFilter["key"] = bson.M{"$in": item.LinkedContent}
-	// 	err := sa.db.customContent.Find(sa.context, subFilter, &linkedContents, nil)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	for _, singleContent := range linkedContents {
-	// 		convertedContent, err := sa.customContentConversionStorageToAPI(singleContent)
-	// 		if err != nil {
-	// 			return result, err
-	// 		}
-	// 		result.LinkedContent = append(result.LinkedContent, convertedContent)
-	// 	}
-	// }
-	return result, nil
-}
-
-// customContentConversionAPIToStorage formats API struct to stroage struct
-func (sa *Adapter) customContentConversionAPIToStorage(item model.Content) content {
-	//parse into the storage format and pass parameters
-	// var extractedKey []string
-	// for _, val := range item.LinkedContent {
-	// 	extractedKey = append(extractedKey, val.Key)
-	// }
-
-	var content content
-	content.ID = item.ID
-	content.AppID = item.AppID
-	content.OrgID = item.OrgID
-	content.Key = item.Key
-	content.Type = item.Type
-	content.Name = item.Name
-	content.Details = item.Details
-	content.ContentReference = item.ContentReference
-	content.LinkedContent = item.LinkedContent
-	content.DateCreated = item.DateCreated
-	content.DateUpdated = item.DateUpdated
-
-	return content
-}
-
-// userCourseConversionHelper formats storage struct to appropirate struct for API request
-func (sa *Adapter) userCourseConversionStorageToAPI(item userCourse) (model.UserCourse, error) {
+// userCourseConversionHelper formats storage struct to appropriate struct for API request
+func (sa *Adapter) userCourseFromStorage(item userCourse) (model.UserCourse, error) {
 	timezone := model.Timezone{Name: item.TimezoneName, Offset: item.TimezoneOffset}
 	result := model.UserCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, Timezone: timezone,
 		Streak: item.Streak, Pauses: item.Pauses, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
-	convertedCourse, err := sa.customCourseConversionStorageToAPI(item.Course)
+	convertedCourse, err := sa.customCourseFromStorage(item.Course)
 	if err != nil {
 		return result, err
 	}
@@ -228,11 +138,11 @@ func (sa *Adapter) userCourseConversionStorageToAPI(item userCourse) (model.User
 	return result, nil
 }
 
-func (sa *Adapter) userUnitConversionStorageToAPI(item userUnit) (model.UserUnit, error) {
+func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
 	result := model.UserUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey,
-		Completed: item.Completed, Current: item.Current, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+		Completed: item.Completed, Current: item.Current, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
-	unit, err := sa.customUnitConversionStorageToAPI(item.Unit)
+	unit, err := sa.customUnitFromStorage(item.Unit)
 	if err != nil {
 		return result, err
 	}
