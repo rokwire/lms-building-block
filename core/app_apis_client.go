@@ -143,7 +143,7 @@ func (s *clientImpl) GetUserCourses(claims *tokenauth.Claims, id *string, name *
 		keyArr = strings.Split(*courseKey, ",")
 	}
 
-	userCourses, err := s.app.storage.FindUserCourses(idArr, claims.AppID, claims.OrgID, nameArr, keyArr, &userID, nil, nil)
+	userCourses, err := s.app.storage.FindUserCourses(idArr, claims.AppID, claims.OrgID, nameArr, keyArr, &userID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -179,6 +179,7 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 		userCourse.Streak = 0
 		userCourse.Pauses = courseConfig.InitialPauses
 
+		// unique index on user courses collection will ensure user cannot take a course multiple times simultaneously
 		err = storage.InsertUserCourse(userCourse)
 		if err != nil {
 			return err
@@ -209,7 +210,7 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
 		// find the current user unit (this is managed by the streaks timer)
-		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Id, courseKey, unitKey)
+		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Id, courseKey, &unitKey)
 		if err != nil {
 			return err
 		}

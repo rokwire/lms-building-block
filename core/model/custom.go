@@ -78,6 +78,27 @@ type Course struct {
 	DateUpdated *time.Time
 }
 
+// GetNextUnit returns the next unit in a course given the current unit key
+func (c *Course) GetNextUnit(currentUnitKey string) *Unit {
+	returnNextModuleUnit := false
+	for _, module := range c.Modules {
+		for i, unit := range module.Units {
+			if returnNextModuleUnit {
+				nextUnit := unit
+				return &nextUnit
+			}
+			if unit.Key == currentUnitKey {
+				if i+1 < len(module.Units) {
+					nextUnit := module.Units[i+1]
+					return &nextUnit
+				}
+				returnNextModuleUnit = true
+			}
+		}
+	}
+	return nil
+}
+
 // CourseConfig represents streak and notification settings for a course
 type CourseConfig struct {
 	ID        string `json:"id" bson:"_id"`

@@ -132,6 +132,64 @@ func (sa *Adapter) UpdateUserCourses(key string, item model.Course) error {
 	return nil
 }
 
+// DecrementUserCoursePauses decrements all matching user course pauses by 1
+func (sa *Adapter) DecrementUserCoursePauses(appID string, orgID string, userIDs []string, key string) error {
+	// should never decrement pauses for all user courses matching the first three filter fields at once
+	if len(userIDs) == 0 {
+		return errors.ErrorData(logutils.StatusMissing, "user ids", nil)
+	}
+
+	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": key, "user_id": bson.M{"$in": userIDs}}
+	errArgs := logutils.FieldArgs(filter)
+	update := bson.M{
+		"$inc": bson.M{
+			"pauses": -1,
+		},
+		"$set": bson.M{
+			"date_updated": time.Now().UTC(),
+		},
+	}
+	res, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
+	}
+	if res.MatchedCount != res.ModifiedCount {
+		errArgs["matched"] = res.MatchedCount
+		errArgs["modified"] = res.ModifiedCount
+		return errors.ErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs)
+	}
+
+	return nil
+}
+
+// ResetUserCourseStreaks resets all matching user course streaks to 0
+func (sa *Adapter) ResetUserCourseStreaks(appID string, orgID string, userIDs []string, key string) error {
+	// should never reset streaks for all user courses matching the first three filter fields at once
+	if len(userIDs) == 0 {
+		return errors.ErrorData(logutils.StatusMissing, "user ids", nil)
+	}
+
+	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": key, "user_id": bson.M{"$in": userIDs}}
+	errArgs := logutils.FieldArgs(filter)
+	update := bson.M{
+		"$set": bson.M{
+			"streak":       0,
+			"date_updated": time.Now().UTC(),
+		},
+	}
+	res, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
+	}
+	if res.MatchedCount != res.ModifiedCount {
+		errArgs["matched"] = res.MatchedCount
+		errArgs["modified"] = res.ModifiedCount
+		return errors.ErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs)
+	}
+
+	return nil
+}
+
 // DeleteCustomCourse deletes a course
 func (sa *Adapter) DeleteCustomCourse(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
@@ -808,7 +866,7 @@ func (sa *Adapter) MarkUserCourseAsDelete(appID string, orgID string, key string
 }
 
 // FindUserCourses finds user course by a set of parameters
-func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair, requirements map[string]interface{}) ([]model.UserCourse, error) {
+func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair) ([]model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
@@ -983,8 +1041,11 @@ func (sa *Adapter) DeleteUserCourses(appID string, orgID string, key string) err
 }
 
 // FindUserUnit finds a user unit
-func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey string) (*model.UserUnit, error) {
-	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "unit.key": unitKey}
+func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey *string) (*model.UserUnit, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey}
+	if unitKey != nil {
+		filter["unit.key"] = *unitKey
+	}
 
 	var results []userUnit
 	err := sa.db.userUnits.Find(sa.context, filter, &results, nil)
@@ -1002,6 +1063,35 @@ func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, cours
 		return nil, err
 	}
 	return &convertedResult, nil
+}
+
+// FindUserUnits finds user units by search parameters
+func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, current *bool) ([]model.UserUnit, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "course_key": courseKey}
+	if len(userIDs) != 0 {
+		filter["user_id"] = bson.M{"$in": userIDs}
+	}
+	if current != nil {
+		filter["current"] = *current
+	}
+
+	var results []userUnit
+	err := sa.db.userUnits.Find(sa.context, filter, &results, nil)
+	if err != nil {
+		errArgs := logutils.FieldArgs(filter)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserUnit, &errArgs, err)
+	}
+
+	userUnits := make([]model.UserUnit, len(results))
+	for i, result := range results {
+		convertedResult, err := sa.userUnitFromStorage(result)
+		if err != nil {
+			return nil, err
+		}
+		userUnits[i] = convertedResult
+	}
+
+	return userUnits, nil
 }
 
 // InsertUserUnit inserts a user unit

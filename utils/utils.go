@@ -297,21 +297,7 @@ func IsVersionLess(v1 string, v2 string) bool {
 }
 
 // Exist checks if the items exists in the list
-func Exist(list []string, value string) bool {
-	if len(list) == 0 {
-		return false
-	}
-
-	for _, s := range list {
-		if value == s {
-			return true
-		}
-	}
-	return false
-}
-
-// ExistInt checks if the items exists in the list
-func ExistInt(list []int, value int) bool {
+func Exist[T listExistType](list []T, value T) bool {
 	if len(list) == 0 {
 		return false
 	}
@@ -455,4 +441,8 @@ func onTimer(timer *time.Timer, timerDone chan bool, initialDuration *time.Durat
 		}
 		timer = nil
 	}
+}
+
+type listExistType interface {
+	string | int
 }

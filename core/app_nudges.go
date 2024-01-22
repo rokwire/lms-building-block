@@ -979,7 +979,7 @@ func (n nudgesLogic) getMissedAssignmentsData(user model.ProviderUser, coursesID
 	result := []model.CourseAssignment{}
 	for _, uc := range userCourses.Data {
 
-		if len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID) {
+		if len(coursesIDs) == 0 || utils.Exist[int](coursesIDs, uc.Data.ID) {
 
 			assignments := uc.Assignments
 			if len(assignments) > 0 {
@@ -1334,7 +1334,7 @@ func (n nudgesLogic) ecFindAssignments(user model.ProviderUser, assignmentsIDs [
 		assignments := uc.Assignments
 		if len(assignments) > 0 {
 			for _, assignment := range assignments {
-				if utils.ExistInt(assignmentsIDs, assignment.Data.ID) {
+				if utils.Exist[int](assignmentsIDs, assignment.Data.ID) {
 					result = append(result, assignment)
 				}
 			}
@@ -1685,7 +1685,7 @@ func (n nudgesLogic) getAssignmentsForAdvancedReminders(user model.ProviderUser,
 
 	result := []model.CourseAssignment{}
 	for _, uc := range userCourses.Data {
-		if (len(accountIDs) == 0 || utils.ExistInt(accountIDs, uc.Data.AccountID)) && (len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID)) {
+		if (len(accountIDs) == 0 || utils.Exist[int](accountIDs, uc.Data.AccountID)) && (len(coursesIDs) == 0 || utils.Exist[int](coursesIDs, uc.Data.ID)) {
 
 			assignments := uc.Assignments
 			if len(assignments) > 0 {

@@ -92,19 +92,22 @@ type Storage interface {
 	UpdateCourseConfig(config model.CourseConfig) error
 	DeleteCourseConfig(appID string, orgID string, key string) error
 
-	FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsets []model.TZOffsetPair, requirements map[string]interface{}) ([]model.UserCourse, error)
+	FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsets []model.TZOffsetPair) ([]model.UserCourse, error)
 	FindUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
 	InsertUserCourse(item model.UserCourse) error
 	UpdateUserCourses(key string, item model.Course) error
 	UpdateUserCourse(appID string, orgID string, userID string, courseID *string, courseKey string, streak *int, pauses *int) error
 	UpdateUserTimezone(appID string, orgID string, userID string, timezoneName string, timezoneOffset int) error
+	DecrementUserCoursePauses(appID string, orgID string, userIDs []string, key string) error
+	ResetUserCourseStreaks(appID string, orgID string, userIDs []string, key string) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 	DeleteUserCourses(appID string, orgID string, courseKey string) error
 
+	FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey *string) (*model.UserUnit, error)
+	FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, current *bool) ([]model.UserUnit, error)
 	InsertUserUnit(item model.UserUnit) error
 	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.UserUnit) error
 	UpdateUserUnits(key string, item model.Unit) error
-	FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey string) (*model.UserUnit, error)
 	DeleteUserUnit(appID string, orgID string, key string) error
 
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
