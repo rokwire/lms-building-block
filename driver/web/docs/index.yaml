@@ -13,8 +13,10 @@ servers:
   - url: 'http://localhost/lms'
     description: Local server
 tags:
-  - name: Api
-    description: Clients  APIs.
+  - name: Default
+    description: Common APIs.
+  - name: Client
+    description: Clients APIs.
   - name: Admin
     description: Clients administration APIs.
 paths:

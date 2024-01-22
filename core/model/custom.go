@@ -233,8 +233,8 @@ type UserReference struct {
 
 // Timezone represents user timezone information received from the client
 type Timezone struct {
-	TimezoneName   string `json:"timezone_name"`
-	TimezoneOffset int    `json:"timezone_offset"` // in seconds east of UTC
+	Name   string `json:"timezone_name"`
+	Offset int    `json:"timezone_offset"` // in seconds east of UTC
 }
 
 // TZOffsets entity represents a set of single timezone offsets

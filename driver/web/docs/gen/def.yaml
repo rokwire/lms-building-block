@@ -13,8 +13,10 @@ servers:
   - url: 'http://localhost/lms'
     description: Local server
 tags:
-  - name: Api
-    description: Clients  APIs.
+  - name: Default
+    description: Common APIs.
+  - name: Client
+    description: Clients APIs.
   - name: Admin
     description: Clients administration APIs.
 paths:
@@ -63,7 +65,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Course'
+                  $ref: '#/components/schemas/ProviderCourse'
         '400':
           description: Bad request
         '401':
@@ -97,7 +99,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Course'
+                $ref: '#/components/schemas/ProviderCourse'
         '400':
           description: Bad request
         '401':
@@ -945,7 +947,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CustomCourse'
+                  $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
@@ -968,7 +970,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomCourse'
+              $ref: '#/components/schemas/Course'
         required: true
       responses:
         '200':
@@ -1011,7 +1013,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomCourse'
+                $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
@@ -1892,7 +1894,7 @@ components:
       properties:
         current_score:
           type: number
-    Course:
+    ProviderCourse:
       type: object
       properties:
         id:
@@ -1988,7 +1990,7 @@ components:
         params:
           nullable: true
           type: object
-    CustomCourse:
+    Course:
       required:
         - id
         - app_id
@@ -2177,7 +2179,7 @@ components:
           type: string
           readOnly: true
         course:
-          $ref: '#/components/schemas/CustomCourse'
+          $ref: '#/components/schemas/Course'
     UserReference:
       allOf:
         - $ref: '#/components/schemas/Reference'

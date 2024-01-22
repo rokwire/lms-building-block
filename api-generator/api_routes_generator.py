@@ -52,11 +52,12 @@ class APIRoutesGenerator:
             for core_function in self.core_functions:
                 if core_function["tag"] == tag:
                     data_type = core_function["data_type"]
+                    request_type = core_function["request_type"]
                     data += f'func (a APIsHandler) {core_function["tag"].lower() + core_function["name"]}'
                     if core_function['auth_type']:
-                        data += f'{core_function["handler_prototype"]} {{\n'.replace('{data_type}', data_type)
+                        data += f'{core_function["handler_prototype"]} {{\n'.replace('{data_type}', data_type).replace('{request_type}', request_type)
                     else:
-                        data += f'{core_function["handler_prototype"]} {{\n'.replace('{data_type}', data_type)
+                        data += f'{core_function["handler_prototype"]} {{\n'.replace('{data_type}', data_type).replace('{request_type}', request_type)
 
                     interface_prototype = core_function["interface_prototype"]
                     params_start = interface_prototype.find("(")

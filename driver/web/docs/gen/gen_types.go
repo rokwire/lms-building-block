@@ -58,9 +58,12 @@ type ContentType string
 
 // Course defines model for Course.
 type Course struct {
-	AccessRestrictedByDate *bool   `json:"access_restricted_by_date,omitempty"`
-	Id                     *string `json:"id,omitempty"`
-	Name                   *string `json:"name,omitempty"`
+	AppId   *string  `json:"app_id,omitempty"`
+	Id      *string  `json:"id,omitempty"`
+	Key     string   `json:"key"`
+	Modules []Module `json:"modules"`
+	Name    string   `json:"name"`
+	OrgId   *string  `json:"org_id,omitempty"`
 }
 
 // CourseConfig defines model for CourseConfig.
@@ -73,16 +76,6 @@ type CourseConfig struct {
 	OrgId                      string                     `json:"org_id"`
 	PauseRewardStreak          int                        `json:"pause_reward_streak"`
 	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config"`
-}
-
-// CustomCourse defines model for CustomCourse.
-type CustomCourse struct {
-	AppId   *string  `json:"app_id,omitempty"`
-	Id      *string  `json:"id,omitempty"`
-	Key     string   `json:"key"`
-	Modules []Module `json:"modules"`
-	Name    string   `json:"name"`
-	OrgId   *string  `json:"org_id,omitempty"`
 }
 
 // Enrollment defines model for Enrollment.
@@ -142,6 +135,13 @@ type NudgesConfig struct {
 // NudgesConfigMode defines model for NudgesConfig.Mode.
 type NudgesConfigMode string
 
+// ProviderCourse defines model for ProviderCourse.
+type ProviderCourse struct {
+	AccessRestrictedByDate *bool   `json:"access_restricted_by_date,omitempty"`
+	Id                     *string `json:"id,omitempty"`
+	Name                   *string `json:"name,omitempty"`
+}
+
 // Reference defines model for Reference.
 type Reference struct {
 	Name         string `json:"name"`
@@ -199,11 +199,11 @@ type User struct {
 
 // UserCourse defines model for UserCourse.
 type UserCourse struct {
-	AppId  *string      `json:"app_id,omitempty"`
-	Course CustomCourse `json:"course"`
-	Id     *string      `json:"id,omitempty"`
-	OrgId  *string      `json:"org_id,omitempty"`
-	UserId *string      `json:"user_id,omitempty"`
+	AppId  *string `json:"app_id,omitempty"`
+	Course Course  `json:"course"`
+	Id     *string `json:"id,omitempty"`
+	OrgId  *string `json:"org_id,omitempty"`
+	UserId *string `json:"user_id,omitempty"`
 }
 
 // UserReference defines model for UserReference.
@@ -392,7 +392,7 @@ type PostAdminCourseConfigsJSONRequestBody = CourseConfig
 type PutAdminCourseConfigsKeyJSONRequestBody = CourseConfig
 
 // PostAdminCoursesJSONRequestBody defines body for PostAdminCourses for application/json ContentType.
-type PostAdminCoursesJSONRequestBody = CustomCourse
+type PostAdminCoursesJSONRequestBody = Course
 
 // PutAdminCoursesKeyJSONRequestBody defines body for PutAdminCoursesKey for application/json ContentType.
 type PutAdminCoursesKeyJSONRequestBody = AdminReqUpdateCourse

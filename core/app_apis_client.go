@@ -160,31 +160,26 @@ func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, courseKey string) (
 }
 
 // pass course key to create a new user course
-func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string, item model.UserCourse) (*model.UserCourse, error) {
+func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string, item model.Timezone) (*model.UserCourse, error) {
 	var userCourse *model.UserCourse
 	transaction := func(storage interfaces.Storage) error {
-		var item model.UserCourse
-		item.ID = uuid.NewString()
-		item.AppID = claims.AppID
-		item.OrgID = claims.OrgID
-		item.UserID = claims.Subject
-		item.DateCreated = time.Now()
+		userCourse := model.UserCourse{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, Timezone: item, DateCreated: time.Now()}
 
 		//retrieve course with coursekey
 		course, err := storage.FindCustomCourse(claims.AppID, claims.OrgID, courseKey)
 		if err != nil {
 			return err
 		}
-		item.Course = *course
+		userCourse.Course = *course
 
 		courseConfig, err := storage.FindCourseConfig(course.AppID, course.OrgID, course.Key)
 		if err != nil {
 			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
 		}
-		item.Streak = 0
-		item.Pauses = courseConfig.InitialPauses
+		userCourse.Streak = 0
+		userCourse.Pauses = courseConfig.InitialPauses
 
-		err = storage.InsertUserCourse(item)
+		err = storage.InsertUserCourse(userCourse)
 		if err != nil {
 			return err
 		}
@@ -259,7 +254,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// update timezone name and offset for all user_course of a user
-		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.TimezoneName, item.TimezoneOffset)
+		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.Name, item.Offset)
 		if err != nil {
 			return err
 		}

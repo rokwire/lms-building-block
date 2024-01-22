@@ -32,12 +32,13 @@ class APIInterfacesGenerator:
             for core_function in self.core_functions:
                 if core_function['tag'] == tag:
                     data_type = core_function["data_type"]
+                    request_type = core_function["request_type"]
                     if data_types.count(data_type) == 0:
                         data += f'\n// {data_type}\n\n'
                         data_types.append(data_type)
                     if core_function['auth_type']:
-                        data += f'{core_function["name"]}{core_function["interface_prototype"]}\n'.replace('{data_type}', data_type)
+                        data += f'{core_function["name"]}{core_function["interface_prototype"]}\n'.replace('{data_type}', data_type).replace('{request_type}', request_type)
                     else:
-                        data += f'{core_function["name"]}{core_function["interface_prototype"]}\n'.replace('{data_type}', data_type)
+                        data += f'{core_function["name"]}{core_function["interface_prototype"]}\n'.replace('{data_type}', data_type).replace('{request_type}', request_type)
             data += '}\n\n'
         return data

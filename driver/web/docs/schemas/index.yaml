@@ -5,7 +5,7 @@ Enrollment:
   $ref: "./provider/Enrollment.yaml"
 Grade:
   $ref: "./provider/Grade.yaml"
-Course:
+ProviderCourse:
   $ref: "./provider/Course.yaml"
 Assignment:
   $ref: "./provider/Assignment.yaml"
@@ -21,7 +21,7 @@ UsersSource:
   $ref: "./nudges/UsersSource.yaml"
 
 # custom
-CustomCourse:
+Course:
   $ref: "./custom/Course.yaml"
 Module:
   $ref: "./custom/Module.yaml"

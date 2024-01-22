@@ -215,13 +215,9 @@ func (sa *Adapter) customContentConversionAPIToStorage(item model.Content) conte
 
 // userCourseConversionHelper formats storage struct to appropirate struct for API request
 func (sa *Adapter) userCourseConversionStorageToAPI(item userCourse) (model.UserCourse, error) {
-	var result model.UserCourse
-	result.ID = item.ID
-	result.AppID = item.AppID
-	result.OrgID = item.OrgID
-	result.UserID = item.UserID
-	result.DateCreated = item.DateCreated
-	result.DateUpdated = item.DateUpdated
+	timezone := model.Timezone{Name: item.TimezoneName, Offset: item.TimezoneOffset}
+	result := model.UserCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, Timezone: timezone,
+		Streak: item.Streak, Pauses: item.Pauses, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	convertedCourse, err := sa.customCourseConversionStorageToAPI(item.Course)
 	if err != nil {

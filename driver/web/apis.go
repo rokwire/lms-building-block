@@ -102,7 +102,7 @@ func (a APIsHandler) clientGetUserCourse(claims *tokenauth.Claims, params map[st
 	return a.app.Client.GetUserCourse(claims, key)
 }
 
-func (a APIsHandler) clientCreateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
+func (a APIsHandler) clientCreateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.Timezone) (*model.UserCourse, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
