@@ -74,8 +74,8 @@ type Course struct {
 	Name    string   `json:"name"`
 	Modules []Module `json:"modules"`
 
-	DateCreated time.Time
-	DateUpdated *time.Time
+	DateCreated time.Time  `json:"-"`
+	DateUpdated *time.Time `json:"-"`
 }
 
 // GetNextUnit returns the next unit in a course given the current unit key
@@ -163,8 +163,8 @@ type Module struct {
 	Name  string `json:"name"`
 	Units []Unit `json:"units"`
 
-	DateCreated time.Time
-	DateUpdated *time.Time
+	DateCreated time.Time  `json:"-"`
+	DateUpdated *time.Time `json:"-"`
 }
 
 // UserUnit represents a copy of a unit that the user modifies as progress is made
@@ -181,7 +181,7 @@ type UserUnit struct {
 	Current   bool `json:"current"`
 
 	LastCompleted *time.Time `json:"last_completed"`
-	DateCreated   time.Time  `json:"date_created"`
+	DateCreated   time.Time  `json:"-"`
 	DateUpdated   *time.Time `json:"date_updated"`
 }
 
@@ -200,8 +200,8 @@ type Unit struct {
 
 	Required int `json:"required"` // number of schedule items required to be completed (may add required flags to each schedule item in future)
 
-	DateCreated time.Time
-	DateUpdated *time.Time
+	DateCreated time.Time  `json:"-"`
+	DateUpdated *time.Time `json:"-"`
 }
 
 // UnitWithTimezone wraps unit with time information
@@ -230,8 +230,8 @@ type Content struct {
 	ContentReference Reference `json:"reference" bson:"reference"`
 	LinkedContent    []string  `json:"linked_content" bson:"linked_content"`
 
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
+	DateCreated time.Time  `json:"-" bson:"date_created"`
+	DateUpdated *time.Time `json:"-" bson:"date_updated"`
 }
 
 // Reference represents a reference to another entity

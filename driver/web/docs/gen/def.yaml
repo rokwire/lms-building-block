@@ -2183,9 +2183,7 @@ components:
     UserReference:
       allOf:
         - $ref: '#/components/schemas/Reference'
-        - required:
-            - date_started
-          type: object
+        - type: object
           properties:
             user_data:
               type: object

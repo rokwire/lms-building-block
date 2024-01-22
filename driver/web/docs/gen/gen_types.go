@@ -209,7 +209,7 @@ type UserCourse struct {
 // UserReference defines model for UserReference.
 type UserReference struct {
 	DateCompleted *time.Time              `json:"date_completed"`
-	DateStarted   time.Time               `json:"date_started"`
+	DateStarted   *time.Time              `json:"date_started,omitempty"`
 	Name          string                  `json:"name"`
 	ReferenceKey  string                  `json:"reference_key"`
 	Type          string                  `json:"type"`

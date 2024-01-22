@@ -1,8 +1,6 @@
 allOf:
   - $ref: "./Reference.yaml"
-  - required:
-      - date_started
-    type: object
+  - type: object
     properties:
       user_data:
         type: object
