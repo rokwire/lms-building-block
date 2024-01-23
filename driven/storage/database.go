@@ -49,7 +49,7 @@ type database struct {
 	customCourses   *collectionWrapper
 	customModules   *collectionWrapper
 	customUnits     *collectionWrapper
-	customContent   *collectionWrapper
+	customContents  *collectionWrapper
 	userCourses     *collectionWrapper
 	userUnits       *collectionWrapper
 }
@@ -138,8 +138,8 @@ func (m *database) start() error {
 		return err
 	}
 
-	customContent := &collectionWrapper{database: m, coll: db.Collection("custom_content")}
-	err = m.applyCustomContentChecks(customContent)
+	customContents := &collectionWrapper{database: m, coll: db.Collection("custom_contents")}
+	err = m.applyCustomContentChecks(customContents)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (m *database) start() error {
 	m.customCourses = customCourses
 	m.customModules = customModules
 	m.customUnits = customUnits
-	m.customContent = customContent
+	m.customContents = customContents
 	m.userCourses = userCourses
 	m.userUnits = userUnits
 
@@ -340,9 +340,9 @@ func (m *database) applyCustomUnitsChecks(customUnits *collectionWrapper) error 
 }
 
 // Custom Content
-func (m *database) applyCustomContentChecks(customContent *collectionWrapper) error {
+func (m *database) applyCustomContentChecks(customContents *collectionWrapper) error {
 	m.logger.Info("apply custom content check.....")
-	err := customContent.AddIndex(
+	err := customContents.AddIndex(
 		bson.D{
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},

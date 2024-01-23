@@ -195,11 +195,17 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 	return userCourse, nil
 }
 
+// get all userUnits from a user's given course
+func (s *clientImpl) GetUserCourseUnits(claims *tokenauth.Claims, courseKey string) ([]model.UserUnit, error) {
+	userUnits, err := s.app.storage.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil)
+	if err != nil {
+		return nil, err
+	}
+	return userUnits, nil
+}
+
 // delete all user course derieved from a custom course
 func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error {
-
-	//item.UserID = claims.Subject
-
 	err := s.app.storage.DeleteUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
 	if err != nil {
 		return err
@@ -209,6 +215,17 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
+		userCourse, err := storageTransaction.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
+		}
+		if userCourse == nil {
+			return errors.ErrorData(logutils.StatusMissing, model.TypeUserCourse, &logutils.FieldArgs{"app_id": claims.AppID, "org_id": claims.OrgID, "user_id": claims.Subject, "key": courseKey})
+		}
+		if userCourse.DateDropped != nil {
+			return errors.ErrorData(logutils.StatusInvalid, model.TypeUserCourse, &logutils.FieldArgs{"id": userCourse.ID, "date_dropped": userCourse.DateDropped})
+		}
+
 		// find the current user unit (this is managed by the streaks timer)
 		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Id, courseKey, &unitKey)
 		if err != nil {
@@ -246,14 +263,6 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 			}
-		}
-
-		userCourse, err := storageTransaction.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
-		}
-		if userCourse == nil {
-			return errors.ErrorData(logutils.StatusMissing, model.TypeUserCourse, &logutils.FieldArgs{"app_id": claims.AppID, "org_id": claims.OrgID, "user_id": claims.Subject, "key": courseKey})
 		}
 
 		courseConfig, err := storageTransaction.FindCourseConfig(userCourse.AppID, userCourse.OrgID, userCourse.Course.Key)
@@ -304,7 +313,7 @@ func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) (*mode
 		appID := claims.AppID
 		orgID := claims.OrgID
 
-		err := storageTransaction.MarkUserCourseAsDelete(appID, orgID, key)
+		err := storageTransaction.DropUserCourse(appID, orgID, key)
 		if err != nil {
 			return err
 		}

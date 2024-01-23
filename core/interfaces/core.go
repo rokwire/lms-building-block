@@ -42,6 +42,10 @@ type Client interface {
 
 	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error)
 
+	// model.UserUnit
+
+	GetUserCourseUnits(claims *tokenauth.Claims, key string) ([]model.UserUnit, error)
+
 	// model.CourseConfig
 
 	GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error)

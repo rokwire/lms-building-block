@@ -25,20 +25,7 @@ admin and client API testing notes
             "type": "string",
             "reference_key": "string"
         },
-        "linked_content": [
-            {
-                "key": "content2",
-                "type": "assignment",
-                "name": "test assignment",
-                "details": "string string string",
-                "reference": {
-                    "name": "string",
-                    "type": "string",
-                    "reference_key": "string"
-                },
-                "linked_content": []
-            }
-        ]
+        "linked_content": ["content2"]
     }
     ```
 
@@ -102,20 +89,7 @@ admin and client API testing notes
                     "type": "string",
                     "reference_key": "string"
                 },
-                "linked_content": [
-                    {
-                        "key": "content2",
-                        "type": "assignment",
-                        "name": "test assignment",
-                        "details": "string string string",
-                        "reference": {
-                            "name": "string",
-                            "type": "string",
-                            "reference_key": "string"
-                        },
-                        "linked_content": []
-                    }
-                ]
+                "linked_content": ["content2"]
             }
         ],
         "schedule": [
@@ -165,6 +139,29 @@ admin and client API testing notes
     | code 500           | no document exist     |        |
     |                    | superior key non-exist|        |
 
+
+```
+{
+    "key": "unit1",
+    "name": "unit1 test",
+    "content_keys":["content1"],
+    "schedule": [
+        {
+            "name": "schedule name",
+            "user_content": [
+                {
+                    "name": "content name",
+                    "type": "string",
+                    "reference_key": "string",
+                    "user_data": {},
+                    "date_started": "2023-11-17T22:06:05.021Z"
+                }
+            ],
+            "duration": 0
+        }
+    ]
+}
+```
 - DeleteCustomUnit
 
     | Test Response Code | Test Description      | Remark |
@@ -202,20 +199,7 @@ admin and client API testing notes
                             "type": "string",
                             "reference_key": "string"
                         },
-                        "linked_content": [
-                            {
-                                "key": "content2",
-                                "type": "assignment",
-                                "name": "test assignment",
-                                "details": "string string string",
-                                "reference": {
-                                    "name": "string",
-                                    "type": "string",
-                                    "reference_key": "string"
-                                },
-                                "linked_content": []
-                            }
-                        ]
+                        "linked_content": ["content2"]
                     }
                 ],
                 "schedule": [
@@ -309,20 +293,7 @@ admin and client API testing notes
                                     "type": "string",
                                     "reference_key": "string"
                                 },
-                                "linked_content": [
-                                    {
-                                        "key": "content2",
-                                        "type": "assignment",
-                                        "name": "test assignment",
-                                        "details": "string string string",
-                                        "reference": {
-                                            "name": "string",
-                                            "type": "string",
-                                            "reference_key": "string"
-                                        },
-                                        "linked_content": []
-                                    }
-                                ]
+                                "linked_content": ["content2"]
                             }
                         ],
                         "schedule": [

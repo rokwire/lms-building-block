@@ -58,7 +58,6 @@ type module struct {
 	AppID string `bson:"app_id"`
 	OrgID string `bson:"org_id"`
 
-	//CourseKey string   `bson:"course_key"`
 	Key      string   `bson:"key"`
 	Name     string   `bson:"name"`
 	UnitKeys []string `bson:"unit_keys"`
@@ -73,7 +72,7 @@ type userUnit struct {
 	OrgID     string `bson:"org_id"`
 	UserID    string `bson:"user_id"`
 	CourseKey string `bson:"course_key"`
-	//ModuleKey   string     `bson:"module_key"`
+
 	Unit unit `bson:"unit"`
 
 	Completed int  `bson:"completed"` // number of schedule items the user has completed
@@ -89,8 +88,6 @@ type unit struct {
 	AppID string `bson:"app_id"`
 	OrgID string `bson:"org_id"`
 
-	//CourseKey string `bson:"course_key"`
-	//ModuleKey   string               `bson:"module_key"`
 	Key         string               `bson:"key"`
 	Name        string               `bson:"name"`
 	ContentKeys []string             `bson:"content_keys"`

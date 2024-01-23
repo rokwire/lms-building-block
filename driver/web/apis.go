@@ -143,6 +143,15 @@ func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims
 	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseKey, unitKey, *item)
 }
 
+func (a APIsHandler) clientGetUserCourseUnits(claims *tokenauth.Claims, params map[string]interface{}) ([]model.UserUnit, error) {
+	key, err := utils.GetValue[string](params, "key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
+	}
+
+	return a.app.Client.GetUserCourseUnits(claims, key)
+}
+
 func (a APIsHandler) clientGetCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}) (*model.CourseConfig, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {

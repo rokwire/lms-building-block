@@ -201,6 +201,7 @@ type User struct {
 type UserCourse struct {
 	AppId          *string     `json:"app_id,omitempty"`
 	Course         Course      `json:"course"`
+	DateDropped    *time.Time  `json:"date_dropped,omitempty"`
 	Id             *string     `json:"id,omitempty"`
 	OrgId          *string     `json:"org_id,omitempty"`
 	PauseUses      []time.Time `json:"pause_uses"`

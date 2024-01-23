@@ -115,7 +115,7 @@ func customUnitUpdateFromDef(claims *tokenauth.Claims, item *Def.AdminReqUpdateU
 		userContent := make([]model.UserReference, len(si.UserContent))
 		for j, uc := range si.UserContent {
 			reference := model.Reference{Name: uc.Name, Type: uc.Type, ReferenceKey: uc.ReferenceKey}
-			userData := make(map[string]interface{})
+			var userData map[string]interface{}
 			if uc.UserData != nil {
 				userData = *uc.UserData
 			}

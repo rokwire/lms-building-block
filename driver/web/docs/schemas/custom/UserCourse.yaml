@@ -10,6 +10,7 @@ allOf:
       - pauses
       - pause_uses
       - course
+      - date_dropped
     type: object
     properties:
       id:
@@ -40,3 +41,7 @@ allOf:
           format: date-time
       course:
         $ref: "./Course.yaml"
+      date_dropped:
+        type: string
+        readOnly: true
+        format: date-time

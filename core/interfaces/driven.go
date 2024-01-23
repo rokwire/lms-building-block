@@ -100,6 +100,7 @@ type Storage interface {
 	UpdateUserTimezone(appID string, orgID string, userID string, timezoneName string, timezoneOffset int) error
 	DecrementUserCoursePauses(appID string, orgID string, userIDs []string, key string) error
 	ResetUserCourseStreaks(appID string, orgID string, userIDs []string, key string) error
+	DropUserCourse(appID string, orgID string, key string) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 	DeleteUserCourses(appID string, orgID string, courseKey string) error
 
@@ -116,7 +117,6 @@ type Storage interface {
 	DeleteUnitKeyFromModules(appID string, orgID string, key string) error
 	DeleteModuleKeyFromCourses(appID string, orgID string, key string) error
 	DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error
-	MarkUserCourseAsDelete(appID string, orgID string, key string) error
 }
 
 // Provider interface for LMS provider

@@ -60,7 +60,7 @@ type UserCourse struct {
 
 	DateCreated time.Time  `json:"date_created"`
 	DateUpdated *time.Time `json:"date_updated"`
-	DateDropped *time.Time `json:"dete_dropped"`
+	DateDropped *time.Time `json:"date_dropped"`
 }
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
@@ -152,7 +152,6 @@ type Module struct {
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
-	//CourseKey string `json:"course_key"`
 	Key   string `json:"key"`
 	Name  string `json:"name"`
 	Units []Unit `json:"units"`
@@ -168,14 +167,13 @@ type UserUnit struct {
 	OrgID     string `json:"org_id"`
 	UserID    string `json:"user_id"`
 	CourseKey string `json:"course_key"`
-	//ModuleKey   string     `json:"module_key"`
-	Unit Unit `json:"unit"`
+	Unit      Unit   `json:"unit"`
 
 	Completed int  `json:"completed"` // number of schedule items the user has completed
 	Current   bool `json:"current"`
 
 	LastCompleted *time.Time `json:"last_completed"`
-	DateCreated   time.Time  `json:"-"`
+	DateCreated   time.Time  `json:"date_created"`
 	DateUpdated   *time.Time `json:"date_updated"`
 }
 
@@ -185,8 +183,6 @@ type Unit struct {
 	AppID string `json:"app_id"`
 	OrgID string `json:"org_id"`
 
-	//CourseKey string         `json:"course_key"`
-	//ModuleKey string         `json:"module_key"`
 	Key      string         `json:"key"`
 	Name     string         `json:"name"`
 	Contents []Content      `json:"content"`

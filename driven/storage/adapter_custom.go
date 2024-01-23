@@ -499,10 +499,10 @@ func (sa *Adapter) DeleteUserUnit(appID string, orgID string, key string) error 
 	if result == nil {
 		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
 	}
-	deletedCount := result.DeletedCount
-	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": key}, err)
-	}
+	// deletedCount := result.DeletedCount
+	// if deletedCount == 0 {
+	// 	return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": key}, err)
+	// }
 	return nil
 }
 
@@ -539,7 +539,7 @@ func (sa *Adapter) FindCustomContents(appID string, orgID string, id []string, n
 		filter["key"] = bson.M{"$in": key}
 	}
 	var result []model.Content
-	err := sa.db.customContent.Find(sa.context, filter, &result, nil)
+	err := sa.db.customContents.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		errArgs := logutils.FieldArgs(filter)
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, &errArgs, err)
@@ -552,7 +552,7 @@ func (sa *Adapter) FindCustomContents(appID string, orgID string, id []string, n
 func (sa *Adapter) FindCustomContent(appID string, orgID string, key string) (*model.Content, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result model.Content
-	err := sa.db.customContent.FindOne(sa.context, filter, &result, nil)
+	err := sa.db.customContents.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		errArgs := logutils.FieldArgs(filter)
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, &errArgs, err)
@@ -564,7 +564,7 @@ func (sa *Adapter) FindCustomContent(appID string, orgID string, key string) (*m
 // InsertCustomContent inserts a content
 func (sa *Adapter) InsertCustomContent(item model.Content) error {
 	item.DateCreated = time.Now()
-	_, err := sa.db.customContent.InsertOne(sa.context, item)
+	_, err := sa.db.customContents.InsertOne(sa.context, item)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeContent, nil, err)
 	}
@@ -579,7 +579,7 @@ func (sa *Adapter) InsertCustomContents(items []model.Content) error {
 		storeItems[i] = item
 	}
 
-	_, err := sa.db.customContent.InsertMany(sa.context, storeItems, nil)
+	_, err := sa.db.customContents.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeContent, nil, err)
 	}
@@ -606,7 +606,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 			"date_updated":   time.Now(),
 		},
 	}
-	result, err := sa.db.customContent.UpdateOne(sa.context, filter, update, nil)
+	result, err := sa.db.customContents.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeContent, &errArgs, err)
 	}
@@ -620,7 +620,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	errArgs := logutils.FieldArgs(filter)
-	result, err := sa.db.customContent.DeleteOne(sa.context, filter, nil)
+	result, err := sa.db.customContents.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeContent, &errArgs, err)
 	}
@@ -742,7 +742,7 @@ func (sa *Adapter) DeleteContentKeyFromLinkedContents(appID string, orgID string
 		// },
 	}
 
-	_, err := sa.db.customContent.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.customContents.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		errArgs := logutils.FieldArgs(filter)
 		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeContent, &errArgs, err)
@@ -854,14 +854,14 @@ func (sa *Adapter) DeleteModuleKeyFromUserCourses(appID string, orgID string, ke
 	return nil
 }
 
-// moved from adapter_client.go
-
-// MarkUserCourseAsDelete mark given course as deleted in user_course collection
-func (sa *Adapter) MarkUserCourseAsDelete(appID string, orgID string, key string) error {
+// DropUserCourse mark user course as dropped
+func (sa *Adapter) DropUserCourse(appID string, orgID string, key string) error {
+	now := time.Now().UTC()
 	filter := bson.M{"org_id": orgID, "app_id": appID, "course.key": key}
 	update := bson.M{
 		"$set": bson.M{
-			"date_dropped": time.Now(),
+			"date_dropped": now,
+			"date_updated": now,
 		},
 	}
 
@@ -1064,6 +1064,9 @@ func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, cours
 	if len(results) == 0 {
 		return nil, nil
 	}
+	// if err != nil {
+
+	// }
 
 	// no function needs to return UserUnit so not implementating this function yet
 	convertedResult, err := sa.userUnitFromStorage(results[0])
@@ -1139,7 +1142,7 @@ func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, cou
 		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, &errArgs, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUserUnit, &errArgs, err)
+		return errors.ErrorData(logutils.StatusMissing, model.TypeUserUnit, &errArgs)
 	}
 	return nil
 }
