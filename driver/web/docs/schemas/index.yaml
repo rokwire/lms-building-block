@@ -37,6 +37,8 @@ Reference:
   $ref: "./custom/Reference.yaml"
 UserCourse:
   $ref: "./custom/UserCourse.yaml"
+UserUnit:
+  $ref: "./custom/UserUnit.yaml"
 UserReference:
   $ref: "./custom/UserReference.yaml"
 Timezone:

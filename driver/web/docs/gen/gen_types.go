@@ -223,6 +223,21 @@ type UserReference struct {
 	UserData      *map[string]interface{} `json:"user_data"`
 }
 
+// UserUnit defines model for UserUnit.
+type UserUnit struct {
+	AppId         *string    `json:"app_id,omitempty"`
+	Completed     int        `json:"completed"`
+	CourseKey     *string    `json:"course_key,omitempty"`
+	Current       bool       `json:"current"`
+	DateCreated   *time.Time `json:"date_created,omitempty"`
+	DateUpdated   *time.Time `json:"date_updated,omitempty"`
+	Id            *string    `json:"id,omitempty"`
+	LastCompleted *time.Time `json:"last_completed,omitempty"`
+	OrgId         *string    `json:"org_id,omitempty"`
+	Unit          Unit       `json:"unit"`
+	UserId        *string    `json:"user_id,omitempty"`
+}
+
 // UsersSource defines model for UsersSource.
 type UsersSource struct {
 	Params *map[string]interface{} `json:"params"`

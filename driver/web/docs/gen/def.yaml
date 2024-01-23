@@ -493,32 +493,7 @@ paths:
               schema:
                 type: array
                 items:
-                  required:
-                    - id
-                    - app_id
-                    - org_id
-                    - user_id
-                    - course_key
-                    - unit
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      readOnly: true
-                    app_id:
-                      type: string
-                      readOnly: true
-                    org_id:
-                      type: string
-                      readOnly: true
-                    user_id:
-                      type: string
-                      readOnly: true
-                    course_key:
-                      type: string
-                      readOnly: true
-                    unit:
-                      $ref: '#/components/schemas/Unit'
+                  $ref: '#/components/schemas/UserUnit'
         '400':
           description: Bad request
         '401':
@@ -2262,6 +2237,48 @@ components:
               type: string
               readOnly: true
               format: date-time
+    UserUnit:
+      required:
+        - id
+        - app_id
+        - org_id
+        - user_id
+        - course_key
+        - completed
+        - current
+        - unit
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        user_id:
+          type: string
+          readOnly: true
+        course_key:
+          type: string
+          readOnly: true
+        completed:
+          type: integer
+        current:
+          type: boolean
+        unit:
+          $ref: '#/components/schemas/Unit'
+        last_completed:
+          type: string
+          format: date-time
+        date_created:
+          type: string
+          format: date-time
+        date_updated:
+          type: string
+          format: date-time
     UserReference:
       allOf:
         - $ref: '#/components/schemas/Reference'
