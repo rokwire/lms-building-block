@@ -227,9 +227,6 @@ func (s *clientImpl) CreateUserUnit(claims *tokenauth.Claims, courseKey string, 
 
 // delete all user course derieved from a custom course
 func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string) error {
-
-	//item.UserID = claims.Subject
-
 	err := s.app.storage.DeleteUserCourse(claims.AppID, claims.OrgID, courseKey)
 	if err != nil {
 		return err
@@ -240,7 +237,16 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.Unit) (*model.Unit, error) {
 	// create a userUnit here if it doesn't already exist
 	transaction := func(storage interfaces.Storage) error {
-		ifExist, err := storage.GetUserUnitExist(claims.AppID, claims.OrgID, claims.Id, courseKey, unitKey)
+		//userCourse has to exist and not dropped.
+		uCourse, err := s.GetUserCourse(claims, courseKey)
+		if err != nil {
+			return err
+		}
+		if uCourse.DateDropped != nil {
+			return errors.WrapErrorData(logutils.StatusMissing, model.TypeUserUnit, &logutils.FieldArgs{"course_key": courseKey, "dropped_date": uCourse.DateDropped}, err)
+		}
+
+		ifExist, err := storage.GetUserUnitExist(claims.AppID, claims.OrgID, claims.Subject, courseKey, unitKey)
 		if err != nil {
 			return err
 		}

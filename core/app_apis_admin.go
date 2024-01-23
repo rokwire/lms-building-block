@@ -613,7 +613,7 @@ func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, key string) error
 			return err
 		}
 
-		return err
+		return nil
 	}
 	return s.app.storage.PerformTransaction(transaction)
 }

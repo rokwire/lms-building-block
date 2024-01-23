@@ -8,10 +8,10 @@ get:
     - bearerAuth: []
   parameters:
     - name: key
-      in: query
+      in: path
       description: course key
       required: true
-      style: form
+      style: simple
       explode: false
       schema:
         type: string
@@ -31,5 +31,5 @@ get:
     500:
       description: Internal error
   x-core-function: GetUserCourseUnits
-  x-data-type: model.UserCourse
+  x-data-type: model.UserUnit
   x-authentication-type: User

@@ -132,7 +132,7 @@ func (sa *Adapter) customUnitConversionStorageToAPI(item unit) (model.Unit, erro
 	// 	var linked []content
 	// 	subFilter := bson.M{"org_id": item.OrgID, "app_id": item.AppID}
 	// 	subFilter["key"] = bson.M{"$in": item.ContentKeys}
-	// 	err := sa.db.customContent.Find(sa.context, subFilter, &linked, nil)
+	// 	err := sa.db.customContents.Find(sa.context, subFilter, &linked, nil)
 	// 	if err != nil {
 	// 		return result, err
 	// 	}
@@ -197,7 +197,7 @@ func (sa *Adapter) customContentConversionStorageToAPI(item content) (model.Cont
 	// 	var linkedContents []content
 	// 	subFilter := bson.M{"org_id": item.OrgID, "app_id": item.AppID}
 	// 	subFilter["key"] = bson.M{"$in": item.LinkedContent}
-	// 	err := sa.db.customContent.Find(sa.context, subFilter, &linkedContents, nil)
+	// 	err := sa.db.customContents.Find(sa.context, subFilter, &linkedContents, nil)
 	// 	if err != nil {
 	// 		return result, err
 	// 	}
@@ -245,6 +245,7 @@ func (sa *Adapter) userCourseConversionStorageToAPI(item userCourse) (model.User
 	result.UserID = item.UserID
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated
+	result.DateDropped = item.DateDropped
 
 	convertedCourse, err := sa.customCourseConversionStorageToAPI(item.Course)
 	if err != nil {

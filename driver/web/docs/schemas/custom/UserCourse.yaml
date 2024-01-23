@@ -4,6 +4,7 @@ required:
   - org_id
   - user_id
   - course
+  - date_dropped
 type: object
 properties:
   id:
@@ -20,3 +21,7 @@ properties:
     readOnly: true
   course:
     $ref: "./Course.yaml"
+  date_dropped:
+   type: string
+   readOnly: true
+   format: date-time

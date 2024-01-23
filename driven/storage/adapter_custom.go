@@ -7,6 +7,7 @@ import (
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // GetCustomCourses finds courses by a set of parameters
@@ -433,10 +434,10 @@ func (sa *Adapter) DeleteUserUnit(appID string, orgID string, key string) error 
 	if result == nil {
 		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
 	}
-	deletedCount := result.DeletedCount
-	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": key}, err)
-	}
+	// deletedCount := result.DeletedCount
+	// if deletedCount == 0 {
+	// 	return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": key}, err)
+	// }
 	return nil
 }
 
@@ -473,7 +474,7 @@ func (sa *Adapter) GetCustomContents(appID string, orgID string, id []string, na
 		filter["key"] = bson.M{"$in": key}
 	}
 	var result []content
-	err := sa.db.customContent.Find(sa.context, filter, &result, nil)
+	err := sa.db.customContents.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		errArgs := logutils.FieldArgs(filter)
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, &errArgs, err)
@@ -499,7 +500,7 @@ func (sa *Adapter) GetCustomContents(appID string, orgID string, id []string, na
 func (sa *Adapter) GetCustomContent(appID string, orgID string, key string) (*model.Content, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	var result content
-	err := sa.db.customContent.FindOne(sa.context, filter, &result, nil)
+	err := sa.db.customContents.FindOne(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +518,7 @@ func (sa *Adapter) InsertCustomContent(item model.Content) error {
 	item.DateCreated = time.Now()
 	item.DateUpdated = nil
 	content := sa.customContentConversionAPIToStorage(item)
-	_, err := sa.db.customContent.InsertOne(sa.context, content)
+	_, err := sa.db.customContents.InsertOne(sa.context, content)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeContent, nil, err)
 	}
@@ -534,7 +535,7 @@ func (sa *Adapter) InsertCustomContents(items []model.Content) error {
 		storeItems[i] = content
 	}
 
-	_, err := sa.db.customContent.InsertMany(sa.context, storeItems, nil)
+	_, err := sa.db.customContents.InsertMany(sa.context, storeItems, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeContent, nil, err)
 	}
@@ -561,7 +562,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 			"date_updated":   time.Now(),
 		},
 	}
-	result, err := sa.db.customContent.UpdateOne(sa.context, filter, update, nil)
+	result, err := sa.db.customContents.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeContent, &errArgs, err)
 	}
@@ -575,7 +576,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "key": key}
 	errArgs := logutils.FieldArgs(filter)
-	result, err := sa.db.customContent.DeleteOne(sa.context, filter, nil)
+	result, err := sa.db.customContents.DeleteOne(sa.context, filter, nil)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeContent, &errArgs, err)
 	}
@@ -589,7 +590,7 @@ func (sa *Adapter) DeleteCustomContent(appID string, orgID string, key string) e
 	return nil
 }
 
-// DeleteContentKeyFromLinkedContents deletes a content key from linkedContent field within customContent collection
+// DeleteContentKeyFromLinkedContents deletes a content key from linkedContent field within customContents collection
 func (sa *Adapter) DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error {
 	var keyArr []string
 	keyArr = append(keyArr, key)
@@ -606,7 +607,7 @@ func (sa *Adapter) DeleteContentKeyFromLinkedContents(appID string, orgID string
 		// },
 	}
 
-	_, err := sa.db.customContent.UpdateMany(sa.context, filter, update, nil)
+	_, err := sa.db.customContents.UpdateMany(sa.context, filter, update, nil)
 	if err != nil {
 		errArgs := logutils.FieldArgs(filter)
 		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeContent, &errArgs, err)
@@ -747,10 +748,10 @@ func (sa *Adapter) DeleteUserCourse(appID string, orgID string, key string) erro
 	if result == nil {
 		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
 	}
-	deletedCount := result.DeletedCount
-	if deletedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, model.TypeCourse, &logutils.FieldArgs{"key": key}, err)
-	}
+	// deletedCount := result.DeletedCount
+	// if deletedCount == 0 {
+	// 	return errors.WrapErrorData(logutils.StatusMissing, model.TypeCourse, &logutils.FieldArgs{"key": key}, err)
+	// }
 	return nil
 }
 
@@ -832,7 +833,7 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 
 // get UserCourseUnits gets all userUnits within a user's course
 func (sa *Adapter) GetUserCourseUnits(appID string, orgID string, userID string, courseKey string) ([]model.UserUnit, error) {
-	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
+	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course_key": courseKey}
 	var result []userUnit
 	err := sa.db.userUnits.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -859,10 +860,14 @@ func (sa *Adapter) GetUserCourseUnits(appID string, orgID string, userID string,
 func (sa *Adapter) GetUserUnitExist(appID string, orgID string, userID string, courseKey string, unitKey string) (bool, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "unit.key": unitKey}
 	var result userUnit
+	// user find instead of findOne to avoid document none-exist error
 	err := sa.db.userUnits.FindOne(sa.context, filter, &result, nil)
-	if err != nil {
+	if err != nil && err != mongo.ErrNoDocuments {
 		return false, err
 	}
+	// if err != nil {
+
+	// }
 
 	// no function needs to return UserUnit so not implementating this function yet
 	//convertedResult, err := sa.userUnitConversionStorageToAPI(result)
@@ -903,10 +908,10 @@ func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, cou
 	}
 	result, err := sa.db.userUnits.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, &logutils.FieldArgs{"app_id": appID, "org_id": appID, "user_id": appID, "course_key": courseKey}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, &logutils.FieldArgs{"app_id": appID, "org_id": orgID, "user_id": userID, "course_key": courseKey}, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUserUnit, &logutils.FieldArgs{"app_id": appID, "org_id": appID, "user_id": appID, "course_key": courseKey}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUserUnit, &logutils.FieldArgs{"app_id": appID, "org_id": orgID, "user_id": userID, "course_key": courseKey}, err)
 	}
 	return nil
 }

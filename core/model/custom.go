@@ -46,7 +46,7 @@ type UserCourse struct {
 
 	DateCreated time.Time  `json:"date_created"`
 	DateUpdated *time.Time `json:"date_updated"`
-	DateDropped *time.Time `json:"dete_dropped"`
+	DateDropped *time.Time `json:"date_dropped"`
 
 	//TODO: add a timestamp for a user dropping a course?
 }

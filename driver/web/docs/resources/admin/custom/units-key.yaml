@@ -53,7 +53,7 @@ put:
     content:
       application/json:
         schema:
-         $ref: "../../../schemas/apis/admin/custom/update-unit.yaml"
+          $ref: "../../../schemas/apis/admin/custom/update-unit.yaml"
     required: true
   responses:
     200:
