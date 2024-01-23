@@ -2077,18 +2077,14 @@ components:
           items:
             $ref: '#/components/schemas/ScheduleItem'
     UnitWithTimezone:
-      required:
-        - unit
-        - timezone_name
-        - timezone_offset
-      type: object
-      properties:
-        unit:
-          $ref: '#/components/schemas/Unit'
-        timezone_name:
-          type: string
-        timezone_offset:
-          type: integer
+      allOf:
+        - $ref: '#/components/schemas/Timezone'
+        - required:
+            - unit
+          type: object
+          properties:
+            unit:
+              $ref: '#/components/schemas/Unit'
     Content:
       required:
         - id
@@ -2158,28 +2154,48 @@ components:
         reference_key:
           type: string
     UserCourse:
-      required:
-        - id
-        - app_id
-        - org_id
-        - user_id
-        - course
-      type: object
-      properties:
-        id:
-          type: string
-          readOnly: true
-        app_id:
-          type: string
-          readOnly: true
-        org_id:
-          type: string
-          readOnly: true
-        user_id:
-          type: string
-          readOnly: true
-        course:
-          $ref: '#/components/schemas/Course'
+      allOf:
+        - $ref: '#/components/schemas/Timezone'
+        - required:
+            - id
+            - app_id
+            - org_id
+            - user_id
+            - streak
+            - streak_resets
+            - pauses
+            - pause_uses
+            - course
+          type: object
+          properties:
+            id:
+              type: string
+              readOnly: true
+            app_id:
+              type: string
+              readOnly: true
+            org_id:
+              type: string
+              readOnly: true
+            user_id:
+              type: string
+              readOnly: true
+            streak:
+              type: integer
+            streak_resets:
+              type: array
+              items:
+                type: string
+                format: date-time
+            pauses:
+              type: integer
+            pause_uses:
+              type: array
+              items:
+                type: string
+                format: date-time
+            course:
+              $ref: '#/components/schemas/Course'
     UserReference:
       allOf:
         - $ref: '#/components/schemas/Reference'

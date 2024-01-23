@@ -127,7 +127,8 @@ func (sa *Adapter) customUnitToStorage(item model.Unit) unit {
 func (sa *Adapter) userCourseFromStorage(item userCourse) (model.UserCourse, error) {
 	timezone := model.Timezone{Name: item.TimezoneName, Offset: item.TimezoneOffset}
 	result := model.UserCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, Timezone: timezone,
-		Streak: item.Streak, Pauses: item.Pauses, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+		Streak: item.Streak, StreakResets: item.StreakResets, Pauses: item.Pauses, PauseUses: item.PauseUses,
+		DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	convertedCourse, err := sa.customCourseFromStorage(item.Course)
 	if err != nil {

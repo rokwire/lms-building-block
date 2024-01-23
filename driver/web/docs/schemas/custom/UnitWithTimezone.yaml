@@ -1,12 +1,8 @@
-required:
-  - unit
-  - timezone_name
-  - timezone_offset
-type: object
-properties:
-  unit:
-    $ref: ./Unit.yaml
-  timezone_name:
-    type: string
-  timezone_offset:
-    type: integer
+allOf:
+  - $ref: "./Timezone.yaml"
+  - required:
+      - unit
+    type: object
+    properties:
+      unit:
+        $ref: ./Unit.yaml

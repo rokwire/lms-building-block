@@ -139,14 +139,18 @@ func (sa *Adapter) DecrementUserCoursePauses(appID string, orgID string, userIDs
 		return errors.ErrorData(logutils.StatusMissing, "user ids", nil)
 	}
 
+	now := time.Now().UTC()
 	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": key, "user_id": bson.M{"$in": userIDs}}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$inc": bson.M{
 			"pauses": -1,
 		},
+		"$push": bson.M{
+			"pause_uses": now,
+		},
 		"$set": bson.M{
-			"date_updated": time.Now().UTC(),
+			"date_updated": now,
 		},
 	}
 	res, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
@@ -169,12 +173,16 @@ func (sa *Adapter) ResetUserCourseStreaks(appID string, orgID string, userIDs []
 		return errors.ErrorData(logutils.StatusMissing, "user ids", nil)
 	}
 
+	now := time.Now().UTC()
 	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": key, "user_id": bson.M{"$in": userIDs}}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
+		"$push": bson.M{
+			"streak_resets": now,
+		},
 		"$set": bson.M{
 			"streak":       0,
-			"date_updated": time.Now().UTC(),
+			"date_updated": now,
 		},
 	}
 	res, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)

@@ -51,17 +51,16 @@ type UserCourse struct {
 
 	Timezone // include user timezone info
 
-	// Notification Requirements fields (reset to the default every day in user's timezone using the hourly streak timer)
-	Streak int `json:"streak"`
-	Pauses int `json:"pauses"`
+	Streak       int         `json:"streak"`
+	StreakResets []time.Time `json:"streak_resets"` // timestamps when the streak is reset for this course
+	Pauses       int         `json:"pauses"`
+	PauseUses    []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
 
 	Course Course `json:"course"`
 
 	DateCreated time.Time  `json:"date_created"`
 	DateUpdated *time.Time `json:"date_updated"`
 	DateDropped *time.Time `json:"dete_dropped"`
-
-	//TODO: add a timestamp for a user dropping a course?
 }
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
@@ -141,11 +140,6 @@ type Notification struct {
 
 	Active bool `json:"active" bson:"active"`
 
-	// note: change completed_task from bool to time befoe FindUserCourses. apply less than or equal to yesterday.
-	// list of requirement identifiers and values to determine if a user should be sent this notification
-	// example: {
-	//		completed_tasks: false (key must match the json (model.UserCourse) and bson (storage.userCourse) fields)
-	// }
 	Requirements map[string]interface{} `json:"requirements" bson:"requirements"`
 }
 
@@ -222,9 +216,9 @@ type Content struct {
 	ID    string `json:"id" bson:"_id"`
 	AppID string `json:"app_id" bson:"app_id"`
 	OrgID string `json:"org_id" bson:"org_id"`
-	// assignment, resource, reward, evaluation
+
 	Key              string    `json:"key" bson:"key"`
-	Type             string    `json:"type" bson:"type"`
+	Type             string    `json:"type" bson:"type"` // assignment, resource, reward, evaluation
 	Name             string    `json:"name" bson:"name"`
 	Details          string    `json:"details" bson:"details"`
 	ContentReference Reference `json:"reference" bson:"reference"`

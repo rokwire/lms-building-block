@@ -98,28 +98,39 @@ func (n streaksNotifications) processNotifications() {
 	for _, config := range courseConfigs {
 		for _, notification := range config.StreaksNotificationsConfig.Notifications {
 			if notification.Active {
-				userCourses, err := n.getUserCoursesForTimezone(config, notification.ProcessTime, nowSeconds)
+				_, userUnits, userIDs, err := n.getUserDataForTimezone(config, config.StreaksNotificationsConfig.StreaksProcessTime, nowSeconds)
 				if err != nil {
-					n.logger.Errorf("%s -> error finding user courses for course key %s: %v", funcName, config.CourseKey, err)
+					n.logger.Errorf("%s -> error finding user courses and user units for course key %s: %v", funcName, config.CourseKey, err)
 					continue
 				}
 
-				recipients := make([]notifications.Recipient, 0)
-				for _, userCourse := range userCourses {
-					recipients = append(recipients, notifications.Recipient{UserID: userCourse.UserID})
+				for reqKey, reqVal := range notification.Requirements {
+					if reqKey == "completed" && reqVal == false {
+						userIDs, err = n.filterUsersByIncomplete(userUnits, userIDs, now, config.StreaksNotificationsConfig.StreaksProcessTime, notification.ProcessTime)
+						if err != nil {
+							n.logger.Errorf("%s -> error filtering users by incomplete for notification %s in course config %s: %v", funcName, notification.Subject, config.ID, err)
+							continue
+						}
+					}
+					//TODO: add more requirement checks as needed here (userIDs, err = n.<function name>(userUnits, userIDs, ...))
 				}
-				if len(recipients) == 0 {
+
+				if len(userIDs) == 0 {
 					n.logger.Infof("%s -> no recipients for notification %s for course key %s", funcName, notification.Subject, config.CourseKey)
 					continue
 				}
 
+				recipients := make([]notifications.Recipient, len(userIDs))
+				for i, userID := range userIDs {
+					recipients[i] = notifications.Recipient{UserID: userID}
+				}
+
 				err = n.notificationsBB.SendNotifications(recipients, notification.Subject, notification.Body, notification.Params)
 				if err != nil {
-					// why would usercourse be modified here?
 					n.logger.Errorf("%s -> error sending notification %s for course key %s: %v", funcName, notification.Subject, config.CourseKey, err)
-					continue
+				} else {
+					n.logger.Infof("%s -> sent notification %s for course key %s", funcName, notification.Subject, config.CourseKey)
 				}
-				n.logger.Infof("%s -> sent notification %s for course key %s", funcName, notification.Subject, config.CourseKey)
 			}
 		}
 	}
@@ -165,22 +176,9 @@ func (n streaksNotifications) processStreaks() {
 	// batch the following if number of user courses gets large
 	// careful running this with multiple service instances - not all storage operations used here are idempotent
 	for _, config := range courseConfigs {
-		userCourses, err := n.getUserCoursesForTimezone(config, config.StreaksNotificationsConfig.StreaksProcessTime, nowSeconds)
+		userCourses, userUnits, userIDs, err := n.getUserDataForTimezone(config, config.StreaksNotificationsConfig.StreaksProcessTime, nowSeconds)
 		if err != nil {
-			n.logger.Errorf("%s -> error finding user courses for course key %s: %v", funcName, config.CourseKey, err)
-			continue
-		}
-
-		current := true
-		// there should be one userCourse per userID (user cannot take the same course multiple times simultaneously)
-		userIDs := make([]string, len(userCourses))
-		for i, userCourse := range userCourses {
-			userIDs[i] = userCourse.UserID
-		}
-
-		userUnits, err := n.storage.FindUserUnits(config.AppID, config.OrgID, userIDs, config.CourseKey, &current)
-		if err != nil {
-			n.logger.Errorf("%s -> error finding user units for course key %s: %v", funcName, config.CourseKey, err)
+			n.logger.Errorf("%s -> error finding user courses and user units for course key %s: %v", funcName, config.CourseKey, err)
 			continue
 		}
 
@@ -188,34 +186,16 @@ func (n streaksNotifications) processStreaks() {
 		resetStreak := make([]string, 0) // list of userIDs where streak should be reset
 		for _, userUnit := range userUnits {
 			var userCourse *model.UserCourse
-			for i, userID := range userIDs {
-				if userID == userUnit.UserID {
-					userCourse = &userCourses[i]
-					break
-				}
-			}
-			if userCourse == nil {
-				//TODO: return error here?
-				continue
-			}
-
-			if userUnit.Completed == 0 {
+			incompleteTaskHandler := func() error {
+				// if task is incomplete, use a pause or reset the streak depending on the current number of pauses
 				if userCourse.Pauses > 0 {
 					usePause = append(usePause, userUnit.UserID)
 				} else {
-					resetStreak = append(resetStreak, userCourse.UserID)
+					resetStreak = append(resetStreak, userUnit.UserID)
 				}
-			} else if userUnit.Completed < userUnit.Unit.Required {
-				// check if the last completed schedule item was completed within days before now
-				days := userUnit.Unit.Schedule[userUnit.Completed-1].Duration
-				if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add(time.Duration(days)*24*time.Hour).Before(now) {
-					if userCourse.Pauses > 0 {
-						usePause = append(usePause, userUnit.UserID)
-					} else {
-						resetStreak = append(resetStreak, userCourse.UserID)
-					}
-				}
-			} else {
+				return nil
+			}
+			completeUnitHandler := func() error {
 				// insert the next user unit since the current one has been completed
 				transaction := func(storage interfaces.Storage) error {
 					nextUnit := userCourse.Course.GetNextUnit(userUnit.Unit.Key)
@@ -238,10 +218,24 @@ func (n streaksNotifications) processStreaks() {
 					return nil
 				}
 
-				err = n.storage.PerformTransaction(transaction)
-				if err != nil {
-					n.logger.Errorf("%s -> error finding user units for course key %s: %v", funcName, config.CourseKey, err)
+				return n.storage.PerformTransaction(transaction)
+			}
+
+			for i, userID := range userIDs {
+				if userID == userUnit.UserID {
+					userCourse = &userCourses[i]
+					break
 				}
+			}
+			if userCourse == nil {
+				n.logger.Errorf("%s -> error matching user course for user unit %s: %v", funcName, userUnit.ID, err)
+				continue
+			}
+
+			err = n.checkScheduleTaskCompletion(userUnit, now, incompleteTaskHandler, 0, completeUnitHandler)
+			if err != nil {
+				n.logger.Errorf("%s -> error checking task completion for user unit %s: %v", funcName, userUnit.ID, err)
+				continue
 			}
 		}
 
@@ -260,7 +254,7 @@ func (n streaksNotifications) processStreaks() {
 	}
 }
 
-func (n streaksNotifications) getUserCoursesForTimezone(config model.CourseConfig, processTime int, nowSeconds int) ([]model.UserCourse, error) {
+func (n streaksNotifications) getUserDataForTimezone(config model.CourseConfig, processTime int, nowSeconds int) ([]model.UserCourse, []model.UserUnit, []string, error) {
 	tzOffsets := make(model.TZOffsets, 0)
 	var userCourses []model.UserCourse
 	var err error
@@ -280,29 +274,80 @@ func (n streaksNotifications) getUserCoursesForTimezone(config model.CourseConfi
 
 		// load user courses for this course based on timezone offsets
 		userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, tzOffsets.GeneratePairs(config.StreaksNotificationsConfig.PreferEarly))
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	} else {
 		configOffset := config.StreaksNotificationsConfig.TimezoneOffset
 		if offset == configOffset || offset+utils.SecondsInDay == configOffset || offset-utils.SecondsInDay == configOffset {
 			// load all user courses for this course
 			userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, nil)
+			if err != nil {
+				return nil, nil, nil, err
+			}
 		}
 	}
 
-	return userCourses, err
+	if len(userCourses) > 0 {
+		current := true
+		// there should be one userCourse per userID (user cannot take the same course multiple times simultaneously)
+		userIDs := make([]string, len(userCourses))
+		for i, userCourse := range userCourses {
+			userIDs[i] = userCourse.UserID
+		}
+
+		userUnits, err := n.storage.FindUserUnits(config.AppID, config.OrgID, userIDs, config.CourseKey, &current)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return userCourses, userUnits, userIDs, nil
+	}
+
+	return nil, nil, nil, nil
 }
 
-// func (n streaksNotifications) processNotificationRequirements(requirements map[string]interface{}, timezoneName string, timezoneOffset int) (map[string]interface{}, error) {
-// 	newRequirements := make(map[string]interface{})
-// 	for reqKey, reqVal := range requirements {
-// 		newRequirements[reqKey] = reqVal
-// 		if reqKey == "completed_tasks" {
-// 			userLoc := time.FixedZone(timezoneName, timezoneOffset)
-// 			if userLoc == nil {
-// 				return nil, errors.ErrorData(logutils.StatusInvalid, "user timezone", &logutils.FieldArgs{"name": timezoneName, "offset": timezoneOffset})
-// 			}
+func (n streaksNotifications) filterUsersByIncomplete(userUnits []model.UserUnit, userIDs []string, now time.Time, streaksProcessTime int, notificationProcessTime int) ([]string, error) {
+	filtered := make([]string, 0)
+	for _, userUnit := range userUnits {
+		if !utils.Exist[string](userIDs, userUnit.ID) {
+			continue
+		}
 
-// 			newRequirements["completed_tasks_time"] = time.Now().In(userLoc)
-// 		}
-// 	}
-// 	return newRequirements, nil
-// }
+		incompleteTaskHandler := func() error {
+			// if task is incomplete, use a pause or reset the streak depending on the current number of pauses
+			filtered = append(filtered, userUnit.UserID)
+			return nil
+		}
+		// equal to difference between notification process time and streaks process time (start of "day") converted to hours
+		incompleteTaskPeriodOffset := (notificationProcessTime - streaksProcessTime) / utils.SecondsInHour
+
+		err := n.checkScheduleTaskCompletion(userUnit, now, incompleteTaskHandler, -incompleteTaskPeriodOffset, nil)
+		if err != nil {
+			n.logger.Errorf("processNotifications -> error checking task completion for user unit %s: %v", userUnit.ID, err)
+			continue
+		}
+	}
+
+	return filtered, nil
+}
+
+func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUnit, now time.Time, incompleteTaskHandler func() error, incompleteTaskPeriodOffset int, completeUnitHandler func() error) error {
+	if incompleteTaskHandler == nil {
+		return errors.ErrorData(logutils.StatusInvalid, "incomplete task handler", nil)
+	}
+
+	if userUnit.Completed == 0 {
+		// user has not completed the current task
+		return incompleteTaskHandler()
+	} else if userUnit.Completed < userUnit.Unit.Required {
+		// check if the last completed schedule item was completed within (24*days+offset) hours before now
+		days := userUnit.Unit.Schedule[userUnit.Completed-1].Duration
+		if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((24*time.Duration(days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) {
+			return incompleteTaskHandler()
+		}
+	} else if completeUnitHandler != nil {
+		// user completed the current unit (userUnit.Completed == userUnit.Unit.Required)
+		return completeUnitHandler()
+	}
+	return nil
+}

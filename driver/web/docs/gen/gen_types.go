@@ -199,11 +199,17 @@ type User struct {
 
 // UserCourse defines model for UserCourse.
 type UserCourse struct {
-	AppId  *string `json:"app_id,omitempty"`
-	Course Course  `json:"course"`
-	Id     *string `json:"id,omitempty"`
-	OrgId  *string `json:"org_id,omitempty"`
-	UserId *string `json:"user_id,omitempty"`
+	AppId          *string     `json:"app_id,omitempty"`
+	Course         Course      `json:"course"`
+	Id             *string     `json:"id,omitempty"`
+	OrgId          *string     `json:"org_id,omitempty"`
+	PauseUses      []time.Time `json:"pause_uses"`
+	Pauses         int         `json:"pauses"`
+	Streak         int         `json:"streak"`
+	StreakResets   []time.Time `json:"streak_resets"`
+	TimezoneName   string      `json:"timezone_name"`
+	TimezoneOffset int         `json:"timezone_offset"`
+	UserId         *string     `json:"user_id,omitempty"`
 }
 
 // UserReference defines model for UserReference.

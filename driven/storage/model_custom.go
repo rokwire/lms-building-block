@@ -28,9 +28,10 @@ type userCourse struct {
 	TimezoneName   string `bson:"timezone_name"`
 	TimezoneOffset int    `bson:"timezone_offset"` // in seconds east of UTC
 
-	// Notification Requirements fields
-	Streak int `bson:"streak"`
-	Pauses int `bson:"pauses"`
+	Streak       int         `bson:"streak"`
+	StreakResets []time.Time `bson:"streak_resets"`
+	Pauses       int         `bson:"pauses"`
+	PauseUses    []time.Time `bson:"pause_uses"`
 
 	Course course `bson:"course"`
 
