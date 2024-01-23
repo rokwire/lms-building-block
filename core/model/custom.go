@@ -124,7 +124,7 @@ type StreaksNotificationsConfig struct {
 	PreferEarly         bool `json:"prefer_early" bson:"prefer_early"`                 // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
 	NotificationsActive bool `json:"notifications_active" bson:"notifications_active"` // if the notifications processing is "on" or "off"
 	// BlockSize int    `json:"block_size" bson:"block_size"` // TODO: needed?
-	// Mode      string `json:"mode" bson:"mode"`             // "normal" or "test"
+	NotificationsMode string `json:"notifications_mode" bson:"notifications_mode"` // "normal" or "test"
 
 	Notifications []Notification `json:"notifications" bson:"notifications"`
 }

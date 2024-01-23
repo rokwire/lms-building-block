@@ -3,6 +3,7 @@ required:
   - streaks_process_time
   - prefer_early
   - notifications_active
+  - notifications_mode
   - notifications
 type: object
 properties:
@@ -16,6 +17,11 @@ properties:
     type: boolean
   notifications_active:
     type: boolean
+  notifications_mode:
+    type: string
+    enum:
+      - normal
+      - test
   notifications:
     type: array
     items:

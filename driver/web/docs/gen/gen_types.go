@@ -21,8 +21,14 @@ const (
 
 // Defines values for NudgesConfigMode.
 const (
-	Normal NudgesConfigMode = "normal"
-	Test   NudgesConfigMode = "test"
+	NudgesConfigModeNormal NudgesConfigMode = "normal"
+	NudgesConfigModeTest   NudgesConfigMode = "test"
+)
+
+// Defines values for StreaksNotificationsConfigNotificationsMode.
+const (
+	StreaksNotificationsConfigNotificationsModeNormal StreaksNotificationsConfigNotificationsMode = "normal"
+	StreaksNotificationsConfigNotificationsModeTest   StreaksNotificationsConfigNotificationsMode = "test"
 )
 
 // Assignment defines model for Assignment.
@@ -158,13 +164,17 @@ type ScheduleItem struct {
 
 // StreaksNotificationsConfig defines model for StreaksNotificationsConfig.
 type StreaksNotificationsConfig struct {
-	Notifications       []Notification `json:"notifications"`
-	NotificationsActive bool           `json:"notifications_active"`
-	PreferEarly         bool           `json:"prefer_early"`
-	StreaksProcessTime  int            `json:"streaks_process_time"`
-	TimezoneName        string         `json:"timezone_name"`
-	TimezoneOffset      *int           `json:"timezone_offset,omitempty"`
+	Notifications       []Notification                              `json:"notifications"`
+	NotificationsActive bool                                        `json:"notifications_active"`
+	NotificationsMode   StreaksNotificationsConfigNotificationsMode `json:"notifications_mode"`
+	PreferEarly         bool                                        `json:"prefer_early"`
+	StreaksProcessTime  int                                         `json:"streaks_process_time"`
+	TimezoneName        string                                      `json:"timezone_name"`
+	TimezoneOffset      *int                                        `json:"timezone_offset,omitempty"`
 }
+
+// StreaksNotificationsConfigNotificationsMode defines model for StreaksNotificationsConfig.NotificationsMode.
+type StreaksNotificationsConfigNotificationsMode string
 
 // Timezone defines model for Timezone.
 type Timezone struct {

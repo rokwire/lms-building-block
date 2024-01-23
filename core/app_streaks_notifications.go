@@ -125,11 +125,16 @@ func (n streaksNotifications) processNotifications() {
 					recipients[i] = notifications.Recipient{UserID: userID}
 				}
 
-				err = n.notificationsBB.SendNotifications(recipients, notification.Subject, notification.Body, notification.Params)
-				if err != nil {
-					n.logger.Errorf("%s -> error sending notification %s for course key %s: %v", funcName, notification.Subject, config.CourseKey, err)
-				} else {
-					n.logger.Infof("%s -> sent notification %s for course key %s", funcName, notification.Subject, config.CourseKey)
+				switch config.StreaksNotificationsConfig.NotificationsMode {
+				case "normal":
+					err = n.notificationsBB.SendNotifications(recipients, notification.Subject, notification.Body, notification.Params)
+					if err != nil {
+						n.logger.Errorf("%s -> error sending notification %s for course key %s: %v", funcName, notification.Subject, config.CourseKey, err)
+					} else {
+						n.logger.Infof("%s -> sent notification %s for course key %s", funcName, notification.Subject, config.CourseKey)
+					}
+				case "test":
+					n.logger.Infof("%s -> (test) notification %s would be sent to users %v for course key %s", funcName, notification.Subject, userIDs, config.CourseKey)
 				}
 			}
 		}
