@@ -223,7 +223,8 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
 			}
-			item.Unit = *unit
+			//item.Unit = *unit
+			userUnit.Unit = *unit
 
 			// user started the course and created the first user unit
 			err = storageTransaction.InsertUserUnit(*userUnit)

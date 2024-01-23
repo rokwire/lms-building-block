@@ -74,9 +74,9 @@ func (n streaksNotifications) setupNotificationsTimer() {
 
 	initialDuration := time.Second * time.Duration(durationInSeconds)
 	// change to minute for testing.
-	initialDuration = 60
-	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Minute, n.processNotifications, "processNotifications", n.logger)
-	//utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processNotifications, "processNotifications", n.logger)
+	//initialDuration = 60
+	//utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Minute, n.processNotifications, "processNotifications", n.logger)
+	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processNotifications, "processNotifications", n.logger)
 }
 
 func (n streaksNotifications) processNotifications() {
