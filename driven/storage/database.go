@@ -275,7 +275,7 @@ func (m *database) applyNudgesBlocksChecks(nudgesProcesses *collectionWrapper) e
 	return nil
 }
 
-// ourse Configs
+// Course Configs
 func (m *database) applyCourseConfigsChecks(courseConfigs *collectionWrapper) error {
 	m.logger.Info("apply course configs check.....")
 	err := courseConfigs.AddIndex(
