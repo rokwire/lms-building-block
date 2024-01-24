@@ -157,11 +157,11 @@ type Reference struct {
 
 // ScheduleItem defines model for ScheduleItem.
 type ScheduleItem struct {
-	DateCompleted *time.Time      `json:"date_completed"`
-	DateStarted   *time.Time      `json:"date_started,omitempty"`
-	Duration      int             `json:"duration"`
-	Name          string          `json:"name"`
-	UserContent   []UserReference `json:"user_content"`
+	DateCompleted *time.Time    `json:"date_completed"`
+	DateStarted   *time.Time    `json:"date_started,omitempty"`
+	Duration      int           `json:"duration"`
+	Name          string        `json:"name"`
+	UserContent   []UserContent `json:"user_content"`
 }
 
 // StreaksNotificationsConfig defines model for StreaksNotificationsConfig.
@@ -209,6 +209,12 @@ type User struct {
 	Name        *string     `json:"name,omitempty"`
 }
 
+// UserContent defines model for UserContent.
+type UserContent struct {
+	ContentKey string                  `json:"content_key"`
+	UserData   *map[string]interface{} `json:"user_data"`
+}
+
 // UserCourse defines model for UserCourse.
 type UserCourse struct {
 	AppId          *string     `json:"app_id,omitempty"`
@@ -223,14 +229,6 @@ type UserCourse struct {
 	TimezoneName   string      `json:"timezone_name"`
 	TimezoneOffset int         `json:"timezone_offset"`
 	UserId         *string     `json:"user_id,omitempty"`
-}
-
-// UserReference defines model for UserReference.
-type UserReference struct {
-	Name         string                  `json:"name"`
-	ReferenceKey string                  `json:"reference_key"`
-	Type         string                  `json:"type"`
-	UserData     *map[string]interface{} `json:"user_data"`
 }
 
 // UserUnit defines model for UserUnit.

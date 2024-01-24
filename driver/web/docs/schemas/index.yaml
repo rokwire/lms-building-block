@@ -39,8 +39,8 @@ UserCourse:
   $ref: "./custom/UserCourse.yaml"
 UserUnit:
   $ref: "./custom/UserUnit.yaml"
-UserReference:
-  $ref: "./custom/UserReference.yaml"
+UserContent:
+  $ref: "./custom/UserContent.yaml"
 Timezone:
   $ref: "./custom/Timezone.yaml"
 CourseConfig:

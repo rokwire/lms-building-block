@@ -10,7 +10,7 @@ servers:
     description: Test server
   - url: 'https://api-dev.rokwire.illinois.edu/lms'
     description: Development server
-  - url: 'http://localhost/lms'
+  - url: 'http://localhost:5010/lms'
     description: Local server
 tags:
   - name: Default
@@ -2208,7 +2208,7 @@ components:
         user_content:
           type: array
           items:
-            $ref: '#/components/schemas/UserReference'
+            $ref: '#/components/schemas/UserContent'
         duration:
           type: integer
         date_started:
@@ -2321,14 +2321,16 @@ components:
         date_updated:
           type: string
           format: date-time
-    UserReference:
-      allOf:
-        - $ref: '#/components/schemas/Reference'
-        - type: object
-          properties:
-            user_data:
-              type: object
-              nullable: true
+    UserContent:
+      required:
+        - content_key
+      type: object
+      properties:
+        content_key:
+          type: string
+        user_data:
+          type: object
+          nullable: true
     Timezone:
       required:
         - timezone_name

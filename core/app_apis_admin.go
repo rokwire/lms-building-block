@@ -172,15 +172,31 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 		var modules, newModules []model.Module
 		var units, newUnits []model.Unit
 		var contents, newContents []model.Content
+		var contentKeys []string
 
 		for _, module := range item.Modules {
 			for _, unit := range module.Units {
-				for _, content := range unit.Contents {
-					content.ID = uuid.NewString()
-					content.AppID = claims.AppID
-					content.OrgID = claims.OrgID
-					contents = append(contents, content)
+				if len(unit.Schedule) == 0 {
+					return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 				}
+
+				for _, content := range unit.Contents {
+					if !utils.Exist[string](contentKeys, content.Key) {
+						content.ID = uuid.NewString()
+						content.AppID = claims.AppID
+						content.OrgID = claims.OrgID
+						contents = append(contents, content)
+						contentKeys = append(contentKeys, content.Key)
+					}
+				}
+				for _, scheduleItem := range unit.Schedule {
+					for _, userContent := range scheduleItem.UserContent {
+						if !utils.Exist[string](contentKeys, userContent.ContentKey) {
+							return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
+						}
+					}
+				}
+
 				unit.ID = uuid.NewString()
 				unit.AppID = claims.AppID
 				unit.OrgID = claims.OrgID
@@ -191,15 +207,15 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 			module.OrgID = claims.OrgID
 			modules = append(modules, module)
 		}
-		newModules, err := s.modulesNotInDB(claims.AppID, claims.OrgID, modules)
+		newModules, err := s.modulesNotInDB(storageTransaction, claims.AppID, claims.OrgID, modules)
 		if err != nil {
 			return err
 		}
-		newUnits, err = s.unitsNotInDB(claims.AppID, claims.OrgID, units)
+		newUnits, err = s.unitsNotInDB(storageTransaction, claims.AppID, claims.OrgID, units)
 		if err != nil {
 			return err
 		}
-		newContents, err = s.contentsNotInDB(claims.AppID, claims.OrgID, contents)
+		newContents, err = s.contentsNotInDB(storageTransaction, claims.AppID, claims.OrgID, contents)
 		if err != nil {
 			return err
 		}
@@ -224,16 +240,6 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 		}
 
 		if len(newContents) != 0 {
-			// this is meant to ensure every linkedContent is already present in database, but we will ignore this in current implementation
-			// for _, thisContent := range newContents{
-			// 	returnedLinkedContents, err := s.contentsNotInDB(claims.AppID, claims.OrgID, thisContent.LinkedContent)
-			// 	if err != nil {
-			// 		return err
-			// 	}
-			// 	if len(returnedLinkedContents) != len(thisContent.LinkedContent){
-			// 		return errors.WrapErrorAction(logutils.ActionInsert, "not all linkedContents exist in db", nil, err)
-			// 	}
-			// }
 			err = storageTransaction.InsertCustomContents(newContents)
 			if err != nil {
 				return err
@@ -355,25 +361,41 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 		//extract sublayer(s) key and struct, insert those not yet present in db according to key
 		var units, newUnits []model.Unit
 		var contents, newContents []model.Content
+		var contentKeys []string
 
 		for _, unit := range item.Units {
-			for _, content := range unit.Contents {
-				content.ID = uuid.NewString()
-				content.AppID = claims.AppID
-				content.OrgID = claims.OrgID
-				contents = append(contents, content)
+			if len(unit.Schedule) == 0 {
+				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 			}
+
+			for _, content := range unit.Contents {
+				if !utils.Exist[string](contentKeys, content.Key) {
+					content.ID = uuid.NewString()
+					content.AppID = claims.AppID
+					content.OrgID = claims.OrgID
+					contents = append(contents, content)
+					contentKeys = append(contentKeys, content.Key)
+				}
+			}
+			for _, scheduleItem := range unit.Schedule {
+				for _, userContent := range scheduleItem.UserContent {
+					if !utils.Exist[string](contentKeys, userContent.ContentKey) {
+						return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
+					}
+				}
+			}
+
 			unit.ID = uuid.NewString()
 			unit.AppID = claims.AppID
 			unit.OrgID = claims.OrgID
 			units = append(units, unit)
 		}
 
-		newUnits, err := s.unitsNotInDB(claims.AppID, claims.OrgID, units)
+		newUnits, err := s.unitsNotInDB(storageTransaction, claims.AppID, claims.OrgID, units)
 		if err != nil {
 			return err
 		}
-		newContents, err = s.contentsNotInDB(claims.AppID, claims.OrgID, contents)
+		newContents, err = s.contentsNotInDB(storageTransaction, claims.AppID, claims.OrgID, contents)
 		if err != nil {
 			return err
 		}
@@ -506,23 +528,37 @@ func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *s
 
 func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) (*model.Unit, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
+		if len(item.Schedule) == 0 {
+			return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": item.Key})
+		}
+
 		item.ID = uuid.NewString()
 		item.AppID = claims.AppID
 		item.OrgID = claims.OrgID
-		item.Required = len(item.Schedule)
 
 		//extract sublayer(s) key and struct, insert those not yet present in db according to key
 		var contents, newContents []model.Content
+		var contentKeys []string
 
 		//contents
 		for _, content := range item.Contents {
-			content.ID = uuid.NewString()
-			content.AppID = claims.AppID
-			content.OrgID = claims.OrgID
-			contents = append(contents, content)
+			if !utils.Exist[string](contentKeys, content.Key) {
+				content.ID = uuid.NewString()
+				content.AppID = claims.AppID
+				content.OrgID = claims.OrgID
+				contents = append(contents, content)
+				contentKeys = append(contentKeys, content.Key)
+			}
+		}
+		for _, scheduleItem := range item.Schedule {
+			for _, userContent := range scheduleItem.UserContent {
+				if !utils.Exist[string](contentKeys, userContent.ContentKey) {
+					return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
+				}
+			}
 		}
 
-		newContents, err := s.contentsNotInDB(claims.AppID, claims.OrgID, contents)
+		newContents, err := s.contentsNotInDB(storageTransaction, claims.AppID, claims.OrgID, contents)
 		if err != nil {
 			return err
 		}
@@ -553,6 +589,10 @@ func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, key string) (*model.
 
 func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item model.Unit) (*model.Unit, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
+		if len(item.Schedule) == 0 {
+			return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": item.Key})
+		}
+
 		item.AppID = claims.AppID
 		item.OrgID = claims.OrgID
 		// prevent empty key and key mismatch. current implementation disallow key update
@@ -762,13 +802,13 @@ func (s *adminImpl) DeleteCustomCourseConfig(claims *tokenauth.Claims, key strin
 }
 
 // return those inside the array that are not present in database determined by key
-func (s *adminImpl) modulesNotInDB(appID string, orgID string, modules []model.Module) ([]model.Module, error) {
+func (s *adminImpl) modulesNotInDB(storage interfaces.Storage, appID string, orgID string, modules []model.Module) ([]model.Module, error) {
 	var keys, returnedKeys []string
 	var resultStructs []model.Module
 	for _, val := range modules {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.FindCustomModules(appID, orgID, nil, nil, keys, nil)
+	returnedStructs, err := storage.FindCustomModules(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeModule, nil, err)
 	}
@@ -786,13 +826,13 @@ func (s *adminImpl) modulesNotInDB(appID string, orgID string, modules []model.M
 }
 
 // return those inside the array that are not present in database determined by key
-func (s *adminImpl) unitsNotInDB(appID string, orgID string, units []model.Unit) ([]model.Unit, error) {
+func (s *adminImpl) unitsNotInDB(storage interfaces.Storage, appID string, orgID string, units []model.Unit) ([]model.Unit, error) {
 	var keys, returnedKeys []string
 	var resultStructs []model.Unit
 	for _, val := range units {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.FindCustomUnits(appID, orgID, nil, nil, keys, nil)
+	returnedStructs, err := storage.FindCustomUnits(appID, orgID, nil, nil, keys, nil)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
 	}
@@ -810,13 +850,13 @@ func (s *adminImpl) unitsNotInDB(appID string, orgID string, units []model.Unit)
 }
 
 // return those inside the array that are not present in database determined by key
-func (s *adminImpl) contentsNotInDB(appID string, orgID string, contents []model.Content) ([]model.Content, error) {
+func (s *adminImpl) contentsNotInDB(storage interfaces.Storage, appID string, orgID string, contents []model.Content) ([]model.Content, error) {
 	var keys, returnedKeys []string
 	var resultStructs []model.Content
 	for _, val := range contents {
 		keys = append(keys, val.Key)
 	}
-	returnedStructs, err := s.app.storage.FindCustomContents(appID, orgID, nil, nil, keys)
+	returnedStructs, err := storage.FindCustomContents(appID, orgID, nil, nil, keys)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeContent, nil, err)
 	}

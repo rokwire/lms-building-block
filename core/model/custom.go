@@ -202,12 +202,22 @@ type UnitWithTimezone struct {
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time
 type ScheduleItem struct {
-	Name        string          `json:"name" bson:"name"`
-	UserContent []UserReference `json:"user_content" bson:"user_content"`
-	Duration    int             `json:"duration" bson:"duration"` // in days
+	Name        string        `json:"name" bson:"name"`
+	UserContent []UserContent `json:"user_content" bson:"user_content"`
+	Duration    int           `json:"duration" bson:"duration"` // in days
 
 	DateStarted   *time.Time `json:"date_started,omitempty" bson:"date_started,omitempty"`
 	DateCompleted *time.Time `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
+}
+
+// IsComplete gives whether every user content item in the schedule item has user data
+func (s *ScheduleItem) IsComplete() bool {
+	for _, userContent := range s.UserContent {
+		if len(userContent.UserData) == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // Content represents some Unit content
@@ -234,9 +244,9 @@ type Reference struct {
 	ReferenceKey string `json:"reference_key" bson:"reference_key"`
 }
 
-// UserReference represents a reference with some additional data about user interactions
-type UserReference struct {
-	Reference
+// UserContent represents a Content reference with some additional user data
+type UserContent struct {
+	ContentKey string `json:"content_key" bson:"content_key"`
 
 	// user fields (populated as user takes a course)
 	UserData map[string]interface{} `json:"user_data,omitempty" bson:"user_data,omitempty"`

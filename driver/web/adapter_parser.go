@@ -50,12 +50,12 @@ func handleRequest[A apiDataType, R requestDataType, S requestDataType](handler 
 
 		pathKey, err := mux.CurrentRoute(req).GetPathTemplate()
 		if err != nil {
-			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), 404, true))
+			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), http.StatusNotFound, true))
 			return
 		}
 		path := paths[pathKey]
 		if path == nil {
-			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), 404, true))
+			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), http.StatusNotFound, true))
 			return
 		}
 
@@ -155,7 +155,7 @@ func handle[A apiDataType, R requestDataType, S requestDataType](r *http.Request
 	if err != nil {
 		return l.HTTPResponseErrorAction(actionType, handler.messageDataType, nil, err, http.StatusInternalServerError, true)
 	}
-	if obj == nil {
+	if obj == (*A)(nil) || obj == nil {
 		return l.HTTPResponseSuccess()
 	}
 

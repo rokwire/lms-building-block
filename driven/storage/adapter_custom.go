@@ -409,8 +409,8 @@ func (sa *Adapter) FindCustomUnit(appID string, orgID string, key string) (*mode
 
 // InsertCustomUnit inserts a unit
 func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
+	item.Required = len(item.Schedule)
 	item.DateCreated = time.Now()
-	item.DateUpdated = nil
 	unit := sa.customUnitToStorage(item)
 	_, err := sa.db.customUnits.InsertOne(sa.context, unit)
 	if err != nil {
@@ -423,8 +423,8 @@ func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
 func (sa *Adapter) InsertCustomUnits(items []model.Unit) error {
 	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
+		item.Required = len(item.Schedule)
 		item.DateCreated = time.Now()
-		item.DateUpdated = nil
 		unit := sa.customUnitToStorage(item)
 		storeItems[i] = unit
 	}
@@ -451,6 +451,7 @@ func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 			"name":         item.Name,
 			"content_keys": extractedKey,
 			"schedule":     item.Schedule,
+			"required":     len(item.Schedule),
 			"date_updated": time.Now(),
 		},
 	}

@@ -1,7 +1,0 @@
-allOf:
-  - $ref: "./Reference.yaml"
-  - type: object
-    properties:
-      user_data:
-        type: object
-        nullable: true

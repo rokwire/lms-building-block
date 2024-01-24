@@ -242,10 +242,19 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
 			}
+			if unit == nil {
+				return errors.ErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": unitKey})
+			}
+			if len(item.Unit.Schedule) == 0 || len(unit.Schedule) == 0 {
+				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
+			}
 
-			userUnit.Unit = *unit
+			item.Unit.Key = unitKey
+			userUnit.Unit = item.Unit
 			userUnit.Unit.Schedule[0].DateStarted = &now
-			userUnit.Unit.Schedule[0].DateCompleted = &now
+			if userUnit.Unit.Schedule[0].IsComplete() {
+				userUnit.Unit.Schedule[0].DateCompleted = &now
+			}
 
 			// user started the course and created the first user unit
 			err = storageTransaction.InsertUserUnit(*userUnit)
@@ -259,9 +268,11 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			}
 
 			userUnit.Unit.Schedule = item.Unit.Schedule
-			userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
-			userUnit.Completed++
-			userUnit.LastCompleted = &now
+			if userUnit.Unit.Schedule[userUnit.Completed].IsComplete() {
+				userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
+				userUnit.Completed++
+				userUnit.LastCompleted = &now
+			}
 
 			err = storageTransaction.UpdateUserUnit(*userUnit)
 			if err != nil {
@@ -269,15 +280,15 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			}
 		}
 
-		courseConfig, err := storageTransaction.FindCourseConfig(userCourse.AppID, userCourse.OrgID, userCourse.Course.Key)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
-		}
-
 		// update timezone name and offset for all user_course of a user
 		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.Name, item.Offset)
 		if err != nil {
 			return err
+		}
+
+		courseConfig, err := storageTransaction.FindCourseConfig(userCourse.AppID, userCourse.OrgID, userCourse.Course.Key)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
 		}
 
 		// update streak and pauses immediately, pauses are used and streaks are reset if necessary in the streaks timer
