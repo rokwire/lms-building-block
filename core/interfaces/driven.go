@@ -107,7 +107,7 @@ type Storage interface {
 	FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey *string) (*model.UserUnit, error)
 	FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, current *bool) ([]model.UserUnit, error)
 	InsertUserUnit(item model.UserUnit) error
-	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.UserUnit) error
+	UpdateUserUnit(item model.UserUnit) error
 	UpdateUserUnits(key string, item model.Unit) error
 	DeleteUserUnit(appID string, orgID string, key string) error
 

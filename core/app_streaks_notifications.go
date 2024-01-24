@@ -200,11 +200,21 @@ func (n streaksNotifications) processStreaks() {
 				}
 				return nil
 			}
+			completeTaskHandler := func() error {
+				// the previous task was completed, so set the start time of the new task to now (beginning of the day)
+				userUnit.Unit.Schedule[userUnit.Completed].DateStarted = &now
+				err := n.storage.UpdateUserUnit(userUnit)
+				if err != nil {
+					return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
+				}
+				return nil
+			}
 			completeUnitHandler := func() error {
 				// insert the next user unit since the current one has been completed
 				transaction := func(storage interfaces.Storage) error {
 					nextUnit := userCourse.Course.GetNextUnit(userUnit.Unit.Key)
 					if nextUnit != nil {
+						nextUnit.Schedule[0].DateStarted = &now
 						nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
 							Unit: *nextUnit, Completed: 0, Current: true, DateCreated: time.Now().UTC()}
 						err := storage.InsertUserUnit(nextUserUnit)
@@ -215,7 +225,7 @@ func (n streaksNotifications) processStreaks() {
 
 					// set current to false on the current user unit since there is a new curernt one or the course is finished
 					userUnit.Current = false
-					err := storage.UpdateUserUnit(config.AppID, config.OrgID, userUnit.UserID, userUnit.CourseKey, userUnit)
+					err := storage.UpdateUserUnit(userUnit)
 					if err != nil {
 						return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 					}
@@ -237,7 +247,7 @@ func (n streaksNotifications) processStreaks() {
 				continue
 			}
 
-			err = n.checkScheduleTaskCompletion(userUnit, now, incompleteTaskHandler, 0, completeUnitHandler)
+			err = n.checkScheduleTaskCompletion(userUnit, now, incompleteTaskHandler, 0, completeTaskHandler, completeUnitHandler)
 			if err != nil {
 				n.logger.Errorf("%s -> error checking task completion for user unit %s: %v", funcName, userUnit.ID, err)
 				continue
@@ -326,7 +336,7 @@ func (n streaksNotifications) filterUsersByIncomplete(userUnits []model.UserUnit
 		// equal to difference between notification process time and streaks process time (start of "day") converted to hours
 		incompleteTaskPeriodOffset := (notificationProcessTime - streaksProcessTime) / utils.SecondsInHour
 
-		err := n.checkScheduleTaskCompletion(userUnit, now, incompleteTaskHandler, -incompleteTaskPeriodOffset, nil)
+		err := n.checkScheduleTaskCompletion(userUnit, now, incompleteTaskHandler, -incompleteTaskPeriodOffset, nil, nil)
 		if err != nil {
 			n.logger.Errorf("processNotifications -> error checking task completion for user unit %s: %v", userUnit.ID, err)
 			continue
@@ -336,7 +346,8 @@ func (n streaksNotifications) filterUsersByIncomplete(userUnits []model.UserUnit
 	return filtered, nil
 }
 
-func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUnit, now time.Time, incompleteTaskHandler func() error, incompleteTaskPeriodOffset int, completeUnitHandler func() error) error {
+func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUnit, now time.Time, incompleteTaskHandler func() error, incompleteTaskPeriodOffset int,
+	completeTaskHandler func() error, completeUnitHandler func() error) error {
 	if incompleteTaskHandler == nil {
 		return errors.ErrorData(logutils.StatusInvalid, "incomplete task handler", nil)
 	}
@@ -348,10 +359,14 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUni
 		// check if the last completed schedule item was completed within (24*days+offset) hours before now
 		days := userUnit.Unit.Schedule[userUnit.Completed-1].Duration
 		if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((24*time.Duration(days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) {
+			// not completed within specified period, so handle incomplete
 			return incompleteTaskHandler()
+		} else if completeTaskHandler != nil {
+			// completed within specified period, so handle complete if desired
+			return completeTaskHandler()
 		}
-	} else if completeUnitHandler != nil {
-		// user completed the current unit (userUnit.Completed == userUnit.Unit.Required)
+	} else if userUnit.Completed == userUnit.Unit.Required && completeUnitHandler != nil {
+		// user completed the current unit
 		return completeUnitHandler()
 	}
 	return nil

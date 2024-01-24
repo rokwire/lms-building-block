@@ -1126,8 +1126,8 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 }
 
 // UpdateUserUnit updates shcedules in a user unit
-func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.UserUnit) error {
-	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "unit.key": item.Unit.Key}
+func (sa *Adapter) UpdateUserUnit(item model.UserUnit) error {
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "user_id": item.UserID, "course_key": item.CourseKey, "unit.key": item.Unit.Key}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{

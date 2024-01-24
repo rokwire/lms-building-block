@@ -157,9 +157,11 @@ type Reference struct {
 
 // ScheduleItem defines model for ScheduleItem.
 type ScheduleItem struct {
-	Duration    int             `json:"duration"`
-	Name        string          `json:"name"`
-	UserContent []UserReference `json:"user_content"`
+	DateCompleted *time.Time      `json:"date_completed"`
+	DateStarted   *time.Time      `json:"date_started,omitempty"`
+	Duration      int             `json:"duration"`
+	Name          string          `json:"name"`
+	UserContent   []UserReference `json:"user_content"`
 }
 
 // StreaksNotificationsConfig defines model for StreaksNotificationsConfig.
@@ -225,12 +227,10 @@ type UserCourse struct {
 
 // UserReference defines model for UserReference.
 type UserReference struct {
-	DateCompleted *time.Time              `json:"date_completed"`
-	DateStarted   *time.Time              `json:"date_started,omitempty"`
-	Name          string                  `json:"name"`
-	ReferenceKey  string                  `json:"reference_key"`
-	Type          string                  `json:"type"`
-	UserData      *map[string]interface{} `json:"user_data"`
+	Name         string                  `json:"name"`
+	ReferenceKey string                  `json:"reference_key"`
+	Type         string                  `json:"type"`
+	UserData     *map[string]interface{} `json:"user_data"`
 }
 
 // UserUnit defines model for UserUnit.

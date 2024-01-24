@@ -205,6 +205,9 @@ type ScheduleItem struct {
 	Name        string          `json:"name" bson:"name"`
 	UserContent []UserReference `json:"user_content" bson:"user_content"`
 	Duration    int             `json:"duration" bson:"duration"` // in days
+
+	DateStarted   *time.Time `json:"date_started,omitempty" bson:"date_started,omitempty"`
+	DateCompleted *time.Time `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
 }
 
 // Content represents some Unit content
@@ -236,9 +239,7 @@ type UserReference struct {
 	Reference
 
 	// user fields (populated as user takes a course)
-	UserData      map[string]interface{} `json:"user_data,omitempty" bson:"user_data,omitempty"`
-	DateStarted   *time.Time             `json:"date_started,omitempty" bson:"date_started,omitempty"`
-	DateCompleted *time.Time             `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
+	UserData map[string]interface{} `json:"user_data,omitempty" bson:"user_data,omitempty"`
 }
 
 // Timezone represents user timezone information received from the client

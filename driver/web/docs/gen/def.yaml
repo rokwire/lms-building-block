@@ -2203,6 +2203,13 @@ components:
             $ref: '#/components/schemas/UserReference'
         duration:
           type: integer
+        date_started:
+          type: string
+          format: date-time
+        date_completed:
+          type: string
+          format: date-time
+          nullable: true
     Reference:
       required:
         - name
@@ -2313,13 +2320,6 @@ components:
           properties:
             user_data:
               type: object
-              nullable: true
-            date_started:
-              type: string
-              format: date-time
-            date_completed:
-              type: string
-              format: date-time
               nullable: true
     Timezone:
       required:

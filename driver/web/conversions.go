@@ -119,10 +119,12 @@ func customUnitUpdateFromDef(claims *tokenauth.Claims, item *Def.AdminReqUpdateU
 			if uc.UserData != nil {
 				userData = *uc.UserData
 			}
-			dateStarted := uc.DateStarted
-			userContent[j] = model.UserReference{Reference: reference, UserData: userData, DateStarted: dateStarted, DateCompleted: uc.DateCompleted}
+			userContent[j] = model.UserReference{Reference: reference, UserData: userData}
 		}
-		schedule[i] = model.ScheduleItem{Name: si.Name, Duration: si.Duration}
+
+		dateStarted := si.DateStarted
+		dateCompleted := si.DateCompleted
+		schedule[i] = model.ScheduleItem{Name: si.Name, Duration: si.Duration, DateStarted: dateStarted, DateCompleted: dateCompleted}
 	}
 
 	return &model.Unit{AppID: claims.AppID, OrgID: claims.OrgID, Name: item.Name, Contents: contents, Schedule: schedule}, nil

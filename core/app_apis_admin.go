@@ -509,6 +509,7 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 		item.ID = uuid.NewString()
 		item.AppID = claims.AppID
 		item.OrgID = claims.OrgID
+		item.Required = len(item.Schedule)
 
 		//extract sublayer(s) key and struct, insert those not yet present in db according to key
 		var contents, newContents []model.Content

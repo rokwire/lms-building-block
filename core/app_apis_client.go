@@ -231,17 +231,21 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		if err != nil {
 			return err
 		}
+
+		now := time.Now().UTC()
 		if userUnit == nil {
 			// create a userUnit here if it doesn't already exist
 			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
-				Completed: 0, Current: true, DateCreated: time.Now().UTC()}
+				Completed: 1, Current: true, DateCreated: time.Now().UTC()}
 
 			unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, unitKey)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
 			}
-			//item.Unit = *unit
+
 			userUnit.Unit = *unit
+			userUnit.Unit.Schedule[0].DateStarted = &now
+			userUnit.Unit.Schedule[0].DateCompleted = &now
 
 			// user started the course and created the first user unit
 			err = storageTransaction.InsertUserUnit(*userUnit)
@@ -254,12 +258,12 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
 			}
 
-			now := time.Now().UTC()
 			userUnit.Unit.Schedule = item.Unit.Schedule
+			userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
 			userUnit.Completed++
 			userUnit.LastCompleted = &now
 
-			err = storageTransaction.UpdateUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, *userUnit)
+			err = storageTransaction.UpdateUserUnit(*userUnit)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 			}
