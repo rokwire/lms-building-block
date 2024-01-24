@@ -108,9 +108,9 @@ delete:
 put:
   tags:
   - Client
-  summary: client voluntarily drops a course
+  summary: update a user course
   description: |
-    mark custom user course as dropped
+    update a user course by its course key
   security:
     - bearerAuth: []
   parameters:
@@ -122,6 +122,14 @@ put:
       explode: false
       schema:
         type: string
+    - name: drop
+      in: query
+      description: whether to drop the course
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: boolean
   responses:
     200:
       description: Success
@@ -136,6 +144,6 @@ put:
       description: Unauthorized
     500:
       description: Internal error
-  x-core-function: DropUserCourse
+  x-core-function: UpdateUserCourse
   x-data-type: model.UserCourse
   x-authentication-type: User

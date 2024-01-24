@@ -120,13 +120,18 @@ func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map
 	return a.app.Client.DeleteUserCourse(claims, key)
 }
 
-func (a APIsHandler) clientDropUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
+func (a APIsHandler) clientUpdateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
 	}
 
-	return a.app.Client.DropUserCourse(claims, key)
+	drop, err := utils.GetValue[*bool](params, "drop", false)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("drop"), err)
+	}
+
+	return a.app.Client.UpdateUserCourse(claims, key, drop)
 }
 
 func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UnitWithTimezone) (*model.UnitWithTimezone, error) {

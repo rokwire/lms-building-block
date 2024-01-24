@@ -411,6 +411,12 @@ type GetApiUsersCoursesParams struct {
 	Key *string `form:"key,omitempty" json:"key,omitempty"`
 }
 
+// PutApiUsersCoursesKeyParams defines parameters for PutApiUsersCoursesKey.
+type PutApiUsersCoursesKeyParams struct {
+	// Drop whether to drop the course
+	Drop *bool `form:"drop,omitempty" json:"drop,omitempty"`
+}
+
 // PostAdminContentJSONRequestBody defines body for PostAdminContent for application/json ContentType.
 type PostAdminContentJSONRequestBody = Content
 

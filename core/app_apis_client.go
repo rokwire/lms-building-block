@@ -295,20 +295,15 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
-// marks a userCourse as deleted, as oppose to remove from database
-func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error) {
-	transaction := func(storageTransaction interfaces.Storage) error {
-		appID := claims.AppID
-		orgID := claims.OrgID
-
-		err := storageTransaction.DropUserCourse(appID, orgID, key)
+func (s *clientImpl) UpdateUserCourse(claims *tokenauth.Claims, key string, drop *bool) (*model.UserCourse, error) {
+	if drop != nil && *drop {
+		err := s.app.storage.DropUserCourse(claims.AppID, claims.OrgID, key)
 		if err != nil {
-			return err
+			return nil, errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &logutils.FieldArgs{"drop": true}, err)
 		}
-
-		return err
 	}
-	return nil, s.app.storage.PerformTransaction(transaction)
+
+	return nil, nil
 }
 
 func (s *clientImpl) GetCustomCourses(claims *tokenauth.Claims) ([]model.Course, error) {

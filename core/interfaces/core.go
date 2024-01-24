@@ -36,7 +36,7 @@ type Client interface {
 	GetUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
 	CreateUserCourse(claims *tokenauth.Claims, key string, item model.Timezone) (*model.UserCourse, error)
 	DeleteUserCourse(claims *tokenauth.Claims, key string) error
-	DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
+	UpdateUserCourse(claims *tokenauth.Claims, key string, drop *bool) (*model.UserCourse, error)
 
 	// model.UnitWithTimezone
 
