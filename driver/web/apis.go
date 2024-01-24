@@ -152,6 +152,10 @@ func (a APIsHandler) clientGetUserCourseUnits(claims *tokenauth.Claims, params m
 	return a.app.Client.GetUserCourseUnits(claims, key)
 }
 
+func (a APIsHandler) clientGetCustomCourses(claims *tokenauth.Claims, params map[string]interface{}) ([]model.Course, error) {
+	return a.app.Client.GetCustomCourses(claims)
+}
+
 func (a APIsHandler) clientGetCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}) (*model.CourseConfig, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {

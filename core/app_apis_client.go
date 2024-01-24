@@ -291,22 +291,6 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 	return nil, s.app.storage.PerformTransaction(transaction)
 }
 
-func (s *clientImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {
-	courseConfig, err := s.app.storage.FindCourseConfig(claims.AppID, claims.OrgID, key)
-	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
-	}
-
-	return courseConfig, nil
-}
-
-func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
-	if claims == nil {
-		return ""
-	}
-	return claims.ExternalIDs["net_id"]
-}
-
 // marks a userCourse as deleted, as oppose to remove from database
 func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
@@ -321,4 +305,28 @@ func (s *clientImpl) DropUserCourse(claims *tokenauth.Claims, key string) (*mode
 		return err
 	}
 	return nil, s.app.storage.PerformTransaction(transaction)
+}
+
+func (s *clientImpl) GetCustomCourses(claims *tokenauth.Claims) ([]model.Course, error) {
+	courses, err := s.app.storage.FindCustomCourses(claims.AppID, claims.OrgID, nil, nil, nil, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
+	}
+	return courses, nil
+}
+
+func (s *clientImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {
+	courseConfig, err := s.app.storage.FindCourseConfig(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
+	}
+
+	return courseConfig, nil
+}
+
+func (s *clientImpl) getProviderUserID(claims *tokenauth.Claims) string {
+	if claims == nil {
+		return ""
+	}
+	return claims.ExternalIDs["net_id"]
 }

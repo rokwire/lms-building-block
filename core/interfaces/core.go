@@ -46,6 +46,10 @@ type Client interface {
 
 	GetUserCourseUnits(claims *tokenauth.Claims, key string) ([]model.UserUnit, error)
 
+	// model.Course
+
+	GetCustomCourses(claims *tokenauth.Claims) ([]model.Course, error)
+
 	// model.CourseConfig
 
 	GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error)
