@@ -10,7 +10,7 @@ servers:
     description: Test server
   - url: 'https://api-dev.rokwire.illinois.edu/lms'
     description: Development server
-  - url: 'http://localhost:5010/lms'
+  - url: 'http://localhost/lms'
     description: Local server
 tags:
   - name: Default
