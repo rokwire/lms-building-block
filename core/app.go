@@ -27,8 +27,9 @@ type Application struct {
 	version string
 	build   string
 
-	Services       interfaces.Services       //expose to the drivers adapters
-	Administration interfaces.Administration //expose to the drivers adapters
+	Default interfaces.Default
+	Client  interfaces.Client
+	Admin   interfaces.Admin
 
 	provider        interfaces.Provider
 	groupsBB        interfaces.GroupsBB
@@ -80,8 +81,9 @@ func NewApplication(version string, build string, storage interfaces.Storage, pr
 	}
 
 	// add the drivers ports/interfaces
-	application.Services = &servicesImpl{app: &application}
-	application.Administration = &administrationImpl{app: &application}
+	application.Default = &defaultImpl{app: &application}
+	application.Client = &clientImpl{app: &application}
+	application.Admin = &adminImpl{app: &application}
 
 	return &application
 }

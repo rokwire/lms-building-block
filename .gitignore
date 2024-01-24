@@ -4,7 +4,14 @@ build/
 .vscode/
 .idea/
 .git
+.env
+*.pem
+node_modules/
+__debug_bin3216055696
+package-lock.json
+package.json
 docker-compose.env
 docker-compose.yml
 run.sh
 env.list
+__pycache__/

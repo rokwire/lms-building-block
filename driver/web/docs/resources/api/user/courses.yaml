@@ -1,0 +1,51 @@
+get:
+  tags:
+  - Client
+  summary: Get custom user courses
+  description: |
+    Get custom user courses by search parameters
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: query
+      description: userCourse ID
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: name
+      in: query
+      description: course name
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: key
+      in: query
+      description: course key
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+  responses:
+    200:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "../../../schemas/custom/UserCourse.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: GetUserCourses
+  x-data-type: model.UserCourse
+  x-authentication-type: User

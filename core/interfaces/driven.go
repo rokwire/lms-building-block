@@ -41,7 +41,7 @@ type Storage interface {
 	LoadAllNudges() ([]model.Nudge, error)
 	LoadActiveNudges() ([]model.Nudge, error)
 	InsertNudge(item model.Nudge) error
-	UpdateNudge(ID string, name string, body string, deepLink string, params model.NudgeParams, active bool, usersSourse []model.UsersSources) error
+	UpdateNudge(item model.Nudge) error
 	DeleteNudge(ID string) error
 
 	InsertSentNudge(sentNudge model.SentNudge) error
@@ -58,6 +58,54 @@ type Storage interface {
 	InsertBlock(block model.Block) error
 	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
+
+	GetCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
+	GetCustomCourse(appID string, orgID string, key string) (*model.Course, error)
+	InsertCustomCourse(item model.Course) error
+	UpdateCustomCourse(key string, item model.Course) error
+	DeleteCustomCourse(appID string, orgID string, key string) error
+
+	GetCustomModules(appID string, orgID string, id []string, name []string, key []string, unitKeys []string) ([]model.Module, error)
+	GetCustomModule(appID string, orgID string, key string) (*model.Module, error)
+	InsertCustomModule(item model.Module) error
+	InsertCustomModules(items []model.Module) error
+	UpdateCustomModule(key string, item model.Module) error
+	DeleteCustomModule(appID string, orgID string, key string) error
+
+	GetCustomUnits(appID string, orgID string, id []string, name []string, key []string, contentKeys []string) ([]model.Unit, error)
+	GetCustomUnit(appID string, orgID string, key string) (*model.Unit, error)
+	InsertCustomUnit(item model.Unit) error
+	InsertCustomUnits(items []model.Unit) error
+	UpdateCustomUnit(key string, item model.Unit) error
+	DeleteCustomUnit(appID string, orgID string, key string) error
+
+	GetCustomContents(appID string, orgID string, id []string, name []string, key []string) ([]model.Content, error)
+	GetCustomContent(appID string, orgID string, key string) (*model.Content, error)
+	InsertCustomContent(item model.Content) error
+	InsertCustomContents(items []model.Content) error
+	UpdateCustomContent(key string, item model.Content) error
+	DeleteCustomContent(appID string, orgID string, key string) error
+
+	GetUserCourses(id []string, name []string, key []string, userID string) ([]model.UserCourse, error)
+	GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
+	InsertUserCourse(item model.UserCourse) error
+	UpdateUserCourses(key string, item model.Course) error
+	DeleteUserCourse(appID string, orgID string, courseKey string) error
+	DeleteUserUnit(appID string, orgID string, key string) error
+	GetUserCourseUnits(appID string, orgID string, userID string, courseKey string) ([]model.UserUnit, error)
+
+	InsertUserUnit(item model.UserUnit) error
+	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.Unit) error
+	UpdateUserUnits(key string, item model.Unit) error
+	GetUserUnitExist(appID string, orgID string, userID string, courseKey string, unitKey string) (bool, error)
+
+	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
+	DeleteContentKeyFromUnits(appID string, orgID string, key string) error
+	DeleteContentKeyFromUserUnits(appID string, orgID string, key string) error
+	DeleteUnitKeyFromModules(appID string, orgID string, key string) error
+	DeleteModuleKeyFromCourses(appID string, orgID string, key string) error
+	DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error
+	MarkUserCourseAsDelete(appID string, orgID string, key string) error
 }
 
 // Provider interface for LMS provider

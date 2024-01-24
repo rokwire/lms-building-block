@@ -20,4 +20,4 @@ properties:
   users_sources:
     type: array
     items:
-      $ref: "../../../../nudges/UsersSources.yaml"
+      $ref: "../../../../nudges/UsersSource.yaml"

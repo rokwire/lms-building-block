@@ -1,0 +1,14 @@
+allOf:
+  - $ref: "./Reference.yaml"
+  - type: object
+    properties:
+      user_data:
+        type: object
+        nullable: true
+      date_started:
+        type: string
+        format: date-time
+      date_completed:
+        type: string
+        format: date-time
+        nullable: true

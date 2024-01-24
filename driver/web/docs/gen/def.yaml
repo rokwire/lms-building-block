@@ -18,15 +18,43 @@ tags:
   - name: Admin
     description: Clients administration APIs.
 paths:
+  /version:
+    get:
+      tags:
+        - Default
+      summary: Get version
+      description: |
+        Gets current version of this service
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: v1.0.0
+        '500':
+          description: Internal error
+      x-core-function: GetVersion
+      x-data-type: string
   /api/courses:
     get:
       tags:
-        - Api
+        - Client
       summary: Get courses
       description: |
         Get courses
       security:
         - bearerAuth: []
+      parameters:
+        - name: course_type
+          in: query
+          description: course type
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -42,10 +70,13 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetCourses
+      x-data-type: model.ProviderCourse
+      x-authentication-type: User
   '/api/courses/{id}':
     get:
       tags:
-        - Api
+        - Client
       summary: Get course by ID
       description: |
         Gets course by ID
@@ -66,9 +97,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Course'
+                $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
@@ -77,10 +106,13 @@ paths:
           description: Not Found
         '500':
           description: Internal error
+      x-core-function: GetCourse
+      x-data-type: model.ProviderCourse
+      x-authentication-type: User
   '/api/courses/{id}/assignment-groups':
     get:
       tags:
-        - Api
+        - Client
       summary: Get assignment-groups by ID
       description: |
         Gets assignment-groups by ID
@@ -109,8 +141,9 @@ paths:
           content:
             application/json:
               schema:
+                type: array
                 items:
-                  $ref: '#/components/schemas/AssigmentGroup'
+                  $ref: '#/components/schemas/AssignmentGroup'
         '400':
           description: Bad request
         '401':
@@ -119,10 +152,13 @@ paths:
           description: Not Found
         '500':
           description: Internal error
+      x-core-function: GetAssignmentGroups
+      x-data-type: model.AssignmentGroup
+      x-authentication-type: User
   '/api/courses/{id}/users':
     get:
       tags:
-        - Api
+        - Client
       summary: Get user by ID
       description: |
         Get user by ID
@@ -140,7 +176,82 @@ paths:
         - name: include
           in: query
           description: 'include = enrollments,scores'
-          required: true
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCourseUser
+      x-data-type: model.User
+      x-authentication-type: User
+  /api/users/self:
+    get:
+      tags:
+        - Client
+      summary: Get current user
+      description: |
+        Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCurrentUser
+      x-data-type: model.User
+      x-authentication-type: User
+  /api/users/courses:
+    get:
+      tags:
+        - Client
+      summary: Get custom user courses
+      description: |
+        Get custom user courses by search parameters
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          description: userCourse ID
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: course name
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: key
+          in: query
+          description: course key
+          required: false
           style: form
           explode: false
           schema:
@@ -153,22 +264,218 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: '#/components/schemas/UserCourse'
         '400':
           description: Bad request
         '401':
           description: Unauthorized
         '500':
           description: Internal error
-  /api/users/self:
+      x-core-function: GetUserCourses
+      x-data-type: model.UserCourse
+      x-authentication-type: User
+  '/api/users/courses/{key}':
     get:
       tags:
-        - Api
-      summary: Get current user
+        - Client
+      summary: Get user course
       description: |
-        Get current user
+        Get user course
       security:
         - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCourse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetUserCourse
+      x-data-type: model.UserCourse
+      x-authentication-type: User
+    post:
+      tags:
+        - Client
+      summary: Create custom user course
+      description: |
+        Create custom user course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCourse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: CreateUserCourse
+      x-data-type: model.UserCourse
+      x-authentication-type: User
+    delete:
+      tags:
+        - Client
+      summary: Delete custom user course
+      description: |
+        Delete custom user course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: DeleteUserCourse
+      x-data-type: model.UserCourse
+      x-authentication-type: User
+    put:
+      tags:
+        - Client
+      summary: client voluntarily drops a course
+      description: |
+        mark custom user course as deleted
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: DropUserCourse
+      x-data-type: model.UserCourse
+      x-authentication-type: User
+  '/api/users/courses/{course_key}/units/{unit_key}':
+    put:
+      tags:
+        - Client
+      summary: Update custom user course
+      description: |
+        Update custom user course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: course_key
+          in: path
+          description: course key of this unit
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: unit_key
+          in: path
+          description: unit key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: updated unit
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Unit'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: UpdateUserCourseUnitProgress
+      x-data-type: model.Unit
+      x-authentication-type: User
+  '/api/users/units/{key}':
+    get:
+      tags:
+        - Client
+      summary: Get custom user units of a course
+      description: |
+        Get custom user units of a course by search parameters
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -177,13 +484,41 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  required:
+                    - id
+                    - app_id
+                    - org_id
+                    - user_id
+                    - course_key
+                    - unit
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      readOnly: true
+                    app_id:
+                      type: string
+                      readOnly: true
+                    org_id:
+                      type: string
+                      readOnly: true
+                    user_id:
+                      type: string
+                      readOnly: true
+                    course_key:
+                      type: string
+                      readOnly: true
+                    unit:
+                      $ref: '#/components/schemas/Unit'
         '400':
           description: Bad request
         '401':
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetUserCourseUnits
+      x-data-type: model.UserUnit
+      x-authentication-type: User
   /admin/nudges-config:
     get:
       tags:
@@ -199,15 +534,16 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/NudgesConfig'
+                $ref: '#/components/schemas/NudgesConfig'
         '400':
           description: Bad request
         '401':
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetNudgesConfig
+      x-data-type: model.NudgesConfig
+      x-authentication-type: Permissions
     put:
       tags:
         - Admin
@@ -237,6 +573,10 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateNudgesConfig
+      x-data-type: model.NudgesConfig
+      x-authentication-type: Permissions
+      x-conversion-function: nudgesConfigFromDef
   /admin/nudges:
     get:
       tags:
@@ -261,6 +601,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: GetNudges
+      x-data-type: model.Nudge
+      x-authentication-type: Permissions
     post:
       tags:
         - Admin
@@ -290,6 +633,10 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: CreateNudge
+      x-data-type: model.Nudge
+      x-authentication-type: Permissions
+      x-conversion-function: nudgeFromDefAdminReqCreate
   '/admin/nudges/{id}':
     put:
       tags:
@@ -329,6 +676,10 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: UpdateNudge
+      x-data-type: model.Nudge
+      x-authentication-type: Permissions
+      x-conversion-function: nudgeFromDefAdminReqUpdate
     delete:
       tags:
         - Admin
@@ -353,6 +704,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: DeleteNudge
+      x-data-type: model.Nudge
+      x-authentication-type: Permissions
   /admin/sent-nudges:
     get:
       tags:
@@ -432,6 +786,9 @@ paths:
           description: Not Found
         '500':
           description: Internal error
+      x-core-function: FindSentNudges
+      x-data-type: model.SentNudge
+      x-authentication-type: Permissions
     delete:
       tags:
         - Admin
@@ -457,6 +814,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: DeleteSentNudges
+      x-data-type: model.SentNudge
+      x-authentication-type: Permissions
   /admin/test-sent-nudges:
     delete:
       tags:
@@ -475,6 +835,9 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: ClearTestSentNudges
+      x-data-type: model.SentNudge
+      x-authentication-type: Permissions
   /admin/nudges-processes:
     get:
       tags:
@@ -549,6 +912,808 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
+      x-core-function: FindNudgesProcesses
+      x-data-type: model.NudgesProcess
+      x-authentication-type: Permissions
+  /admin/courses:
+    get:
+      tags:
+        - Admin
+      summary: Get custom courses
+      description: |
+        Get custom courses by search parameters
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          description: course ID
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: course name
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: key
+          in: query
+          description: course key
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: module_key
+          in: query
+          description: comma separated list of module keys
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomCourse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourses
+      x-data-type: model.Course
+      x-authentication-type: Permissions
+    post:
+      tags:
+        - Admin
+      summary: Create custom course
+      description: |
+        Create a custom course
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: custom course
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomCourse'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: CreateCustomCourse
+      x-data-type: model.Course
+      x-authentication-type: Permissions
+  '/admin/courses/{key}':
+    get:
+      tags:
+        - Admin
+      summary: Get custom course by key
+      description: |
+        Get custom course by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course Key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomCourse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourse
+      x-data-type: model.Course
+      x-authentication-type: Permissions
+    put:
+      tags:
+        - Admin
+      summary: Update custom course
+      description: |
+        Update custom course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course Key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: updated course
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_admin_req_update_course'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: UpdateCustomCourse
+      x-data-type: model.Course
+      x-authentication-type: Permissions
+      x-conversion-function: customCourseUpdateFromDef
+    delete:
+      tags:
+        - Admin
+      summary: Delete custom course
+      description: |
+        Delete custom course
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course Key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: DeleteCustomCourse
+      x-data-type: model.Course
+      x-authentication-type: Permissions
+  /admin/modules:
+    get:
+      tags:
+        - Admin
+      summary: Get custom modules
+      description: |
+        Get custom modules by search parameters
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          description: module ID
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: module name
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: key
+          in: query
+          description: module key
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: unit_key
+          in: query
+          description: comma separated list of unit IDs
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Module'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomModules
+      x-data-type: model.Module
+      x-authentication-type: Permissions
+    post:
+      tags:
+        - Admin
+      summary: Create custom module
+      description: |
+        Create a custom module
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: custom module
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Module'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: CreateCustomModule
+      x-data-type: model.Module
+      x-authentication-type: Permissions
+  '/admin/modules/{key}':
+    get:
+      tags:
+        - Admin
+      summary: Get custom module by key
+      description: |
+        Get custom module by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Module key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Module'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomModule
+      x-data-type: model.Module
+      x-authentication-type: Permissions
+    put:
+      tags:
+        - Admin
+      summary: Update custom module
+      description: |
+        Update custom module
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Module key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: updated module
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_admin_req_update_module'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: UpdateCustomModule
+      x-data-type: model.Module
+      x-authentication-type: Permissions
+      x-conversion-function: customModuleUpdateFromDef
+    delete:
+      tags:
+        - Admin
+      summary: Delete custom module
+      description: |
+        Delete custom module
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Module key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: DeleteCustomModule
+      x-data-type: model.Module
+      x-authentication-type: Permissions
+  /admin/units:
+    get:
+      tags:
+        - Admin
+      summary: Get custom units
+      description: |
+        Get custom units by search parameters
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          description: unit ID
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: unit name
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: key
+          in: query
+          description: unit key
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: content_key
+          in: query
+          description: comma separated list of content keys
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Unit'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomUnits
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
+    post:
+      tags:
+        - Admin
+      summary: Create custom unit
+      description: |
+        Create a custom unit
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: custom unit
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Unit'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: CreateCustomUnit
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
+  '/admin/units/{key}':
+    get:
+      tags:
+        - Admin
+      summary: Get custom unit by key
+      description: |
+        Get custom unit by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Unit key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomUnit
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
+    put:
+      tags:
+        - Admin
+      summary: Update custom unit
+      description: |
+        Update custom unit
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Unit key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: updated unit
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_admin_req_update_unit'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: UpdateCustomUnit
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
+      x-conversion-function: customUnitUpdateFromDef
+    delete:
+      tags:
+        - Admin
+      summary: Delete custom unit
+      description: |
+        Delete custom unit
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Unit key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: DeleteCustomUnit
+      x-data-type: model.Unit
+      x-authentication-type: Permissions
+  /admin/content:
+    get:
+      tags:
+        - Admin
+      summary: Get custom contents
+      description: |
+        Get custom contents by search parameters
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          description: content ID
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: content name
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+        - name: key
+          in: query
+          description: content key
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Content'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomContents
+      x-data-type: model.Content
+      x-authentication-type: Permissions
+    post:
+      tags:
+        - Admin
+      summary: Create custom content
+      description: |
+        Create a custom content
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: custom content
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Content'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: CreateCustomContent
+      x-data-type: model.Content
+      x-authentication-type: Permissions
+  '/admin/content/{key}':
+    get:
+      tags:
+        - Admin
+      summary: Get custom content by key
+      description: |
+        Get custom content by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Content key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomContent
+      x-data-type: model.Content
+      x-authentication-type: Permissions
+    put:
+      tags:
+        - Admin
+      summary: Update custom content
+      description: |
+        Update custom content
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Content key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: updated content
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Content'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: UpdateCustomContent
+      x-data-type: model.Content
+      x-authentication-type: Permissions
+    delete:
+      tags:
+        - Admin
+      summary: Delete custom content
+      description: |
+        Delete custom content
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Content key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: DeleteCustomContent
+      x-data-type: model.Content
+      x-authentication-type: Permissions
 components:
   securitySchemes:
     bearerAuth:
@@ -556,37 +1721,6 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    Course:
-      type: object
-      properties:
-        id:
-          type: string
-          readOnly: true
-        name:
-          type: string
-        access_restricted_by_date:
-          type: boolean
-    Assigment:
-      type: object
-      properties:
-        id:
-          readOnly: true
-          type: string
-        name:
-          type: string
-        course_id:
-          type: integer
-        html_url:
-          type: string
-        position:
-          type: integer
-    AssigmentGroup:
-      type: object
-      properties:
-        id:
-          type: string
-        assigments:
-          $ref: '#/components/schemas/Assigment'
     User:
       type: object
       properties:
@@ -610,6 +1744,37 @@ components:
       properties:
         current_score:
           type: number
+    Course:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        access_restricted_by_date:
+          type: boolean
+    Assignment:
+      type: object
+      properties:
+        id:
+          readOnly: true
+          type: string
+        name:
+          type: string
+        course_id:
+          type: integer
+        html_url:
+          type: string
+        position:
+          type: integer
+    AssignmentGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        assigments:
+          $ref: '#/components/schemas/Assignment'
     Nudge:
       required:
         - id
@@ -641,7 +1806,7 @@ components:
         users_sources:
           type: array
           items:
-            $ref: '#/components/schemas/UsersSources'
+            $ref: '#/components/schemas/UsersSource'
     NudgesConfig:
       required:
         - active
@@ -665,15 +1830,213 @@ components:
           type: integer
         block_size:
           type: integer
-    UsersSources:
+    UsersSource:
+      required:
+        - type
       type: object
       properties:
         type:
-          nullable: true
           type: string
         params:
           nullable: true
           type: object
+    CustomCourse:
+      required:
+        - id
+        - app_id
+        - org_id
+        - key
+        - name
+        - modules
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        key:
+          type: string
+        name:
+          type: string
+        modules:
+          type: array
+          items:
+            $ref: '#/components/schemas/Module'
+    Module:
+      required:
+        - id
+        - app_id
+        - org_id
+        - key
+        - name
+        - units
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        key:
+          type: string
+        name:
+          type: string
+        units:
+          type: array
+          items:
+            $ref: '#/components/schemas/Unit'
+    Unit:
+      required:
+        - id
+        - app_id
+        - org_id
+        - key
+        - name
+        - content
+        - schedule
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        key:
+          type: string
+        name:
+          type: string
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Content'
+        schedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleItem'
+    Content:
+      required:
+        - id
+        - app_id
+        - org_id
+        - key
+        - type
+        - name
+        - reference
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        key:
+          type: string
+        type:
+          type: string
+          enum:
+            - assignment
+            - resource
+            - reward
+            - evaluation
+        name:
+          type: string
+        details:
+          type: string
+        reference:
+          $ref: '#/components/schemas/Reference'
+        linked_content:
+          type: array
+          items:
+            type: string
+          nullable: true
+    ScheduleItem:
+      required:
+        - name
+        - user_content
+        - duration
+      type: object
+      properties:
+        name:
+          type: string
+        user_content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserReference'
+        duration:
+          type: integer
+    Reference:
+      required:
+        - name
+        - type
+        - reference_key
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        reference_key:
+          type: string
+    UserCourse:
+      required:
+        - id
+        - app_id
+        - org_id
+        - user_id
+        - course
+        - date_dropped
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        user_id:
+          type: string
+          readOnly: true
+        course:
+          $ref: '#/components/schemas/CustomCourse'
+        date_dropped:
+          type: string
+          readOnly: true
+          format: date-time
+    UserReference:
+      allOf:
+        - $ref: '#/components/schemas/Reference'
+        - type: object
+          properties:
+            user_data:
+              type: object
+              nullable: true
+            date_started:
+              type: string
+              format: date-time
+            date_completed:
+              type: string
+              format: date-time
+              nullable: true
     _admin_req_create_nudge:
       required:
         - id
@@ -700,7 +2063,7 @@ components:
         users_sources:
           type: array
           items:
-            $ref: '#/components/schemas/UsersSources'
+            $ref: '#/components/schemas/UsersSource'
     _admin_req_update_nudge:
       required:
         - name
@@ -724,4 +2087,45 @@ components:
         users_sources:
           type: array
           items:
-            $ref: '#/components/schemas/UsersSources'
+            $ref: '#/components/schemas/UsersSource'
+    _admin_req_update_course:
+      required:
+        - name
+        - module_keys
+      type: object
+      properties:
+        name:
+          type: string
+        module_keys:
+          type: array
+          items:
+            type: string
+    _admin_req_update_module:
+      required:
+        - name
+        - unit_keys
+      type: object
+      properties:
+        name:
+          type: string
+        unit_keys:
+          type: array
+          items:
+            type: string
+    _admin_req_update_unit:
+      required:
+        - name
+        - content_keys
+        - schedule
+      type: object
+      properties:
+        name:
+          type: string
+        content_keys:
+          type: array
+          items:
+            type: string
+        schedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleItem'

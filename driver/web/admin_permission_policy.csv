@@ -2,16 +2,16 @@ p, all_admin_lms, /lms/admin/*, (GET)|(POST)|(DELETE)|(PUT), Access all LMS BB a
 
 
 p, all_nudges, /lms/admin/nudges, (GET)|(POST)|(PUT)|(DELETE), All nudge actions
-p, all_nudges, /lms/admin/sent-nudges, (GET)|(POST)|(PUT)|(DELETE)
-p, all_nudges, /lms/admin/nudges-config, (GET)|(PUT)
+p, all_nudges, /lms/admin/sent-nudges, (GET)|(POST)|(PUT)|(DELETE),
+p, all_nudges, /lms/admin/nudges-config, (GET)|(PUT),
 
 p, get_nudges, /lms/admin/nudges, (GET), Gets nudges
 p, get_nudges, /lms/admin/sent-nudges, (GET), Gets nudges
-p, get_nudges, /lms/admin/nudges-config, (GET)
+p, get_nudges, /lms/admin/nudges-config, (GET),
 
 p, update_nudges, /lms/admin/nudges, (GET)|(POST), Get create and update nudges
 p, update_nudges, /lms/admin/nudges/*, (PUT),
-p, update_nudges, /lms/admin/nudges-config, (GET)|(PUT)
+p, update_nudges, /lms/admin/nudges-config, (GET)|(PUT),
 
 p, delete_nudges, /lms/admin/nudges, (GET), Get and delete nudges
 p, delete_nudges, /lms/admin/nudges/*, (DELETE),

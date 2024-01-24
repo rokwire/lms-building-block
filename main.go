@@ -119,7 +119,7 @@ func main() {
 
 	// web adapter
 	lmsServiceURL := envLoader.GetAndLogEnvVar(envPrefix+"SERVICE_URL", true, false)
-	webAdapter := driver.NewWebAdapter(lmsServiceURL, port, application, serviceRegManager, logger)
+	webAdapter := driver.NewWebAdapter(lmsServiceURL, port, serviceID, application, serviceRegManager, logger)
 	webAdapter.Start()
 }
 

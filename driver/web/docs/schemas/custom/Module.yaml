@@ -1,0 +1,26 @@
+required:
+  - id
+  - app_id
+  - org_id
+  - key
+  - name
+  - units
+type: object
+properties:
+  id:
+    type: string
+    readOnly: true
+  app_id:
+    type: string
+    readOnly: true
+  org_id:
+    type: string
+    readOnly: true
+  key:
+    type: string
+  name:
+    type: string
+  units:
+    type: array
+    items:
+      $ref: "./Unit.yaml"

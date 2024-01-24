@@ -1,0 +1,83 @@
+get:
+  tags:
+  - Admin
+  summary: Get custom contents
+  description: |
+    Get custom contents by search parameters
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: query
+      description: content ID
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: name
+      in: query
+      description: content name
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: key
+      in: query
+      description: content key
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+  responses:
+    200:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "../../../schemas/custom/Content.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: GetCustomContents
+  x-data-type: model.Content
+  x-authentication-type: Permissions
+post:
+  tags:
+  - Admin
+  summary: Create custom content
+  description: |
+    Create a custom content
+  security:
+    - bearerAuth: []
+  requestBody:
+    description: custom content
+    content:
+      application/json:
+        schema:
+         $ref: "../../../schemas/custom/Content.yaml"
+    required: true
+  responses:
+    200:
+      description: Success
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Success
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: CreateCustomContent
+  x-data-type: model.Content
+  x-authentication-type: Permissions

@@ -18,17 +18,13 @@ import (
 	"context"
 	"fmt"
 	"lms/core"
-	"lms/driver/web/rest"
 	"log"
 	"net/http"
 
-	"github.com/getkin/kin-openapi/routers/gorillamux"
-
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/routers"
 
 	"github.com/rokwire/core-auth-library-go/v3/authservice"
-	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
+	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logs"
 	"github.com/rokwire/logging-library-go/v2/logutils"
 
@@ -36,121 +32,96 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+const (
+	// XCoreFunction defines the core function from docs
+	XCoreFunction = "x-core-function"
+	// XDataType defines the data type from docs
+	XDataType = "x-data-type"
+	// XAuthType defines the auth type from docs
+	XAuthType = "x-authentication-type"
+	// XConversionFunction defines the conversion function from docs
+	XConversionFunction = "x-conversion-function"
+)
+
 // Adapter entity
 type Adapter struct {
 	env           string
 	lmsServiceURL string
 	port          string
+	serviceID     string
 	auth          *Auth
-	openAPIRouter routers.Router
 
-	apisHandler      rest.ApisHandler
-	adminApisHandler rest.AdminApisHandler
+	apisHandler APIsHandler
 
-	app *core.Application
+	paths map[string]*openapi3.PathItem
 
 	logger *logs.Logger
 }
 
-// @title Rewards Building Block API
-// @description RoRewards Building Block API Documentation.
-// @version 1.0.2
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-// @host localhost
-// @BasePath /content
-// @schemes https
-
-// @securityDefinitions.apikey InternalApiAuth
-// @in header (add INTERNAL-API-KEY with correct value as a header)
-// @name Authorization
-
-// @securityDefinitions.apikey AdminUserAuth
-// @in header (add Bearer prefix to the Authorization value)
-// @name Authorization
-
-// @securityDefinitions.apikey AdminGroupAuth
-// @in header
-// @name GROUP
-
-type handlerFunc = func(*logs.Log, *http.Request, *tokenauth.Claims) logs.HTTPResponse
-
 // Start starts the module
-func (we Adapter) Start() {
+func (a *Adapter) Start() {
 
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use()
 
-	subrouter := router.PathPrefix("/lms").Subrouter()
-	subrouter.PathPrefix("/doc/ui").Handler(we.serveDocUI())
-	subrouter.HandleFunc("/doc", we.serveDoc)
-	subrouter.HandleFunc("/version", we.wrapFunc(we.apisHandler.Version, nil)).Methods("GET")
+	subrouter := router.PathPrefix("/" + a.serviceID).Subrouter()
+	subrouter.PathPrefix("/doc/ui").Handler(a.serveDocUI())
+	subrouter.HandleFunc("/doc", a.serveDoc)
 
-	// handle apis
-	apiRouter := subrouter.PathPrefix("/api").Subrouter()
+	a.routeAPIs(router)
 
-	apiRouter.HandleFunc("/courses", we.wrapFunc(we.apisHandler.GetCourses, we.auth.client.User)).Methods("GET")
-	apiRouter.HandleFunc("/courses/{id}", we.wrapFunc(we.apisHandler.GetCourse, we.auth.client.User)).Methods("GET")
-	apiRouter.HandleFunc("/courses/{id}/assignment-groups", we.wrapFunc(we.apisHandler.GetAssignemntGroups, we.auth.client.User)).Methods("GET")
-	apiRouter.HandleFunc("/courses/{id}/users", we.wrapFunc(we.apisHandler.GetUsers, we.auth.client.User)).Methods("GET")
-	apiRouter.HandleFunc("/users/self", we.wrapFunc(we.apisHandler.GetCurrentUser, we.auth.client.User)).Methods("GET")
-
-	///admin ///
-	adminRouter := subrouter.PathPrefix("/admin").Subrouter()
-
-	adminRouter.HandleFunc("/nudges-config", we.wrapFunc(we.adminApisHandler.GetNudgesConfig, we.auth.admin.Permissions)).Methods("GET")
-	adminRouter.HandleFunc("/nudges-config", we.wrapFunc(we.adminApisHandler.UpdateNudgesConfig, we.auth.admin.Permissions)).Methods("PUT")
-	adminRouter.HandleFunc("/nudges", we.wrapFunc(we.adminApisHandler.GetNudges, we.auth.admin.Permissions)).Methods("GET")
-	adminRouter.HandleFunc("/nudges", we.wrapFunc(we.adminApisHandler.CreateNudge, we.auth.admin.Permissions)).Methods("POST")
-	adminRouter.HandleFunc("/nudges/{id}", we.wrapFunc(we.adminApisHandler.UpdateNudge, we.auth.admin.Permissions)).Methods("PUT")
-	adminRouter.HandleFunc("/nudges/{id}", we.wrapFunc(we.adminApisHandler.DeleteNudge, we.auth.admin.Permissions)).Methods("DELETE")
-	adminRouter.HandleFunc("/sent-nudges", we.wrapFunc(we.adminApisHandler.FindSentNudges, we.auth.admin.Permissions)).Methods("GET")
-	adminRouter.HandleFunc("/sent-nudges", we.wrapFunc(we.adminApisHandler.DeleteSentNudges, we.auth.admin.Permissions)).Methods("DELETE")
-	adminRouter.HandleFunc("/test-sent-nudges", we.wrapFunc(we.adminApisHandler.ClearTestSentNudges, we.auth.admin.Permissions)).Methods("DELETE")
-	adminRouter.HandleFunc("/nudges-processes", we.wrapFunc(we.adminApisHandler.FindNudgesProcesses, we.auth.admin.Permissions)).Methods("GET")
-
-	log.Fatal(http.ListenAndServe(":"+we.port, router))
+	log.Fatal(http.ListenAndServe(":"+a.port, router))
 }
 
-func (we Adapter) serveDoc(w http.ResponseWriter, r *http.Request) {
+// routeAPIs calls registerHandler for every path specified as auto-generated in docs
+func (a *Adapter) routeAPIs(router *mux.Router) error {
+	for path, pathItem := range a.paths {
+		operations := map[string]*openapi3.Operation{
+			http.MethodGet:    pathItem.Get,
+			http.MethodPost:   pathItem.Post,
+			http.MethodPut:    pathItem.Put,
+			http.MethodDelete: pathItem.Delete,
+		}
+
+		for method, operation := range operations {
+			if operation == nil || operation.Extensions[XCoreFunction] == nil || operation.Extensions[XDataType] == nil {
+				continue
+			}
+
+			var requestBody interface{}
+			tag := operation.Tags[0]
+			convFunc, ok := operation.Extensions[XConversionFunction]
+			if ok {
+				// allow a panic to occur if something goes wrong
+				// the service should be stopped anyway and the stack trace is logged without needing to recover and import runtime/debug to get the stack trace
+				requestBody = operation.RequestBody.Value.Content.Get("application/json").Schema.Ref
+			}
+			err := a.registerHandler(router, path, method, tag, operation.Extensions[XCoreFunction].(string), operation.Extensions[XDataType].(string),
+				operation.Extensions[XAuthType], requestBody, convFunc)
+			if err != nil {
+				errArgs := logutils.FieldArgs(operation.Extensions)
+				errArgs["method"] = method
+				errArgs["tag"] = tag
+				return errors.WrapErrorAction(logutils.ActionRegister, "api handler", &errArgs, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (a *Adapter) serveDoc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("access-control-allow-origin", "*")
 	http.ServeFile(w, r, "./driver/web/docs/gen/def.yaml")
 }
 
-func (we Adapter) serveDocUI() http.Handler {
-	url := fmt.Sprintf("%s/doc", we.lmsServiceURL)
+func (a *Adapter) serveDocUI() http.Handler {
+	url := fmt.Sprintf("%s/doc", a.lmsServiceURL)
 	return httpSwagger.Handler(httpSwagger.URL(url))
 }
 
-func (we Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		logObj := we.logger.NewRequestLog(req)
-
-		logObj.RequestReceived()
-
-		var response logs.HTTPResponse
-		if authorization != nil {
-			responseStatus, claims, err := authorization.Check(req)
-			if err != nil {
-				logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.ActionValidate, logutils.TypeRequest, nil, err, responseStatus, true))
-				return
-			}
-
-			if claims != nil {
-				logObj.SetContext("account_id", claims.Subject)
-			}
-			response = handler(logObj, req, claims)
-		} else {
-			response = handler(logObj, req, nil)
-		}
-
-		logObj.SendHTTPResponse(w, response)
-		logObj.RequestComplete()
-	}
-}
-
-// func (we Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
-// 	route, pathParams, err := we.openAPIRouter.FindRoute(req)
+// func (a *Adapter) validateRequest(req *http.Request) (*openapi3filter.RequestValidationInput, error) {
+// 	route, pathParams, err := a.openAPIRouter.FindRoute(req)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -173,7 +144,7 @@ func (we Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler)
 // }
 
 // NewWebAdapter creates new WebAdapter instance
-func NewWebAdapter(baseURL string, port string, app *core.Application, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
+func NewWebAdapter(baseURL string, port string, serviceID string, app *core.Application, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
 	//openAPI doc
 	loader := &openapi3.Loader{Context: context.Background(), IsExternalRefsAllowed: true}
 	doc, err := loader.LoadFromFile("driver/web/docs/gen/def.yaml")
@@ -189,30 +160,25 @@ func NewWebAdapter(baseURL string, port string, app *core.Application, serviceRe
 	doc.Servers = nil
 
 	//To correctly route traffic to base path, we must add to all paths since servers are ignored
-	paths := make(openapi3.Paths, len(doc.Paths))
-	for path, obj := range doc.Paths {
-		paths["/lms"+path] = obj
-	}
-	doc.Paths = paths
-
-	openAPIRouter, err := gorillamux.NewRouter(doc)
-	if err != nil {
-		logger.Fatalf("error on openapi3 gorillamux router - %s", err.Error())
+	paths := make(map[string]*openapi3.PathItem, doc.Paths.Len())
+	for path, obj := range doc.Paths.Map() {
+		paths["/"+serviceID+path] = obj
 	}
 
 	auth, err := NewAuth(serviceRegManager, app)
+	if err != nil {
+		logger.Fatalf("error creating auth - %s", err.Error())
+	}
 
-	apisHandler := rest.NewApisHandler(app)
-	adminApisHandler := rest.NewAdminApisHandler(app)
+	apisHandler := NewAPIsHandler(app)
 	return Adapter{
-		lmsServiceURL:    baseURL,
-		port:             port,
-		auth:             auth,
-		apisHandler:      apisHandler,
-		adminApisHandler: adminApisHandler,
-		app:              app,
-		logger:           logger,
-		openAPIRouter:    openAPIRouter,
+		lmsServiceURL: baseURL,
+		port:          port,
+		serviceID:     serviceID,
+		auth:          auth,
+		paths:         paths,
+		apisHandler:   apisHandler,
+		logger:        logger,
 	}
 }
 
