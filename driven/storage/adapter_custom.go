@@ -738,7 +738,7 @@ func (sa *Adapter) MarkUserCourseAsDelete(appID string, orgID string, key string
 	return nil
 }
 
-// DeleteCustomCourse deletes a course
+// DeleteUserCourse deletes a course
 func (sa *Adapter) DeleteUserCourse(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "course.key": key}
 	result, err := sa.db.userCourses.DeleteMany(sa.context, filter, nil)
@@ -831,7 +831,7 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 	return nil
 }
 
-// get UserCourseUnits gets all userUnits within a user's course
+// GetUserCourseUnits gets all userUnits within a user's course
 func (sa *Adapter) GetUserCourseUnits(appID string, orgID string, userID string, courseKey string) ([]model.UserUnit, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course_key": courseKey}
 	var result []userUnit
@@ -856,7 +856,7 @@ func (sa *Adapter) GetUserCourseUnits(appID string, orgID string, userID string,
 	return convertedResult, nil
 }
 
-// GetUserUnit finds a user unit
+// GetUserUnitExist finds a user unit
 func (sa *Adapter) GetUserUnitExist(appID string, orgID string, userID string, courseKey string, unitKey string) (bool, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "unit.key": unitKey}
 	var result userUnit
