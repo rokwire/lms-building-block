@@ -1115,6 +1115,7 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 	userUnit.DateCreated = time.Now()
 	userUnit.DateUpdated = nil
 	userUnit.CourseKey = item.CourseKey
+	userUnit.Current = item.Current
 	userUnit.Unit = sa.customUnitToStorage(item.Unit)
 
 	_, err := sa.db.userUnits.InsertOne(sa.context, userUnit)
@@ -1126,7 +1127,7 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 
 // UpdateUserUnit updates shcedules in a user unit
 func (sa *Adapter) UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.UserUnit) error {
-	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey}
+	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey, "unit.key": item.Unit.Key}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{

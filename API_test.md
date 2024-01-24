@@ -251,6 +251,12 @@ admin and client API testing notes
     | code 500           | no document exist     |        |
     |                    | superior key non-exist|        |
 
+    ```
+    {
+        "name": "module1 update",
+        "unit_keys": ["unit1"]
+    }
+    ```
 
 - DeleteCustomModule
 
@@ -347,7 +353,12 @@ admin and client API testing notes
     | code 500           | no document exist     |        |
     |                    | superior key non-exist|        |
 
-
+    ```
+    {
+        "name": "course1 update",
+        "module_keys": ["module1"]
+    }
+    ```
 - DeleteCustomCourse
 
     | Test Response Code | Test Description      | Remark |

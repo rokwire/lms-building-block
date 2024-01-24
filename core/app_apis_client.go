@@ -227,7 +227,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// find the current user unit (this is managed by the streaks timer)
-		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Id, courseKey, &unitKey)
+		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, &unitKey)
 		if err != nil {
 			return err
 		}
