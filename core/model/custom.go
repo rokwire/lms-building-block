@@ -202,9 +202,9 @@ type UnitWithTimezone struct {
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time
 type ScheduleItem struct {
-	Name        string          `bson:"name" json:"name"`
-	UserContent []UserReference `bson:"user_content" json:"user_content"`
-	Duration    int             `bson:"duration" json:"duration"` // in days
+	Name        string          `json:"name" bson:"name"`
+	UserContent []UserReference `json:"user_content" bson:"user_content"`
+	Duration    int             `json:"duration" bson:"duration"` // in days
 }
 
 // Content represents some Unit content
@@ -226,9 +226,9 @@ type Content struct {
 
 // Reference represents a reference to another entity
 type Reference struct {
-	Name         string `bson:"name" json:"name"`
-	Type         string `bson:"type" json:"type"` // content item, video, PDF, survey, web URL
-	ReferenceKey string `bson:"reference_key" json:"reference_key"`
+	Name         string `json:"name" bson:"name"`
+	Type         string `json:"type" bson:"type"` // content item, video, PDF, survey, web URL
+	ReferenceKey string `json:"reference_key" bson:"reference_key"`
 }
 
 // UserReference represents a reference with some additional data about user interactions
@@ -236,9 +236,9 @@ type UserReference struct {
 	Reference
 
 	// user fields (populated as user takes a course)
-	UserData      map[string]interface{} `bson:"user_data,omitempty" json:"user_data,omitempty"`
-	DateStarted   *time.Time             `bson:"date_started,omitempty" json:"date_started,omitempty"`
-	DateCompleted *time.Time             `bson:"date_completed,omitempty" json:"date_completed,omitempty"`
+	UserData      map[string]interface{} `json:"user_data,omitempty" bson:"user_data,omitempty"`
+	DateStarted   *time.Time             `json:"date_started,omitempty" bson:"date_started,omitempty"`
+	DateCompleted *time.Time             `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
 }
 
 // Timezone represents user timezone information received from the client
