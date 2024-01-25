@@ -40,7 +40,16 @@ func (sa *Adapter) customCourseFromStorage(item course) (model.Course, error) {
 		if err != nil {
 			return result, err
 		}
-		result.Modules = modules
+
+		result.Modules = make([]model.Module, len(modules))
+		for i, key := range item.ModuleKeys {
+			for _, module := range modules {
+				if module.Key == key {
+					result.Modules[i] = module
+					break
+				}
+			}
+		}
 	}
 	return result, nil
 }
@@ -61,7 +70,16 @@ func (sa *Adapter) customModuleFromStorage(item module) (model.Module, error) {
 		if err != nil {
 			return result, err
 		}
-		result.Units = units
+
+		result.Units = make([]model.Unit, len(units))
+		for i, key := range item.UnitKeys {
+			for _, unit := range units {
+				if unit.Key == key {
+					result.Units[i] = unit
+					break
+				}
+			}
+		}
 	}
 	return result, nil
 }
