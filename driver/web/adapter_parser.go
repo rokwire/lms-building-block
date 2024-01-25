@@ -180,7 +180,7 @@ func setCoreHandler[A apiDataType, R requestDataType, S requestDataType](handler
 		handler.deleteHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}) error)
 	}
 	if !ok {
-		return errors.ErrorData(logutils.StatusInvalid, "core function", &logutils.FieldArgs{"name": tag + ref, "method": method})
+		return errors.ErrorData(logutils.StatusInvalid, "core function", &logutils.FieldArgs{"name": tag + "." + ref, "method": method})
 	}
 
 	return nil
