@@ -154,6 +154,8 @@ type Module struct {
 	Name  string `json:"name"`
 	Units []Unit `json:"units"`
 
+	Display Display `json:"display"`
+
 	DateCreated time.Time  `json:"-"`
 	DateUpdated *time.Time `json:"-"`
 }
@@ -277,4 +279,11 @@ func (tz TZOffsets) GeneratePairs(preferEarly bool) []TZOffsetPair {
 type TZOffsetPair struct {
 	Lower int
 	Upper int
+}
+
+// Display represents data used to determine how to display course data in the client
+type Display struct {
+	PrimaryColor string `json:"primary_color" bson:"primary_color"`
+	AccentColor  string `json:"accent_color" bson:"accent_color"`
+	Image        string `json:"image" bson:"image"`
 }

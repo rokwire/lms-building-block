@@ -2096,6 +2096,7 @@ components:
         - key
         - name
         - units
+        - display
       type: object
       properties:
         id:
@@ -2115,6 +2116,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Unit'
+        display:
+          $ref: '#/components/schemas/Display'
     Unit:
       required:
         - id
@@ -2427,6 +2430,15 @@ components:
           type: boolean
         requirements:
           type: object
+    Display:
+      type: object
+      properties:
+        primary_color:
+          type: string
+        accent_color:
+          type: string
+        image:
+          type: string
     _admin_req_create_nudge:
       required:
         - id

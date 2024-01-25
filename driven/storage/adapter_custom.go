@@ -320,6 +320,7 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 			"date_updated": time.Now(),
 			"name":         item.Name,
 			"unit_keys":    unitKeys,
+			"display":      item.Display,
 		},
 	}
 	result, err := sa.db.customModules.UpdateOne(sa.context, filter, update, nil)

@@ -1,0 +1,8 @@
+type: object
+properties:
+  primary_color:
+    type: string
+  accent_color:
+    type: string
+  image:
+    type: string

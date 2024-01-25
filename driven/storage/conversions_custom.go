@@ -62,6 +62,7 @@ func (sa *Adapter) customModuleFromStorage(item module) (model.Module, error) {
 	result.OrgID = item.OrgID
 	result.Key = item.Key
 	result.Name = item.Name
+	result.Display = item.Display
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated
 
@@ -99,6 +100,7 @@ func (sa *Adapter) customModuleToStorage(item model.Module) module {
 	module.Key = item.Key
 	module.Name = item.Name
 	module.UnitKeys = unitKeys
+	module.Display = item.Display
 	module.DateCreated = item.DateCreated
 	module.DateUpdated = item.DateUpdated
 

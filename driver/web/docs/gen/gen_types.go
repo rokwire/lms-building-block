@@ -84,6 +84,13 @@ type CourseConfig struct {
 	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config"`
 }
 
+// Display defines model for Display.
+type Display struct {
+	AccentColor  *string `json:"accent_color,omitempty"`
+	Image        *string `json:"image,omitempty"`
+	PrimaryColor *string `json:"primary_color,omitempty"`
+}
+
 // Enrollment defines model for Enrollment.
 type Enrollment struct {
 	Grade *Grade  `json:"grade,omitempty"`
@@ -98,12 +105,13 @@ type Grade struct {
 
 // Module defines model for Module.
 type Module struct {
-	AppId *string `json:"app_id,omitempty"`
-	Id    *string `json:"id,omitempty"`
-	Key   string  `json:"key"`
-	Name  string  `json:"name"`
-	OrgId *string `json:"org_id,omitempty"`
-	Units []Unit  `json:"units"`
+	AppId   *string `json:"app_id,omitempty"`
+	Display Display `json:"display"`
+	Id      *string `json:"id,omitempty"`
+	Key     string  `json:"key"`
+	Name    string  `json:"name"`
+	OrgId   *string `json:"org_id,omitempty"`
+	Units   []Unit  `json:"units"`
 }
 
 // Notification defines model for Notification.

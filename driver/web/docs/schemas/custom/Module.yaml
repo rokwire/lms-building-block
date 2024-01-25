@@ -5,6 +5,7 @@ required:
   - key
   - name
   - units
+  - display
 type: object
 properties:
   id:
@@ -24,3 +25,5 @@ properties:
     type: array
     items:
       $ref: "./Unit.yaml"
+  display:
+    $ref: "./Display.yaml"
