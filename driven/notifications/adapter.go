@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"lms/core"
 	"log"
 	"net/http"
 )
@@ -34,8 +33,14 @@ type Adapter struct {
 	org            string
 }
 
+// Recipient entity
+type Recipient struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
+}
+
 // SendNotifications sends notifications via the Notifications BB
-func (a *Adapter) SendNotifications(recipients []core.Recipient, text string, body string, data map[string]string) error {
+func (a *Adapter) SendNotifications(recipients []Recipient, text string, body string, data map[string]string) error {
 	if len(recipients) > 0 {
 		url := fmt.Sprintf("%s/api/int/v2/message", a.host)
 

@@ -1,0 +1,21 @@
+delete:
+  tags:
+  - Admin
+  summary: Clear test sent nudges
+  description: |
+    Clear all test sent nudges
+  security:
+    - bearerAuth: []
+  responses:
+    200:
+      description: Success
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error     
+  x-core-function: ClearTestSentNudges
+  x-data-type: model.SentNudge
+  x-authentication-type: Permissions 
+ 

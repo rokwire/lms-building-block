@@ -20,6 +20,19 @@ package model
 import (
 	"lms/utils"
 	"time"
+
+	"github.com/rokwire/logging-library-go/v2/logutils"
+)
+
+const (
+	//TypeNudge nudge type
+	TypeNudge logutils.MessageDataType = "nudge"
+	//TypeSentNudge sent nudge type
+	TypeSentNudge logutils.MessageDataType = "sent nudge"
+	//TypeNudgesConfig nudges config type
+	TypeNudgesConfig logutils.MessageDataType = "nudges config"
+	//TypeNudgesProcess nudges process type
+	TypeNudgesProcess logutils.MessageDataType = "nudges process"
 )
 
 // NudgesConfig entity
@@ -61,12 +74,6 @@ func (p Nudge) GetUsersSourcesCanvasCoursesIDs() []int {
 type UsersSource struct {
 	Type   string         `json:"type" bson:"type"`     //groups-bb-group or canvas-course
 	Params map[string]any `json:"params" bson:"params"` //nil for groups-bb-group and a list with canvas courses for canvas-courses
-}
-
-// UsersSources entity
-type UsersSources struct {
-	Type   *string         `json:"type" bson:"type"`     //groups-bb-group or canvas-course
-	Params *map[string]any `json:"params" bson:"params"` //nil for groups-bb-group and a list with canvas courses for canvas-courses
 }
 
 // NudgeParams entity

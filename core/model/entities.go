@@ -17,10 +17,23 @@
 
 package model
 
-import "time"
+import (
+	"time"
 
-// Course entity
-type Course struct {
+	"github.com/rokwire/logging-library-go/v2/logutils"
+)
+
+const (
+	//TypeUser user type
+	TypeUser logutils.MessageDataType = "user"
+	//TypeProviderCourse provider course type
+	TypeProviderCourse logutils.MessageDataType = "provider course"
+	//TypeAssignmentGroup assignment group type
+	TypeAssignmentGroup logutils.MessageDataType = "assignment group"
+)
+
+// ProviderCourse entity
+type ProviderCourse struct {
 	ID                     int    `json:"id"  bson:"id"`
 	Name                   string `json:"name" bson:"name"`
 	AccessRestrictedByDate bool   `json:"access_restricted_by_date" bson:"access_restricted_by_date"`

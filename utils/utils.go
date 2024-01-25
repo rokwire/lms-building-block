@@ -27,6 +27,16 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/rokwire/logging-library-go/v2/errors"
+	"github.com/rokwire/logging-library-go/v2/logs"
+	"github.com/rokwire/logging-library-go/v2/logutils"
+)
+
+const (
+	// SecondsInDay is the number of seconds in one 24-hour day
+	SecondsInDay int = 24 * 60 * 60
+	// SecondsInHour is the number of seconds in one hour
+	SecondsInHour int = 60 * 60
 )
 
 // Filter represents find filter for finding entities by the their fields
@@ -167,7 +177,12 @@ func GetLogValue(value string) string {
 }
 
 // Equal compares two slices
-func Equal(a, b []string) bool {
+func Equal(a, b []string, strict bool) bool {
+	if !strict {
+		sort.Strings(a)
+		sort.Strings(b)
+	}
+
 	if len(a) != len(b) {
 		return false
 	}
@@ -192,7 +207,7 @@ func EqualPointers(a, b *[]string) bool {
 	}
 
 	//both are not nil
-	return Equal(*a, *b)
+	return Equal(*a, *b, true)
 }
 
 // GetInt gives the value which this pointer points. Gives 0 if the pointer is nil
@@ -282,21 +297,7 @@ func IsVersionLess(v1 string, v2 string) bool {
 }
 
 // Exist checks if the items exists in the list
-func Exist(list []string, value string) bool {
-	if len(list) == 0 {
-		return false
-	}
-
-	for _, s := range list {
-		if value == s {
-			return true
-		}
-	}
-	return false
-}
-
-// ExistInt checks if the items exists in the list
-func ExistInt(list []int, value int) bool {
+func Exist[T listExistType](list []T, value T) bool {
 	if len(list) == 0 {
 		return false
 	}
@@ -370,4 +371,78 @@ func AnyToArrayOfInt(val any) []int {
 		return result
 	}
 	return result
+}
+
+// GetValue returns the value corresponding to key in items; returns an error if missing and required or not the expected type
+func GetValue[T any](items map[string]interface{}, key string, required bool) (T, error) {
+	mapValue, ok := items[key]
+	if required && !ok {
+		return *new(T), errors.ErrorData(logutils.StatusMissing, "map value", &logutils.FieldArgs{"key": key, "required": required})
+	}
+
+	value, ok := mapValue.(T)
+	if !ok {
+		return *new(T), errors.ErrorData(logutils.StatusInvalid, "map value", &logutils.FieldArgs{"key": key, "required": required})
+	}
+
+	return value, nil
+}
+
+// StartTimer starts a timer with the given name, period, and function to call when the timer goes off
+func StartTimer(timer *time.Timer, timerDone chan bool, initialDuration *time.Duration, period time.Duration, periodicFunc func(), name string, logger *logs.Logger) {
+	if logger != nil {
+		logger.Info("start timer for " + name)
+	}
+
+	//cancel if active
+	if timer != nil {
+		if logger != nil {
+			logger.Info(name + " -> there is active timer, so cancel it")
+		}
+
+		timerDone <- true
+		timer.Stop()
+	}
+
+	onTimer(timer, timerDone, initialDuration, period, periodicFunc, name, logger)
+}
+
+func onTimer(timer *time.Timer, timerDone chan bool, initialDuration *time.Duration, period time.Duration, periodicFunc func(), name string, logger *logs.Logger) {
+	hasLogger := (logger != nil)
+	if hasLogger {
+		logger.Info(name)
+	}
+
+	duration := period
+	if initialDuration != nil {
+		duration = *initialDuration
+	} else {
+		periodicFunc()
+	}
+	timer = time.NewTimer(duration)
+
+	if hasLogger {
+		logger.Infof(name+" -> next call after %s", duration)
+	}
+
+	select {
+	case <-timer.C:
+		// timer expired
+		if hasLogger {
+			logger.Info(name + " -> timer expired")
+		}
+		timer = nil
+
+		onTimer(timer, timerDone, nil, period, periodicFunc, name, logger)
+	case <-timerDone:
+		// timer aborted
+		if hasLogger {
+			logger.Info(name + " -> timer aborted")
+		}
+		timer = nil
+	}
+}
+
+type listExistType interface {
+	string | int
 }

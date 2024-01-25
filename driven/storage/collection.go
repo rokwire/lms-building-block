@@ -21,7 +21,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/v2/logs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -32,11 +32,10 @@ type collectionWrapper struct {
 	coll     *mongo.Collection
 }
 
-func (collWrapper *collectionWrapper) Find(filter interface{}, result interface{}, findOptions *options.FindOptions) error {
-	return collWrapper.FindWithContext(context.Background(), filter, result, findOptions)
-}
-
-func (collWrapper *collectionWrapper) FindWithContext(ctx context.Context, filter interface{}, result interface{}, findOptions *options.FindOptions) error {
+func (collWrapper *collectionWrapper) Find(ctx context.Context, filter interface{}, result interface{}, findOptions *options.FindOptions) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 	defer cancel()
 
@@ -54,11 +53,10 @@ func (collWrapper *collectionWrapper) FindWithContext(ctx context.Context, filte
 	return err
 }
 
-func (collWrapper *collectionWrapper) FindOne(filter interface{}, result interface{}, findOptions *options.FindOneOptions) error {
-	return collWrapper.FindOneWithContext(context.Background(), filter, result, findOptions)
-}
-
-func (collWrapper *collectionWrapper) FindOneWithContext(ctx context.Context, filter interface{}, result interface{}, findOptions *options.FindOneOptions) error {
+func (collWrapper *collectionWrapper) FindOne(ctx context.Context, filter interface{}, result interface{}, findOptions *options.FindOneOptions) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 	defer cancel()
 
@@ -77,11 +75,10 @@ func (collWrapper *collectionWrapper) FindOneWithContext(ctx context.Context, fi
 	return nil
 }
 
-func (collWrapper *collectionWrapper) ReplaceOne(filter interface{}, replacement interface{}, replaceOptions *options.ReplaceOptions) error {
-	return collWrapper.ReplaceOneWithContext(context.Background(), filter, replacement, replaceOptions)
-}
-
-func (collWrapper *collectionWrapper) ReplaceOneWithContext(ctx context.Context, filter interface{}, replacement interface{}, replaceOptions *options.ReplaceOptions) error {
+func (collWrapper *collectionWrapper) ReplaceOne(ctx context.Context, filter interface{}, replacement interface{}, replaceOptions *options.ReplaceOptions) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 	defer cancel()
 
@@ -106,11 +103,10 @@ func (collWrapper *collectionWrapper) ReplaceOneWithContext(ctx context.Context,
 	return nil
 }
 
-func (collWrapper *collectionWrapper) InsertOne(data interface{}) (interface{}, error) {
-	return collWrapper.InsertOneWithContext(context.Background(), data)
-}
-
-func (collWrapper *collectionWrapper) InsertOneWithContext(ctx context.Context, data interface{}) (interface{}, error) {
+func (collWrapper *collectionWrapper) InsertOne(ctx context.Context, data interface{}) (interface{}, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 
 	ins, err := collWrapper.coll.InsertOne(ctx, data)
@@ -125,11 +121,10 @@ func (collWrapper *collectionWrapper) InsertOneWithContext(ctx context.Context, 
 	return nil, err
 }
 
-func (collWrapper *collectionWrapper) InsertMany(documents []interface{}, opts *options.InsertManyOptions) (*mongo.InsertManyResult, error) {
-	return collWrapper.InsertManyWithContext(context.Background(), documents, opts)
-}
-
-func (collWrapper *collectionWrapper) InsertManyWithContext(ctx context.Context, documents []interface{}, opts *options.InsertManyOptions) (*mongo.InsertManyResult, error) {
+func (collWrapper *collectionWrapper) InsertMany(ctx context.Context, documents []interface{}, opts *options.InsertManyOptions) (*mongo.InsertManyResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 	defer cancel()
 
@@ -141,11 +136,10 @@ func (collWrapper *collectionWrapper) InsertManyWithContext(ctx context.Context,
 	return result, nil
 }
 
-func (collWrapper *collectionWrapper) DeleteMany(filter interface{}, opts *options.DeleteOptions) (*mongo.DeleteResult, error) {
-	return collWrapper.DeleteManyWithContext(context.Background(), filter, opts)
-}
-
-func (collWrapper *collectionWrapper) DeleteManyWithContext(ctx context.Context, filter interface{}, opts *options.DeleteOptions) (*mongo.DeleteResult, error) {
+func (collWrapper *collectionWrapper) DeleteMany(ctx context.Context, filter interface{}, opts *options.DeleteOptions) (*mongo.DeleteResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 	defer cancel()
 
@@ -157,11 +151,10 @@ func (collWrapper *collectionWrapper) DeleteManyWithContext(ctx context.Context,
 	return result, nil
 }
 
-func (collWrapper *collectionWrapper) DeleteOne(filter interface{}, opts *options.DeleteOptions) (*mongo.DeleteResult, error) {
-	return collWrapper.DeleteOneWithContext(context.Background(), filter, opts)
-}
-
-func (collWrapper *collectionWrapper) DeleteOneWithContext(ctx context.Context, filter interface{}, opts *options.DeleteOptions) (*mongo.DeleteResult, error) {
+func (collWrapper *collectionWrapper) DeleteOne(ctx context.Context, filter interface{}, opts *options.DeleteOptions) (*mongo.DeleteResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 	defer cancel()
 
@@ -173,11 +166,10 @@ func (collWrapper *collectionWrapper) DeleteOneWithContext(ctx context.Context, 
 	return result, nil
 }
 
-func (collWrapper *collectionWrapper) UpdateOne(filter interface{}, update interface{}, opts *options.UpdateOptions) (*mongo.UpdateResult, error) {
-	return collWrapper.UpdateOneWithContext(context.Background(), filter, update, opts)
-}
-
-func (collWrapper *collectionWrapper) UpdateOneWithContext(ctx context.Context, filter interface{}, update interface{}, opts *options.UpdateOptions) (*mongo.UpdateResult, error) {
+func (collWrapper *collectionWrapper) UpdateOne(ctx context.Context, filter interface{}, update interface{}, opts *options.UpdateOptions) (*mongo.UpdateResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 	defer cancel()
 
@@ -189,8 +181,26 @@ func (collWrapper *collectionWrapper) UpdateOneWithContext(ctx context.Context, 
 	return updateResult, nil
 }
 
-func (collWrapper *collectionWrapper) CountDocuments(filter interface{}) (int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), collWrapper.database.mongoTimeout)
+func (collWrapper *collectionWrapper) UpdateMany(ctx context.Context, filter interface{}, update interface{}, opts *options.UpdateOptions) (*mongo.UpdateResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
+	defer cancel()
+
+	updateResult, err := collWrapper.coll.UpdateMany(ctx, filter, update, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateResult, nil
+}
+
+func (collWrapper *collectionWrapper) CountDocuments(ctx context.Context, filter interface{}) (int64, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, collWrapper.database.mongoTimeout)
 	defer cancel()
 
 	if filter == nil {
@@ -308,8 +318,11 @@ func (collWrapper *collectionWrapper) DropIndex(name string) error {
 	return err
 }
 
-func (collWrapper *collectionWrapper) Aggregate(pipeline interface{}, result interface{}, ops *options.AggregateOptions) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*15000)
+func (collWrapper *collectionWrapper) Aggregate(ctx context.Context, pipeline interface{}, result interface{}, ops *options.AggregateOptions) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*15000)
 	defer cancel()
 
 	cursor, err := collWrapper.coll.Aggregate(ctx, pipeline, ops)

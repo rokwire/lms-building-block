@@ -1,0 +1,33 @@
+get:
+  tags:
+  - Client
+  summary: Get custom course config
+  description: |
+    Get custom course config by key
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: key
+      in: path
+      description: Course key
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+  responses:
+    200:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: "../../../schemas/custom/CourseConfig.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: GetCustomCourseConfig
+  x-data-type: model.CourseConfig
+  x-authentication-type: User

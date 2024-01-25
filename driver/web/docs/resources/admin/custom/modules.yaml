@@ -1,0 +1,91 @@
+get:
+  tags:
+  - Admin
+  summary: Get custom modules
+  description: |
+    Get custom modules by search parameters
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: query
+      description: module ID
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: name
+      in: query
+      description: module name
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: key
+      in: query
+      description: module key
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+    - name: unit_key
+      in: query
+      description: comma separated list of unit IDs
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
+  responses:
+    200:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "../../../schemas/custom/Module.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: GetCustomModules
+  x-data-type: model.Module
+  x-authentication-type: Permissions
+post:
+  tags:
+  - Admin
+  summary: Create custom module
+  description: |
+    Create a custom module
+  security:
+    - bearerAuth: []
+  requestBody:
+    description: custom module
+    content:
+      application/json:
+        schema:
+         $ref: "../../../schemas/custom/Module.yaml"
+    required: true
+  responses:
+    200:
+      description: Success
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Success
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: CreateCustomModule
+  x-data-type: model.Module
+  x-authentication-type: Permissions

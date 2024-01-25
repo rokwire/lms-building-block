@@ -15,10 +15,11 @@
 package core
 
 import (
+	"lms/core/interfaces"
 	cacheadapter "lms/driven/cache"
 	"lms/driven/corebb"
 
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 // Application represents the core application code based on hexagonal architecture
@@ -26,14 +27,15 @@ type Application struct {
 	version string
 	build   string
 
-	Services       Services       //expose to the drivers adapters
-	Administration Administration //expose to the drivers adapters
+	Default interfaces.Default
+	Client  interfaces.Client
+	Admin   interfaces.Admin
 
-	provider        Provider
-	groupsBB        GroupsBB
-	notificationsBB NotificationsBB
+	provider        interfaces.Provider
+	groupsBB        interfaces.GroupsBB
+	notificationsBB interfaces.NotificationsBB
 
-	storage      Storage
+	storage      interfaces.Storage
 	cacheAdapter *cacheadapter.CacheAdapter
 	core         *corebb.Adapter
 
@@ -41,6 +43,8 @@ type Application struct {
 
 	//nudges logic
 	nudgesLogic nudgesLogic
+	//streaks and notifications logic
+	streaksNotifications streaksNotifications
 }
 
 // Start starts the core part of the application
@@ -48,12 +52,12 @@ func (app *Application) Start() {
 	app.storage.SetListener(app)
 
 	app.nudgesLogic.start()
+	app.streaksNotifications.start()
 }
 
 // NewApplication creates new Application
-func NewApplication(version string, build string, storage Storage, provider Provider,
-	groupsBB GroupsBB, notificationsBB NotificationsBB,
-	cacheadapter *cacheadapter.CacheAdapter, coreBB *corebb.Adapter, logger *logs.Logger) *Application {
+func NewApplication(version string, build string, storage interfaces.Storage, provider interfaces.Provider, groupsBB interfaces.GroupsBB,
+	notificationsBB interfaces.NotificationsBB, cacheadapter *cacheadapter.CacheAdapter, coreBB *corebb.Adapter, logger *logs.Logger) *Application {
 
 	timerDone := make(chan bool)
 	nudgesLogic := nudgesLogic{
@@ -66,22 +70,34 @@ func NewApplication(version string, build string, storage Storage, provider Prov
 		core:            coreBB,
 	}
 
+	notificationsTimerDone := make(chan bool)
+	streaksTimerDone := make(chan bool)
+	streaksNotifications := streaksNotifications{
+		notificationsBB:        notificationsBB,
+		storage:                storage,
+		logger:                 logger,
+		notificationsTimerDone: notificationsTimerDone,
+		streaksTimerDone:       streaksTimerDone,
+	}
+
 	application := Application{
-		version:         version,
-		build:           build,
-		provider:        provider,
-		groupsBB:        groupsBB,
-		notificationsBB: notificationsBB,
-		storage:         storage,
-		cacheAdapter:    cacheadapter,
-		logger:          logger,
-		nudgesLogic:     nudgesLogic,
-		core:            coreBB,
+		version:              version,
+		build:                build,
+		provider:             provider,
+		groupsBB:             groupsBB,
+		notificationsBB:      notificationsBB,
+		storage:              storage,
+		cacheAdapter:         cacheadapter,
+		logger:               logger,
+		nudgesLogic:          nudgesLogic,
+		streaksNotifications: streaksNotifications,
+		core:                 coreBB,
 	}
 
 	// add the drivers ports/interfaces
-	application.Services = &servicesImpl{app: &application}
-	application.Administration = &administrationImpl{app: &application}
+	application.Default = &defaultImpl{app: &application}
+	application.Client = &clientImpl{app: &application}
+	application.Admin = &adminImpl{app: &application}
 
 	return &application
 }

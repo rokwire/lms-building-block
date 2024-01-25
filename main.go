@@ -16,7 +16,6 @@ package main
 
 import (
 	"lms/core"
-	"lms/core/model"
 	cacheadapter "lms/driven/cache"
 	"lms/driven/corebb"
 	"lms/driven/groups"
@@ -25,13 +24,13 @@ import (
 	storage "lms/driven/storage"
 	driver "lms/driver/web"
 	"log"
-	"os"
 	"strings"
 
-	"github.com/golang-jwt/jwt"
-	"github.com/rokwire/core-auth-library-go/v2/authservice"
-	"github.com/rokwire/core-auth-library-go/v2/sigauth"
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/core-auth-library-go/v3/authservice"
+	"github.com/rokwire/core-auth-library-go/v3/envloader"
+	"github.com/rokwire/core-auth-library-go/v3/keys"
+	"github.com/rokwire/core-auth-library-go/v3/sigauth"
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 var (
@@ -47,49 +46,70 @@ func main() {
 	}
 
 	serviceID := "lms"
-
-	loggerOpts := logs.LoggerOpts{SuppressRequests: []logs.HttpRequestProperties{logs.NewAwsHealthCheckHttpRequestProperties(serviceID + "/version")}}
+	loggerOpts := logs.LoggerOpts{SuppressRequests: logs.NewStandardHealthCheckHTTPRequestProperties(serviceID + "/version")}
 	logger := logs.NewLogger(serviceID, &loggerOpts)
+	envLoader := envloader.NewEnvLoader(Version, logger)
 
-	port := getEnvKey("LMS_PORT", true)
+	envPrefix := strings.ReplaceAll(strings.ToUpper(serviceID), "-", "_") + "_"
+	port := envLoader.GetAndLogEnvVar(envPrefix+"PORT", false, false)
+	if len(port) == 0 {
+		port = "80"
+	}
 
-	internalAPIKey := getEnvKey("LMS_INTERNAL_API_KEY", true)
+	internalAPIKey := envLoader.GetAndLogEnvVar(envPrefix+"INTERNAL_API_KEY", true, true)
 
-	//mongoDB adapter
-	mongoDBAuth := getEnvKey("LMS_MONGO_AUTH", true)
-	mongoDBName := getEnvKey("LMS_MONGO_DATABASE", true)
-	mongoTimeout := getEnvKey("LMS_MONGO_TIMEOUT", false)
+	// mongoDB adapter
+	mongoDBAuth := envLoader.GetAndLogEnvVar(envPrefix+"MONGO_AUTH", true, true)
+	mongoDBName := envLoader.GetAndLogEnvVar(envPrefix+"MONGO_DATABASE", true, false)
+	mongoTimeout := envLoader.GetAndLogEnvVar(envPrefix+"MONGO_TIMEOUT", false, false)
 	storageAdapter := storage.NewStorageAdapter(mongoDBAuth, mongoDBName, mongoTimeout, logger)
 	err := storageAdapter.Start()
 	if err != nil {
-		log.Fatal("Cannot start the mongoDB adapter - " + err.Error())
+		logger.Fatalf("Cannot start the mongoDB adapter: %v", err)
 	}
 
-	defaultCacheExpirationSeconds := getEnvKey("LMS_DEFAULT_CACHE_EXPIRATION_SECONDS", false)
+	defaultCacheExpirationSeconds := envLoader.GetAndLogEnvVar(envPrefix+"DEFAULT_CACHE_EXPIRATION_SECONDS", false, false)
 	cacheAdapter := cacheadapter.NewCacheAdapter(defaultCacheExpirationSeconds)
 
 	//provider adapter
-	canvasBaseURL := getEnvKey("LMS_CANVAS_BASE_URL", true)
-	canvasTokenType := getEnvKey("LMS_CANVAS_TOKEN_TYPE", true)
-	canvasToken := getEnvKey("LMS_CANVAS_TOKEN", true)
-	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType, mongoDBAuth, mongoDBName, mongoTimeout, logger)
-	err = providerAdapter.Start()
-	if err != nil {
-		log.Fatal("Cannot start the provider adapter - " + err.Error())
-	}
+	canvasBaseURL := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_BASE_URL", true, false)
+	canvasTokenType := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN_TYPE", true, false)
+	canvasToken := envLoader.GetAndLogEnvVar(envPrefix+"CANVAS_TOKEN", true, true)
+	providerAdapter := provider.NewProviderAdapter(canvasBaseURL, canvasToken, canvasTokenType, storageAdapter, logger)
 
 	//groups BB adapter
-	groupsHost := getEnvKey("LMS_GROUPS_BB_HOST", true)
+	groupsHost := envLoader.GetAndLogEnvVar(envPrefix+"GROUPS_BB_HOST", true, false)
 	groupsBBAdapter := groups.NewGroupsAdapter(groupsHost, internalAPIKey)
 
 	//notifications BB adapter
-	app := getEnvKey("LMS_APP_ID", true)
-	org := getEnvKey("LMS_ORG_ID", true)
-	notificationHost := getEnvKey("LMS_NOTIFICATIONS_BB_HOST", true)
+	app := envLoader.GetAndLogEnvVar(envPrefix+"APP_ID", true, false)
+	org := envLoader.GetAndLogEnvVar(envPrefix+"ORG_ID", true, false)
+	notificationHost := envLoader.GetAndLogEnvVar(envPrefix+"NOTIFICATIONS_BB_HOST", true, false)
 	notificationsBBAdapter := notifications.NewNotificationsAdapter(notificationHost, internalAPIKey, app, org)
 
+	// Service registration
+	baseURL := envLoader.GetAndLogEnvVar(envPrefix+"BASE_URL", true, false)
+	coreBBBaseURL := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_BASE_URL", true, false)
+
+	authService := authservice.AuthService{
+		ServiceID:   serviceID,
+		ServiceHost: baseURL,
+		FirstParty:  true,
+		AuthBaseURL: coreBBBaseURL,
+	}
+
+	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{"groups", "notifications"})
+	if err != nil {
+		logger.Fatalf("Error initializing remote service registration loader: %v", err)
+	}
+
+	serviceRegManager, err := authservice.NewServiceRegManager(&authService, serviceRegLoader, !strings.HasPrefix(baseURL, "http://localhost"))
+	if err != nil {
+		logger.Fatalf("Error initializing service registration manager: %v", err)
+	}
+
 	//core adapter
-	cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID)
+	cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID, serviceRegManager, envLoader, envPrefix)
 	coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager, org, app)
 
 	// application
@@ -98,23 +118,14 @@ func main() {
 	application.Start()
 
 	// web adapter
-	coreBBHost := getEnvKey("LMS_CORE_BB_HOST", true)
-	lmsServiceURL := getEnvKey("LMS_SERVICE_URL", true)
-	config := model.Config{
-		InternalAPIKey:  internalAPIKey,
-		CoreBBHost:      coreBBHost,
-		LmsServiceURL:   lmsServiceURL,
-		CanvasBaseURL:   canvasBaseURL,
-		CanvasTokenType: canvasTokenType,
-		CanvasToken:     canvasToken,
-	}
-	webAdapter := driver.NewWebAdapter(port, application, &config, logger)
+	lmsServiceURL := envLoader.GetAndLogEnvVar(envPrefix+"SERVICE_URL", true, false)
+	webAdapter := driver.NewWebAdapter(lmsServiceURL, port, serviceID, application, serviceRegManager, logger)
 	webAdapter.Start()
 }
 
-func getCoreBBAdapterValues(logger *logs.Logger, serviceID string) (string, *authservice.ServiceAccountManager) {
-	host := getEnvKey("LMS_CORE_BB_CURRENT_HOST", true)
-	coreBBHost := getEnvKey("LMS_CORE_BB_CORE_HOST", true)
+func getCoreBBAdapterValues(logger *logs.Logger, serviceID string, serviceRegManager *authservice.ServiceRegManager, envLoader envloader.EnvLoader, envPrefix string) (string, *authservice.ServiceAccountManager) {
+	host := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_CURRENT_HOST", true, false)
+	coreBBHost := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_CORE_HOST", true, false)
 
 	authService := authservice.AuthService{
 		ServiceID:   serviceID,
@@ -123,25 +134,16 @@ func getCoreBBAdapterValues(logger *logs.Logger, serviceID string) (string, *aut
 		AuthBaseURL: coreBBHost,
 	}
 
-	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{})
-	if err != nil {
-		logger.Fatalf("Error initializing remote service registration loader: %v", err)
-	}
-
-	serviceRegManager, err := authservice.NewServiceRegManager(&authService, serviceRegLoader)
-	if err != nil {
-		logger.Fatalf("Error initializing service registration manager: %v", err)
-	}
-
-	serviceAccountID := getEnvKey("LMS_SERVICE_ACCOUNT_ID", true)
-	privKeyRaw := getEnvKey("LMS_PRIV_KEY", true)
+	serviceAccountID := envLoader.GetAndLogEnvVar(envPrefix+"SERVICE_ACCOUNT_ID", false, false)
+	privKeyRaw := envLoader.GetAndLogEnvVar(envPrefix+"PRIV_KEY", false, true)
 	privKeyRaw = strings.ReplaceAll(privKeyRaw, "\\n", "\n")
-	privKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(privKeyRaw))
+	privKey, err := keys.NewPrivKey(keys.RS256, privKeyRaw)
 	if err != nil {
-		log.Fatalf("Error parsing priv key: %v", err)
+		logger.Errorf("Error parsing priv key: %v", err)
+	} else if serviceAccountID == "" {
+		logger.Errorf("Missing service account id")
 	}
-
-	signatureAuth, err := sigauth.NewSignatureAuth(privKey, serviceRegManager, false)
+	signatureAuth, err := sigauth.NewSignatureAuth(privKey, serviceRegManager, false, false)
 	if err != nil {
 		log.Fatalf("Error initializing signature auth: %v", err)
 	}
@@ -156,17 +158,4 @@ func getCoreBBAdapterValues(logger *logs.Logger, serviceID string) (string, *aut
 		log.Fatalf("Error initializing service account manager: %v", err)
 	}
 	return coreBBHost, serviceAccountManager
-}
-
-func getEnvKey(key string, required bool) string {
-	// get from the environment
-	value, exist := os.LookupEnv(key)
-	if !exist {
-		if required {
-			log.Fatal("No provided environment variable for " + key)
-		} else {
-			log.Printf("No provided environment variable for " + key)
-		}
-	}
-	return value
 }

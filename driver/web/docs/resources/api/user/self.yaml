@@ -1,0 +1,24 @@
+ get:
+  tags:
+  - Client
+  summary: Get current user
+  description: |
+    Get current user
+  security:
+    - bearerAuth: []
+  responses:
+    200:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: "../../../schemas/provider/User.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: GetCurrentUser
+  x-data-type: model.User
+  x-authentication-type: User

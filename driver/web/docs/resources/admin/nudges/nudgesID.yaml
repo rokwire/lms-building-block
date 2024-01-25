@@ -36,6 +36,10 @@ put:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: UpdateNudge
+  x-data-type: model.Nudge
+  x-authentication-type: Permissions
+  x-conversion-function: nudgeFromDefAdminReqUpdate
 delete:
   tags:
   - Admin
@@ -60,3 +64,6 @@ delete:
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: DeleteNudge
+  x-data-type: model.Nudge
+  x-authentication-type: Permissions

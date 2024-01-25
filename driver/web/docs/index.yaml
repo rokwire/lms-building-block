@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rokwire LMS Building Block API
   description: LMS Building Block API Documentation
-  version: 1.9.2
+  version: 1.10.0
 servers:
   - url: 'https://api.rokwire.illinois.edu/lms'
     description: Production server
@@ -13,11 +13,17 @@ servers:
   - url: 'http://localhost/lms'
     description: Local server
 tags:
-  - name: Api
-    description: Clients  APIs.
+  - name: Default
+    description: Common APIs.
+  - name: Client
+    description: Clients APIs.
   - name: Admin
     description: Clients administration APIs.
 paths:
+  #default
+  /version:
+    $ref: "./resources/default/version.yaml"
+
   #api
   /api/courses:
     $ref: "./resources/api/courses/courses.yaml"
@@ -28,7 +34,19 @@ paths:
   /api/courses/{id}/users:
     $ref: "./resources/api/courses/userID.yaml"
   /api/users/self:
-    $ref: "./resources/api/user/user.yaml"
+    $ref: "./resources/api/user/self.yaml"
+  /api/users/courses:
+    $ref: "./resources/api/user/courses.yaml"
+  /api/users/courses/{key}:
+    $ref: "./resources/api/user/coursesKey.yaml"
+  /api/users/courses/{course_key}/units/{unit_key}:
+    $ref: "./resources/api/user/unitsKey.yaml"
+  /api/users/units/{key}:
+    $ref: "./resources/api/user/units.yaml"
+  /api/custom/courses:
+    $ref: "./resources/api/custom/courses.yaml"
+  /api/custom/course-configs/{key}:
+    $ref: "./resources/api/custom/course-configs-key.yaml"
 
   #admin
   /admin/nudges-config:
@@ -38,11 +56,31 @@ paths:
   /admin/nudges/{id}:
     $ref: "./resources/admin/nudges/nudgesID.yaml"
   /admin/sent-nudges:
-    $ref: "./resources/admin/sentNudges/sentNudges.yaml"
+    $ref: "./resources/admin/sent-nudges.yaml"
   /admin/test-sent-nudges:
-    $ref: "./resources/admin/sentNudges/testSentNudges.yaml"
+    $ref: "./resources/admin/test-sent-nudges.yaml"
   /admin/nudges-processes:
-    $ref: "./resources/admin/nudgesProcess/nudges-process.yaml"
+    $ref: "./resources/admin/nudges-process.yaml"
+  /admin/courses:
+    $ref: "./resources/admin/custom/courses.yaml"
+  /admin/courses/{key}:
+    $ref: "./resources/admin/custom/courses-key.yaml"
+  /admin/modules:
+    $ref: "./resources/admin/custom/modules.yaml"
+  /admin/modules/{key}:
+    $ref: "./resources/admin/custom/modules-key.yaml"
+  /admin/units:
+    $ref: "./resources/admin/custom/units.yaml"
+  /admin/units/{key}:
+    $ref: "./resources/admin/custom/units-key.yaml"
+  /admin/content:
+    $ref: "./resources/admin/custom/content.yaml"
+  /admin/content/{key}:
+    $ref: "./resources/admin/custom/content-key.yaml"
+  /admin/course-configs:
+    $ref: "./resources/admin/custom/course-configs.yaml"
+  /admin/course-configs/{key}:
+    $ref: "./resources/admin/custom/course-configs-key.yaml"
 
 components:
   securitySchemes:

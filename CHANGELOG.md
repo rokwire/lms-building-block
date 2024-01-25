@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.10.0] - 2024-01-24
+### Changed
+- Update LMS BB [#90](https://github.com/rokwire/lms-building-block/issues/90)
+### Added
+- Implement admin and client APIs [#92](https://github.com/rokwire/lms-building-block/issues/92)
+- Custom course streaks [#94](https://github.com/rokwire/lms-building-block/issues/94)
 
 ## [1.9.2] - 2023-05-16
 ### Fixed 

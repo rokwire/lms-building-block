@@ -21,8 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"lms/core"
+	"io"
 	"log"
 	"net/http"
 )
@@ -33,8 +32,15 @@ type Adapter struct {
 	apiKey string
 }
 
+// User entity
+type User struct {
+	UserID string `json:"user_id"`
+	NetID  string `json:"net_id"`
+	Name   string `json:"name"`
+}
+
 // GetUsers get user from the groups BB
-func (a *Adapter) GetUsers(groupName string, offset int, limit int) ([]core.GroupsBBUser, error) {
+func (a *Adapter) GetUsers(groupName string, offset int, limit int) ([]User, error) {
 
 	url := fmt.Sprintf("%s/api/int/group/title/%s/members?offset=%d&limit=%d", a.host, groupName, offset, limit)
 
@@ -58,13 +64,13 @@ func (a *Adapter) GetUsers(groupName string, offset int, limit int) ([]core.Grou
 		return nil, errors.New("error with response code != 200")
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("error reading the body data for the loading groups members data request - %s", err)
 		return nil, err
 	}
 
-	var result []core.GroupsBBUser
+	var result []User
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		log.Printf("error converting data for the loading groups members data request - %s", err)

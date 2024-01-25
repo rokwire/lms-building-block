@@ -1,0 +1,9 @@
+required:
+  - timezone_name
+  - timezone_offset
+type: object
+properties:
+  timezone_name:
+    type: string
+  timezone_offset:
+    type: integer

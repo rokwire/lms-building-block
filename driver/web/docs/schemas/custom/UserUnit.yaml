@@ -1,0 +1,41 @@
+required:
+  - id
+  - app_id
+  - org_id
+  - user_id
+  - course_key
+  - completed
+  - current
+  - unit
+type: object
+properties:
+  id:
+    type: string
+    readOnly: true
+  app_id:
+    type: string
+    readOnly: true
+  org_id:
+    type: string
+    readOnly: true
+  user_id:
+    type: string
+    readOnly: true
+  course_key:
+    type: string
+    readOnly: true
+  completed:
+    type: integer
+  current:
+    type: boolean
+  unit:
+    $ref: "./Unit.yaml"
+  last_completed:
+    type: string
+    format: date-time
+  date_created:
+    type: string
+    format: date-time
+  date_updated:
+    type: string
+    format: date-time

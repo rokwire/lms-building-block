@@ -1,0 +1,149 @@
+get:
+  tags:
+  - Client
+  summary: Get user course
+  description: |
+    Get user course
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: key
+      in: path
+      description: course key
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+  responses:
+    200:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "../../../schemas/custom/UserCourse.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: GetUserCourse
+  x-data-type: model.UserCourse
+  x-authentication-type: User
+post:
+  tags:
+  - Client
+  summary: Create custom user course
+  description: |
+    Create custom user course
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: key
+      in: path
+      description: course key
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+  requestBody:
+    description: user timezone information
+    content:
+      application/json:
+        schema:
+          $ref: "../../../schemas/custom/Timezone.yaml"
+    required: true
+  responses:
+    200:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: "../../../schemas/custom/UserCourse.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: CreateUserCourse
+  x-data-type: model.UserCourse
+  x-authentication-type: User
+delete:
+  tags:
+  - Client
+  summary: Delete custom user course
+  description: |
+    Delete custom user course
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: key
+      in: path
+      description: course key
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+  responses:
+    200:
+      description: Success
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Success
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: DeleteUserCourse
+  x-data-type: model.UserCourse
+  x-authentication-type: User
+put:
+  tags:
+  - Client
+  summary: update a user course
+  description: |
+    update a user course by its course key
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: key
+      in: path
+      description: course key
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+    - name: drop
+      in: query
+      description: whether to drop the course
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: boolean
+  responses:
+    200:
+      description: Success
+      content:
+        text/plain:
+          schema:
+            type: string
+            example: Success
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: UpdateUserCourse
+  x-data-type: model.UserCourse
+  x-authentication-type: User

@@ -1,4 +1,4 @@
- get:
+get:
   tags:
   - Admin
   summary: Get nudges
@@ -7,21 +7,24 @@
   security:
     - bearerAuth: []
   responses:
-      200:
-        description: Successful operation
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: "../../../schemas/nudges/Nudge.yaml"
-      400:
-        description: Bad request
-      401:
-        description: Unauthorized
-      500:
-        description: Internal error
- post:
+    200:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "../../../schemas/nudges/Nudge.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: GetNudges
+  x-data-type: model.Nudge
+  x-authentication-type: Permissions
+post:
   tags:
   - Admin
   summary: Create Nudge
@@ -50,3 +53,7 @@
       description: Unauthorized
     500:
       description: Internal error
+  x-core-function: CreateNudge
+  x-data-type: model.Nudge
+  x-authentication-type: Permissions
+  x-conversion-function: nudgeFromDefAdminReqCreate
