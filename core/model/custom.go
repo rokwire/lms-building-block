@@ -34,8 +34,6 @@ const (
 	TypeModule logutils.MessageDataType = "module"
 	//TypeUnit unit type
 	TypeUnit logutils.MessageDataType = "unit"
-	//TypeUnitWithTimezone unit with timezone type
-	TypeUnitWithTimezone logutils.MessageDataType = "unit with timezone"
 	//TypeContent content type
 	TypeContent logutils.MessageDataType = "content"
 	//TypeTimezone timezone type
@@ -188,16 +186,17 @@ type Unit struct {
 	Contents []Content      `json:"content"`
 	Schedule []ScheduleItem `json:"schedule"`
 
-	Required int `json:"required"` // number of schedule items required to be completed (may add required flags to each schedule item in future)
+	ScheduleStart int `json:"schedule_start"`
+	Required      int `json:"required"` // number of schedule items required to be completed (may add required flags to each schedule item in future)
 
 	DateCreated time.Time  `json:"-"`
 	DateUpdated *time.Time `json:"-"`
 }
 
-// UnitWithTimezone wraps unit with time information
-type UnitWithTimezone struct {
-	Unit     Unit `json:"unit"`
-	Timezone      // include user timezone info
+// UserContentWithTimezone wraps unit with time information
+type UserContentWithTimezone struct {
+	UserContent []UserContent `json:"user_content"`
+	Timezone                  // include user timezone info
 }
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time

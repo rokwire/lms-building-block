@@ -453,11 +453,11 @@ paths:
           schema:
             type: string
       requestBody:
-        description: updated unit
+        description: updated user content with timezone info
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UnitWithTimezone'
+              $ref: '#/components/schemas/UserContentWithTimezone'
         required: true
       responses:
         '200':
@@ -465,7 +465,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
+                $ref: '#/components/schemas/UserUnit'
         '400':
           description: Bad request
         '401':
@@ -473,7 +473,7 @@ paths:
         '500':
           description: Internal error
       x-core-function: UpdateUserCourseUnitProgress
-      x-data-type: model.UnitWithTimezone
+      x-data-type: model.UserUnit
       x-authentication-type: User
   '/api/users/units/{key}':
     get:
@@ -2147,15 +2147,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ScheduleItem'
-    UnitWithTimezone:
-      allOf:
-        - $ref: '#/components/schemas/Timezone'
-        - required:
-            - unit
-          type: object
-          properties:
-            unit:
-              $ref: '#/components/schemas/Unit'
+        schedule_start:
+          type: integer
+          default: 0
     Content:
       required:
         - id
@@ -2331,6 +2325,21 @@ components:
         user_data:
           type: object
           nullable: true
+    UserContentWithTimezone:
+      required:
+        - timezone_name
+        - timezone_offset
+        - user_content
+      type: object
+      properties:
+        timezone_name:
+          type: string
+        timezone_offset:
+          type: integer
+        user_content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserContent'
     Timezone:
       required:
         - timezone_name

@@ -134,7 +134,7 @@ func (a APIsHandler) clientUpdateUserCourse(claims *tokenauth.Claims, params map
 	return a.app.Client.UpdateUserCourse(claims, key, drop)
 }
 
-func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
+func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserContentWithTimezone) (*model.UserUnit, error) {
 	courseKey, err := utils.GetValue[string](params, "course_key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseKey"), err)

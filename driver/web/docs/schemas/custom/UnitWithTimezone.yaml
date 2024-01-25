@@ -1,8 +1,0 @@
-allOf:
-  - $ref: "./Timezone.yaml"
-  - required:
-      - unit
-    type: object
-    properties:
-      unit:
-        $ref: ./Unit.yaml

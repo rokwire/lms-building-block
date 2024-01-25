@@ -24,11 +24,11 @@ put:
       schema:
         type: string
   requestBody:
-    description: updated unit
+    description: updated user content with timezone info
     content:
       application/json:
         schema:
-          $ref: "../../../schemas/custom/UnitWithTimezone.yaml"
+          $ref: "../../../schemas/custom/UserContentWithTimezone.yaml"
     required: true
   responses:
     200:
@@ -36,7 +36,7 @@ put:
       content:
         application/json:
           schema:
-            $ref: "../../../schemas/custom/Unit.yaml"
+            $ref: "../../../schemas/custom/UserUnit.yaml"
     400:
       description: Bad request
     401:
@@ -44,5 +44,5 @@ put:
     500:
       description: Internal error
   x-core-function: UpdateUserCourseUnitProgress
-  x-data-type: model.UnitWithTimezone
+  x-data-type: model.UserUnit
   x-authentication-type: User

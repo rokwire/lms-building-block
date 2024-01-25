@@ -186,20 +186,14 @@ type Timezone struct {
 
 // Unit defines model for Unit.
 type Unit struct {
-	AppId    *string        `json:"app_id,omitempty"`
-	Content  []Content      `json:"content"`
-	Id       *string        `json:"id,omitempty"`
-	Key      string         `json:"key"`
-	Name     string         `json:"name"`
-	OrgId    *string        `json:"org_id,omitempty"`
-	Schedule []ScheduleItem `json:"schedule"`
-}
-
-// UnitWithTimezone defines model for UnitWithTimezone.
-type UnitWithTimezone struct {
-	TimezoneName   string `json:"timezone_name"`
-	TimezoneOffset int    `json:"timezone_offset"`
-	Unit           Unit   `json:"unit"`
+	AppId         *string        `json:"app_id,omitempty"`
+	Content       []Content      `json:"content"`
+	Id            *string        `json:"id,omitempty"`
+	Key           string         `json:"key"`
+	Name          string         `json:"name"`
+	OrgId         *string        `json:"org_id,omitempty"`
+	Schedule      []ScheduleItem `json:"schedule"`
+	ScheduleStart *int           `json:"schedule_start,omitempty"`
 }
 
 // User defines model for User.
@@ -213,6 +207,13 @@ type User struct {
 type UserContent struct {
 	ContentKey string                  `json:"content_key"`
 	UserData   *map[string]interface{} `json:"user_data"`
+}
+
+// UserContentWithTimezone defines model for UserContentWithTimezone.
+type UserContentWithTimezone struct {
+	TimezoneName   string        `json:"timezone_name"`
+	TimezoneOffset int           `json:"timezone_offset"`
+	UserContent    []UserContent `json:"user_content"`
 }
 
 // UserCourse defines model for UserCourse.
@@ -455,7 +456,7 @@ type PostAdminUnitsJSONRequestBody = Unit
 type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
 // PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyUnitsUnitKey for application/json ContentType.
-type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UnitWithTimezone
+type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UserContentWithTimezone
 
 // PostApiUsersCoursesKeyJSONRequestBody defines body for PostApiUsersCoursesKey for application/json ContentType.
 type PostApiUsersCoursesKeyJSONRequestBody = Timezone

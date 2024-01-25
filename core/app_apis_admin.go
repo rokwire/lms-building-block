@@ -179,6 +179,9 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 				if len(unit.Schedule) == 0 {
 					return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 				}
+				if unit.ScheduleStart < 0 {
+					return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": unit.ScheduleStart})
+				}
 
 				for _, content := range unit.Contents {
 					if !utils.Exist[string](contentKeys, content.Key) {
@@ -367,6 +370,9 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 			if len(unit.Schedule) == 0 {
 				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 			}
+			if unit.ScheduleStart < 0 {
+				return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": unit.ScheduleStart})
+			}
 
 			for _, content := range unit.Contents {
 				if !utils.Exist[string](contentKeys, content.Key) {
@@ -531,6 +537,9 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 		if len(item.Schedule) == 0 {
 			return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": item.Key})
 		}
+		if item.ScheduleStart < 0 {
+			return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": item.ScheduleStart})
+		}
 
 		item.ID = uuid.NewString()
 		item.AppID = claims.AppID
@@ -591,6 +600,9 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 	transaction := func(storageTransaction interfaces.Storage) error {
 		if len(item.Schedule) == 0 {
 			return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": item.Key})
+		}
+		if item.ScheduleStart < 0 {
+			return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": item.ScheduleStart})
 		}
 
 		item.AppID = claims.AppID

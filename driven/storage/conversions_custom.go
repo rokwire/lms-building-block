@@ -108,7 +108,7 @@ func (sa *Adapter) customModuleToStorage(item model.Module) module {
 // customUnitFromStorage formats storage struct to appropriate struct for API request
 func (sa *Adapter) customUnitFromStorage(item unit) (model.Unit, error) {
 	result := model.Unit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, Key: item.Key, Name: item.Name, Schedule: item.Schedule,
-		Required: item.Required, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+		ScheduleStart: item.ScheduleStart, Required: item.Required, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	if len(item.ContentKeys) > 0 {
 		contents, err := sa.FindCustomContents(item.AppID, item.OrgID, nil, nil, item.ContentKeys)
@@ -135,6 +135,7 @@ func (sa *Adapter) customUnitToStorage(item model.Unit) unit {
 	result.Name = item.Name
 	result.ContentKeys = extractedKey
 	result.Schedule = item.Schedule
+	result.ScheduleStart = item.ScheduleStart
 	result.Required = item.Required
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated

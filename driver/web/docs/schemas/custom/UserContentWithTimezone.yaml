@@ -1,0 +1,14 @@
+required:
+  - timezone_name
+  - timezone_offset
+  - user_content
+type: object
+properties:
+  timezone_name:
+    type: string
+  timezone_offset:
+    type: integer
+  user_content:
+    type: array
+    items:
+      $ref: "./UserContent.yaml"

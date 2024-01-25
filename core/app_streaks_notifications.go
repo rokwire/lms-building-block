@@ -214,9 +214,9 @@ func (n streaksNotifications) processStreaks() {
 				transaction := func(storage interfaces.Storage) error {
 					nextUnit := userCourse.Course.GetNextUnit(userUnit.Unit.Key)
 					if nextUnit != nil {
-						nextUnit.Schedule[0].DateStarted = &now
+						nextUnit.Schedule[nextUnit.ScheduleStart].DateStarted = &now
 						nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
-							Unit: *nextUnit, Completed: 0, Current: true, DateCreated: time.Now().UTC()}
+							Unit: *nextUnit, Completed: nextUnit.ScheduleStart, Current: true, DateCreated: time.Now().UTC()}
 						err := storage.InsertUserUnit(nextUserUnit)
 						if err != nil {
 							return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
@@ -352,7 +352,7 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUni
 		return errors.ErrorData(logutils.StatusInvalid, "incomplete task handler", nil)
 	}
 
-	if userUnit.Completed == 0 {
+	if userUnit.Completed == userUnit.Unit.ScheduleStart {
 		// user has not completed the current task
 		return incompleteTaskHandler()
 	} else if userUnit.Completed < userUnit.Unit.Required {

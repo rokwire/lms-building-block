@@ -213,7 +213,8 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 	return nil
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UserContentWithTimezone) (*model.UserUnit, error) {
+	var userUnit *model.UserUnit
 	transaction := func(storageTransaction interfaces.Storage) error {
 		userCourse, err := storageTransaction.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
 		if err != nil {
@@ -227,7 +228,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// find the current user unit (this is managed by the streaks timer)
-		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, &unitKey)
+		userUnit, err = storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, &unitKey)
 		if err != nil {
 			return err
 		}
@@ -235,9 +236,6 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		now := time.Now().UTC()
 		if userUnit == nil {
 			// create a userUnit here if it doesn't already exist
-			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
-				Completed: 1, Current: true, DateCreated: time.Now().UTC()}
-
 			unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, unitKey)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
@@ -245,15 +243,17 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if unit == nil {
 				return errors.ErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": unitKey})
 			}
-			if len(item.Unit.Schedule) == 0 || len(unit.Schedule) == 0 {
+			if len(unit.Schedule) == 0 {
 				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 			}
 
-			item.Unit.Key = unitKey
-			userUnit.Unit = item.Unit
-			userUnit.Unit.Schedule[0].DateStarted = &now
-			if userUnit.Unit.Schedule[0].IsComplete() {
-				userUnit.Unit.Schedule[0].DateCompleted = &now
+			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
+				Completed: unit.ScheduleStart + 1, Current: true, DateCreated: time.Now().UTC()}
+			userUnit.Unit = *unit
+			userUnit.Unit.Schedule[unit.ScheduleStart].UserContent = item.UserContent
+			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = &now
+			if userUnit.Unit.Schedule[unit.ScheduleStart].IsComplete() {
+				userUnit.Unit.Schedule[unit.ScheduleStart].DateCompleted = &now
 			}
 
 			// user started the course and created the first user unit
@@ -267,7 +267,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
 			}
 
-			userUnit.Unit.Schedule = item.Unit.Schedule
+			userUnit.Unit.Schedule[userUnit.Completed].UserContent = item.UserContent
 			if userUnit.Unit.Schedule[userUnit.Completed].IsComplete() {
 				userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
 				userUnit.Completed++
@@ -303,7 +303,12 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 		return nil
 	}
-	return nil, s.app.storage.PerformTransaction(transaction)
+
+	err := s.app.storage.PerformTransaction(transaction)
+	if err != nil {
+		return nil, err
+	}
+	return userUnit, nil
 }
 
 func (s *clientImpl) UpdateUserCourse(claims *tokenauth.Claims, key string, drop *bool) (*model.UserCourse, error) {
