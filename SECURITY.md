@@ -4,10 +4,10 @@
 
 Patches for **LMS Building Blocks** in this repository will only be applied to the following versions:
 
-| Version | Supported          |
-|---------| ------------------ |
-| 1.9.2   | :white_check_mark: |
-| < 1.9.2  | :x: |
+| Version  | Supported          |
+|----------| ------------------ |
+| 1.10.0   | :white_check_mark: |
+| < 1.10.0 | :x: |
 
 ## Reporting a Bug or Vulnerability
 
