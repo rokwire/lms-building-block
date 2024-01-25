@@ -158,6 +158,10 @@ func handle[A apiDataType, R requestDataType, S requestDataType](r *http.Request
 	if obj == (*A)(nil) || obj == nil {
 		return l.HTTPResponseSuccess()
 	}
+	if objStr, ok := obj.(*string); ok {
+		// avoids returning strings with unnecessary quotations
+		return l.HTTPResponseSuccessMessage(*objStr)
+	}
 
 	responseData, err := json.Marshal(obj)
 	if err != nil {
