@@ -13,8 +13,10 @@ servers:
   - url: 'http://localhost/lms'
     description: Local server
 tags:
-  - name: Api
-    description: Clients  APIs.
+  - name: Default
+    description: Common APIs.
+  - name: Client
+    description: Clients APIs.
   - name: Admin
     description: Clients administration APIs.
 paths:
@@ -63,7 +65,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Course'
+                  $ref: '#/components/schemas/ProviderCourse'
         '400':
           description: Bad request
         '401':
@@ -97,7 +99,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Course'
+                $ref: '#/components/schemas/ProviderCourse'
         '400':
           description: Bad request
         '401':
@@ -325,6 +327,13 @@ paths:
           explode: false
           schema:
             type: string
+      requestBody:
+        description: user timezone information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Timezone'
+        required: true
       responses:
         '200':
           description: Success
@@ -378,9 +387,9 @@ paths:
     put:
       tags:
         - Client
-      summary: client voluntarily drops a course
+      summary: update a user course
       description: |
-        mark custom user course as deleted
+        update a user course by its course key
       security:
         - bearerAuth: []
       parameters:
@@ -392,6 +401,14 @@ paths:
           explode: false
           schema:
             type: string
+        - name: drop
+          in: query
+          description: whether to drop the course
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: Success
@@ -406,16 +423,16 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
-      x-core-function: DropUserCourse
+      x-core-function: UpdateUserCourse
       x-data-type: model.UserCourse
       x-authentication-type: User
   '/api/users/courses/{course_key}/units/{unit_key}':
     put:
       tags:
         - Client
-      summary: Update custom user course
+      summary: Update custom user unit
       description: |
-        Update custom user course
+        Update custom user unit
       security:
         - bearerAuth: []
       parameters:
@@ -440,7 +457,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Unit'
+              $ref: '#/components/schemas/UnitWithTimezone'
         required: true
       responses:
         '200':
@@ -456,7 +473,7 @@ paths:
         '500':
           description: Internal error
       x-core-function: UpdateUserCourseUnitProgress
-      x-data-type: model.Unit
+      x-data-type: model.UnitWithTimezone
       x-authentication-type: User
   '/api/users/units/{key}':
     get:
@@ -484,32 +501,7 @@ paths:
               schema:
                 type: array
                 items:
-                  required:
-                    - id
-                    - app_id
-                    - org_id
-                    - user_id
-                    - course_key
-                    - unit
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      readOnly: true
-                    app_id:
-                      type: string
-                      readOnly: true
-                    org_id:
-                      type: string
-                      readOnly: true
-                    user_id:
-                      type: string
-                      readOnly: true
-                    course_key:
-                      type: string
-                      readOnly: true
-                    unit:
-                      $ref: '#/components/schemas/Unit'
+                  $ref: '#/components/schemas/UserUnit'
         '400':
           description: Bad request
         '401':
@@ -518,6 +510,67 @@ paths:
           description: Internal error
       x-core-function: GetUserCourseUnits
       x-data-type: model.UserUnit
+      x-authentication-type: User
+  /api/custom/courses:
+    get:
+      tags:
+        - Client
+      summary: Get custom courses
+      description: |
+        Get custom courses
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Course'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourses
+      x-data-type: model.Course
+      x-authentication-type: User
+  '/api/custom/course-configs/{key}':
+    get:
+      tags:
+        - Client
+      summary: Get custom course config
+      description: |
+        Get custom course config by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseConfig'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourseConfig
+      x-data-type: model.CourseConfig
       x-authentication-type: User
   /admin/nudges-config:
     get:
@@ -965,7 +1018,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CustomCourse'
+                  $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
@@ -988,7 +1041,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomCourse'
+              $ref: '#/components/schemas/Course'
         required: true
       responses:
         '200':
@@ -1031,7 +1084,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomCourse'
+                $ref: '#/components/schemas/Course'
         '400':
           description: Bad request
         '401':
@@ -1714,6 +1767,174 @@ paths:
       x-core-function: DeleteCustomContent
       x-data-type: model.Content
       x-authentication-type: Permissions
+  /admin/course-configs:
+    get:
+      tags:
+        - Admin
+      summary: Get custom course configs
+      description: |
+        Get all custom course configs
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseConfig'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourseConfigs
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
+    post:
+      tags:
+        - Admin
+      summary: Create custom course config
+      description: |
+        Create a custom course config
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: course config
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseConfig'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: CreateCustomCourseConfig
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
+  '/admin/course-configs/{key}':
+    get:
+      tags:
+        - Admin
+      summary: Get custom course config
+      description: |
+        Get custom course config by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseConfig'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourseConfig
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
+    put:
+      tags:
+        - Admin
+      summary: Update custom course config
+      description: |
+        Update custom course config
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course Key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: updated course config
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseConfig'
+        required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: UpdateCustomCourseConfig
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
+    delete:
+      tags:
+        - Admin
+      summary: Delete custom course config
+      description: |
+        Delete custom course config
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course Key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Success
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: DeleteCustomCourseConfig
+      x-data-type: model.CourseConfig
+      x-authentication-type: Permissions
 components:
   securitySchemes:
     bearerAuth:
@@ -1744,7 +1965,7 @@ components:
       properties:
         current_score:
           type: number
-    Course:
+    ProviderCourse:
       type: object
       properties:
         id:
@@ -1840,7 +2061,7 @@ components:
         params:
           nullable: true
           type: object
-    CustomCourse:
+    Course:
       required:
         - id
         - app_id
@@ -1926,6 +2147,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ScheduleItem'
+    UnitWithTimezone:
+      allOf:
+        - $ref: '#/components/schemas/Timezone'
+        - required:
+            - unit
+          type: object
+          properties:
+            unit:
+              $ref: '#/components/schemas/Unit'
     Content:
       required:
         - id
@@ -1978,9 +2208,16 @@ components:
         user_content:
           type: array
           items:
-            $ref: '#/components/schemas/UserReference'
+            $ref: '#/components/schemas/UserContent'
         duration:
           type: integer
+        date_started:
+          type: string
+          format: date-time
+        date_completed:
+          type: string
+          format: date-time
+          nullable: true
     Reference:
       required:
         - name
@@ -1995,13 +2232,63 @@ components:
         reference_key:
           type: string
     UserCourse:
+      allOf:
+        - $ref: '#/components/schemas/Timezone'
+        - required:
+            - id
+            - app_id
+            - org_id
+            - user_id
+            - streak
+            - streak_resets
+            - pauses
+            - pause_uses
+            - course
+            - date_dropped
+          type: object
+          properties:
+            id:
+              type: string
+              readOnly: true
+            app_id:
+              type: string
+              readOnly: true
+            org_id:
+              type: string
+              readOnly: true
+            user_id:
+              type: string
+              readOnly: true
+            streak:
+              type: integer
+            streak_resets:
+              type: array
+              items:
+                type: string
+                format: date-time
+            pauses:
+              type: integer
+            pause_uses:
+              type: array
+              items:
+                type: string
+                format: date-time
+            course:
+              $ref: '#/components/schemas/Course'
+            date_dropped:
+              type: string
+              readOnly: true
+              format: date-time
+    UserUnit:
       required:
         - id
         - app_id
         - org_id
         - user_id
-        - course
-        - date_dropped
+        - course_key
+        - completed
+        - current
+        - unit
       type: object
       properties:
         id:
@@ -2016,27 +2303,121 @@ components:
         user_id:
           type: string
           readOnly: true
-        course:
-          $ref: '#/components/schemas/CustomCourse'
-        date_dropped:
+        course_key:
           type: string
           readOnly: true
+        completed:
+          type: integer
+        current:
+          type: boolean
+        unit:
+          $ref: '#/components/schemas/Unit'
+        last_completed:
+          type: string
           format: date-time
-    UserReference:
-      allOf:
-        - $ref: '#/components/schemas/Reference'
-        - type: object
-          properties:
-            user_data:
-              type: object
-              nullable: true
-            date_started:
-              type: string
-              format: date-time
-            date_completed:
-              type: string
-              format: date-time
-              nullable: true
+        date_created:
+          type: string
+          format: date-time
+        date_updated:
+          type: string
+          format: date-time
+    UserContent:
+      required:
+        - content_key
+      type: object
+      properties:
+        content_key:
+          type: string
+        user_data:
+          type: object
+          nullable: true
+    Timezone:
+      required:
+        - timezone_name
+        - timezone_offset
+      type: object
+      properties:
+        timezone_name:
+          type: string
+        timezone_offset:
+          type: integer
+    CourseConfig:
+      required:
+        - id
+        - app_id
+        - org_id
+        - course_key
+        - initial_pauses
+        - max_pauses
+        - pause_reward_streak
+        - streaks_notifications_config
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+        org_id:
+          type: string
+        course_key:
+          type: string
+        initial_pauses:
+          type: integer
+        max_pauses:
+          type: integer
+        pause_reward_streak:
+          type: integer
+        streaks_notifications_config:
+          $ref: '#/components/schemas/StreaksNotificationsConfig'
+    StreaksNotificationsConfig:
+      required:
+        - timezone_name
+        - streaks_process_time
+        - prefer_early
+        - notifications_active
+        - notifications_mode
+        - notifications
+      type: object
+      properties:
+        timezone_name:
+          type: string
+        timezone_offset:
+          type: integer
+        streaks_process_time:
+          type: integer
+        prefer_early:
+          type: boolean
+        notifications_active:
+          type: boolean
+        notifications_mode:
+          type: string
+          enum:
+            - normal
+            - test
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    Notification:
+      required:
+        - subject
+        - body
+        - process_time
+        - active
+        - requirements
+      type: object
+      properties:
+        subject:
+          type: string
+        body:
+          type: string
+        process_time:
+          type: integer
+        active:
+          type: boolean
+        requirements:
+          type: object
     _admin_req_create_nudge:
       required:
         - id

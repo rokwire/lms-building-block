@@ -20,11 +20,21 @@ import (
 )
 
 type userCourse struct {
-	ID          string     `bson:"_id"`
-	AppID       string     `bson:"app_id"`
-	OrgID       string     `bson:"org_id"`
-	UserID      string     `bson:"user_id"`
-	Course      course     `bson:"course"`
+	ID     string `bson:"_id"`
+	AppID  string `bson:"app_id"`
+	OrgID  string `bson:"org_id"`
+	UserID string `bson:"user_id"`
+
+	TimezoneName   string `bson:"timezone_name"`
+	TimezoneOffset int    `bson:"timezone_offset"` // in seconds east of UTC
+
+	Streak       int         `bson:"streak"`
+	StreakResets []time.Time `bson:"streak_resets"`
+	Pauses       int         `bson:"pauses"`
+	PauseUses    []time.Time `bson:"pause_uses"`
+
+	Course course `bson:"course"`
+
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
 	DateDropped *time.Time `bson:"date_dropped"`
@@ -48,7 +58,6 @@ type module struct {
 	AppID string `bson:"app_id"`
 	OrgID string `bson:"org_id"`
 
-	//CourseKey string   `bson:"course_key"`
 	Key      string   `bson:"key"`
 	Name     string   `bson:"name"`
 	UnitKeys []string `bson:"unit_keys"`
@@ -63,10 +72,15 @@ type userUnit struct {
 	OrgID     string `bson:"org_id"`
 	UserID    string `bson:"user_id"`
 	CourseKey string `bson:"course_key"`
-	//ModuleKey   string     `bson:"module_key"`
-	Unit        unit       `bson:"unit"`
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
+
+	Unit unit `bson:"unit"`
+
+	Completed int  `bson:"completed"` // number of schedule items the user has completed
+	Current   bool `bson:"current"`
+
+	LastCompleted *time.Time `bson:"last_completed"`
+	DateCreated   time.Time  `bson:"date_created"`
+	DateUpdated   *time.Time `bson:"date_updated"`
 }
 
 type unit struct {
@@ -74,31 +88,12 @@ type unit struct {
 	AppID string `bson:"app_id"`
 	OrgID string `bson:"org_id"`
 
-	//CourseKey string `bson:"course_key"`
-	//ModuleKey   string               `bson:"module_key"`
 	Key         string               `bson:"key"`
 	Name        string               `bson:"name"`
 	ContentKeys []string             `bson:"content_keys"`
 	Schedule    []model.ScheduleItem `bson:"schedule"`
 
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
-}
-
-type content struct {
-	ID    string `bson:"_id"`
-	AppID string `bson:"app_id"`
-	OrgID string `bson:"org_id"`
-
-	//CourseKey        string          `bson:"course_key"`
-	//ModuleKey        string          `bson:"module_key"`
-	//UnitKey          string          `bson:"unit_key"`
-	Key              string          `bson:"key"`
-	Type             string          `bson:"type"` // assignment, resource, reward, evaluation
-	Name             string          `bson:"name"`
-	Details          string          `bson:"details"`
-	ContentReference model.Reference `bson:"reference"`
-	LinkedContent    []string        `bson:"linked_content"` // Content Keys
+	Required int `json:"required"` // number of schedule items required to be completed
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`

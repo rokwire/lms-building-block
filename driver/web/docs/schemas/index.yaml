@@ -5,7 +5,7 @@ Enrollment:
   $ref: "./provider/Enrollment.yaml"
 Grade:
   $ref: "./provider/Grade.yaml"
-Course:
+ProviderCourse:
   $ref: "./provider/Course.yaml"
 Assignment:
   $ref: "./provider/Assignment.yaml"
@@ -21,12 +21,14 @@ UsersSource:
   $ref: "./nudges/UsersSource.yaml"
 
 # custom
-CustomCourse:
+Course:
   $ref: "./custom/Course.yaml"
 Module:
   $ref: "./custom/Module.yaml"
 Unit:
   $ref: "./custom/Unit.yaml"
+UnitWithTimezone:
+  $ref: "./custom/UnitWithTimezone.yaml"
 Content:
   $ref: "./custom/Content.yaml"
 ScheduleItem:
@@ -35,8 +37,18 @@ Reference:
   $ref: "./custom/Reference.yaml"
 UserCourse:
   $ref: "./custom/UserCourse.yaml"
-UserReference:
-  $ref: "./custom/UserReference.yaml"
+UserUnit:
+  $ref: "./custom/UserUnit.yaml"
+UserContent:
+  $ref: "./custom/UserContent.yaml"
+Timezone:
+  $ref: "./custom/Timezone.yaml"
+CourseConfig:
+  $ref: "./custom/CourseConfig.yaml"
+StreaksNotificationsConfig:
+  $ref: "./custom/StreaksNotificationsConfig.yaml"
+Notification:
+  $ref: "./custom/Notification.yaml"
 
 ### nudges api
 _admin_req_create_nudge:

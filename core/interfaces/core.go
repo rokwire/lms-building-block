@@ -34,17 +34,25 @@ type Client interface {
 
 	GetUserCourses(claims *tokenauth.Claims, id *string, name *string, key *string) ([]model.UserCourse, error)
 	GetUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
-	CreateUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
+	CreateUserCourse(claims *tokenauth.Claims, key string, item model.Timezone) (*model.UserCourse, error)
 	DeleteUserCourse(claims *tokenauth.Claims, key string) error
-	DropUserCourse(claims *tokenauth.Claims, key string) (*model.UserCourse, error)
+	UpdateUserCourse(claims *tokenauth.Claims, key string, drop *bool) (*model.UserCourse, error)
 
-	// model.Unit
+	// model.UnitWithTimezone
 
-	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.Unit) (*model.Unit, error)
+	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error)
 
 	// model.UserUnit
 
 	GetUserCourseUnits(claims *tokenauth.Claims, key string) ([]model.UserUnit, error)
+
+	// model.Course
+
+	GetCustomCourses(claims *tokenauth.Claims) ([]model.Course, error)
+
+	// model.CourseConfig
+
+	GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error)
 }
 
 // Admin exposes administrative APIs to the driver adapters
@@ -102,4 +110,12 @@ type Admin interface {
 	GetCustomContent(claims *tokenauth.Claims, key string) (*model.Content, error)
 	UpdateCustomContent(claims *tokenauth.Claims, key string, item model.Content) (*model.Content, error)
 	DeleteCustomContent(claims *tokenauth.Claims, key string) error
+
+	// model.CourseConfig
+
+	GetCustomCourseConfigs(claims *tokenauth.Claims) ([]model.CourseConfig, error)
+	CreateCustomCourseConfig(claims *tokenauth.Claims, item model.CourseConfig) (*model.CourseConfig, error)
+	GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error)
+	UpdateCustomCourseConfig(claims *tokenauth.Claims, key string, item model.CourseConfig) (*model.CourseConfig, error)
+	DeleteCustomCourseConfig(claims *tokenauth.Claims, key string) error
 }

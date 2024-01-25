@@ -9,6 +9,13 @@ properties:
   user_content:
     type: array
     items:
-      $ref: "./UserReference.yaml"
+      $ref: "./UserContent.yaml"
   duration:
     type: integer
+  date_started:
+    type: string
+    format: date-time
+  date_completed:
+    type: string
+    format: date-time
+    nullable: true

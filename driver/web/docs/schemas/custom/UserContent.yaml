@@ -1,0 +1,9 @@
+required:
+  - content_key
+type: object
+properties:
+  content_key:
+    type: string
+  user_data:
+    type: object
+    nullable: true

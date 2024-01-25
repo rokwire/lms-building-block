@@ -45,6 +45,7 @@ type database struct {
 	sentNudges      *collectionWrapper
 	nudgesProcesses *collectionWrapper
 	nudgesBlocks    *collectionWrapper
+	courseConfigs   *collectionWrapper
 	customCourses   *collectionWrapper
 	customModules   *collectionWrapper
 	customUnits     *collectionWrapper
@@ -113,6 +114,12 @@ func (m *database) start() error {
 		return err
 	}
 
+	courseConfigs := &collectionWrapper{database: m, coll: db.Collection("course_configs")}
+	err = m.applyCourseConfigsChecks(courseConfigs)
+	if err != nil {
+		return err
+	}
+
 	customCourses := &collectionWrapper{database: m, coll: db.Collection("custom_courses")}
 	err = m.applyCustomCoursesChecks(customCourses)
 	if err != nil {
@@ -159,6 +166,7 @@ func (m *database) start() error {
 	m.sentNudges = sentNudges
 	m.nudgesProcesses = nudgesProcesses
 	m.nudgesBlocks = nudgesBlocks
+	m.courseConfigs = courseConfigs
 	m.customCourses = customCourses
 	m.customModules = customModules
 	m.customUnits = customUnits
@@ -267,6 +275,22 @@ func (m *database) applyNudgesBlocksChecks(nudgesProcesses *collectionWrapper) e
 	return nil
 }
 
+// Course Configs
+func (m *database) applyCourseConfigsChecks(courseConfigs *collectionWrapper) error {
+	m.logger.Info("apply course configs check.....")
+	err := courseConfigs.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "course_key", Value: 1},
+		}, true)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("course configs check passed")
+	return nil
+}
+
 // Custom Course
 func (m *database) applyCustomCoursesChecks(customCourses *collectionWrapper) error {
 	m.logger.Info("apply custom course check.....")
@@ -356,7 +380,9 @@ func (m *database) applyUserUnitsChecks(userUnits *collectionWrapper) error {
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},
 			primitive.E{Key: "user_id", Value: 1},
-		}, false)
+			primitive.E{Key: "course_key", Value: 1},
+			primitive.E{Key: "unit.key", Value: 1},
+		}, true)
 	if err != nil {
 		return err
 	}

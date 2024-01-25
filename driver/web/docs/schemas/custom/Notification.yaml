@@ -1,0 +1,18 @@
+required:
+  - subject
+  - body
+  - process_time
+  - active
+  - requirements
+type: object
+properties:
+  subject:
+    type: string
+  body:
+    type: string
+  process_time:
+    type: integer
+  active:
+    type: boolean
+  requirements:
+    type: object

@@ -59,45 +59,57 @@ type Storage interface {
 	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
 
-	GetCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
-	GetCustomCourse(appID string, orgID string, key string) (*model.Course, error)
+	FindCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
+	FindCustomCourse(appID string, orgID string, key string) (*model.Course, error)
 	InsertCustomCourse(item model.Course) error
 	UpdateCustomCourse(key string, item model.Course) error
 	DeleteCustomCourse(appID string, orgID string, key string) error
 
-	GetCustomModules(appID string, orgID string, id []string, name []string, key []string, unitKeys []string) ([]model.Module, error)
-	GetCustomModule(appID string, orgID string, key string) (*model.Module, error)
+	FindCustomModules(appID string, orgID string, id []string, name []string, key []string, unitKeys []string) ([]model.Module, error)
+	FindCustomModule(appID string, orgID string, key string) (*model.Module, error)
 	InsertCustomModule(item model.Module) error
 	InsertCustomModules(items []model.Module) error
 	UpdateCustomModule(key string, item model.Module) error
 	DeleteCustomModule(appID string, orgID string, key string) error
 
-	GetCustomUnits(appID string, orgID string, id []string, name []string, key []string, contentKeys []string) ([]model.Unit, error)
-	GetCustomUnit(appID string, orgID string, key string) (*model.Unit, error)
+	FindCustomUnits(appID string, orgID string, id []string, name []string, key []string, contentKeys []string) ([]model.Unit, error)
+	FindCustomUnit(appID string, orgID string, key string) (*model.Unit, error)
 	InsertCustomUnit(item model.Unit) error
 	InsertCustomUnits(items []model.Unit) error
 	UpdateCustomUnit(key string, item model.Unit) error
 	DeleteCustomUnit(appID string, orgID string, key string) error
 
-	GetCustomContents(appID string, orgID string, id []string, name []string, key []string) ([]model.Content, error)
-	GetCustomContent(appID string, orgID string, key string) (*model.Content, error)
+	FindCustomContents(appID string, orgID string, id []string, name []string, key []string) ([]model.Content, error)
+	FindCustomContent(appID string, orgID string, key string) (*model.Content, error)
 	InsertCustomContent(item model.Content) error
 	InsertCustomContents(items []model.Content) error
 	UpdateCustomContent(key string, item model.Content) error
 	DeleteCustomContent(appID string, orgID string, key string) error
 
-	GetUserCourses(id []string, name []string, key []string, userID string) ([]model.UserCourse, error)
-	GetUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
+	FindCourseConfig(appID string, orgID string, key string) (*model.CourseConfig, error)
+	FindCourseConfigs(appID *string, orgID *string, notificationsActive *bool) ([]model.CourseConfig, error)
+	InsertCourseConfig(config model.CourseConfig) error
+	UpdateCourseConfig(config model.CourseConfig) error
+	DeleteCourseConfig(appID string, orgID string, key string) error
+
+	FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsets []model.TZOffsetPair) ([]model.UserCourse, error)
+	FindUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
 	InsertUserCourse(item model.UserCourse) error
 	UpdateUserCourses(key string, item model.Course) error
-	DeleteUserCourse(appID string, orgID string, courseKey string) error
-	DeleteUserUnit(appID string, orgID string, key string) error
-	GetUserCourseUnits(appID string, orgID string, userID string, courseKey string) ([]model.UserUnit, error)
+	UpdateUserCourse(appID string, orgID string, userID string, courseID *string, courseKey string, streak *int, pauses *int) error
+	UpdateUserTimezone(appID string, orgID string, userID string, timezoneName string, timezoneOffset int) error
+	DecrementUserCoursePauses(appID string, orgID string, userIDs []string, key string) error
+	ResetUserCourseStreaks(appID string, orgID string, userIDs []string, key string) error
+	DropUserCourse(appID string, orgID string, key string) error
+	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
+	DeleteUserCourses(appID string, orgID string, courseKey string) error
 
+	FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey *string) (*model.UserUnit, error)
+	FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, current *bool) ([]model.UserUnit, error)
 	InsertUserUnit(item model.UserUnit) error
-	UpdateUserUnit(appID string, orgID string, userID string, courseKey string, item model.Unit) error
+	UpdateUserUnit(item model.UserUnit) error
 	UpdateUserUnits(key string, item model.Unit) error
-	GetUserUnitExist(appID string, orgID string, userID string, courseKey string, unitKey string) (bool, error)
+	DeleteUserUnit(appID string, orgID string, key string) error
 
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error
@@ -105,7 +117,6 @@ type Storage interface {
 	DeleteUnitKeyFromModules(appID string, orgID string, key string) error
 	DeleteModuleKeyFromCourses(appID string, orgID string, key string) error
 	DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error
-	MarkUserCourseAsDelete(appID string, orgID string, key string) error
 }
 
 // Provider interface for LMS provider

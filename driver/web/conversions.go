@@ -15,12 +15,10 @@
 package web
 
 import (
-	"errors"
 	"lms/core/model"
 	Def "lms/driver/web/docs/gen"
 
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
-	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 func nudgesConfigFromDef(claims *tokenauth.Claims, item *Def.NudgesConfig) (*model.NudgesConfig, error) {
@@ -35,7 +33,7 @@ func nudgesConfigFromDef(claims *tokenauth.Claims, item *Def.NudgesConfig) (*mod
 
 	nudgesConfig := model.NudgesConfig{Active: item.Active, GroupName: item.GroupName, TestGroupName: item.TestGroupName, Mode: string(item.Mode),
 		ProcessTime: item.ProcessTime, BlockSize: blockSizeVal}
-	return &nudgesConfig, errors.New(logutils.Unimplemented)
+	return &nudgesConfig, nil
 }
 
 func nudgeFromDefAdminReqCreate(claims *tokenauth.Claims, item *Def.AdminReqCreateNudge) (*model.Nudge, error) {
@@ -111,22 +109,22 @@ func customUnitUpdateFromDef(claims *tokenauth.Claims, item *Def.AdminReqUpdateU
 	for i, key := range item.ContentKeys {
 		contents[i] = model.Content{Key: key}
 	}
-	schedule := make([]model.ScheduleItem, len(item.Schedule))
-	for i, val := range item.Schedule {
-		userContent := make([]model.UserReference, len(val.UserContent))
-		for j, uContent := range val.UserContent {
-			var reference model.Reference
-			reference.Name = uContent.Name
-			reference.Type = uContent.Type
-			reference.ReferenceKey = uContent.ReferenceKey
 
-			var emptyUserData map[string]interface{}
-			if uContent.UserData != nil {
-				emptyUserData = *uContent.UserData
+	schedule := make([]model.ScheduleItem, len(item.Schedule))
+	for i, si := range item.Schedule {
+		userContent := make([]model.UserContent, len(si.UserContent))
+		for j, uc := range si.UserContent {
+			var userData map[string]interface{}
+			if uc.UserData != nil {
+				userData = *uc.UserData
 			}
-			userContent[j] = model.UserReference{UserData: emptyUserData, DateStarted: &uContent.DateStarted, DateCompleted: uContent.DateCompleted, Reference: reference}
+			userContent[j] = model.UserContent{ContentKey: uc.ContentKey, UserData: userData}
 		}
-		schedule[i] = model.ScheduleItem{Name: val.Name, UserContent: userContent, Duration: val.Duration}
+
+		dateStarted := si.DateStarted
+		dateCompleted := si.DateCompleted
+		schedule[i] = model.ScheduleItem{Name: si.Name, Duration: si.Duration, DateStarted: dateStarted, DateCompleted: dateCompleted}
 	}
+
 	return &model.Unit{AppID: claims.AppID, OrgID: claims.OrgID, Name: item.Name, Contents: contents, Schedule: schedule}, nil
 }

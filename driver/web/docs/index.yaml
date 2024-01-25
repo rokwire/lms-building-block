@@ -13,8 +13,10 @@ servers:
   - url: 'http://localhost/lms'
     description: Local server
 tags:
-  - name: Api
-    description: Clients  APIs.
+  - name: Default
+    description: Common APIs.
+  - name: Client
+    description: Clients APIs.
   - name: Admin
     description: Clients administration APIs.
 paths:
@@ -41,7 +43,10 @@ paths:
     $ref: "./resources/api/user/unitsKey.yaml"
   /api/users/units/{key}:
     $ref: "./resources/api/user/units.yaml"
-
+  /api/custom/courses:
+    $ref: "./resources/api/custom/courses.yaml"
+  /api/custom/course-configs/{key}:
+    $ref: "./resources/api/custom/course-configs-key.yaml"
 
   #admin
   /admin/nudges-config:
@@ -72,6 +77,10 @@ paths:
     $ref: "./resources/admin/custom/content.yaml"
   /admin/content/{key}:
     $ref: "./resources/admin/custom/content-key.yaml"
+  /admin/course-configs:
+    $ref: "./resources/admin/custom/course-configs.yaml"
+  /admin/course-configs/{key}:
+    $ref: "./resources/admin/custom/course-configs-key.yaml"
 
 components:
   securitySchemes:

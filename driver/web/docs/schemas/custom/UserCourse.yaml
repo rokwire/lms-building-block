@@ -1,27 +1,47 @@
-required:
-  - id
-  - app_id
-  - org_id
-  - user_id
-  - course
-  - date_dropped
-type: object
-properties:
-  id:
-    type: string
-    readOnly: true
-  app_id:
-    type: string
-    readOnly: true
-  org_id:
-    type: string
-    readOnly: true
-  user_id:
-    type: string
-    readOnly: true
-  course:
-    $ref: "./Course.yaml"
-  date_dropped:
-   type: string
-   readOnly: true
-   format: date-time
+allOf:
+  - $ref: "./Timezone.yaml"
+  - required:
+      - id
+      - app_id
+      - org_id
+      - user_id
+      - streak
+      - streak_resets
+      - pauses
+      - pause_uses
+      - course
+      - date_dropped
+    type: object
+    properties:
+      id:
+        type: string
+        readOnly: true
+      app_id:
+        type: string
+        readOnly: true
+      org_id:
+        type: string
+        readOnly: true
+      user_id:
+        type: string
+        readOnly: true
+      streak:
+        type: integer
+      streak_resets:
+        type: array
+        items:
+          type: string
+          format: date-time
+      pauses:
+        type: integer
+      pause_uses:
+        type: array
+        items:
+          type: string
+          format: date-time
+      course:
+        $ref: "./Course.yaml"
+      date_dropped:
+        type: string
+        readOnly: true
+        format: date-time

@@ -102,13 +102,13 @@ func (a APIsHandler) clientGetUserCourse(claims *tokenauth.Claims, params map[st
 	return a.app.Client.GetUserCourse(claims, key)
 }
 
-func (a APIsHandler) clientCreateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
+func (a APIsHandler) clientCreateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.Timezone) (*model.UserCourse, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
 	}
 
-	return a.app.Client.CreateUserCourse(claims, key)
+	return a.app.Client.CreateUserCourse(claims, key, *item)
 }
 
 func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map[string]interface{}) error {
@@ -120,16 +120,21 @@ func (a APIsHandler) clientDeleteUserCourse(claims *tokenauth.Claims, params map
 	return a.app.Client.DeleteUserCourse(claims, key)
 }
 
-func (a APIsHandler) clientDropUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
+func (a APIsHandler) clientUpdateUserCourse(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserCourse) (*model.UserCourse, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
 	}
 
-	return a.app.Client.DropUserCourse(claims, key)
+	drop, err := utils.GetValue[*bool](params, "drop", false)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("drop"), err)
+	}
+
+	return a.app.Client.UpdateUserCourse(claims, key, drop)
 }
 
-func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.Unit) (*model.Unit, error) {
+func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
 	courseKey, err := utils.GetValue[string](params, "course_key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseKey"), err)
@@ -150,6 +155,19 @@ func (a APIsHandler) clientGetUserCourseUnits(claims *tokenauth.Claims, params m
 	}
 
 	return a.app.Client.GetUserCourseUnits(claims, key)
+}
+
+func (a APIsHandler) clientGetCustomCourses(claims *tokenauth.Claims, params map[string]interface{}) ([]model.Course, error) {
+	return a.app.Client.GetCustomCourses(claims)
+}
+
+func (a APIsHandler) clientGetCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}) (*model.CourseConfig, error) {
+	key, err := utils.GetValue[string](params, "key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
+	}
+
+	return a.app.Client.GetCustomCourseConfig(claims, key)
 }
 
 // Admin
@@ -452,6 +470,41 @@ func (a APIsHandler) adminDeleteCustomContent(claims *tokenauth.Claims, params m
 	}
 
 	return a.app.Admin.DeleteCustomContent(claims, key)
+}
+
+func (a APIsHandler) adminGetCustomCourseConfigs(claims *tokenauth.Claims, params map[string]interface{}) ([]model.CourseConfig, error) {
+	return a.app.Admin.GetCustomCourseConfigs(claims)
+}
+
+func (a APIsHandler) adminCreateCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}, item *model.CourseConfig) (*model.CourseConfig, error) {
+	return a.app.Admin.CreateCustomCourseConfig(claims, *item)
+}
+
+func (a APIsHandler) adminGetCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}) (*model.CourseConfig, error) {
+	key, err := utils.GetValue[string](params, "key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
+	}
+
+	return a.app.Admin.GetCustomCourseConfig(claims, key)
+}
+
+func (a APIsHandler) adminUpdateCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}, item *model.CourseConfig) (*model.CourseConfig, error) {
+	key, err := utils.GetValue[string](params, "key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
+	}
+
+	return a.app.Admin.UpdateCustomCourseConfig(claims, key, *item)
+}
+
+func (a APIsHandler) adminDeleteCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}) error {
+	key, err := utils.GetValue[string](params, "key", true)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
+	}
+
+	return a.app.Admin.DeleteCustomCourseConfig(claims, key)
 }
 
 // NewAPIsHandler creates new API handler instance

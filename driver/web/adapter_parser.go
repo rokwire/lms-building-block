@@ -25,14 +25,14 @@ type PrivateAPIHandler func(*tokenauth.Claims, map[string]interface{}, interface
 // PublicAPIHandler defined for API handler no authorization for calling core functions
 type PublicAPIHandler func(map[string]interface{}, interface{}) (interface{}, error)
 
-type apiHandler[A apiDataType, R requestDataType] struct {
+type apiHandler[A apiDataType, R requestDataType, S requestDataType] struct {
 	authorization   tokenauth.Handler
-	conversionFunc  func(*tokenauth.Claims, *R) (*A, error)
+	conversionFunc  func(*tokenauth.Claims, *R) (*S, error)
 	messageDataType logutils.MessageDataType
 
 	getHandler     func(*tokenauth.Claims, map[string]interface{}) (*A, error)
 	getManyHandler func(*tokenauth.Claims, map[string]interface{}) ([]A, error)
-	saveHandler    func(*tokenauth.Claims, map[string]interface{}, *A) (*A, error)
+	saveHandler    func(*tokenauth.Claims, map[string]interface{}, *S) (*A, error)
 	deleteHandler  func(*tokenauth.Claims, map[string]interface{}) error
 }
 
@@ -43,19 +43,19 @@ type openapi3Type interface {
 /* Replaces wrapFunc by taking in authorization and the core function corresponding to the path
 *  The obj pointer represents the pointer of the type of the request body
  */
-func handleRequest[A apiDataType, R requestDataType](handler *apiHandler[A, R], paths map[string]*openapi3.PathItem, logger *logs.Logger) http.HandlerFunc {
+func handleRequest[A apiDataType, R requestDataType, S requestDataType](handler *apiHandler[A, R, S], paths map[string]*openapi3.PathItem, logger *logs.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		logObj := logger.NewRequestLog(req)
 		logObj.RequestReceived()
 
 		pathKey, err := mux.CurrentRoute(req).GetPathTemplate()
 		if err != nil {
-			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), 404, true))
+			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), http.StatusNotFound, true))
 			return
 		}
 		path := paths[pathKey]
 		if path == nil {
-			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), 404, true))
+			logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.MessageActionType(logutils.Unimplemented), logutils.TypeRequest, nil, errors.Newf("Path not found"), http.StatusNotFound, true))
 			return
 		}
 
@@ -76,13 +76,13 @@ func handleRequest[A apiDataType, R requestDataType](handler *apiHandler[A, R], 
 		var response logs.HTTPResponse
 		switch req.Method {
 		case http.MethodGet:
-			response = handle[A, R](req, handler, claims, path.Get, logObj)
+			response = handle[A, R, S](req, handler, claims, path.Get, logObj)
 		case http.MethodPost:
-			response = handle[A, R](req, handler, claims, path.Post, logObj)
+			response = handle[A, R, S](req, handler, claims, path.Post, logObj)
 		case http.MethodPut:
-			response = handle[A, R](req, handler, claims, path.Put, logObj)
+			response = handle[A, R, S](req, handler, claims, path.Put, logObj)
 		case http.MethodDelete:
-			response = handle[A, R](req, handler, claims, path.Delete, logObj)
+			response = handle[A, R, S](req, handler, claims, path.Delete, logObj)
 		default:
 			response = logObj.HTTPResponseErrorData(logutils.StatusInvalid, "method", nil, nil, http.StatusMethodNotAllowed, true)
 		}
@@ -96,13 +96,13 @@ func handleRequest[A apiDataType, R requestDataType](handler *apiHandler[A, R], 
 *  and calling the core function
 *  The obj pointer represent the defined model for the request body or response
  */
-func handle[A apiDataType, R requestDataType](r *http.Request, handler *apiHandler[A, R], claims *tokenauth.Claims, operation *openapi3.Operation, l *logs.Log) logs.HTTPResponse {
+func handle[A apiDataType, R requestDataType, S requestDataType](r *http.Request, handler *apiHandler[A, R, S], claims *tokenauth.Claims, operation *openapi3.Operation, l *logs.Log) logs.HTTPResponse {
 	paramMap, response := getParams(l, r, operation.Parameters)
 	if response != nil {
 		return *response
 	}
 
-	var data *A
+	var data *S
 	var err error
 	if operation.RequestBody != nil {
 		if handler.conversionFunc != nil {
@@ -117,7 +117,7 @@ func handle[A apiDataType, R requestDataType](r *http.Request, handler *apiHandl
 				return l.HTTPResponseErrorAction(logutils.ActionParse, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, true)
 			}
 		} else {
-			var dataVal A
+			var dataVal S
 			err = json.NewDecoder(r.Body).Decode(&dataVal)
 			if err != nil {
 				return l.HTTPResponseErrorAction(logutils.ActionUnmarshal, logutils.TypeRequestBody, nil, err, http.StatusBadRequest, true)
@@ -155,7 +155,7 @@ func handle[A apiDataType, R requestDataType](r *http.Request, handler *apiHandl
 	if err != nil {
 		return l.HTTPResponseErrorAction(actionType, handler.messageDataType, nil, err, http.StatusInternalServerError, true)
 	}
-	if obj == nil {
+	if obj == (*A)(nil) || obj == nil {
 		return l.HTTPResponseSuccess()
 	}
 
@@ -166,7 +166,7 @@ func handle[A apiDataType, R requestDataType](r *http.Request, handler *apiHandl
 	return l.HTTPResponseSuccessJSON(responseData)
 }
 
-func setCoreHandler[A apiDataType, R requestDataType](handler *apiHandler[A, R], coreFunc interface{}, method string, tag string, ref string) error {
+func setCoreHandler[A apiDataType, R requestDataType, S requestDataType](handler *apiHandler[A, R, S], coreFunc interface{}, method string, tag string, ref string) error {
 	ok := false
 	switch method {
 	case http.MethodGet:
@@ -175,12 +175,12 @@ func setCoreHandler[A apiDataType, R requestDataType](handler *apiHandler[A, R],
 			handler.getManyHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}) ([]A, error))
 		}
 	case http.MethodPost, http.MethodPut:
-		handler.saveHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}, *A) (*A, error))
+		handler.saveHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}, *S) (*A, error))
 	case http.MethodDelete:
 		handler.deleteHandler, ok = coreFunc.(func(*tokenauth.Claims, map[string]interface{}) error)
 	}
 	if !ok {
-		return errors.ErrorData(logutils.StatusInvalid, "core function", &logutils.FieldArgs{"name": tag + ref, "method": method})
+		return errors.ErrorData(logutils.StatusInvalid, "core function", &logutils.FieldArgs{"name": tag + "." + ref, "method": method})
 	}
 
 	return nil

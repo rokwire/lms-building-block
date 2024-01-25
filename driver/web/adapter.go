@@ -68,7 +68,10 @@ func (a *Adapter) Start() {
 	subrouter.PathPrefix("/doc/ui").Handler(a.serveDocUI())
 	subrouter.HandleFunc("/doc", a.serveDoc)
 
-	a.routeAPIs(router)
+	err := a.routeAPIs(router)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Fatal(http.ListenAndServe(":"+a.port, router))
 }
@@ -90,8 +93,8 @@ func (a *Adapter) routeAPIs(router *mux.Router) error {
 
 			var requestBody interface{}
 			tag := operation.Tags[0]
-			convFunc, ok := operation.Extensions[XConversionFunction]
-			if ok {
+			convFunc := operation.Extensions[XConversionFunction]
+			if operation.RequestBody != nil {
 				// allow a panic to occur if something goes wrong
 				// the service should be stopped anyway and the stack trace is logged without needing to recover and import runtime/debug to get the stack trace
 				requestBody = operation.RequestBody.Value.Content.Get("application/json").Schema.Ref

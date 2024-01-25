@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update LMS BB [#90](https://github.com/rokwire/lms-building-block/issues/90)
 ### Added
 - Implement admin and client APIs [#92](https://github.com/rokwire/lms-building-block/issues/92)
+- Custom course streaks [#94](https://github.com/rokwire/lms-building-block/issues/94)
 
 ## [1.9.2] - 2023-05-16
 ### Fixed 

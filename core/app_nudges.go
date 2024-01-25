@@ -72,16 +72,6 @@ func (n nudgesLogic) start() {
 }
 
 func (n nudgesLogic) setupNudgesTimer() {
-	n.logger.Info("Setup nudges timer")
-
-	//cancel if active
-	if n.dailyNudgesTimer != nil {
-		n.logger.Info("setupNudgesTimer -> there is active timer, so cancel it")
-
-		n.timerDone <- true
-		n.dailyNudgesTimer.Stop()
-	}
-
 	//wait until it is the correct moment from the day
 	location, err := time.LoadLocation("America/Chicago")
 	if err != nil {
@@ -108,44 +98,8 @@ func (n nudgesLogic) setupNudgesTimer() {
 	}
 	//app.logger.Infof("%d", durationInSeconds)
 	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
-	n.logger.Infof("setupNudgesTimer -> first call after %s", duration)
-
-	n.dailyNudgesTimer = time.NewTimer(duration)
-	select {
-	case <-n.dailyNudgesTimer.C:
-		n.logger.Info("setupNudgesTimer -> nudges timer expired")
-		n.dailyNudgesTimer = nil
-
-		n.processNudges()
-	case <-n.timerDone:
-		// timer aborted
-		n.logger.Info("setupNudgesTimer -> nudges timer aborted")
-		n.dailyNudgesTimer = nil
-	}
-}
-
-func (n nudgesLogic) processNudges() {
-	n.logger.Info("processNudges")
-
-	//process nudges
-	n.processAllNudges()
-
-	//generate new processing after 24 hours
-	duration := time.Hour * 24
-	n.logger.Infof("processNudges -> next call after %s", duration)
-	n.dailyNudgesTimer = time.NewTimer(duration)
-	select {
-	case <-n.dailyNudgesTimer.C:
-		n.logger.Info("processNudges -> nudges timer expired")
-		n.dailyNudgesTimer = nil
-
-		n.processNudges()
-	case <-n.timerDone:
-		// timer aborted
-		n.logger.Info("processNudges -> nudges timer aborted")
-		n.dailyNudgesTimer = nil
-	}
+	initialDuration := time.Second * time.Duration(durationInSeconds)
+	utils.StartTimer(n.dailyNudgesTimer, n.timerDone, &initialDuration, time.Hour*24, n.processAllNudges, "processNudges", n.logger)
 }
 
 func (n nudgesLogic) processAllNudges() {
@@ -1025,7 +979,7 @@ func (n nudgesLogic) getMissedAssignmentsData(user model.ProviderUser, coursesID
 	result := []model.CourseAssignment{}
 	for _, uc := range userCourses.Data {
 
-		if len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID) {
+		if len(coursesIDs) == 0 || utils.Exist[int](coursesIDs, uc.Data.ID) {
 
 			assignments := uc.Assignments
 			if len(assignments) > 0 {
@@ -1380,7 +1334,7 @@ func (n nudgesLogic) ecFindAssignments(user model.ProviderUser, assignmentsIDs [
 		assignments := uc.Assignments
 		if len(assignments) > 0 {
 			for _, assignment := range assignments {
-				if utils.ExistInt(assignmentsIDs, assignment.Data.ID) {
+				if utils.Exist[int](assignmentsIDs, assignment.Data.ID) {
 					result = append(result, assignment)
 				}
 			}
@@ -1731,7 +1685,7 @@ func (n nudgesLogic) getAssignmentsForAdvancedReminders(user model.ProviderUser,
 
 	result := []model.CourseAssignment{}
 	for _, uc := range userCourses.Data {
-		if (len(accountIDs) == 0 || utils.ExistInt(accountIDs, uc.Data.AccountID)) && (len(coursesIDs) == 0 || utils.ExistInt(coursesIDs, uc.Data.ID)) {
+		if (len(accountIDs) == 0 || utils.Exist[int](accountIDs, uc.Data.AccountID)) && (len(coursesIDs) == 0 || utils.Exist[int](coursesIDs, uc.Data.ID)) {
 
 			assignments := uc.Assignments
 			if len(assignments) > 0 {

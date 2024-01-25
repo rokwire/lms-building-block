@@ -19,7 +19,7 @@ require github.com/casbin/govaluate v1.1.1 // indirect
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/aws/aws-sdk-go v1.49.22 // indirect
+	github.com/aws/aws-sdk-go v1.50.0 // indirect
 	github.com/casbin/casbin/v2 v2.81.0 // indirect
 	github.com/go-openapi/jsonpointer v0.20.2 // indirect
 	github.com/go-openapi/jsonreference v0.20.4 // indirect

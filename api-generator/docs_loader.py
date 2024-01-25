@@ -31,21 +31,20 @@ class DocsLoader:
         request_bodies = set()
         for methods in self.docs['paths'].values():
             for method_data in methods.values():
-                if self.docs_ext_conv_function_key in method_data:
+                if method_data.get('requestBody', None):
                     try:
-                        request_body_ref = method_data['requestBody']['content']['application/json']['schema']['$ref']
+                        request_body_ref, request_body = self.get_request_body_type(method_data)
                     except:
                         print(f'{method_data[self.docs_ext_core_function_key]}: failed to parse request body from docs')
                         continue
                     
-                    request_body_ref_parts = request_body_ref.split('/')
-                    request_body_snake = request_body_ref_parts[-1]
-                    request_body = Utils.get_camel_case_from_snake(request_body_snake, self.camel_caps)
-                    if self.gen_types_package != 'web':
-                        request_body = f'{self.gen_types_package}.{request_body[0].upper() + request_body[1:]}'
-                    else:
-                        request_body = request_body[0].lower() + request_body[1:]
-                    request_bodies.add((request_body_ref, request_body, method_data[self.docs_ext_data_type_key]))
+                    try:
+                        request_body_name = request_body.split(',')[-1]
+                        data_type_name = method_data[self.docs_ext_data_type_key].split(',')[-1]
+                        if request_body_name != data_type_name:
+                            request_bodies.add((request_body_ref, request_body, method_data[self.docs_ext_data_type_key]))
+                    except:
+                        pass
         return request_bodies
 
     def get_core_functions(self):
@@ -54,9 +53,10 @@ class DocsLoader:
             for method, method_data in methods.items():
                 if self.docs_ext_core_function_key in method_data:
                     for tag in method_data['tags']:
+                        request_type = data_type = method_data.get(self.docs_ext_data_type_key, None)
                         auth_type = method_data.get(self.docs_ext_auth_type_key, None)
                         handler_prototype = self.get_api_handler_prototype(method, method_data)
-                        interface_prototype = handler_prototype.replace('item *{data_type}', 'item {data_type}')
+                        interface_prototype = handler_prototype.replace('item *{request_type}', 'item {request_type}')
 
                         parameters = method_data.get('parameters', [])
                         param_prototype, param_names = self.get_core_interface_param_prototype(parameters)
@@ -65,7 +65,14 @@ class DocsLoader:
                         else:
                             interface_prototype = interface_prototype.replace('params map[string]interface{}', '').replace(', ,', ',').replace(', )', ')')
                             
-                        if not method_data.get('requestBody', None) and (method == 'post' or method == 'put'):
+                        if method_data.get('requestBody', None):
+                            try:
+                                _, request_body = self.get_request_body_type(method_data)
+                                if request_body.startswith('model.'):
+                                    request_type = request_body
+                            except:
+                                pass
+                        elif method == 'post' or method == 'put':
                             item_param_start = interface_prototype.index(', item')
                             item_param_end = interface_prototype.index(')', item_param_start)
                             interface_prototype = interface_prototype[:item_param_start] + interface_prototype[item_param_end:]
@@ -78,7 +85,8 @@ class DocsLoader:
                             'handler_prototype': handler_prototype,
                             'interface_prototype': interface_prototype,
                             'param_names': param_names,
-                            'data_type': method_data.get(self.docs_ext_data_type_key, None),
+                            'data_type': data_type,
+                            'request_type': request_type,
                             'auth_type': auth_type,
                             'conv_function': method_data.get(self.docs_ext_conv_function_key, None)
                         })
@@ -95,7 +103,7 @@ class DocsLoader:
             else:
                 return '(claims *tokenauth.Claims, params map[string]interface{}) (*{data_type}, error)'
         elif method == 'post' or method == 'put':
-            return '(claims *tokenauth.Claims, params map[string]interface{}, item *{data_type}) (*{data_type}, error)'
+            return '(claims *tokenauth.Claims, params map[string]interface{}, item *{request_type}) (*{data_type}, error)'
         elif method == 'delete':
             return '(claims *tokenauth.Claims, params map[string]interface{}) error'
         return ''
@@ -133,3 +141,16 @@ class DocsLoader:
         elif param['type'] == 'boolean':
             return 'bool'
         return ''
+    
+    def get_request_body_type(self, method_data):
+        request_body_ref = method_data['requestBody']['content']['application/json']['schema']['$ref']
+
+        request_body_ref_parts = request_body_ref.split('/')
+        request_body_snake = request_body_ref_parts[-1]
+        request_body = Utils.get_camel_case_from_snake(request_body_snake, self.camel_caps)
+        if method_data.get(self.docs_ext_conv_function_key, None):
+            if self.gen_types_package != 'web':
+                return request_body_ref, f'{self.gen_types_package}.{request_body[0].upper() + request_body[1:]}'
+            else:
+                return request_body_ref, request_body[0].lower() + request_body[1:]
+        return request_body_ref, 'model.' + request_body
