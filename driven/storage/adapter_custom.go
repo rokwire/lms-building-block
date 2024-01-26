@@ -857,25 +857,6 @@ func (sa *Adapter) DeleteModuleKeyFromUserCourses(appID string, orgID string, ke
 	return nil
 }
 
-// DropUserCourse mark user course as dropped
-func (sa *Adapter) DropUserCourse(appID string, orgID string, key string) error {
-	now := time.Now().UTC()
-	filter := bson.M{"org_id": orgID, "app_id": appID, "course.key": key}
-	update := bson.M{
-		"$set": bson.M{
-			"date_dropped": now,
-			"date_updated": now,
-		},
-	}
-
-	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
-	if err != nil {
-		errArgs := logutils.FieldArgs(filter)
-		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
-	}
-	return nil
-}
-
 // FindUserCourses finds user course by a set of parameters
 func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair) ([]model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID}
@@ -972,29 +953,24 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 }
 
 // UpdateUserCourse updates a user course
-func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, userCourseID *string, courseKey string, streak *int, pauses *int) error {
-	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey, "user_id": userID}
-	if userCourseID != nil {
-		filter["_id"] = userCourseID
-	}
-
-	updateVals := bson.M{}
-	if streak != nil {
-		updateVals["streak"] = streak
-	}
-	if pauses != nil {
-		updateVals["pauses"] = pauses
-	}
-
+func (sa *Adapter) UpdateUserCourse(item model.UserCourse) error {
+	filter := bson.M{"app_id": item.AppID, "org_id": item.OrgID, "course.key": item.Course.Key, "user_id": item.UserID}
+	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
-		"$set": updateVals,
+		"$set": bson.M{
+			"streak":          item.Streak,
+			"pauses":          item.Pauses,
+			"streak_restarts": item.StreakRestarts,
+			"date_dropped":    item.DateDropped,
+			"date_updated":    time.Now().UTC(),
+		},
 	}
 	result, err := sa.db.userCourses.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUserCourse, &errArgs, err)
 	}
 	return nil
 }

@@ -236,6 +236,7 @@ type UserCourse struct {
 	Pauses         int         `json:"pauses"`
 	Streak         int         `json:"streak"`
 	StreakResets   []time.Time `json:"streak_resets"`
+	StreakRestarts []time.Time `json:"streak_restarts"`
 	TimezoneName   string      `json:"timezone_name"`
 	TimezoneOffset int         `json:"timezone_offset"`
 	UserId         *string     `json:"user_id,omitempty"`

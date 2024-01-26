@@ -49,10 +49,11 @@ type UserCourse struct {
 
 	Timezone // include user timezone info
 
-	Streak       int         `json:"streak"`
-	StreakResets []time.Time `json:"streak_resets"` // timestamps when the streak is reset for this course
-	Pauses       int         `json:"pauses"`
-	PauseUses    []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
+	Streak         int         `json:"streak"`
+	StreakResets   []time.Time `json:"streak_resets"`   // timestamps when the streak is reset for this course
+	StreakRestarts []time.Time `json:"streak_restarts"` // timestamps when the streak is restarted for this course
+	Pauses         int         `json:"pauses"`
+	PauseUses      []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
 
 	Course Course `json:"course"`
 

@@ -2275,6 +2275,7 @@ components:
             - user_id
             - streak
             - streak_resets
+            - streak_restarts
             - pauses
             - pause_uses
             - course
@@ -2296,6 +2297,11 @@ components:
             streak:
               type: integer
             streak_resets:
+              type: array
+              items:
+                type: string
+                format: date-time
+            streak_restarts:
               type: array
               items:
                 type: string

@@ -297,7 +297,17 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		if newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
 			newPauses++
 		}
-		err = storageTransaction.UpdateUserCourse(userCourse.AppID, userCourse.OrgID, userCourse.UserID, nil, userCourse.Course.Key, &newStreak, &newPauses)
+		// if the user has no active streak and no remaining pauses, then mark now as a streak restart (user has resumed progress after some extended time)
+		if userCourse.Streak == 0 && userCourse.Pauses == 0 {
+			if userCourse.StreakRestarts == nil {
+				userCourse.StreakRestarts = make([]time.Time, 0)
+			}
+			userCourse.StreakRestarts = append(userCourse.StreakRestarts, now)
+		}
+		userCourse.Streak = newStreak
+		userCourse.Pauses = newPauses
+
+		err = storageTransaction.UpdateUserCourse(*userCourse)
 		if err != nil {
 			return err
 		}
@@ -312,8 +322,22 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 }
 
 func (s *clientImpl) UpdateUserCourse(claims *tokenauth.Claims, key string, drop *bool) (*model.UserCourse, error) {
+	userCourse, err := s.app.storage.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, key)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
+	}
+	if userCourse == nil {
+		return nil, errors.ErrorData(logutils.StatusMissing, model.TypeUserCourse, &logutils.FieldArgs{"course.key": key})
+	}
+
 	if drop != nil && *drop {
-		err := s.app.storage.DropUserCourse(claims.AppID, claims.OrgID, key)
+		if userCourse.DateDropped != nil {
+			return nil, errors.ErrorData(logutils.StatusInvalid, model.TypeUserCourse, &logutils.FieldArgs{"course.key": key, "date_dropped": *userCourse.DateDropped})
+		}
+
+		now := time.Now().UTC()
+		userCourse.DateDropped = &now
+		err := s.app.storage.UpdateUserCourse(*userCourse)
 		if err != nil {
 			return nil, errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &logutils.FieldArgs{"drop": true}, err)
 		}
