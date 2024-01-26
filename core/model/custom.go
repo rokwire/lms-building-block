@@ -188,8 +188,8 @@ type Unit struct {
 	Contents []Content      `json:"content"`
 	Schedule []ScheduleItem `json:"schedule"`
 
-	ScheduleStart int `json:"schedule_start"`
-	Required      int `json:"required"` // number of schedule items required to be completed (may add required flags to each schedule item in future)
+	ScheduleStart int `json:"schedule_start"` // index of the first schedule item the user should submit data for
+	Required      int `json:"required"`       // number of schedule items required to be completed (may add required flags to each schedule item in future)
 
 	DateCreated time.Time  `json:"-"`
 	DateUpdated *time.Time `json:"-"`
