@@ -1,0 +1,33 @@
+get:
+  tags:
+  - Client
+  summary: Get custom course by key
+  description: |
+    Get custom course by key
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: key
+      in: path
+      description: Course Key
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
+  responses:
+    200:
+      description: Successful operation
+      content:
+        application/json:
+          schema:
+            $ref: "../../../schemas/custom/Course.yaml"
+    400:
+      description: Bad request
+    401:
+      description: Unauthorized
+    500:
+      description: Internal error
+  x-core-function: GetCustomCourse
+  x-data-type: model.Course
+  x-authentication-type: Permissions

@@ -330,6 +330,14 @@ func (s *clientImpl) GetCustomCourses(claims *tokenauth.Claims) ([]model.Course,
 	return courses, nil
 }
 
+func (s *clientImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error) {
+	course, err := s.app.storage.FindCustomCourse(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
+	}
+	return course, nil
+}
+
 func (s *clientImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {
 	courseConfig, err := s.app.storage.FindCourseConfig(claims.AppID, claims.OrgID, key)
 	if err != nil {

@@ -366,6 +366,8 @@ func (a *Adapter) getCoreHandler(tag string, ref string) (interface{}, error) {
 		return a.apisHandler.clientGetUserCourseUnits, nil
 	case "ClientGetCustomCourses":
 		return a.apisHandler.clientGetCustomCourses, nil
+	case "ClientGetCustomCourse":
+		return a.apisHandler.clientGetCustomCourse, nil
 	case "ClientGetCustomCourseConfig":
 		return a.apisHandler.clientGetCustomCourseConfig, nil
 	case "AdminGetNudgesConfig":
