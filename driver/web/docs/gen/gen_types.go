@@ -50,6 +50,7 @@ type AssignmentGroup struct {
 type Content struct {
 	AppId         *string     `json:"app_id,omitempty"`
 	Details       *string     `json:"details,omitempty"`
+	Display       Display     `json:"display"`
 	Id            *string     `json:"id,omitempty"`
 	Key           string      `json:"key"`
 	LinkedContent *[]string   `json:"linked_content"`
@@ -87,7 +88,7 @@ type CourseConfig struct {
 // Display defines model for Display.
 type Display struct {
 	AccentColor  *string `json:"accent_color,omitempty"`
-	Image        *string `json:"image,omitempty"`
+	Icon         *string `json:"icon,omitempty"`
 	PrimaryColor *string `json:"primary_color,omitempty"`
 }
 

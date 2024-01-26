@@ -30,4 +30,4 @@ get:
       description: Internal error
   x-core-function: GetCustomCourse
   x-data-type: model.Course
-  x-authentication-type: Permissions
+  x-authentication-type: User

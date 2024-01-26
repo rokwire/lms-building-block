@@ -4,5 +4,5 @@ properties:
     type: string
   accent_color:
     type: string
-  image:
+  icon:
     type: string

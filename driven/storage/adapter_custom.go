@@ -605,6 +605,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 			"name":           item.Name,
 			"reference":      item.ContentReference,
 			"linked_content": item.LinkedContent,
+			"display":        item.Display,
 			"date_updated":   time.Now(),
 		},
 	}
@@ -935,13 +936,16 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 // FindUserCourse finds a user course by id
 func (sa *Adapter) FindUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
-	var result userCourse
-	err := sa.db.userCourses.FindOne(sa.context, filter, &result, nil)
+	var result []userCourse
+	err := sa.db.userCourses.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
+	if len(result) == 0 {
+		return nil, nil
+	}
 
-	convertedResult, err := sa.userCourseFromStorage(result)
+	convertedResult, err := sa.userCourseFromStorage(result[0])
 	if err != nil {
 		return nil, err
 	}

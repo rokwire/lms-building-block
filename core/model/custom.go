@@ -234,6 +234,8 @@ type Content struct {
 	ContentReference Reference `json:"reference" bson:"reference"`
 	LinkedContent    []string  `json:"linked_content" bson:"linked_content"`
 
+	Display Display `json:"display" bson:"display"`
+
 	DateCreated time.Time  `json:"-" bson:"date_created"`
 	DateUpdated *time.Time `json:"-" bson:"date_updated"`
 }
@@ -285,5 +287,5 @@ type TZOffsetPair struct {
 type Display struct {
 	PrimaryColor string `json:"primary_color" bson:"primary_color"`
 	AccentColor  string `json:"accent_color" bson:"accent_color"`
-	Image        string `json:"image" bson:"image"`
+	Icon         string `json:"icon" bson:"icon"`
 }
