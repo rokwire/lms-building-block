@@ -87,9 +87,10 @@ type CourseConfig struct {
 
 // Display defines model for Display.
 type Display struct {
-	AccentColor  *string `json:"accent_color,omitempty"`
-	Icon         *string `json:"icon,omitempty"`
-	PrimaryColor *string `json:"primary_color,omitempty"`
+	AccentColor    *string `json:"accent_color,omitempty"`
+	CompletedColor *string `json:"completed_color,omitempty"`
+	Icon           *string `json:"icon,omitempty"`
+	PrimaryColor   *string `json:"primary_color,omitempty"`
 }
 
 // Enrollment defines model for Enrollment.

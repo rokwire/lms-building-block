@@ -2480,6 +2480,8 @@ components:
           type: string
         accent_color:
           type: string
+        completed_color:
+          type: string
         icon:
           type: string
     _admin_req_create_nudge:
