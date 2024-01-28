@@ -270,9 +270,9 @@ func (tz TZOffsets) GeneratePairs(preferEarly bool) []TZOffsetPair {
 	pairs := make([]TZOffsetPair, len(tz))
 	for i, offset := range tz {
 		if preferEarly {
-			pairs[i] = TZOffsetPair{Lower: offset, Upper: offset + utils.SecondsInHour - 1}
-		} else {
 			pairs[i] = TZOffsetPair{Lower: offset - utils.SecondsInHour + 1, Upper: offset}
+		} else {
+			pairs[i] = TZOffsetPair{Lower: offset, Upper: offset + utils.SecondsInHour - 1}
 		}
 	}
 	return pairs

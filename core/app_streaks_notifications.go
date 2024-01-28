@@ -73,9 +73,6 @@ func (n streaksNotifications) setupNotificationsTimer() {
 	}
 
 	initialDuration := time.Second * time.Duration(durationInSeconds)
-	// change to minute for testing.
-	//initialDuration = 60
-	//utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Minute, n.processNotifications, "processNotifications", n.logger)
 	utils.StartTimer(n.notificationsTimer, n.notificationsTimerDone, &initialDuration, time.Hour, n.processNotifications, "processNotifications", n.logger)
 }
 
@@ -134,7 +131,7 @@ func (n streaksNotifications) processNotifications() {
 						n.logger.Infof("%s -> sent notification %s for course key %s", funcName, notification.Subject, config.CourseKey)
 					}
 				case "test":
-					n.logger.Infof("%s -> (test) notification %s would be sent to users %v for course key %s", funcName, notification.Subject, userIDs, config.CourseKey)
+					n.logger.Infof("%s -> (test) notification %s would be sent to %d users for course key %s", funcName, notification.Subject, len(userIDs), config.CourseKey)
 				}
 			}
 		}
@@ -156,9 +153,6 @@ func (n streaksNotifications) setupStreaksTimer() {
 		durationInSeconds = (utils.SecondsInHour - nowSecondsInHour) + desiredMoment // the time which left this hour + desired moment from next hour
 	}
 	initialDuration := time.Second * time.Duration(durationInSeconds)
-	//change initialduration to 60 and time.hour to time.minute for testing purpose
-	//initialDuration = 60
-	//utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Minute, n.processStreaks, "processStreaks", n.logger)
 	utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Hour, n.processStreaks, "processStreaks", n.logger)
 
 }
