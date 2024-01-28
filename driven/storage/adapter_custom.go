@@ -72,7 +72,6 @@ func (sa *Adapter) FindCustomCourse(appID string, orgID string, key string) (*mo
 // InsertCustomCourse inserts a course
 func (sa *Adapter) InsertCustomCourse(item model.Course) error {
 	item.DateCreated = time.Now()
-	item.DateUpdated = nil
 	course := sa.customCourseToStorage(item)
 
 	_, err := sa.db.customCourses.InsertOne(sa.context, course)
@@ -279,7 +278,6 @@ func (sa *Adapter) FindCustomModule(appID string, orgID string, key string) (*mo
 // InsertCustomModule inserts a module
 func (sa *Adapter) InsertCustomModule(item model.Module) error {
 	item.DateCreated = time.Now()
-	item.DateUpdated = nil
 	module := sa.customModuleToStorage(item)
 	_, err := sa.db.customModules.InsertOne(sa.context, module)
 	if err != nil {
@@ -293,7 +291,6 @@ func (sa *Adapter) InsertCustomModules(items []model.Module) error {
 	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
 		item.DateCreated = time.Now()
-		item.DateUpdated = nil
 		module := sa.customModuleToStorage(item)
 		storeItems[i] = module
 	}
@@ -410,8 +407,6 @@ func (sa *Adapter) FindCustomUnit(appID string, orgID string, key string) (*mode
 
 // InsertCustomUnit inserts a unit
 func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
-	item.Required = len(item.Schedule)
-	item.DateCreated = time.Now()
 	unit := sa.customUnitToStorage(item)
 	_, err := sa.db.customUnits.InsertOne(sa.context, unit)
 	if err != nil {
@@ -424,8 +419,6 @@ func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
 func (sa *Adapter) InsertCustomUnits(items []model.Unit) error {
 	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
-		item.Required = len(item.Schedule)
-		item.DateCreated = time.Now()
 		unit := sa.customUnitToStorage(item)
 		storeItems[i] = unit
 	}
@@ -1082,16 +1075,7 @@ func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, c
 
 // InsertUserUnit inserts a user unit
 func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
-	var userUnit userUnit
-	userUnit.ID = item.ID
-	userUnit.AppID = item.AppID
-	userUnit.OrgID = item.OrgID
-	userUnit.UserID = item.UserID
-	userUnit.DateCreated = time.Now()
-	userUnit.DateUpdated = nil
-	userUnit.CourseKey = item.CourseKey
-	userUnit.Current = item.Current
-	userUnit.Unit = sa.customUnitToStorage(item.Unit)
+	userUnit := sa.userUnitToStorage(item)
 
 	_, err := sa.db.userUnits.InsertOne(sa.context, userUnit)
 	if err != nil {

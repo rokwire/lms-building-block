@@ -203,6 +203,8 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 				unit.ID = uuid.NewString()
 				unit.AppID = claims.AppID
 				unit.OrgID = claims.OrgID
+				unit.Required = len(unit.Schedule)
+				unit.DateCreated = time.Now().UTC()
 				units = append(units, unit)
 			}
 			module.ID = uuid.NewString()
@@ -394,6 +396,8 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 			unit.ID = uuid.NewString()
 			unit.AppID = claims.AppID
 			unit.OrgID = claims.OrgID
+			unit.Required = len(unit.Schedule)
+			unit.DateCreated = time.Now().UTC()
 			units = append(units, unit)
 		}
 
@@ -579,6 +583,8 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 			}
 		}
 
+		item.Required = len(item.Schedule)
+		item.DateCreated = time.Now().UTC()
 		err = storageTransaction.InsertCustomUnit(item)
 		if err != nil {
 			return err

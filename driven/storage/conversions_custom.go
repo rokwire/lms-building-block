@@ -180,3 +180,9 @@ func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
 
 	return result, nil
 }
+
+func (sa *Adapter) userUnitToStorage(item model.UserUnit) userUnit {
+	unit := sa.customUnitToStorage(item.Unit)
+	return userUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, Unit: unit,
+		Current: item.Current, Completed: item.Completed, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+}
