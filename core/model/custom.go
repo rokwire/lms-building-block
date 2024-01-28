@@ -18,12 +18,15 @@ import (
 	"lms/utils"
 	"time"
 
+	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 const (
 	//TypeCourseConfig course config type
 	TypeCourseConfig logutils.MessageDataType = "course config"
+	//TypeStreaksNotificationsConfig streaks notifications config type
+	TypeStreaksNotificationsConfig logutils.MessageDataType = "streaks notifications config"
 	//TypeUserCourse user course type
 	TypeUserCourse logutils.MessageDataType = "user course"
 	//TypeUserUnit user unit type
@@ -38,6 +41,9 @@ const (
 	TypeContent logutils.MessageDataType = "content"
 	//TypeTimezone timezone type
 	TypeTimezone logutils.MessageDataType = "timezone"
+
+	//UserTimezone indicates the user's timezone should be used
+	UserTimezone string = "user"
 )
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
@@ -126,6 +132,32 @@ type StreaksNotificationsConfig struct {
 	NotificationsMode string `json:"notifications_mode" bson:"notifications_mode"` // "normal" or "test"
 
 	Notifications []Notification `json:"notifications" bson:"notifications"`
+}
+
+// ValidateTimings checks timezone information is valid and streaks and notifications process times are valid
+func (c *StreaksNotificationsConfig) ValidateTimings() error {
+	if c == nil {
+		return errors.ErrorData(logutils.StatusMissing, TypeStreaksNotificationsConfig, nil)
+	}
+
+	if c.TimezoneName != UserTimezone {
+		timezone := Timezone{Name: c.TimezoneName, Offset: c.TimezoneOffset}
+		err := timezone.Validate()
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionValidate, "streaks and notifications timezone", nil, err)
+		}
+		c.TimezoneOffset = timezone.Offset
+	}
+	if c.StreaksProcessTime < 0 || c.StreaksProcessTime > utils.SecondsInDay {
+		return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
+	}
+	for _, notification := range c.Notifications {
+		if notification.ProcessTime < 0 || notification.ProcessTime > utils.SecondsInDay {
+			return errors.ErrorData(logutils.StatusInvalid, "notification process time", &logutils.FieldArgs{"process_time": notification.ProcessTime})
+		}
+	}
+
+	return nil
 }
 
 // Notification entity
@@ -260,6 +292,25 @@ type UserContent struct {
 type Timezone struct {
 	Name   string `json:"timezone_name"`
 	Offset int    `json:"timezone_offset"` // in seconds east of UTC
+}
+
+// Validate checks whether name and offset refer to a valid timezone (sets offset if name is valid but offset is not)
+func (t *Timezone) Validate() error {
+	if t == nil {
+		return errors.ErrorData(logutils.StatusMissing, "timezone", nil)
+	}
+
+	if t.Offset < utils.MinTZOffset || t.Offset > utils.MaxTZOffset {
+		tzLoc, err := time.LoadLocation(t.Name)
+		if err != nil {
+			return errors.WrapErrorData(logutils.StatusInvalid, "user timezone", &logutils.FieldArgs{"name": t.Name, "offset": t.Offset}, err)
+		}
+
+		// set the offset if it was invalid, but could load location from name
+		_, t.Offset = time.Now().In(tzLoc).Zone()
+	}
+
+	return nil
 }
 
 // TZOffsets entity represents a set of single timezone offsets

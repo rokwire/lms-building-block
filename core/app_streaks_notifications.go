@@ -30,11 +30,6 @@ import (
 	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
-const (
-	minTZOffset int = -43200
-	maxTZOffset int = 50400
-)
-
 type streaksNotifications struct {
 	logger *logs.Logger
 
@@ -95,7 +90,7 @@ func (n streaksNotifications) processNotifications() {
 	for _, config := range courseConfigs {
 		for _, notification := range config.StreaksNotificationsConfig.Notifications {
 			if notification.Active {
-				_, userUnits, userIDs, err := n.getUserDataForTimezone(config, config.StreaksNotificationsConfig.StreaksProcessTime, nowSeconds)
+				_, userUnits, userIDs, err := n.getUserDataForTimezone(config, notification.ProcessTime, nowSeconds)
 				if err != nil {
 					n.logger.Errorf("%s -> error finding user courses and user units for course key %s: %v", funcName, config.CourseKey, err)
 					continue
@@ -269,15 +264,15 @@ func (n streaksNotifications) getUserDataForTimezone(config model.CourseConfig, 
 	var err error
 
 	offset := processTime - nowSeconds
-	if config.StreaksNotificationsConfig.TimezoneName == "user" {
-		if offset >= minTZOffset && offset <= maxTZOffset {
+	if config.StreaksNotificationsConfig.TimezoneName == model.UserTimezone {
+		if offset >= utils.MinTZOffset && offset <= utils.MaxTZOffset {
 			tzOffsets = append(tzOffsets, offset)
 		}
 
-		if offset+utils.SecondsInDay <= maxTZOffset {
+		if offset+utils.SecondsInDay <= utils.MaxTZOffset {
 			tzOffsets = append(tzOffsets, offset+utils.SecondsInDay)
 		}
-		if offset-utils.SecondsInDay >= minTZOffset {
+		if offset-utils.SecondsInDay >= utils.MinTZOffset {
 			tzOffsets = append(tzOffsets, offset-utils.SecondsInDay)
 		}
 

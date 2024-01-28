@@ -161,10 +161,13 @@ func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, courseKey string) (
 
 // pass course key to create a new user course
 func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string, item model.Timezone) (*model.UserCourse, error) {
-	var userCourse *model.UserCourse
-	transaction := func(storage interfaces.Storage) error {
-		userCourse = &model.UserCourse{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, Timezone: item, DateCreated: time.Now()}
+	err := item.Validate()
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionValidate, "user timezone", nil, err)
+	}
 
+	userCourse := &model.UserCourse{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, Timezone: item, DateCreated: time.Now()}
+	transaction := func(storage interfaces.Storage) error {
 		//retrieve course with coursekey
 		course, err := storage.FindCustomCourse(claims.AppID, claims.OrgID, courseKey)
 		if err != nil {
@@ -189,7 +192,7 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 		return nil
 	}
 
-	err := s.app.storage.PerformTransaction(transaction)
+	err = s.app.storage.PerformTransaction(transaction)
 	if err != nil {
 		return nil, err
 	}
@@ -215,6 +218,11 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 }
 
 func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UserContentWithTimezone) (*model.UserUnit, error) {
+	err := item.Validate()
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionValidate, "user timezone", nil, err)
+	}
+
 	var userUnit *model.UserUnit
 	transaction := func(storageTransaction interfaces.Storage) error {
 		userCourse, err := storageTransaction.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
@@ -267,6 +275,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if !userUnit.Current {
 				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
 			}
+			//TODO: only allow user to complete exactly one schedule item per unit per Duration?
 
 			userUnit.Unit.Schedule[userUnit.Completed].UserContent = item.UserContent
 			if userUnit.Unit.Schedule[userUnit.Completed].IsComplete() {
@@ -315,7 +324,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		return nil
 	}
 
-	err := s.app.storage.PerformTransaction(transaction)
+	err = s.app.storage.PerformTransaction(transaction)
 	if err != nil {
 		return nil, err
 	}

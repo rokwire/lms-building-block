@@ -790,6 +790,11 @@ func (s *adminImpl) GetCustomCourseConfigs(claims *tokenauth.Claims) ([]model.Co
 }
 
 func (s *adminImpl) CreateCustomCourseConfig(claims *tokenauth.Claims, item model.CourseConfig) (*model.CourseConfig, error) {
+	err := item.StreaksNotificationsConfig.ValidateTimings()
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeStreaksNotificationsConfig, nil, err)
+	}
+
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
@@ -808,6 +813,11 @@ func (s *adminImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) 
 }
 
 func (s *adminImpl) UpdateCustomCourseConfig(claims *tokenauth.Claims, key string, item model.CourseConfig) (*model.CourseConfig, error) {
+	err := item.StreaksNotificationsConfig.ValidateTimings()
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeStreaksNotificationsConfig, nil, err)
+	}
+
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
 	item.CourseKey = key
