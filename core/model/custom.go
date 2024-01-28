@@ -116,8 +116,8 @@ type CourseConfig struct {
 
 // StreaksNotificationsConfig entity
 type StreaksNotificationsConfig struct {
-	TimezoneName   string `json:"timezone_name" bson:"timezone_name"`     // either an IANA timezone database identifier or "user" to for users' most recent known timezone
-	TimezoneOffset int    `json:"timezone_offset" bson:"timezone_offset"` // in seconds east of UTC (only valid if TimezoneName is not "user")
+	TimezoneName   string `json:"timezone_name" bson:"timezone_name"`                         // either an IANA timezone database identifier or "user" to for users' most recent known timezone
+	TimezoneOffset int    `json:"timezone_offset,omitempty" bson:"timezone_offset,omitempty"` // in seconds east of UTC (only valid if TimezoneName is not "user")
 
 	StreaksProcessTime  int  `json:"streaks_process_time" bson:"streaks_process_time"` // seconds since midnight in selected timezone at which to process streaks
 	PreferEarly         bool `json:"prefer_early" bson:"prefer_early"`                 // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime

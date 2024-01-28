@@ -936,14 +936,7 @@ func (sa *Adapter) FindUserCourse(appID string, orgID string, userID string, cou
 
 // InsertUserCourse inserts a user course
 func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
-	var userCourse userCourse
-	userCourse.ID = item.ID
-	userCourse.AppID = item.AppID
-	userCourse.OrgID = item.OrgID
-	userCourse.UserID = item.UserID
-	userCourse.DateCreated = time.Now()
-	userCourse.DateUpdated = nil
-	userCourse.Course = sa.customCourseToStorage(item.Course)
+	userCourse := sa.userCourseToStorage(item)
 
 	_, err := sa.db.userCourses.InsertOne(sa.context, userCourse)
 	if err != nil {

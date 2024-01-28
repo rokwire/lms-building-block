@@ -163,7 +163,7 @@ func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, courseKey string) (
 func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string, item model.Timezone) (*model.UserCourse, error) {
 	var userCourse *model.UserCourse
 	transaction := func(storage interfaces.Storage) error {
-		userCourse := model.UserCourse{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, Timezone: item, DateCreated: time.Now()}
+		userCourse = &model.UserCourse{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, Timezone: item, DateCreated: time.Now()}
 
 		//retrieve course with coursekey
 		course, err := storage.FindCustomCourse(claims.AppID, claims.OrgID, courseKey)
@@ -178,9 +178,10 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 		}
 		userCourse.Streak = 0
 		userCourse.Pauses = courseConfig.InitialPauses
+		userCourse.DateCreated = time.Now().UTC()
 
 		// unique index on user courses collection will ensure user cannot take a course multiple times simultaneously
-		err = storage.InsertUserCourse(userCourse)
+		err = storage.InsertUserCourse(*userCourse)
 		if err != nil {
 			return err
 		}
