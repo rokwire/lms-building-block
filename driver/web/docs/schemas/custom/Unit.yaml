@@ -29,3 +29,6 @@ properties:
     type: array
     items:
       $ref: "./ScheduleItem.yaml"
+  schedule_start:
+    type: integer
+    default: 0

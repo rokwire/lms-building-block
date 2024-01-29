@@ -25,7 +25,13 @@ class DocsLoader:
             for method_data in methods.values():
                 if self.docs_ext_data_type_key in method_data:
                     data_types.add(method_data[self.docs_ext_data_type_key])
-        return data_types
+        try:
+            data_types.remove('string')
+            data_types_list = ['string']
+            data_types_list.extend(sorted(data_types))
+            return data_types_list
+        except KeyError:
+            return sorted(data_types)
 
     def get_request_bodies(self):
         request_bodies = set()
@@ -45,7 +51,7 @@ class DocsLoader:
                             request_bodies.add((request_body_ref, request_body, method_data[self.docs_ext_data_type_key]))
                     except:
                         pass
-        return request_bodies
+        return sorted(request_bodies)
 
     def get_core_functions(self):
         core_functions = []

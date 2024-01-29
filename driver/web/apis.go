@@ -134,7 +134,7 @@ func (a APIsHandler) clientUpdateUserCourse(claims *tokenauth.Claims, params map
 	return a.app.Client.UpdateUserCourse(claims, key, drop)
 }
 
-func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
+func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserContentWithTimezone) (*model.UserUnit, error) {
 	courseKey, err := utils.GetValue[string](params, "course_key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseKey"), err)
@@ -159,6 +159,15 @@ func (a APIsHandler) clientGetUserCourseUnits(claims *tokenauth.Claims, params m
 
 func (a APIsHandler) clientGetCustomCourses(claims *tokenauth.Claims, params map[string]interface{}) ([]model.Course, error) {
 	return a.app.Client.GetCustomCourses(claims)
+}
+
+func (a APIsHandler) clientGetCustomCourse(claims *tokenauth.Claims, params map[string]interface{}) (*model.Course, error) {
+	key, err := utils.GetValue[string](params, "key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
+	}
+
+	return a.app.Client.GetCustomCourse(claims, key)
 }
 
 func (a APIsHandler) clientGetCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}) (*model.CourseConfig, error) {

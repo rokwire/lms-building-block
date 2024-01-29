@@ -50,6 +50,7 @@ type AssignmentGroup struct {
 type Content struct {
 	AppId         *string     `json:"app_id,omitempty"`
 	Details       *string     `json:"details,omitempty"`
+	Display       Display     `json:"display"`
 	Id            *string     `json:"id,omitempty"`
 	Key           string      `json:"key"`
 	LinkedContent *[]string   `json:"linked_content"`
@@ -84,6 +85,14 @@ type CourseConfig struct {
 	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config"`
 }
 
+// Display defines model for Display.
+type Display struct {
+	AccentColor    *string `json:"accent_color,omitempty"`
+	CompletedColor *string `json:"completed_color,omitempty"`
+	Icon           *string `json:"icon,omitempty"`
+	PrimaryColor   *string `json:"primary_color,omitempty"`
+}
+
 // Enrollment defines model for Enrollment.
 type Enrollment struct {
 	Grade *Grade  `json:"grade,omitempty"`
@@ -98,12 +107,13 @@ type Grade struct {
 
 // Module defines model for Module.
 type Module struct {
-	AppId *string `json:"app_id,omitempty"`
-	Id    *string `json:"id,omitempty"`
-	Key   string  `json:"key"`
-	Name  string  `json:"name"`
-	OrgId *string `json:"org_id,omitempty"`
-	Units []Unit  `json:"units"`
+	AppId   *string `json:"app_id,omitempty"`
+	Display Display `json:"display"`
+	Id      *string `json:"id,omitempty"`
+	Key     string  `json:"key"`
+	Name    string  `json:"name"`
+	OrgId   *string `json:"org_id,omitempty"`
+	Units   []Unit  `json:"units"`
 }
 
 // Notification defines model for Notification.
@@ -171,6 +181,7 @@ type StreaksNotificationsConfig struct {
 	NotificationsMode   StreaksNotificationsConfigNotificationsMode `json:"notifications_mode"`
 	PreferEarly         bool                                        `json:"prefer_early"`
 	StreaksProcessTime  int                                         `json:"streaks_process_time"`
+	TimerDelayTolerance *int                                        `json:"timer_delay_tolerance,omitempty"`
 	TimezoneName        string                                      `json:"timezone_name"`
 	TimezoneOffset      *int                                        `json:"timezone_offset,omitempty"`
 }
@@ -186,20 +197,14 @@ type Timezone struct {
 
 // Unit defines model for Unit.
 type Unit struct {
-	AppId    *string        `json:"app_id,omitempty"`
-	Content  []Content      `json:"content"`
-	Id       *string        `json:"id,omitempty"`
-	Key      string         `json:"key"`
-	Name     string         `json:"name"`
-	OrgId    *string        `json:"org_id,omitempty"`
-	Schedule []ScheduleItem `json:"schedule"`
-}
-
-// UnitWithTimezone defines model for UnitWithTimezone.
-type UnitWithTimezone struct {
-	TimezoneName   string `json:"timezone_name"`
-	TimezoneOffset int    `json:"timezone_offset"`
-	Unit           Unit   `json:"unit"`
+	AppId         *string        `json:"app_id,omitempty"`
+	Content       []Content      `json:"content"`
+	Id            *string        `json:"id,omitempty"`
+	Key           string         `json:"key"`
+	Name          string         `json:"name"`
+	OrgId         *string        `json:"org_id,omitempty"`
+	Schedule      []ScheduleItem `json:"schedule"`
+	ScheduleStart *int           `json:"schedule_start,omitempty"`
 }
 
 // User defines model for User.
@@ -215,6 +220,13 @@ type UserContent struct {
 	UserData   *map[string]interface{} `json:"user_data"`
 }
 
+// UserContentWithTimezone defines model for UserContentWithTimezone.
+type UserContentWithTimezone struct {
+	TimezoneName   string      `json:"timezone_name"`
+	TimezoneOffset int         `json:"timezone_offset"`
+	UserContent    UserContent `json:"user_content"`
+}
+
 // UserCourse defines model for UserCourse.
 type UserCourse struct {
 	AppId          *string     `json:"app_id,omitempty"`
@@ -226,6 +238,7 @@ type UserCourse struct {
 	Pauses         int         `json:"pauses"`
 	Streak         int         `json:"streak"`
 	StreakResets   []time.Time `json:"streak_resets"`
+	StreakRestarts []time.Time `json:"streak_restarts"`
 	TimezoneName   string      `json:"timezone_name"`
 	TimezoneOffset int         `json:"timezone_offset"`
 	UserId         *string     `json:"user_id,omitempty"`
@@ -455,7 +468,7 @@ type PostAdminUnitsJSONRequestBody = Unit
 type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
 // PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyUnitsUnitKey for application/json ContentType.
-type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UnitWithTimezone
+type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UserContentWithTimezone
 
 // PostApiUsersCoursesKeyJSONRequestBody defines body for PostApiUsersCoursesKey for application/json ContentType.
 type PostApiUsersCoursesKeyJSONRequestBody = Timezone

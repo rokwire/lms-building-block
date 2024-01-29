@@ -161,10 +161,13 @@ func (s *clientImpl) GetUserCourse(claims *tokenauth.Claims, courseKey string) (
 
 // pass course key to create a new user course
 func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string, item model.Timezone) (*model.UserCourse, error) {
-	var userCourse *model.UserCourse
-	transaction := func(storage interfaces.Storage) error {
-		userCourse := model.UserCourse{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, Timezone: item, DateCreated: time.Now()}
+	err := item.Validate()
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionValidate, "user timezone", nil, err)
+	}
 
+	userCourse := &model.UserCourse{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, Timezone: item, DateCreated: time.Now()}
+	transaction := func(storage interfaces.Storage) error {
 		//retrieve course with coursekey
 		course, err := storage.FindCustomCourse(claims.AppID, claims.OrgID, courseKey)
 		if err != nil {
@@ -178,9 +181,10 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 		}
 		userCourse.Streak = 0
 		userCourse.Pauses = courseConfig.InitialPauses
+		userCourse.DateCreated = time.Now().UTC()
 
 		// unique index on user courses collection will ensure user cannot take a course multiple times simultaneously
-		err = storage.InsertUserCourse(userCourse)
+		err = storage.InsertUserCourse(*userCourse)
 		if err != nil {
 			return err
 		}
@@ -188,7 +192,7 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 		return nil
 	}
 
-	err := s.app.storage.PerformTransaction(transaction)
+	err = s.app.storage.PerformTransaction(transaction)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +217,13 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 	return nil
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UnitWithTimezone) (*model.UnitWithTimezone, error) {
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UserContentWithTimezone) (*model.UserUnit, error) {
+	err := item.Validate()
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionValidate, "user timezone", nil, err)
+	}
+
+	var userUnit *model.UserUnit
 	transaction := func(storageTransaction interfaces.Storage) error {
 		userCourse, err := storageTransaction.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
 		if err != nil {
@@ -227,17 +237,15 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// find the current user unit (this is managed by the streaks timer)
-		userUnit, err := storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, &unitKey)
+		userUnit, err = storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, &unitKey)
 		if err != nil {
 			return err
 		}
 
 		now := time.Now().UTC()
+		creating := false
 		if userUnit == nil {
 			// create a userUnit here if it doesn't already exist
-			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
-				Completed: 1, Current: true, DateCreated: time.Now().UTC()}
-
 			unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, unitKey)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
@@ -245,15 +253,20 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if unit == nil {
 				return errors.ErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": unitKey})
 			}
-			if len(item.Unit.Schedule) == 0 || len(unit.Schedule) == 0 {
+			if len(unit.Schedule) == 0 {
 				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 			}
 
-			item.Unit.Key = unitKey
-			userUnit.Unit = item.Unit
-			userUnit.Unit.Schedule[0].DateStarted = &now
-			if userUnit.Unit.Schedule[0].IsComplete() {
-				userUnit.Unit.Schedule[0].DateCompleted = &now
+			creating = true
+			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
+				Completed: unit.ScheduleStart, Current: true, DateCreated: time.Now().UTC()}
+			userUnit.Unit = *unit
+			userUnit.Unit.Schedule[unit.ScheduleStart].UpdateUserData(item.UserContent)
+			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = &now
+			if userUnit.Unit.Schedule[unit.ScheduleStart].IsComplete() {
+				userUnit.Unit.Schedule[unit.ScheduleStart].DateCompleted = &now
+				// userUnit.Completed++
+				userUnit.LastCompleted = &now
 			}
 
 			// user started the course and created the first user unit
@@ -267,10 +280,10 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
 			}
 
-			userUnit.Unit.Schedule = item.Unit.Schedule
+			userUnit.Unit.Schedule[userUnit.Completed].UpdateUserData(item.UserContent)
 			if userUnit.Unit.Schedule[userUnit.Completed].IsComplete() {
 				userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
-				userUnit.Completed++
+				// userUnit.Completed++
 				userUnit.LastCompleted = &now
 			}
 
@@ -292,23 +305,57 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// update streak and pauses immediately, pauses are used and streaks are reset if necessary in the streaks timer
-		newStreak := userCourse.Streak + 1
-		newPauses := userCourse.Pauses
-		if newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
-			newPauses++
+		// only if LastCompleted was before most recent streak timer run
+		lastStreakProcess := userUnit.Unit.Schedule[userUnit.Completed].DateStarted
+		if userUnit.Unit.Schedule[userUnit.Completed].DateCompleted != nil && (creating || (lastStreakProcess != nil && userUnit.LastCompleted.Before(*lastStreakProcess))) {
+			newStreak := userCourse.Streak + 1
+			newPauses := userCourse.Pauses
+			if newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
+				newPauses++
+			}
+			// if the user has no active streak and no remaining pauses, then mark now as a streak restart (user has resumed progress after some extended time)
+			if userCourse.Streak == 0 && userCourse.Pauses == 0 {
+				if userCourse.StreakRestarts == nil {
+					userCourse.StreakRestarts = make([]time.Time, 0)
+				}
+				userCourse.StreakRestarts = append(userCourse.StreakRestarts, now)
+			}
+			userCourse.Streak = newStreak
+			userCourse.Pauses = newPauses
+
+			err = storageTransaction.UpdateUserCourse(*userCourse)
+			if err != nil {
+				return err
+			}
 		}
-		err = storageTransaction.UpdateUserCourse(userCourse.AppID, userCourse.OrgID, userCourse.UserID, nil, userCourse.Course.Key, &newStreak, &newPauses)
-		if err != nil {
-			return err
-		}
+
 		return nil
 	}
-	return nil, s.app.storage.PerformTransaction(transaction)
+
+	err = s.app.storage.PerformTransaction(transaction)
+	if err != nil {
+		return nil, err
+	}
+	return userUnit, nil
 }
 
 func (s *clientImpl) UpdateUserCourse(claims *tokenauth.Claims, key string, drop *bool) (*model.UserCourse, error) {
+	userCourse, err := s.app.storage.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, key)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
+	}
+	if userCourse == nil {
+		return nil, errors.ErrorData(logutils.StatusMissing, model.TypeUserCourse, &logutils.FieldArgs{"course.key": key})
+	}
+
 	if drop != nil && *drop {
-		err := s.app.storage.DropUserCourse(claims.AppID, claims.OrgID, key)
+		if userCourse.DateDropped != nil {
+			return nil, errors.ErrorData(logutils.StatusInvalid, model.TypeUserCourse, &logutils.FieldArgs{"course.key": key, "date_dropped": *userCourse.DateDropped})
+		}
+
+		now := time.Now().UTC()
+		userCourse.DateDropped = &now
+		err := s.app.storage.UpdateUserCourse(*userCourse)
 		if err != nil {
 			return nil, errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &logutils.FieldArgs{"drop": true}, err)
 		}
@@ -323,6 +370,14 @@ func (s *clientImpl) GetCustomCourses(claims *tokenauth.Claims) ([]model.Course,
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
 	}
 	return courses, nil
+}
+
+func (s *clientImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error) {
+	course, err := s.app.storage.FindCustomCourse(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
+	}
+	return course, nil
 }
 
 func (s *clientImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {
