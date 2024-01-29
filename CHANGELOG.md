@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.10.1] - 2024-01-29
 ### Fixed
 - Improve user course progress tracking [#97](https://github.com/rokwire/lms-building-block/issues/97)
 
