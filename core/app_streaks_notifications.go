@@ -191,6 +191,7 @@ func (n streaksNotifications) processStreaks() {
 			}
 			completeTaskHandler := func() error {
 				// the previous task was completed, so set the start time of the new task to now (beginning of the day)
+				userUnit.Completed++
 				userUnit.Unit.Schedule[userUnit.Completed].DateStarted = &now
 				err := n.storage.UpdateUserUnit(userUnit)
 				if err != nil {
@@ -205,7 +206,7 @@ func (n streaksNotifications) processStreaks() {
 					if nextUnit != nil {
 						nextUnit.Schedule[nextUnit.ScheduleStart].DateStarted = &now
 						nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
-							Unit: *nextUnit, Completed: nextUnit.ScheduleStart, Current: true, DateCreated: time.Now().UTC()}
+							Unit: *nextUnit, Completed: nextUnit.ScheduleStart, Current: true, LastCompleted: userUnit.LastCompleted, DateCreated: time.Now().UTC()}
 						err := storage.InsertUserUnit(nextUserUnit)
 						if err != nil {
 							return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
@@ -214,6 +215,7 @@ func (n streaksNotifications) processStreaks() {
 
 					// set current to false on the current user unit since there is a new curernt one or the course is finished
 					userUnit.Current = false
+					userUnit.Completed++
 					err := storage.UpdateUserUnit(userUnit)
 					if err != nil {
 						return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
@@ -341,20 +343,21 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUni
 		return errors.ErrorData(logutils.StatusInvalid, "incomplete task handler", nil)
 	}
 
-	if userUnit.Completed == userUnit.Unit.ScheduleStart {
-		// user has not completed the current task
-		return incompleteTaskHandler()
-	} else if userUnit.Completed < userUnit.Unit.Required {
+	// if userUnit.Completed == userUnit.Unit.ScheduleStart {
+	// 	// user has not completed the current task
+	// 	return incompleteTaskHandler()
+	// } else
+	if userUnit.Completed+1 < userUnit.Unit.Required {
 		// check if the last completed schedule item was completed within (24*days+offset) hours before now
-		days := userUnit.Unit.Schedule[userUnit.Completed-1].Duration
-		if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((24*time.Duration(days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) {
+		days := userUnit.Unit.Schedule[userUnit.Completed].Duration
+		if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((24*time.Duration(days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) { //TODO: may need to change this to handle user travelling
 			// not completed within specified period, so handle incomplete
 			return incompleteTaskHandler()
 		} else if completeTaskHandler != nil {
 			// completed within specified period, so handle complete if desired
 			return completeTaskHandler()
 		}
-	} else if userUnit.Completed == userUnit.Unit.Required && completeUnitHandler != nil {
+	} else if userUnit.Completed+1 == userUnit.Unit.Required && completeUnitHandler != nil {
 		// user completed the current unit
 		return completeUnitHandler()
 	}

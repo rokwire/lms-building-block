@@ -221,9 +221,9 @@ type UserContent struct {
 
 // UserContentWithTimezone defines model for UserContentWithTimezone.
 type UserContentWithTimezone struct {
-	TimezoneName   string        `json:"timezone_name"`
-	TimezoneOffset int           `json:"timezone_offset"`
-	UserContent    []UserContent `json:"user_content"`
+	TimezoneName   string      `json:"timezone_name"`
+	TimezoneOffset int         `json:"timezone_offset"`
+	UserContent    UserContent `json:"user_content"`
 }
 
 // UserCourse defines model for UserCourse.

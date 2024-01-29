@@ -230,8 +230,8 @@ type Unit struct {
 
 // UserContentWithTimezone wraps unit with time information
 type UserContentWithTimezone struct {
-	UserContent []UserContent `json:"user_content"`
-	Timezone                  // include user timezone info
+	UserContent UserContent `json:"user_content"`
+	Timezone                // include user timezone info
 }
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time
@@ -242,6 +242,18 @@ type ScheduleItem struct {
 
 	DateStarted   *time.Time `json:"date_started,omitempty" bson:"date_started,omitempty"`
 	DateCompleted *time.Time `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
+}
+
+// UpdateUserData updates the stored data for the user content matching item.ContentKey in the schedule item
+func (s *ScheduleItem) UpdateUserData(item UserContent) {
+	if s == nil {
+		return
+	}
+	for i, userContent := range s.UserContent {
+		if userContent.ContentKey == item.ContentKey {
+			s.UserContent[i].UserData = item.UserData
+		}
+	}
 }
 
 // IsComplete gives whether every user content item in the schedule item has user data

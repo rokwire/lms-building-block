@@ -646,7 +646,7 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 			return err
 		}
 
-		err = storageTransaction.UpdateUserUnits(key, item)
+		err = storageTransaction.UpdateUserUnits(key, item) //TODO: can cause problems if user unit has data stored in schedule
 		if err != nil {
 			return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 		}

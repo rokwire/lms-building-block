@@ -2383,9 +2383,7 @@ components:
         timezone_offset:
           type: integer
         user_content:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserContent'
+          $ref: '#/components/schemas/UserContent'
     Timezone:
       required:
         - timezone_name

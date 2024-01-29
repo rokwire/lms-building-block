@@ -243,6 +243,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		now := time.Now().UTC()
+		creating := false
 		if userUnit == nil {
 			// create a userUnit here if it doesn't already exist
 			unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, unitKey)
@@ -256,13 +257,16 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 			}
 
+			creating = true
 			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
-				Completed: unit.ScheduleStart + 1, Current: true, DateCreated: time.Now().UTC()}
+				Completed: unit.ScheduleStart, Current: true, DateCreated: time.Now().UTC()}
 			userUnit.Unit = *unit
-			userUnit.Unit.Schedule[unit.ScheduleStart].UserContent = item.UserContent
+			userUnit.Unit.Schedule[unit.ScheduleStart].UpdateUserData(item.UserContent)
 			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = &now
 			if userUnit.Unit.Schedule[unit.ScheduleStart].IsComplete() {
 				userUnit.Unit.Schedule[unit.ScheduleStart].DateCompleted = &now
+				// userUnit.Completed++
+				userUnit.LastCompleted = &now
 			}
 
 			// user started the course and created the first user unit
@@ -275,12 +279,11 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if !userUnit.Current {
 				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
 			}
-			//TODO: only allow user to complete exactly one schedule item per unit per Duration?
 
-			userUnit.Unit.Schedule[userUnit.Completed].UserContent = item.UserContent
+			userUnit.Unit.Schedule[userUnit.Completed].UpdateUserData(item.UserContent)
 			if userUnit.Unit.Schedule[userUnit.Completed].IsComplete() {
 				userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
-				userUnit.Completed++
+				// userUnit.Completed++
 				userUnit.LastCompleted = &now
 			}
 
@@ -302,25 +305,30 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// update streak and pauses immediately, pauses are used and streaks are reset if necessary in the streaks timer
-		newStreak := userCourse.Streak + 1
-		newPauses := userCourse.Pauses
-		if newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
-			newPauses++
-		}
-		// if the user has no active streak and no remaining pauses, then mark now as a streak restart (user has resumed progress after some extended time)
-		if userCourse.Streak == 0 && userCourse.Pauses == 0 {
-			if userCourse.StreakRestarts == nil {
-				userCourse.StreakRestarts = make([]time.Time, 0)
+		// only if LastCompleted was before most recent streak timer run
+		lastStreakProcess := userUnit.Unit.Schedule[userUnit.Completed].DateStarted
+		if userUnit.Unit.Schedule[userUnit.Completed].DateCompleted != nil && (creating || (lastStreakProcess != nil && userUnit.LastCompleted.Before(*lastStreakProcess))) {
+			newStreak := userCourse.Streak + 1
+			newPauses := userCourse.Pauses
+			if newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
+				newPauses++
 			}
-			userCourse.StreakRestarts = append(userCourse.StreakRestarts, now)
-		}
-		userCourse.Streak = newStreak
-		userCourse.Pauses = newPauses
+			// if the user has no active streak and no remaining pauses, then mark now as a streak restart (user has resumed progress after some extended time)
+			if userCourse.Streak == 0 && userCourse.Pauses == 0 {
+				if userCourse.StreakRestarts == nil {
+					userCourse.StreakRestarts = make([]time.Time, 0)
+				}
+				userCourse.StreakRestarts = append(userCourse.StreakRestarts, now)
+			}
+			userCourse.Streak = newStreak
+			userCourse.Pauses = newPauses
 
-		err = storageTransaction.UpdateUserCourse(*userCourse)
-		if err != nil {
-			return err
+			err = storageTransaction.UpdateUserCourse(*userCourse)
+			if err != nil {
+				return err
+			}
 		}
+
 		return nil
 	}
 
