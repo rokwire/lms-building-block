@@ -44,6 +44,8 @@ const (
 
 	//UserTimezone indicates the user's timezone should be used
 	UserTimezone string = "user"
+	//DefaultStreaksNotificationsTimerDelayTolerance gives the default seconds of timer delay to tolerate
+	DefaultStreaksNotificationsTimerDelayTolerance int = 10
 )
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
@@ -122,8 +124,9 @@ type CourseConfig struct {
 
 // StreaksNotificationsConfig entity
 type StreaksNotificationsConfig struct {
-	TimezoneName   string `json:"timezone_name" bson:"timezone_name"`                         // either an IANA timezone database identifier or "user" to for users' most recent known timezone
-	TimezoneOffset int    `json:"timezone_offset,omitempty" bson:"timezone_offset,omitempty"` // in seconds east of UTC (only valid if TimezoneName is not "user")
+	TimezoneName        string `json:"timezone_name" bson:"timezone_name"`                 // either an IANA timezone database identifier or "user" to for users' most recent known timezone
+	TimezoneOffset      int    `json:"timezone_offset" bson:"timezone_offset"`             // in seconds east of UTC (only valid if TimezoneName is not "user")
+	TimerDelayTolerance int    `json:"timer_delay_tolerance" bson:"timer_delay_tolerance"` // for static timezone (e.g., America/Chicago), the maximum number of seconds of timer delay to tolerate
 
 	StreaksProcessTime  int  `json:"streaks_process_time" bson:"streaks_process_time"` // seconds since midnight in selected timezone at which to process streaks
 	PreferEarly         bool `json:"prefer_early" bson:"prefer_early"`                 // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime

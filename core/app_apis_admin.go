@@ -795,6 +795,10 @@ func (s *adminImpl) CreateCustomCourseConfig(claims *tokenauth.Claims, item mode
 		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeStreaksNotificationsConfig, nil, err)
 	}
 
+	if item.StreaksNotificationsConfig.TimerDelayTolerance <= 0 {
+		item.StreaksNotificationsConfig.TimerDelayTolerance = model.DefaultStreaksNotificationsTimerDelayTolerance
+	}
+
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
@@ -816,6 +820,10 @@ func (s *adminImpl) UpdateCustomCourseConfig(claims *tokenauth.Claims, key strin
 	err := item.StreaksNotificationsConfig.ValidateTimings()
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeStreaksNotificationsConfig, nil, err)
+	}
+
+	if item.StreaksNotificationsConfig.TimerDelayTolerance <= 0 {
+		item.StreaksNotificationsConfig.TimerDelayTolerance = model.DefaultStreaksNotificationsTimerDelayTolerance
 	}
 
 	item.AppID = claims.AppID

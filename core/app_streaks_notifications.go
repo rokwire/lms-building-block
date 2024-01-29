@@ -285,7 +285,11 @@ func (n streaksNotifications) getUserDataForTimezone(config model.CourseConfig, 
 		}
 	} else {
 		configOffset := config.StreaksNotificationsConfig.TimezoneOffset
-		if offset == configOffset || offset+utils.SecondsInDay == configOffset || offset-utils.SecondsInDay == configOffset {
+		tolerance := config.StreaksNotificationsConfig.TimerDelayTolerance
+		offsetDiff := offset - configOffset
+		offsetDiffPlusDay := offset + utils.SecondsInDay - configOffset
+		offsetDiffMinusDay := offset - utils.SecondsInDay - configOffset
+		if offsetDiff <= tolerance || offsetDiff >= -tolerance || offsetDiffPlusDay <= tolerance || offsetDiffPlusDay >= -tolerance || offsetDiffMinusDay <= tolerance || offsetDiffMinusDay >= -tolerance {
 			// load all user courses for this course
 			userCourses, err = n.storage.FindUserCourses(nil, config.AppID, config.OrgID, nil, []string{config.CourseKey}, nil, nil)
 			if err != nil {
