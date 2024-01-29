@@ -96,11 +96,10 @@ type Storage interface {
 	FindUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
 	InsertUserCourse(item model.UserCourse) error
 	UpdateUserCourses(key string, item model.Course) error
-	UpdateUserCourse(appID string, orgID string, userID string, courseID *string, courseKey string, streak *int, pauses *int) error
+	UpdateUserCourse(item model.UserCourse) error
 	UpdateUserTimezone(appID string, orgID string, userID string, timezoneName string, timezoneOffset int) error
 	DecrementUserCoursePauses(appID string, orgID string, userIDs []string, key string) error
 	ResetUserCourseStreaks(appID string, orgID string, userIDs []string, key string) error
-	DropUserCourse(appID string, orgID string, key string) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 	DeleteUserCourses(appID string, orgID string, courseKey string) error
 

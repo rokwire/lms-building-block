@@ -39,7 +39,7 @@ class APIHandlerGenerator:
         data += 'type apiDataType interface {\n'
         for i, data_type in enumerate(self.data_types):
             if i > 0:
-                data += f' | {data_type}'
+                data += f' |\n{data_type}'
             else:
                 data += data_type
         return data + '\n}\n\n'
@@ -47,16 +47,15 @@ class APIHandlerGenerator:
     def create_request_data_type_interface(self):
         data = '// requestDataType represents any data type that may be sent in an API request body\n'
         data += 'type requestDataType interface {\n'
+        data += 'apiDataType'
+        if len(self.request_bodies) > 0:
+            data += '|\n'
         for i, request_body in enumerate(self.request_bodies):
             if data.count(request_body[1]) == 0:
                 if i > 0:
-                    data += f' | {request_body[1]}'
+                    data += f' |\n{request_body[1]}'
                 else:
                     data += request_body[1]
-        
-        if len(self.request_bodies) > 0:
-            data += '| '
-        data += 'apiDataType'
 
         return data + '\n}\n\n'
 

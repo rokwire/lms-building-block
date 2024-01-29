@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rokwire LMS Building Block API
   description: LMS Building Block API Documentation
-  version: 1.10.0
+  version: 1.10.1
 servers:
   - url: 'https://api.rokwire.illinois.edu/lms'
     description: Production server
@@ -453,11 +453,11 @@ paths:
           schema:
             type: string
       requestBody:
-        description: updated unit
+        description: updated user content with timezone info
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UnitWithTimezone'
+              $ref: '#/components/schemas/UserContentWithTimezone'
         required: true
       responses:
         '200':
@@ -465,7 +465,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
+                $ref: '#/components/schemas/UserUnit'
         '400':
           description: Bad request
         '401':
@@ -473,7 +473,7 @@ paths:
         '500':
           description: Internal error
       x-core-function: UpdateUserCourseUnitProgress
-      x-data-type: model.UnitWithTimezone
+      x-data-type: model.UserUnit
       x-authentication-type: User
   '/api/users/units/{key}':
     get:
@@ -536,6 +536,40 @@ paths:
         '500':
           description: Internal error
       x-core-function: GetCustomCourses
+      x-data-type: model.Course
+      x-authentication-type: User
+  '/api/custom/courses/{key}':
+    get:
+      tags:
+        - Client
+      summary: Get custom course by key
+      description: |
+        Get custom course by key
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          description: Course Key
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Course'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetCustomCourse
       x-data-type: model.Course
       x-authentication-type: User
   '/api/custom/course-configs/{key}':
@@ -2096,6 +2130,7 @@ components:
         - key
         - name
         - units
+        - display
       type: object
       properties:
         id:
@@ -2115,6 +2150,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Unit'
+        display:
+          $ref: '#/components/schemas/Display'
     Unit:
       required:
         - id
@@ -2147,15 +2184,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ScheduleItem'
-    UnitWithTimezone:
-      allOf:
-        - $ref: '#/components/schemas/Timezone'
-        - required:
-            - unit
-          type: object
-          properties:
-            unit:
-              $ref: '#/components/schemas/Unit'
+        schedule_start:
+          type: integer
+          default: 0
     Content:
       required:
         - id
@@ -2165,6 +2196,7 @@ components:
         - type
         - name
         - reference
+        - display
       type: object
       properties:
         id:
@@ -2196,6 +2228,8 @@ components:
           items:
             type: string
           nullable: true
+        display:
+          $ref: '#/components/schemas/Display'
     ScheduleItem:
       required:
         - name
@@ -2241,6 +2275,7 @@ components:
             - user_id
             - streak
             - streak_resets
+            - streak_restarts
             - pauses
             - pause_uses
             - course
@@ -2262,6 +2297,11 @@ components:
             streak:
               type: integer
             streak_resets:
+              type: array
+              items:
+                type: string
+                format: date-time
+            streak_restarts:
               type: array
               items:
                 type: string
@@ -2331,6 +2371,19 @@ components:
         user_data:
           type: object
           nullable: true
+    UserContentWithTimezone:
+      required:
+        - timezone_name
+        - timezone_offset
+        - user_content
+      type: object
+      properties:
+        timezone_name:
+          type: string
+        timezone_offset:
+          type: integer
+        user_content:
+          $ref: '#/components/schemas/UserContent'
     Timezone:
       required:
         - timezone_name
@@ -2384,6 +2437,8 @@ components:
           type: string
         timezone_offset:
           type: integer
+        timer_delay_tolerance:
+          type: integer
         streaks_process_time:
           type: integer
         prefer_early:
@@ -2418,6 +2473,17 @@ components:
           type: boolean
         requirements:
           type: object
+    Display:
+      type: object
+      properties:
+        primary_color:
+          type: string
+        accent_color:
+          type: string
+        completed_color:
+          type: string
+        icon:
+          type: string
     _admin_req_create_nudge:
       required:
         - id

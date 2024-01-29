@@ -6,6 +6,7 @@ required:
   - type
   - name
   - reference
+  - display
 type: object
 properties:
   id:
@@ -37,3 +38,5 @@ properties:
     items:
       type: string
     nullable: true
+  display:
+    $ref: "./Display.yaml"
