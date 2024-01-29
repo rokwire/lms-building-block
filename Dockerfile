@@ -22,10 +22,7 @@ COPY --from=builder /lms-app/driver/web/admin_permission_policy.csv /driver/web/
 COPY --from=builder /lms-app/driver/web/client_permission_policy.csv /driver/web/client_permission_policy.csv
 COPY --from=builder /lms-app/driver/web/client_scope_policy.csv /driver/web/client_scope_policy.csv
 
-COPY --from=builder /lms-app/vendor/github.com/rokwire/core-auth-library-go/v2/authorization/authorization_model_string.conf /lms-app/vendor/github.com/rokwire/core-auth-library-go/v2/authorization/authorization_model_string.conf
-
-
-#we need timezone database
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo 
+COPY --from=builder /lms-app/vendor/github.com/rokwire/core-auth-library-go/v3/authorization/authorization_model_string.conf /lms-app/vendor/github.com/rokwire/core-auth-library-go/v3/authorization/authorization_model_string.conf
+COPY --from=builder /lms-app/vendor/github.com/rokwire/core-auth-library-go/v3/authorization/authorization_model_scope.conf /lms-app/vendor/github.com/rokwire/core-auth-library-go/v3/authorization/authorization_model_scope.conf
 
 ENTRYPOINT ["/lms"]
