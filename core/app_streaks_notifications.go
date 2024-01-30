@@ -319,7 +319,7 @@ func (n streaksNotifications) getUserDataForTimezone(config model.CourseConfig, 
 func (n streaksNotifications) filterUsersByIncomplete(userUnits []model.UserUnit, userIDs []string, now time.Time, streaksProcessTime int, notificationProcessTime int) ([]string, error) {
 	filtered := make([]string, 0)
 	for _, userUnit := range userUnits {
-		if !utils.Exist[string](userIDs, userUnit.ID) {
+		if !utils.Exist[string](userIDs, userUnit.UserID) {
 			continue
 		}
 
