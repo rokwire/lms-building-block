@@ -35,9 +35,10 @@ type userCourse struct {
 
 	Course course `bson:"course"`
 
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
-	DateDropped *time.Time `bson:"date_dropped"`
+	DateCreated   time.Time  `bson:"date_created"`
+	DateUpdated   *time.Time `bson:"date_updated"`
+	DateDropped   *time.Time `bson:"date_dropped"`
+	LastCompleted *time.Time `bson:"last_completed"`
 }
 
 type course struct {
@@ -74,8 +75,8 @@ type userUnit struct {
 	OrgID     string `bson:"org_id"`
 	UserID    string `bson:"user_id"`
 	CourseKey string `bson:"course_key"`
-
-	Unit unit `bson:"unit"`
+	ModuleKey string `bson:"module_key"`
+	Unit      unit   `bson:"unit"`
 
 	Completed int  `bson:"completed"` // number of schedule items the user has completed
 	Current   bool `bson:"current"`

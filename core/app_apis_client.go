@@ -197,7 +197,7 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 
 // get all userUnits from a user's given course
 func (s *clientImpl) GetUserCourseUnits(claims *tokenauth.Claims, courseKey string) ([]model.UserUnit, error) {
-	userUnits, err := s.app.storage.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil)
+	userUnits, err := s.app.storage.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 	return nil
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UserContentWithTimezone) (*model.UserUnit, error) {
+func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.UserContentWithTimezone) (*model.UserUnit, error) {
 	var userUnit *model.UserUnit
 	transaction := func(storageTransaction interfaces.Storage) error {
 		userCourse, err := storageTransaction.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, courseKey)
@@ -228,50 +228,65 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// find the current user unit (this is managed by the streaks timer)
-		userUnit, err = storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, &unitKey)
+		// get all userUnits under this module, and filter the one and only current userUnit.
+		// If exist userUnit but all none-current throw error, if no userUnit exist creates the first one for this module and set to active.
+		moduleUserUnits, err := storageTransaction.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, &moduleKey, nil)
 		if err != nil {
 			return err
 		}
+		var activeModuleUserUnit []model.UserUnit
+		for _, uUnit := range moduleUserUnits {
+			if uUnit.Current {
+				activeModuleUserUnit = append(activeModuleUserUnit, uUnit)
+			}
+		}
 
 		now := time.Now().UTC()
-		if userUnit == nil {
-			// create a userUnit here if it doesn't already exist
-			unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, unitKey)
+		var userCourseLastCompleted *time.Time
+		// mutiple active userUnit under a module is not allowed
+		if len(activeModuleUserUnit) > 1 {
+			return errors.ErrorData(logutils.StatusInvalid, model.TypeUnit, &logutils.FieldArgs{"mutiple active userUnit under this module": moduleKey})
+		} else if len(activeModuleUserUnit) == 0 {
+			// if there are userUnit in this module but none is active, return error
+			if len(moduleUserUnits) != 0 {
+				return errors.ErrorData(logutils.StatusInvalid, model.TypeUnit, &logutils.FieldArgs{"no active userUnit in this module": moduleKey})
+			}
+			// create the first userUnit and set to active only if there are none under current module yet
+			module, err := storageTransaction.FindCustomModule(claims.AppID, claims.OrgID, moduleKey)
 			if err != nil {
-				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
+				return err
 			}
-			if unit == nil {
-				return errors.ErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": unitKey})
+			if len(module.Units) == 0 {
+				return errors.ErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"no unit associatd with this module": moduleKey})
 			}
+			unit := module.Units[0]
+
 			if len(unit.Schedule) == 0 {
 				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 			}
 
 			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
-				Completed: unit.ScheduleStart + 1, Current: true, DateCreated: time.Now().UTC()}
-			userUnit.Unit = *unit
+				ModuleKey: moduleKey, Completed: unit.ScheduleStart + 1, Current: true, DateCreated: time.Now().UTC()}
+			userUnit.Unit = unit
 			userUnit.Unit.Schedule[unit.ScheduleStart].UserContent = item.UserContent
 			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = &now
 			if userUnit.Unit.Schedule[unit.ScheduleStart].IsComplete() {
 				userUnit.Unit.Schedule[unit.ScheduleStart].DateCompleted = &now
 			}
 
-			// user started the course and created the first user unit
+			// user started the module and created the first user unit
 			err = storageTransaction.InsertUserUnit(*userUnit)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
 			}
 		} else {
-			// only updates to the current user unit are allowed
-			if !userUnit.Current {
-				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
-			}
-
 			userUnit.Unit.Schedule[userUnit.Completed].UserContent = item.UserContent
 			if userUnit.Unit.Schedule[userUnit.Completed].IsComplete() {
 				userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
 				userUnit.Completed++
 				userUnit.LastCompleted = &now
+				// TODO: update userCoursLastCompleted
+				userCourseLastCompleted = &now
 			}
 
 			err = storageTransaction.UpdateUserUnit(*userUnit)
@@ -291,13 +306,44 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
 		}
 
-		// update streak and pauses immediately, pauses are used and streaks are reset if necessary in the streaks timer
-		newStreak := userCourse.Streak + 1
-		newPauses := userCourse.Pauses
-		if newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
-			newPauses++
+		// TODO: compare time to determine whether to run streak and pauses update.
+		// if last_completed is before the latest date_started of current userUnits, then we update streaks
+		// don't do local time conversion, use directly.
+		/*
+			scheduled start everyday 9am
+			Module 1
+			dateStarted 9am
+			dateCompleted in db is nil, update streaks.  4pm
+
+			Module 2
+			dateStarted 9am
+			DateCompleted in db is 4pm, update streaks. 6pm
+		*/
+
+		// only update streak and pauses if usercourse last_completed timestamp is before any of current userUnits within the course
+		// current := true
+		// activeCourseUserUnits, err := storageTransaction.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil, &current)
+		// if err != nil {
+		// 	return errors.WrapErrorAction(logutils.ActionFind, model.TypeUserUnit, nil, err)
+		// }
+		// latestTime := userUnit.Unit.Schedule[userUnit.Completed].DateStarted
+		recentlyUpdated := false
+		// for _, uUnit := range activeCourseUserUnits{
+		// 	if userCourse.LastCompleted < uUnit.Unit.Schedule[userUnit.Completed].DateStarted
+
+		// }
+
+		var newStreak *int
+		var newPauses *int
+		if !recentlyUpdated {
+			// update streak and pauses immediately, pauses are used and streaks are reset if necessary in the streaks timer
+			*newStreak = userCourse.Streak + 1
+			*newPauses = userCourse.Pauses
+			if *newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
+				*newPauses++
+			}
 		}
-		err = storageTransaction.UpdateUserCourse(userCourse.AppID, userCourse.OrgID, userCourse.UserID, nil, userCourse.Course.Key, &newStreak, &newPauses)
+		err = storageTransaction.UpdateUserCourse(userCourse.AppID, userCourse.OrgID, userCourse.UserID, nil, userCourse.Course.Key, newStreak, newPauses, userCourseLastCompleted)
 		if err != nil {
 			return err
 		}

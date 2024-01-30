@@ -56,9 +56,10 @@ type UserCourse struct {
 
 	Course Course `json:"course"`
 
-	DateCreated time.Time  `json:"date_created"`
-	DateUpdated *time.Time `json:"date_updated"`
-	DateDropped *time.Time `json:"date_dropped"`
+	DateCreated   time.Time  `json:"date_created"`
+	DateUpdated   *time.Time `json:"date_updated"`
+	DateDropped   *time.Time `json:"date_dropped"`
+	LastCompleted *time.Time `json:"last_completed"`
 }
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
@@ -75,21 +76,23 @@ type Course struct {
 	DateUpdated *time.Time `json:"-"`
 }
 
-// GetNextUnit returns the next unit in a course given the current unit key
-func (c *Course) GetNextUnit(currentUnitKey string) *Unit {
+// GetNextUnit returns the next unit within the same module in a course given the userUnit
+func (c *Course) GetNextUnit(userUnit UserUnit) *Unit {
 	returnNextModuleUnit := false
 	for _, module := range c.Modules {
-		for i, unit := range module.Units {
-			if returnNextModuleUnit {
-				nextUnit := unit
-				return &nextUnit
-			}
-			if unit.Key == currentUnitKey {
-				if i+1 < len(module.Units) {
-					nextUnit := module.Units[i+1]
+		if module.Key == userUnit.ModuleKey {
+			for i, unit := range module.Units {
+				if returnNextModuleUnit {
+					nextUnit := unit
 					return &nextUnit
 				}
-				returnNextModuleUnit = true
+				if unit.Key == userUnit.Unit.Key {
+					if i+1 < len(module.Units) {
+						nextUnit := module.Units[i+1]
+						return &nextUnit
+					}
+					returnNextModuleUnit = true
+				}
 			}
 		}
 	}
@@ -167,6 +170,7 @@ type UserUnit struct {
 	OrgID     string `json:"org_id"`
 	UserID    string `json:"user_id"`
 	CourseKey string `json:"course_key"`
+	ModuleKey string `json:"module_key"`
 	Unit      Unit   `json:"unit"`
 
 	Completed int  `json:"completed"` // number of schedule items the user has completed

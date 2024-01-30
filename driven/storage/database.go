@@ -381,6 +381,7 @@ func (m *database) applyUserUnitsChecks(userUnits *collectionWrapper) error {
 			primitive.E{Key: "org_id", Value: 1},
 			primitive.E{Key: "user_id", Value: 1},
 			primitive.E{Key: "course_key", Value: 1},
+			primitive.E{Key: "module_key", Value: 1},
 			primitive.E{Key: "unit.key", Value: 1},
 		}, true)
 	if err != nil {

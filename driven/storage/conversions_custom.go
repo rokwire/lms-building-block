@@ -150,7 +150,7 @@ func (sa *Adapter) userCourseFromStorage(item userCourse) (model.UserCourse, err
 	timezone := model.Timezone{Name: item.TimezoneName, Offset: item.TimezoneOffset}
 	result := model.UserCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, Timezone: timezone,
 		Streak: item.Streak, StreakResets: item.StreakResets, Pauses: item.Pauses, PauseUses: item.PauseUses,
-		DateCreated: item.DateCreated, DateUpdated: item.DateUpdated, DateDropped: item.DateDropped}
+		DateCreated: item.DateCreated, DateUpdated: item.DateUpdated, DateDropped: item.DateDropped, LastCompleted: item.LastCompleted}
 
 	convertedCourse, err := sa.customCourseFromStorage(item.Course)
 	if err != nil {
@@ -162,7 +162,7 @@ func (sa *Adapter) userCourseFromStorage(item userCourse) (model.UserCourse, err
 }
 
 func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
-	result := model.UserUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey,
+	result := model.UserUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, ModuleKey: item.ModuleKey,
 		Completed: item.Completed, Current: item.Current, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	unit, err := sa.customUnitFromStorage(item.Unit)

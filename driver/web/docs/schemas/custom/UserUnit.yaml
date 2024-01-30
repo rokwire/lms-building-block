@@ -4,6 +4,7 @@ required:
   - org_id
   - user_id
   - course_key
+  - module_key
   - completed
   - current
   - unit
@@ -22,6 +23,9 @@ properties:
     type: string
     readOnly: true
   course_key:
+    type: string
+    readOnly: true
+  module_key:
     type: string
     readOnly: true
   completed:

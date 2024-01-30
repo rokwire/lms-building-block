@@ -426,34 +426,34 @@ paths:
       x-core-function: UpdateUserCourse
       x-data-type: model.UserCourse
       x-authentication-type: User
-  '/api/users/courses/{course_key}/units/{unit_key}':
+  '/api/users/courses/{course_key}/modules/{module_key}':
     put:
       tags:
         - Client
-      summary: Update custom user unit
+      summary: Update module progress
       description: |
-        Update custom user unit
+        Update module progress
       security:
         - bearerAuth: []
       parameters:
         - name: course_key
           in: path
-          description: course key of this unit
+          description: course key associated with userUnit
           required: true
           style: simple
           explode: false
           schema:
             type: string
-        - name: unit_key
+        - name: module_key
           in: path
-          description: unit key
+          description: module key associated with userUnit
           required: true
           style: simple
           explode: false
           schema:
             type: string
       requestBody:
-        description: updated user content with timezone info
+        description: updated userUnit content with timezone info
         content:
           application/json:
             schema:
@@ -472,7 +472,7 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
-      x-core-function: UpdateUserCourseUnitProgress
+      x-core-function: UpdateUserCourseModuleProgress
       x-data-type: model.UserUnit
       x-authentication-type: User
   '/api/users/units/{key}':
@@ -2283,6 +2283,7 @@ components:
         - org_id
         - user_id
         - course_key
+        - module_key
         - completed
         - current
         - unit
@@ -2301,6 +2302,9 @@ components:
           type: string
           readOnly: true
         course_key:
+          type: string
+          readOnly: true
+        module_key:
           type: string
           readOnly: true
         completed:

@@ -958,6 +958,7 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 	userCourse.UserID = item.UserID
 	userCourse.DateCreated = time.Now()
 	userCourse.DateUpdated = nil
+	userCourse.LastCompleted = nil
 	userCourse.Course = sa.customCourseToStorage(item.Course)
 
 	_, err := sa.db.userCourses.InsertOne(sa.context, userCourse)
@@ -968,7 +969,7 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 }
 
 // UpdateUserCourse updates a user course
-func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, userCourseID *string, courseKey string, streak *int, pauses *int) error {
+func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, userCourseID *string, courseKey string, streak *int, pauses *int, lastCompleted *time.Time) error {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey, "user_id": userID}
 	if userCourseID != nil {
 		filter["_id"] = userCourseID
@@ -976,11 +977,15 @@ func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, u
 
 	updateVals := bson.M{}
 	if streak != nil {
-		updateVals["streak"] = streak
+		updateVals["streak"] = *streak
 	}
 	if pauses != nil {
-		updateVals["pauses"] = pauses
+		updateVals["pauses"] = *pauses
 	}
+	if lastCompleted != nil {
+		updateVals["last_completed"] = *lastCompleted
+	}
+	updateVals["date_updated"] = time.Now()
 
 	update := bson.M{
 		"$set": updateVals,
@@ -1051,10 +1056,17 @@ func (sa *Adapter) DeleteUserCourses(appID string, orgID string, key string) err
 }
 
 // FindUserUnit finds a user unit
-func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey *string) (*model.UserUnit, error) {
+func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey *string, unitKey *string, current *bool) (*model.UserUnit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey}
+
+	if moduleKey != nil {
+		filter["module_key"] = *moduleKey
+	}
 	if unitKey != nil {
 		filter["unit.key"] = *unitKey
+	}
+	if current != nil {
+		filter["current"] = *current
 	}
 
 	var results []userUnit
@@ -1079,13 +1091,17 @@ func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, cours
 }
 
 // FindUserUnits finds user units by search parameters
-func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, current *bool) ([]model.UserUnit, error) {
+func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, moduleKey *string, current *bool) ([]model.UserUnit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "course_key": courseKey}
 	if len(userIDs) != 0 {
 		filter["user_id"] = bson.M{"$in": userIDs}
 	}
 	if current != nil {
 		filter["current"] = *current
+	}
+
+	if moduleKey != nil {
+		filter["module_key"] = moduleKey
 	}
 
 	var results []userUnit
@@ -1117,6 +1133,7 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 	userUnit.DateCreated = time.Now()
 	userUnit.DateUpdated = nil
 	userUnit.CourseKey = item.CourseKey
+	userUnit.ModuleKey = item.ModuleKey
 	userUnit.Current = item.Current
 	userUnit.Unit = sa.customUnitToStorage(item.Unit)
 
@@ -1129,7 +1146,7 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 
 // UpdateUserUnit updates shcedules in a user unit
 func (sa *Adapter) UpdateUserUnit(item model.UserUnit) error {
-	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "user_id": item.UserID, "course_key": item.CourseKey, "unit.key": item.Unit.Key}
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "user_id": item.UserID, "course_key": item.CourseKey, "module_key": item.ModuleKey, "unit.key": item.Unit.Key}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{

@@ -134,18 +134,18 @@ func (a APIsHandler) clientUpdateUserCourse(claims *tokenauth.Claims, params map
 	return a.app.Client.UpdateUserCourse(claims, key, drop)
 }
 
-func (a APIsHandler) clientUpdateUserCourseUnitProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserContentWithTimezone) (*model.UserUnit, error) {
+func (a APIsHandler) clientUpdateUserCourseModuleProgress(claims *tokenauth.Claims, params map[string]interface{}, item *model.UserContentWithTimezone) (*model.UserUnit, error) {
 	courseKey, err := utils.GetValue[string](params, "course_key", true)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("courseKey"), err)
 	}
 
-	unitKey, err := utils.GetValue[string](params, "unit_key", true)
+	moduleKey, err := utils.GetValue[string](params, "module_key", true)
 	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("unitKey"), err)
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("moduleKey"), err)
 	}
 
-	return a.app.Client.UpdateUserCourseUnitProgress(claims, courseKey, unitKey, *item)
+	return a.app.Client.UpdateUserCourseModuleProgress(claims, courseKey, moduleKey, *item)
 }
 
 func (a APIsHandler) clientGetUserCourseUnits(claims *tokenauth.Claims, params map[string]interface{}) ([]model.UserUnit, error) {
