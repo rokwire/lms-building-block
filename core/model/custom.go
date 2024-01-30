@@ -352,8 +352,9 @@ type TZOffsetPair struct {
 
 // Display represents data used to determine how to display course data in the client
 type Display struct {
-	PrimaryColor   string `json:"primary_color" bson:"primary_color"`
-	AccentColor    string `json:"accent_color" bson:"accent_color"`
-	CompletedColor string `json:"completed_color" bson:"completed_color"`
-	Icon           string `json:"icon" bson:"icon"`
+	PrimaryColor    string `json:"primary_color" bson:"primary_color"`
+	AccentColor     string `json:"accent_color" bson:"accent_color"`
+	CompleteColor   string `json:"complete_color" bson:"complete_color"`
+	IncompleteColor string `json:"incomplete_color" bson:"incomplete_color"`
+	Icon            string `json:"icon" bson:"icon"`
 }
