@@ -144,6 +144,7 @@ func (sa *Adapter) DecrementUserCoursePauses(appID string, orgID string, userIDs
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$inc": bson.M{
+			"streak": 1, // using a pause counts toward the streak
 			"pauses": -1,
 		},
 		"$push": bson.M{
