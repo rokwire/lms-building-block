@@ -232,6 +232,14 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
 		}
 
+		// update timezone name and offset for all user's courses
+		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.Name, item.Offset)
+		if err != nil {
+			return err
+		}
+		userCourse.Timezone.Name = item.Name
+		userCourse.Timezone.Offset = item.Offset
+
 		// find the current user unit (this is managed by the streaks timer)
 		// get all userUnits under this module, and filter the one and only current userUnit.
 		// If exist userUnit but all none-current throw error, if no userUnit exist creates the first one for this module and set to active.
@@ -275,7 +283,7 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			userUnit.Unit = unit
 			userUnit.Unit.Schedule[unit.ScheduleStart].UserContent = item.UserContent
 			// set DateStarted to the most recent streak process time for the user for consistency and to determine when to increment the streak
-			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = courseConfig.StreaksNotificationsConfig.MostRecentStreakProcessTime(&now, item.Name, item.Offset)
+			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = userCourse.MostRecentStreakProcessTime(&now, courseConfig.StreaksNotificationsConfig)
 			if userUnit.Unit.Schedule[unit.ScheduleStart].IsComplete() {
 				userUnit.Unit.Schedule[unit.ScheduleStart].DateCompleted = &now
 			}
@@ -299,12 +307,6 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 			}
-		}
-
-		// update timezone name and offset for all user_course of a user
-		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.Name, item.Offset)
-		if err != nil {
-			return err
 		}
 
 		// TODO: compare time to determine whether to run streak and pauses update.

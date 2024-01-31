@@ -59,7 +59,7 @@ func (n streaksNotifications) start() {
 
 func (n streaksNotifications) setupNotificationsTimer() {
 	now := time.Now().UTC()
-	nowSecondsInHour := 60*now.Minute() + now.Second()
+	nowSecondsInHour := utils.SecondsInMinute*now.Minute() + now.Second()
 	desiredMoment := 0 //default desired moment of the hour in seconds (beginning of the hour)
 
 	var durationInSeconds int
@@ -82,7 +82,7 @@ func (n streaksNotifications) setupNotificationsTimer() {
 func (n streaksNotifications) processNotifications() {
 	funcName := "processNotifications"
 	now := time.Now().UTC()
-	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	nowSeconds := utils.SecondsInHour*now.Hour() + utils.SecondsInMinute*now.Minute() + now.Second()
 
 	active := true
 	courseConfigs, err := n.storage.FindCourseConfigs(nil, nil, &active)
@@ -144,7 +144,7 @@ func (n streaksNotifications) processNotifications() {
 func (n streaksNotifications) setupStreaksTimer() {
 	//TODO: setup hourly streaks timer (streaks must be updated according to user timezone)
 	now := time.Now().UTC()
-	nowSecondsInHour := 60*now.Minute() + now.Second()
+	nowSecondsInHour := utils.SecondsInMinute*now.Minute() + now.Second()
 	desiredMoment := 0 //default desired moment of the hour in seconds (beginning of the hour)
 	var durationInSeconds int
 	n.logger.Infof("setupStreaksTimer -> nowSecondsInHour:%d", nowSecondsInHour)
@@ -166,7 +166,7 @@ func (n streaksNotifications) setupStreaksTimer() {
 func (n streaksNotifications) processStreaks() {
 	funcName := "processStreaks"
 	now := time.Now().UTC()
-	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	nowSeconds := utils.SecondsInHour*now.Hour() + utils.SecondsInMinute*now.Minute() + now.Second()
 
 	courseConfigs, err := n.storage.FindCourseConfigs(nil, nil, nil)
 	if err != nil {
@@ -365,7 +365,7 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnits []model.User
 		} else if userUnit.Completed < userUnit.Unit.Required {
 			// check if the last completed schedule item was completed within (24*days+offset) hours before now
 			days := userUnit.Unit.Schedule[userUnit.Completed-1].Duration
-			if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((24*time.Duration(days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) {
+			if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((time.Duration(utils.HoursInDay*days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) {
 				// not completed within specified period, so handle incomplete
 				//return incompleteTaskHandler()
 			} else if completeTaskHandler != nil {

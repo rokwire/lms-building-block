@@ -33,10 +33,14 @@ import (
 )
 
 const (
+	// HoursInDay is the number of hours in one day
+	HoursInDay int = 24
 	// SecondsInDay is the number of seconds in one 24-hour day
-	SecondsInDay int = 24 * 60 * 60
+	SecondsInDay int = HoursInDay * SecondsInHour
 	// SecondsInHour is the number of seconds in one hour
-	SecondsInHour int = 60 * 60
+	SecondsInHour int = 60 * SecondsInMinute
+	// SecondsInMinute is the number of seconds in one minute
+	SecondsInMinute int = 60
 )
 
 // Filter represents find filter for finding entities by the their fields

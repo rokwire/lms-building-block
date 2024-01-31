@@ -80,7 +80,7 @@ func (n nudgesLogic) setupNudgesTimer() {
 	now := time.Now().In(location)
 	n.logger.Infof("setupNudgesTimer -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	nowSecondsInDay := utils.SecondsInHour*now.Hour() + utils.SecondsInMinute*now.Minute() + now.Second()
 	desiredMoment := 39600 //default desired moment in the day in seconds, i.e. 11:00 AM
 	if n.config != nil && n.config.ProcessTime != nil {
 		desiredMoment = *n.config.ProcessTime
@@ -93,13 +93,13 @@ func (n nudgesLogic) setupNudgesTimer() {
 		durationInSeconds = desiredMoment - nowSecondsInDay
 	} else {
 		n.logger.Info("setupNudgesTimer -> the nudges have already been processed today, so the first nudges process will be tomorrow")
-		leftToday := 86400 - nowSecondsInDay
+		leftToday := utils.SecondsInDay - nowSecondsInDay
 		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
 	}
 	//app.logger.Infof("%d", durationInSeconds)
 	//duration := time.Second * time.Duration(3)
 	initialDuration := time.Second * time.Duration(durationInSeconds)
-	utils.StartTimer(n.dailyNudgesTimer, n.timerDone, &initialDuration, time.Hour*24, n.processAllNudges, "processNudges", n.logger)
+	utils.StartTimer(n.dailyNudgesTimer, n.timerDone, &initialDuration, time.Hour*time.Duration(utils.HoursInDay), n.processAllNudges, "processNudges", n.logger)
 }
 
 func (n nudgesLogic) processAllNudges() {
@@ -1197,7 +1197,7 @@ func (n nudgesLogic) ecIsEarlyCompleted(assignment model.CourseAssignment, hours
 
 	dueAtSeconds := assignment.Data.DueAt.Unix()
 	submittedAtSeconds := submittedAt.Unix()
-	hoursInSecs := hours * 60 * 60
+	hoursInSecs := hours * float64(utils.SecondsInHour)
 	//check if submitted is x hours before due
 	difference := dueAtSeconds - submittedAtSeconds
 
@@ -1710,7 +1710,7 @@ func (n nudgesLogic) isAssignmentMatchedByDaysInAdvance(ca model.CourseAssignmen
 	}
 
 	now := time.Now()
-	daysDifference := -int64(now.Sub(*assignmentDueAt).Hours() / 24)
+	daysDifference := -int64(now.Sub(*assignmentDueAt).Hours() / float64(utils.HoursInDay))
 	daysInAdvance := int64(numberOfDaysInAdvance)
 	return now.Before(*assignmentDueAt) && daysDifference == daysInAdvance
 }
@@ -1725,7 +1725,7 @@ func (n nudgesLogic) findAssignmentsInDaysAdvance(days int, now time.Time, assig
 		}
 
 		difference := now.Sub(*assignment.DueAt) //difference between now and the due at date
-		differenceInDays := -int(difference.Hours() / 24)
+		differenceInDays := -int(difference.Hours() / float64(utils.HoursInDay))
 		if differenceInDays == days {
 			resultList = append(resultList, assignment)
 		}

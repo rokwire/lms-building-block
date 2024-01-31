@@ -985,6 +985,9 @@ func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, u
 	if lastCompleted != nil {
 		updateVals["last_completed"] = *lastCompleted
 	}
+	if len(updateVals) != 0 {
+		return nil // no updates to do
+	}
 	updateVals["date_updated"] = time.Now()
 
 	update := bson.M{

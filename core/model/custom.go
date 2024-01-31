@@ -62,6 +62,40 @@ type UserCourse struct {
 	LastCompleted *time.Time `json:"last_completed"`
 }
 
+// MostRecentStreakProcessTime gives the time when the most recent daily streak process ran for a user
+func (u *UserCourse) MostRecentStreakProcessTime(now *time.Time, snConfig StreaksNotificationsConfig) *time.Time {
+	if u == nil {
+		return nil
+	}
+	if now == nil {
+		newNow := time.Now()
+		now = &newNow
+	}
+
+	var loc *time.Location
+	var err error
+	if snConfig.TimezoneName == "user" {
+		loc = time.FixedZone(u.Timezone.Name, u.Timezone.Offset)
+	} else {
+		loc, err = time.LoadLocation(snConfig.TimezoneName)
+		if err != nil {
+			loc = time.FixedZone(snConfig.TimezoneName, snConfig.TimezoneOffset)
+		}
+	}
+	nowLocal := now.In(loc)
+	nowLocalSeconds := utils.SecondsInHour*nowLocal.Hour() + utils.SecondsInMinute*nowLocal.Minute() + nowLocal.Second()
+
+	hour := snConfig.StreaksProcessTime / utils.SecondsInHour
+	minute := (snConfig.StreaksProcessTime % utils.SecondsInHour) / utils.SecondsInMinute
+	second := (snConfig.StreaksProcessTime % utils.SecondsInHour) % utils.SecondsInMinute
+	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), hour, minute, second, 0, loc).UTC()
+	if nowLocalSeconds < snConfig.StreaksProcessTime {
+		// go back one day if the current moment is before the process time in the current day
+		mostRecent = mostRecent.Add(time.Duration(-utils.HoursInDay) * time.Hour)
+	}
+	return &mostRecent
+}
+
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
 type Course struct {
 	ID    string `json:"id"`
@@ -128,41 +162,6 @@ type StreaksNotificationsConfig struct {
 	NotificationsMode string `json:"notifications_mode" bson:"notifications_mode"` // "normal" or "test"
 
 	Notifications []Notification `json:"notifications" bson:"notifications"`
-}
-
-// MostRecentStreakProcessTime gives the time when the most recent daily streak process ran for a user
-func (s *StreaksNotificationsConfig) MostRecentStreakProcessTime(now *time.Time, userTimezoneName string, userTimezoneOffset int) *time.Time {
-	if s == nil {
-		return nil
-	}
-	if now == nil {
-		newNow := time.Now()
-		now = &newNow
-	}
-
-	var loc *time.Location
-	var err error
-	if s.TimezoneName == "user" {
-		//TODO: convert now to local using offset (guaranteed to be accurate because this is used when user calls module progress API, in which TZ info is sent)
-		loc = time.FixedZone(userTimezoneName, userTimezoneOffset)
-	} else {
-		loc, err = time.LoadLocation(s.TimezoneName)
-		if err != nil {
-			loc = time.FixedZone(s.TimezoneName, s.TimezoneOffset)
-		}
-	}
-	nowLocal := now.In(loc)
-	nowLocalSeconds := 60*60*nowLocal.Hour() + 60*nowLocal.Minute() + nowLocal.Second()
-
-	hour := s.StreaksProcessTime / utils.SecondsInHour
-	minute := (s.StreaksProcessTime % utils.SecondsInHour) / 60
-	second := (s.StreaksProcessTime % utils.SecondsInHour) % 60
-	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), hour, minute, second, 0, loc).UTC()
-	if nowLocalSeconds < s.StreaksProcessTime {
-		// go back one day if the current moment is before the process time in the current day
-		mostRecent = mostRecent.Add(-24 * time.Hour)
-	}
-	return &mostRecent
 }
 
 // Notification entity
