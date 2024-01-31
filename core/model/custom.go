@@ -130,6 +130,41 @@ type StreaksNotificationsConfig struct {
 	Notifications []Notification `json:"notifications" bson:"notifications"`
 }
 
+// MostRecentStreakProcessTime gives the time when the most recent daily streak process ran for a user
+func (s *StreaksNotificationsConfig) MostRecentStreakProcessTime(now *time.Time, userTimezoneName string, userTimezoneOffset int) *time.Time {
+	if s == nil {
+		return nil
+	}
+	if now == nil {
+		newNow := time.Now()
+		now = &newNow
+	}
+
+	var loc *time.Location
+	var err error
+	if s.TimezoneName == "user" {
+		//TODO: convert now to local using offset (guaranteed to be accurate because this is used when user calls module progress API, in which TZ info is sent)
+		loc = time.FixedZone(userTimezoneName, userTimezoneOffset)
+	} else {
+		loc, err = time.LoadLocation(s.TimezoneName)
+		if err != nil {
+			loc = time.FixedZone(s.TimezoneName, s.TimezoneOffset)
+		}
+	}
+	nowLocal := now.In(loc)
+	nowLocalSeconds := 60*60*nowLocal.Hour() + 60*nowLocal.Minute() + nowLocal.Second()
+
+	hour := s.StreaksProcessTime / utils.SecondsInHour
+	minute := (s.StreaksProcessTime % utils.SecondsInHour) / 60
+	second := (s.StreaksProcessTime % utils.SecondsInHour) % 60
+	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), hour, minute, second, 0, loc).UTC()
+	if nowLocalSeconds < s.StreaksProcessTime {
+		// go back one day if the current moment is before the process time in the current day
+		mostRecent = mostRecent.Add(-24 * time.Hour)
+	}
+	return &mostRecent
+}
+
 // Notification entity
 type Notification struct {
 	Subject string             `json:"subject" bson:"subject"` // e.g., "Daily task reminder" (a.k.a. "text")

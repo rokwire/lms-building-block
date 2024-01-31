@@ -227,6 +227,11 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			return errors.ErrorData(logutils.StatusInvalid, model.TypeUserCourse, &logutils.FieldArgs{"id": userCourse.ID, "date_dropped": userCourse.DateDropped})
 		}
 
+		courseConfig, err := storageTransaction.FindCourseConfig(userCourse.AppID, userCourse.OrgID, userCourse.Course.Key)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
+		}
+
 		// find the current user unit (this is managed by the streaks timer)
 		// get all userUnits under this module, and filter the one and only current userUnit.
 		// If exist userUnit but all none-current throw error, if no userUnit exist creates the first one for this module and set to active.
@@ -269,7 +274,8 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 				ModuleKey: moduleKey, Completed: unit.ScheduleStart + 1, Current: true, DateCreated: time.Now().UTC()}
 			userUnit.Unit = unit
 			userUnit.Unit.Schedule[unit.ScheduleStart].UserContent = item.UserContent
-			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = &now
+			// set DateStarted to the most recent streak process time for the user for consistency and to determine when to increment the streak
+			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = courseConfig.StreaksNotificationsConfig.MostRecentStreakProcessTime(&now, item.Name, item.Offset)
 			if userUnit.Unit.Schedule[unit.ScheduleStart].IsComplete() {
 				userUnit.Unit.Schedule[unit.ScheduleStart].DateCompleted = &now
 			}
@@ -299,11 +305,6 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.Name, item.Offset)
 		if err != nil {
 			return err
-		}
-
-		courseConfig, err := storageTransaction.FindCourseConfig(userCourse.AppID, userCourse.OrgID, userCourse.Course.Key)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
 		}
 
 		// TODO: compare time to determine whether to run streak and pauses update.
