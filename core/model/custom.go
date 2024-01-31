@@ -275,12 +275,12 @@ type Content struct {
 	AppID string `json:"app_id" bson:"app_id"`
 	OrgID string `json:"org_id" bson:"org_id"`
 
-	Key              string    `json:"key" bson:"key"`
-	Type             string    `json:"type" bson:"type"` // assignment, resource, reward, evaluation
-	Name             string    `json:"name" bson:"name"`
-	Details          string    `json:"details" bson:"details"`
-	ContentReference Reference `json:"reference" bson:"reference"`
-	LinkedContent    []string  `json:"linked_content" bson:"linked_content"`
+	Key           string    `json:"key" bson:"key"`
+	Type          string    `json:"type" bson:"type"` // assignment, resource, reward, evaluation
+	Name          string    `json:"name" bson:"name"`
+	Details       string    `json:"details" bson:"details"`
+	Reference     Reference `json:"reference" bson:"reference"`
+	LinkedContent []string  `json:"linked_content" bson:"linked_content"`
 
 	Display Display `json:"display" bson:"display"`
 

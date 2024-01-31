@@ -257,6 +257,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 			}
 
+			//TODO: do not begin at schedule start to "complete" info content items
 			creating = true
 			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
 				Completed: unit.ScheduleStart, Current: true, DateCreated: time.Now().UTC()}

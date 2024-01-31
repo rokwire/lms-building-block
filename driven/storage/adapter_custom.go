@@ -584,12 +584,6 @@ func (sa *Adapter) InsertCustomContents(items []model.Content) error {
 
 // UpdateCustomContent updates a content
 func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
-	//parse into the storage format and pass parameters
-	// var extractedKey []string
-	// for _, val := range item.LinkedContent {
-	// 	extractedKey = append(extractedKey, val.Key)
-	// }
-
 	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
@@ -597,7 +591,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 			"type":           item.Type,
 			"details":        item.Details,
 			"name":           item.Name,
-			"reference":      item.ContentReference,
+			"reference":      item.Reference,
 			"linked_content": item.LinkedContent,
 			"display":        item.Display,
 			"date_updated":   time.Now(),
@@ -1033,9 +1027,6 @@ func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, cours
 	if len(results) == 0 {
 		return nil, nil
 	}
-	// if err != nil {
-
-	// }
 
 	// no function needs to return UserUnit so not implementating this function yet
 	convertedResult, err := sa.userUnitFromStorage(results[0])
