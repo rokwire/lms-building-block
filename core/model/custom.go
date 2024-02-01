@@ -275,12 +275,12 @@ type Content struct {
 	AppID string `json:"app_id" bson:"app_id"`
 	OrgID string `json:"org_id" bson:"org_id"`
 
-	Key              string    `json:"key" bson:"key"`
-	Type             string    `json:"type" bson:"type"` // assignment, resource, reward, evaluation
-	Name             string    `json:"name" bson:"name"`
-	Details          string    `json:"details" bson:"details"`
-	ContentReference Reference `json:"reference" bson:"reference"`
-	LinkedContent    []string  `json:"linked_content" bson:"linked_content"`
+	Key           string    `json:"key" bson:"key"`
+	Type          string    `json:"type" bson:"type"` // assignment, resource, reward, evaluation
+	Name          string    `json:"name" bson:"name"`
+	Details       string    `json:"details" bson:"details"`
+	Reference     Reference `json:"reference" bson:"reference"`
+	LinkedContent []string  `json:"linked_content" bson:"linked_content"`
 
 	Display Display `json:"display" bson:"display"`
 
@@ -352,8 +352,9 @@ type TZOffsetPair struct {
 
 // Display represents data used to determine how to display course data in the client
 type Display struct {
-	PrimaryColor   string `json:"primary_color" bson:"primary_color"`
-	AccentColor    string `json:"accent_color" bson:"accent_color"`
-	CompletedColor string `json:"completed_color" bson:"completed_color"`
-	Icon           string `json:"icon" bson:"icon"`
+	PrimaryColor    string `json:"primary_color" bson:"primary_color"`
+	AccentColor     string `json:"accent_color" bson:"accent_color"`
+	CompleteColor   string `json:"complete_color" bson:"complete_color"`
+	IncompleteColor string `json:"incomplete_color" bson:"incomplete_color"`
+	Icon            string `json:"icon" bson:"icon"`
 }

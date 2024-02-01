@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rokwire LMS Building Block API
   description: LMS Building Block API Documentation
-  version: 1.10.1
+  version: 1.10.2
 servers:
   - url: 'https://api.rokwire.illinois.edu/lms'
     description: Production server
@@ -2480,7 +2480,9 @@ components:
           type: string
         accent_color:
           type: string
-        completed_color:
+        complete_color:
+          type: string
+        incomplete_color:
           type: string
         icon:
           type: string
