@@ -243,7 +243,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		now := time.Now().UTC()
-		creating := false
+		var lastCompleted *time.Time
 		if userUnit == nil {
 			// create a userUnit here if it doesn't already exist
 			unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, unitKey)
@@ -257,17 +257,18 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
 			}
 
-			//TODO: do not begin at schedule start to "complete" info content items
-			creating = true
 			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
-				Completed: unit.ScheduleStart, Current: true, DateCreated: time.Now().UTC()}
+				Completed: 0, Current: true, DateCreated: time.Now().UTC()}
 			userUnit.Unit = *unit
-			userUnit.Unit.Schedule[unit.ScheduleStart].UpdateUserData(item.UserContent)
-			userUnit.Unit.Schedule[unit.ScheduleStart].DateStarted = &now
-			if userUnit.Unit.Schedule[unit.ScheduleStart].IsComplete() {
-				userUnit.Unit.Schedule[unit.ScheduleStart].DateCompleted = &now
+			userUnit.Unit.Schedule[0].UpdateUserData(item.UserContent)
+			userUnit.Unit.Schedule[0].DateStarted = &now
+			if userUnit.Unit.Schedule[0].IsComplete() {
+				userUnit.Unit.Schedule[0].DateCompleted = &now
 				// userUnit.Completed++
 				userUnit.LastCompleted = &now
+				if userUnit.Completed < unit.ScheduleStart {
+					userUnit.Completed++
+				}
 			}
 
 			// user started the course and created the first user unit
@@ -280,12 +281,20 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if !userUnit.Current {
 				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
 			}
+			if userUnit.LastCompleted != nil {
+				// make copy of LastCompleted time before possibly updating it
+				lastCompletedVal := *userUnit.LastCompleted
+				lastCompleted = &lastCompletedVal
+			}
 
 			userUnit.Unit.Schedule[userUnit.Completed].UpdateUserData(item.UserContent)
 			if userUnit.Unit.Schedule[userUnit.Completed].IsComplete() {
 				userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
 				// userUnit.Completed++
 				userUnit.LastCompleted = &now
+				if userUnit.Completed < userUnit.Unit.ScheduleStart {
+					userUnit.Completed++
+				}
 			}
 
 			err = storageTransaction.UpdateUserUnit(*userUnit)
@@ -306,9 +315,13 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// update streak and pauses immediately, pauses are used and streaks are reset if necessary in the streaks timer
-		// only if LastCompleted was before most recent streak timer run
+		// only if the following are true:
+		// 1. the current schedule item is required
+		// 2. the current schedule item is completed
+		// 3. the previous schedule item was completed before most recent streak timer run or there is no previous schedule item
 		lastStreakProcess := userUnit.Unit.Schedule[userUnit.Completed].DateStarted
-		if userUnit.Unit.Schedule[userUnit.Completed].DateCompleted != nil && (creating || (lastStreakProcess != nil && userUnit.LastCompleted.Before(*lastStreakProcess))) {
+		if userUnit.Completed >= userUnit.Unit.ScheduleStart && userUnit.Unit.Schedule[userUnit.Completed].DateCompleted != nil &&
+			(lastCompleted == nil || (lastStreakProcess != nil && lastCompleted.Before(*lastStreakProcess))) {
 			newStreak := userCourse.Streak + 1
 			newPauses := userCourse.Pauses
 			if newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
