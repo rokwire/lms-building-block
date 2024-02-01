@@ -4,7 +4,9 @@ properties:
     type: string
   accent_color:
     type: string
-  completed_color:
+  complete_color:
+    type: string
+  incomplete_color:
     type: string
   icon:
     type: string
