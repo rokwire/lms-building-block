@@ -260,10 +260,12 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey,
 				Completed: 0, Current: true, DateCreated: time.Now().UTC()}
 			userUnit.Unit = *unit
-			userUnit.Unit.Schedule[0].UpdateUserData(item.UserContent)
-			userUnit.Unit.Schedule[0].DateStarted = &now
-			if userUnit.Unit.Schedule[0].IsComplete() {
-				userUnit.Unit.Schedule[0].DateCompleted = &now
+
+			scheduleItem := &userUnit.Unit.Schedule[0]
+			scheduleItem.UpdateUserData(item.UserContent)
+			scheduleItem.DateStarted = &now
+			if scheduleItem.IsComplete() {
+				scheduleItem.DateCompleted = &now
 				// userUnit.Completed++
 				userUnit.LastCompleted = &now
 				if userUnit.Completed < unit.ScheduleStart {
@@ -287,9 +289,13 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				lastCompleted = &lastCompletedVal
 			}
 
-			userUnit.Unit.Schedule[userUnit.Completed].UpdateUserData(item.UserContent)
-			if userUnit.Unit.Schedule[userUnit.Completed].IsComplete() {
-				userUnit.Unit.Schedule[userUnit.Completed].DateCompleted = &now
+			scheduleItem := &userUnit.Unit.Schedule[userUnit.Completed]
+			scheduleItem.UpdateUserData(item.UserContent)
+			if scheduleItem.DateStarted == nil {
+				scheduleItem.DateStarted = &now
+			}
+			if scheduleItem.IsComplete() {
+				scheduleItem.DateCompleted = &now
 				// userUnit.Completed++
 				userUnit.LastCompleted = &now
 				if userUnit.Completed < userUnit.Unit.ScheduleStart {
