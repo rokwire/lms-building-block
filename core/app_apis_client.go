@@ -309,32 +309,51 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			}
 		}
 
-		// TODO: compare time to determine whether to run streak and pauses update.
-		// if last_completed is before the latest date_started of current userUnits, then we update streaks
+		// if last_completed is before latest of current userUnits, then we update streaks
 		// don't do local time conversion, use directly.
 		/*
-			scheduled start everyday 9am
 			Module 1
-			dateStarted 9am
-			dateCompleted in db is nil, update streaks.  4pm
+			dateStarted 9am 1.20 no progress today.
 
 			Module 2
-			dateStarted 9am
-			DateCompleted in db is 4pm, update streaks. 6pm
+			dateStarted 9am 1.20
+			Completes at 7pm 1.20. dateCompleted in db is nil. update dateCompleted to 7pm 1.20
+
+			---------------------DAY 2-------------------------------------------
+
+			Module 1
+			dateStarted 9am 1.20
+			Completes at 5pm 1.21. dateCompleted in db is 7pm 1.21. update streaks
+
+			Module 2
+			dateStarted 9am 1.21
+			Completes at 7pm 1.21. d
+
+				  9am    9am
+			    ---|      |
+			-------|      |
+			....
 		*/
 
-		// only update streak and pauses if usercourse last_completed timestamp is before any of current userUnits within the course
-		// current := true
-		// activeCourseUserUnits, err := storageTransaction.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil, &current)
-		// if err != nil {
-		// 	return errors.WrapErrorAction(logutils.ActionFind, model.TypeUserUnit, nil, err)
-		// }
-		// latestTime := userUnit.Unit.Schedule[userUnit.Completed].DateStarted
-		recentlyUpdated := false
-		// for _, uUnit := range activeCourseUserUnits{
-		// 	if userCourse.LastCompleted < uUnit.Unit.Schedule[userUnit.Completed].DateStarted
+		current := true
+		activeCourseUserUnits, err := storageTransaction.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil, &current)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionFind, model.TypeUserUnit, nil, err)
+		}
 
-		// }
+		// get latest started time on userUnit
+		var latestTime *time.Time
+		for _, uUnit := range activeCourseUserUnits {
+			if latestTime == nil || latestTime.Before(*uUnit.Unit.Schedule[userUnit.Completed].DateStarted) {
+				latestTime = uUnit.Unit.Schedule[userUnit.Completed].DateStarted
+			}
+		}
+
+		// only update streak and pauses if usercourse last_completed timestamp is before any of current userUnits within the course
+		recentlyUpdated := true
+		if userCourse.LastCompleted == nil || userCourse.LastCompleted.Before(*latestTime) {
+			recentlyUpdated = false
+		}
 
 		var newStreak *int
 		var newPauses *int
