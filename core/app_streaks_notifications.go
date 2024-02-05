@@ -361,7 +361,6 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnits []model.User
 	for _, userUnit := range userUnits {
 		if userUnit.Completed == userUnit.Unit.ScheduleStart {
 			// user has not completed the current task
-			//return incompleteTaskHandler()
 		} else if userUnit.Completed < userUnit.Unit.Required {
 			// check if the last completed schedule item was completed within (24*days+offset) hours before now
 			days := userUnit.Unit.Schedule[userUnit.Completed-1].Duration
@@ -378,7 +377,6 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnits []model.User
 			}
 		} else if userUnit.Completed == userUnit.Unit.Required && completeUnitHandler != nil {
 			// user completed the current unit
-			//return completeUnitHandler()
 			err := completeUnitHandler(userUnit)
 			if err != nil {
 				n.logger.Error("checkScheduleTaskCompletion completeUnitHandler error: " + err.Error())

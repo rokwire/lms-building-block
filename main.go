@@ -17,7 +17,6 @@ package main
 import (
 	"lms/core"
 	cacheadapter "lms/driven/cache"
-	"lms/driven/corebb"
 	"lms/driven/groups"
 	"lms/driven/notifications"
 	"lms/driven/provider"
@@ -109,12 +108,12 @@ func main() {
 	}
 
 	//core adapter
-	cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID, serviceRegManager, envLoader, envPrefix)
-	coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager, org, app)
+	// cHost, cServiceAccountManager := getCoreBBAdapterValues(logger, serviceID, serviceRegManager, envLoader, envPrefix)
+	// coreAdapter := corebb.NewCoreAdapter(cHost, cServiceAccountManager, org, app)
 
 	// application
 	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
-		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, coreAdapter, logger)
+		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, nil, logger)
 	application.Start()
 
 	// web adapter
