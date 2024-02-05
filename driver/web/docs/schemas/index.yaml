@@ -49,8 +49,8 @@ StreaksNotificationsConfig:
   $ref: "./custom/StreaksNotificationsConfig.yaml"
 Notification:
   $ref: "./custom/Notification.yaml"
-Display:
-  $ref: "./custom/Display.yaml"
+Styles:
+  $ref: "./custom/Styles.yaml"
 
 ### nudges api
 _admin_req_create_nudge:

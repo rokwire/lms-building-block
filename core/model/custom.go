@@ -190,7 +190,7 @@ type Module struct {
 	Name  string `json:"name"`
 	Units []Unit `json:"units"`
 
-	Display Display `json:"display"`
+	Styles Styles `json:"styles"`
 
 	DateCreated time.Time  `json:"-"`
 	DateUpdated *time.Time `json:"-"`
@@ -282,7 +282,7 @@ type Content struct {
 	Reference     Reference `json:"reference" bson:"reference"`
 	LinkedContent []string  `json:"linked_content" bson:"linked_content"`
 
-	Display Display `json:"display" bson:"display"`
+	Styles Styles `json:"styles" bson:"styles"`
 
 	DateCreated time.Time  `json:"-" bson:"date_created"`
 	DateUpdated *time.Time `json:"-" bson:"date_updated"`
@@ -350,11 +350,9 @@ type TZOffsetPair struct {
 	Upper int
 }
 
-// Display represents data used to determine how to display course data in the client
-type Display struct {
-	PrimaryColor    string `json:"primary_color" bson:"primary_color"`
-	AccentColor     string `json:"accent_color" bson:"accent_color"`
-	CompleteColor   string `json:"complete_color" bson:"complete_color"`
-	IncompleteColor string `json:"incomplete_color" bson:"incomplete_color"`
-	Icon            string `json:"icon" bson:"icon"`
+// Styles represents data used to determine how to display course data in the client
+type Styles struct {
+	Colors  map[string]interface{} `json:"colors,omitempty" bson:"colors,omitempty"`
+	Images  map[string]interface{} `json:"images,omitempty" bson:"images,omitempty"`
+	Strings map[string]interface{} `json:"strings,omitempty" bson:"strings,omitempty"`
 }

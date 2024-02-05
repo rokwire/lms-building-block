@@ -63,7 +63,7 @@ type module struct {
 	Name     string   `bson:"name"`
 	UnitKeys []string `bson:"unit_keys"`
 
-	Display model.Display `bson:"display"`
+	Styles model.Styles `bson:"styles"`
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`

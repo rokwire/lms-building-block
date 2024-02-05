@@ -318,7 +318,7 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 			"date_updated": time.Now(),
 			"name":         item.Name,
 			"unit_keys":    unitKeys,
-			"display":      item.Display,
+			"styles":       item.Styles,
 		},
 	}
 	result, err := sa.db.customModules.UpdateOne(sa.context, filter, update, nil)
@@ -593,7 +593,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 			"name":           item.Name,
 			"reference":      item.Reference,
 			"linked_content": item.LinkedContent,
-			"display":        item.Display,
+			"styles":         item.Styles,
 			"date_updated":   time.Now(),
 		},
 	}
