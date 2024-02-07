@@ -203,6 +203,8 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 				unit.ID = uuid.NewString()
 				unit.AppID = claims.AppID
 				unit.OrgID = claims.OrgID
+				unit.Required = len(unit.Schedule)
+				unit.DateCreated = time.Now().UTC()
 				units = append(units, unit)
 			}
 			module.ID = uuid.NewString()
@@ -394,6 +396,8 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 			unit.ID = uuid.NewString()
 			unit.AppID = claims.AppID
 			unit.OrgID = claims.OrgID
+			unit.Required = len(unit.Schedule)
+			unit.DateCreated = time.Now().UTC()
 			units = append(units, unit)
 		}
 
@@ -579,6 +583,8 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 			}
 		}
 
+		item.Required = len(item.Schedule)
+		item.DateCreated = time.Now().UTC()
 		err = storageTransaction.InsertCustomUnit(item)
 		if err != nil {
 			return err
@@ -640,7 +646,7 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 			return err
 		}
 
-		err = storageTransaction.UpdateUserUnits(key, item)
+		err = storageTransaction.UpdateUserUnits(key, item) //TODO: can cause problems if user unit has data stored in schedule
 		if err != nil {
 			return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 		}
@@ -784,6 +790,15 @@ func (s *adminImpl) GetCustomCourseConfigs(claims *tokenauth.Claims) ([]model.Co
 }
 
 func (s *adminImpl) CreateCustomCourseConfig(claims *tokenauth.Claims, item model.CourseConfig) (*model.CourseConfig, error) {
+	err := item.StreaksNotificationsConfig.ValidateTimings()
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeStreaksNotificationsConfig, nil, err)
+	}
+
+	if item.StreaksNotificationsConfig.TimerDelayTolerance <= 0 {
+		item.StreaksNotificationsConfig.TimerDelayTolerance = model.DefaultStreaksNotificationsTimerDelayTolerance
+	}
+
 	item.ID = uuid.NewString()
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
@@ -802,6 +817,15 @@ func (s *adminImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) 
 }
 
 func (s *adminImpl) UpdateCustomCourseConfig(claims *tokenauth.Claims, key string, item model.CourseConfig) (*model.CourseConfig, error) {
+	err := item.StreaksNotificationsConfig.ValidateTimings()
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeStreaksNotificationsConfig, nil, err)
+	}
+
+	if item.StreaksNotificationsConfig.TimerDelayTolerance <= 0 {
+		item.StreaksNotificationsConfig.TimerDelayTolerance = model.DefaultStreaksNotificationsTimerDelayTolerance
+	}
+
 	item.AppID = claims.AppID
 	item.OrgID = claims.OrgID
 	item.CourseKey = key

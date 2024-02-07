@@ -161,6 +161,15 @@ func (a APIsHandler) clientGetCustomCourses(claims *tokenauth.Claims, params map
 	return a.app.Client.GetCustomCourses(claims)
 }
 
+func (a APIsHandler) clientGetCustomCourse(claims *tokenauth.Claims, params map[string]interface{}) (*model.Course, error) {
+	key, err := utils.GetValue[string](params, "key", true)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("key"), err)
+	}
+
+	return a.app.Client.GetCustomCourse(claims, key)
+}
+
 func (a APIsHandler) clientGetCustomCourseConfig(claims *tokenauth.Claims, params map[string]interface{}) (*model.CourseConfig, error) {
 	key, err := utils.GetValue[string](params, "key", true)
 	if err != nil {

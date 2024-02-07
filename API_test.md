@@ -164,11 +164,7 @@ admin and client API testing notes
             "user_content": [
                 {
                     "content_key":"content1",
-                    "user_data":
-                    {
-                        "name": "AAAAA",
-                        "score": 95
-                    }
+                    "user_data":{}
                 }
             ],
             "duration": 1
@@ -178,11 +174,7 @@ admin and client API testing notes
             "user_content": [
                 {
                     "content_key":"content2",
-                    "user_data":
-                    {
-                        "name": "BBBBB",
-                        "score": 95
-                    }
+                    "user_data":{}
                 }
             ],
             "duration": 2
@@ -191,43 +183,6 @@ admin and client API testing notes
 }
 ```
 
-```
-{
-    "key": "unit1",
-    "name": "unit1 test",
-    "content_keys":["content1"],
-    "schedule": [
-        {
-            "name": "schedule item 1 name",
-            "user_content": [
-                {
-                    "content_key":"content1",
-                    "user_data":
-                    {
-                        "name": "AAAAA",
-                        "score": 95
-                    }
-                }
-            ],
-            "duration": 1
-        },
-        {
-            "name": "schedule item 2 name",
-            "user_content": [
-                {
-                    "content_key":"content2",
-                    "user_data":
-                    {
-                        "name": "BBBBB",
-                        "score": 95
-                    }
-                }
-            ],
-            "duration": 2
-        }
-    ]
-}
-```
 - DeleteCustomUnit
 
     | Test Response Code | Test Description      | Remark |
@@ -246,49 +201,55 @@ admin and client API testing notes
     | code 400           | bad format/wrong type                     |        |
     | code 500           | repeated {app_id, org_id,key combination} |        |
 
-    ```
-    {
-        "key": "module1",
-        "name": "module1 test",
-        "units": [
-            {
-                "key": "unit1",
-                "name": "unit1 test",
-                "content": [
-                    {
-                        "key": "content1",
-                        "type": "assignment",
-                        "name": "test assignment",
-                        "details": "string string string",
-                        "reference": {
-                            "name": "string",
-                            "type": "string",
-                            "reference_key": "string"
-                        },
-                        "linked_content": ["content2"]
-                    }
-                ],
-                "schedule": [
-                    {
-                        "name": "schedule name",
-                        "user_content": [
-                            {
-                                "name": "content name",
-                                "type": "string",
-                                "reference_key": "string",
-                                "user_data": {
-                                    "test_1_score": 97,
-                                    "homework_3_due": "2023-12-12T22:06:05.021Z"
-                                },
-                                "date_started": "2023-11-17T22:06:05.021Z"
-                            }
-                        ],
-                        "duration": 0
-                    }
-                ]
-            }
-        ]
-    }
+```
+{
+    "key": "module1",
+    "name": "module1 test",
+    "units": [
+        {
+            "key": "unit1",
+            "name": "unit1 test",
+            "content": [
+                {
+                    "key": "content1",
+                    "type": "assignment",
+                    "name": "test assignment",
+                    "details": "string string string",
+                    "reference": {
+                        "name": "string",
+                        "type": "string",
+                        "reference_key": "string"
+                    },
+                    "linked_content": [
+                        "content2"
+                    ]
+                }
+            ],
+            "schedule": [
+                {
+                    "name": "schedule item 1 name",
+                    "user_content": [
+                        {
+                            "content_key": "content1",
+                            "user_data": {}
+                        }
+                    ],
+                    "duration": 1
+                },
+                {
+                    "name": "schedule item 2 name",
+                    "user_content": [
+                        {
+                            "content_key": "content2",
+                            "user_data": {}
+                        }
+                    ],
+                    "duration": 2
+                }
+            ]
+        }
+    ]
+}
     ```
 
 - GetCustomModule
@@ -474,3 +435,52 @@ admin and client API testing notes
     |--------------------|-----------------------|--------|
     | code 200           | correct input         |        |
     |                    | not found             |        |
+
+### course configs
+```
+    {
+        "_id": {
+            "$oid": "65afcda06ff2c17b142a35d2"
+        },
+        "app_id": "9768",
+        "org_id": "0a2eff20-e2cd-11eb-af68-60f81db5ecc0",
+        "course_key": "course1",
+        "initial_pauses": 2,
+        "max_pauses": 5,
+        "pause_reward_streak": 2,
+        "streaks_notifications_config": {
+            "timezone_name": "user",
+            "timezone_offset": 37000,
+            "prefer_early": true,
+            "notifications_active": true,
+            "notifications": [
+                {
+                    "subject": "Time to start today's class",
+                    "body": "start your class early, and accumulate breaks after completeting task everyday",
+                    "params": {
+                        "params1Key": "params1Value",
+                        "params2Key": "params2Value"
+                    },
+                    "process_time": 60,
+                    "active": true,
+                    "requirements": {
+                        "completed_tasks": false
+                    }
+                },
+                {
+                    "subject": "You Haven't Finish Today's Work Yet",
+                    "body": "hurry, only few hours left to complete today's work",
+                    "params": {
+                        "params1Key": "params3Value",
+                        "params2Key": "params4Value"
+                    },
+                    "process_time": 0,
+                    "active": true,
+                    "requirements": {
+                        "completed_tasks": false
+                    }
+                }
+            ]
+        }
+    }
+```

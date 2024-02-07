@@ -46,6 +46,7 @@ type Client interface {
 	// model.Course
 
 	GetCustomCourses(claims *tokenauth.Claims) ([]model.Course, error)
+	GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error)
 
 	// model.CourseConfig
 

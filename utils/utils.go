@@ -41,6 +41,10 @@ const (
 	SecondsInHour int = 60 * SecondsInMinute
 	// SecondsInMinute is the number of seconds in one minute
 	SecondsInMinute int = 60
+	// MinTZOffset is the minimum allowed timezone offset from UTC in seconds (UTC-12 = -43200)
+	MinTZOffset int = -12 * SecondsInHour
+	// MaxTZOffset is the maximum allowed timezone offset from UTC in seconds (UTC+14 = 50400)
+	MaxTZOffset int = 14 * SecondsInHour
 )
 
 // Filter represents find filter for finding entities by the their fields
@@ -314,6 +318,10 @@ func Exist[T listExistType](list []T, value T) bool {
 	return false
 }
 
+type listExistType interface {
+	string | int
+}
+
 // Hash hashes the s value
 func Hash(s string) uint32 {
 	h := fnv.New32a()
@@ -445,8 +453,4 @@ func onTimer(timer *time.Timer, timerDone chan bool, initialDuration *time.Durat
 		}
 		timer = nil
 	}
-}
-
-type listExistType interface {
-	string | int
 }

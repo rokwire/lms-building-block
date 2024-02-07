@@ -18,12 +18,15 @@ import (
 	"lms/utils"
 	"time"
 
+	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 const (
 	//TypeCourseConfig course config type
 	TypeCourseConfig logutils.MessageDataType = "course config"
+	//TypeStreaksNotificationsConfig streaks notifications config type
+	TypeStreaksNotificationsConfig logutils.MessageDataType = "streaks notifications config"
 	//TypeUserCourse user course type
 	TypeUserCourse logutils.MessageDataType = "user course"
 	//TypeUserUnit user unit type
@@ -38,6 +41,11 @@ const (
 	TypeContent logutils.MessageDataType = "content"
 	//TypeTimezone timezone type
 	TypeTimezone logutils.MessageDataType = "timezone"
+
+	//UserTimezone indicates the user's timezone should be used
+	UserTimezone string = "user"
+	//DefaultStreaksNotificationsTimerDelayTolerance gives the default seconds of timer delay to tolerate
+	DefaultStreaksNotificationsTimerDelayTolerance int = 10
 )
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
@@ -49,10 +57,11 @@ type UserCourse struct {
 
 	Timezone // include user timezone info
 
-	Streak       int         `json:"streak"`
-	StreakResets []time.Time `json:"streak_resets"` // timestamps when the streak is reset for this course
-	Pauses       int         `json:"pauses"`
-	PauseUses    []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
+	Streak         int         `json:"streak"`
+	StreakResets   []time.Time `json:"streak_resets"`   // timestamps when the streak is reset for this course
+	StreakRestarts []time.Time `json:"streak_restarts"` // timestamps when the streak is restarted for this course
+	Pauses         int         `json:"pauses"`
+	PauseUses      []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
 
 	Course Course `json:"course"`
 
@@ -152,8 +161,9 @@ type CourseConfig struct {
 
 // StreaksNotificationsConfig entity
 type StreaksNotificationsConfig struct {
-	TimezoneName   string `json:"timezone_name" bson:"timezone_name"`     // either an IANA timezone database identifier or "user" to for users' most recent known timezone
-	TimezoneOffset int    `json:"timezone_offset" bson:"timezone_offset"` // in seconds east of UTC (only valid if TimezoneName is not "user")
+	TimezoneName        string `json:"timezone_name" bson:"timezone_name"`                 // either an IANA timezone database identifier or "user" to for users' most recent known timezone
+	TimezoneOffset      int    `json:"timezone_offset" bson:"timezone_offset"`             // in seconds east of UTC (only valid if TimezoneName is not "user")
+	TimerDelayTolerance int    `json:"timer_delay_tolerance" bson:"timer_delay_tolerance"` // for static timezone (e.g., America/Chicago), the maximum number of seconds of timer delay to tolerate
 
 	StreaksProcessTime  int  `json:"streaks_process_time" bson:"streaks_process_time"` // seconds since midnight in selected timezone at which to process streaks
 	PreferEarly         bool `json:"prefer_early" bson:"prefer_early"`                 // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
@@ -162,6 +172,32 @@ type StreaksNotificationsConfig struct {
 	NotificationsMode string `json:"notifications_mode" bson:"notifications_mode"` // "normal" or "test"
 
 	Notifications []Notification `json:"notifications" bson:"notifications"`
+}
+
+// ValidateTimings checks timezone information is valid and streaks and notifications process times are valid
+func (c *StreaksNotificationsConfig) ValidateTimings() error {
+	if c == nil {
+		return errors.ErrorData(logutils.StatusMissing, TypeStreaksNotificationsConfig, nil)
+	}
+
+	if c.TimezoneName != UserTimezone {
+		timezone := Timezone{Name: c.TimezoneName, Offset: c.TimezoneOffset}
+		err := timezone.Validate()
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionValidate, "streaks and notifications timezone", nil, err)
+		}
+		c.TimezoneOffset = timezone.Offset
+	}
+	if c.StreaksProcessTime < 0 || c.StreaksProcessTime > utils.SecondsInDay {
+		return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
+	}
+	for _, notification := range c.Notifications {
+		if notification.ProcessTime < 0 || notification.ProcessTime > utils.SecondsInDay {
+			return errors.ErrorData(logutils.StatusInvalid, "notification process time", &logutils.FieldArgs{"process_time": notification.ProcessTime})
+		}
+	}
+
+	return nil
 }
 
 // Notification entity
@@ -235,8 +271,8 @@ type Unit struct {
 
 // UserContentWithTimezone wraps unit with time information
 type UserContentWithTimezone struct {
-	UserContent []UserContent `json:"user_content"`
-	Timezone                  // include user timezone info
+	UserContent UserContent `json:"user_content"`
+	Timezone                // include user timezone info
 }
 
 // ScheduleItem represents a set of Content items to be completed in a certain amount of time
@@ -247,6 +283,18 @@ type ScheduleItem struct {
 
 	DateStarted   *time.Time `json:"date_started,omitempty" bson:"date_started,omitempty"`
 	DateCompleted *time.Time `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
+}
+
+// UpdateUserData updates the stored data for the user content matching item.ContentKey in the schedule item
+func (s *ScheduleItem) UpdateUserData(item UserContent) {
+	if s == nil {
+		return
+	}
+	for i, userContent := range s.UserContent {
+		if userContent.ContentKey == item.ContentKey {
+			s.UserContent[i].UserData = item.UserData
+		}
+	}
 }
 
 // IsComplete gives whether every user content item in the schedule item has user data
@@ -265,12 +313,14 @@ type Content struct {
 	AppID string `json:"app_id" bson:"app_id"`
 	OrgID string `json:"org_id" bson:"org_id"`
 
-	Key              string    `json:"key" bson:"key"`
-	Type             string    `json:"type" bson:"type"` // assignment, resource, reward, evaluation
-	Name             string    `json:"name" bson:"name"`
-	Details          string    `json:"details" bson:"details"`
-	ContentReference Reference `json:"reference" bson:"reference"`
-	LinkedContent    []string  `json:"linked_content" bson:"linked_content"`
+	Key           string    `json:"key" bson:"key"`
+	Type          string    `json:"type" bson:"type"` // assignment, resource, reward, evaluation
+	Name          string    `json:"name" bson:"name"`
+	Details       string    `json:"details" bson:"details"`
+	Reference     Reference `json:"reference" bson:"reference"`
+	LinkedContent []string  `json:"linked_content" bson:"linked_content"`
+
+	Display Display `json:"display" bson:"display"`
 
 	DateCreated time.Time  `json:"-" bson:"date_created"`
 	DateUpdated *time.Time `json:"-" bson:"date_updated"`
@@ -297,6 +347,25 @@ type Timezone struct {
 	Offset int    `json:"timezone_offset"` // in seconds east of UTC
 }
 
+// Validate checks whether name and offset refer to a valid timezone (sets offset if name is valid but offset is not)
+func (t *Timezone) Validate() error {
+	if t == nil {
+		return errors.ErrorData(logutils.StatusMissing, "timezone", nil)
+	}
+
+	if t.Offset < utils.MinTZOffset || t.Offset > utils.MaxTZOffset {
+		tzLoc, err := time.LoadLocation(t.Name)
+		if err != nil {
+			return errors.WrapErrorData(logutils.StatusInvalid, "user timezone", &logutils.FieldArgs{"name": t.Name, "offset": t.Offset}, err)
+		}
+
+		// set the offset if it was invalid, but could load location from name
+		_, t.Offset = time.Now().In(tzLoc).Zone()
+	}
+
+	return nil
+}
+
 // TZOffsets entity represents a set of single timezone offsets
 type TZOffsets []int
 
@@ -305,9 +374,9 @@ func (tz TZOffsets) GeneratePairs(preferEarly bool) []TZOffsetPair {
 	pairs := make([]TZOffsetPair, len(tz))
 	for i, offset := range tz {
 		if preferEarly {
-			pairs[i] = TZOffsetPair{Lower: offset, Upper: offset + utils.SecondsInHour - 1}
-		} else {
 			pairs[i] = TZOffsetPair{Lower: offset - utils.SecondsInHour + 1, Upper: offset}
+		} else {
+			pairs[i] = TZOffsetPair{Lower: offset, Upper: offset + utils.SecondsInHour - 1}
 		}
 	}
 	return pairs
@@ -321,7 +390,9 @@ type TZOffsetPair struct {
 
 // Display represents data used to determine how to display course data in the client
 type Display struct {
-	PrimaryColor string `json:"primary_color" bson:"primary_color"`
-	AccentColor  string `json:"accent_color" bson:"accent_color"`
-	Image        string `json:"image" bson:"image"`
+	PrimaryColor    string `json:"primary_color" bson:"primary_color"`
+	AccentColor     string `json:"accent_color" bson:"accent_color"`
+	CompleteColor   string `json:"complete_color" bson:"complete_color"`
+	IncompleteColor string `json:"incomplete_color" bson:"incomplete_color"`
+	Icon            string `json:"icon" bson:"icon"`
 }

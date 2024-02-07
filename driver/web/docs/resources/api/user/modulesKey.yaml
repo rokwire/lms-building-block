@@ -24,7 +24,7 @@ put:
       schema:
         type: string
   requestBody:
-    description: updated userUnit content with timezone info
+    description: updated user content with timezone info
     content:
       application/json:
         schema:

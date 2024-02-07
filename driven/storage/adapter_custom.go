@@ -72,7 +72,6 @@ func (sa *Adapter) FindCustomCourse(appID string, orgID string, key string) (*mo
 // InsertCustomCourse inserts a course
 func (sa *Adapter) InsertCustomCourse(item model.Course) error {
 	item.DateCreated = time.Now()
-	item.DateUpdated = nil
 	course := sa.customCourseToStorage(item)
 
 	_, err := sa.db.customCourses.InsertOne(sa.context, course)
@@ -280,7 +279,6 @@ func (sa *Adapter) FindCustomModule(appID string, orgID string, key string) (*mo
 // InsertCustomModule inserts a module
 func (sa *Adapter) InsertCustomModule(item model.Module) error {
 	item.DateCreated = time.Now()
-	item.DateUpdated = nil
 	module := sa.customModuleToStorage(item)
 	_, err := sa.db.customModules.InsertOne(sa.context, module)
 	if err != nil {
@@ -294,7 +292,6 @@ func (sa *Adapter) InsertCustomModules(items []model.Module) error {
 	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
 		item.DateCreated = time.Now()
-		item.DateUpdated = nil
 		module := sa.customModuleToStorage(item)
 		storeItems[i] = module
 	}
@@ -411,8 +408,6 @@ func (sa *Adapter) FindCustomUnit(appID string, orgID string, key string) (*mode
 
 // InsertCustomUnit inserts a unit
 func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
-	item.Required = len(item.Schedule)
-	item.DateCreated = time.Now()
 	unit := sa.customUnitToStorage(item)
 	_, err := sa.db.customUnits.InsertOne(sa.context, unit)
 	if err != nil {
@@ -425,8 +420,6 @@ func (sa *Adapter) InsertCustomUnit(item model.Unit) error {
 func (sa *Adapter) InsertCustomUnits(items []model.Unit) error {
 	storeItems := make([]interface{}, len(items))
 	for i, item := range items {
-		item.Required = len(item.Schedule)
-		item.DateCreated = time.Now()
 		unit := sa.customUnitToStorage(item)
 		storeItems[i] = unit
 	}
@@ -591,12 +584,6 @@ func (sa *Adapter) InsertCustomContents(items []model.Content) error {
 
 // UpdateCustomContent updates a content
 func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
-	//parse into the storage format and pass parameters
-	// var extractedKey []string
-	// for _, val := range item.LinkedContent {
-	// 	extractedKey = append(extractedKey, val.Key)
-	// }
-
 	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "key": key}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
@@ -604,8 +591,9 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 			"type":           item.Type,
 			"details":        item.Details,
 			"name":           item.Name,
-			"reference":      item.ContentReference,
+			"reference":      item.Reference,
 			"linked_content": item.LinkedContent,
+			"display":        item.Display,
 			"date_updated":   time.Now(),
 		},
 	}
@@ -857,25 +845,6 @@ func (sa *Adapter) DeleteModuleKeyFromUserCourses(appID string, orgID string, ke
 	return nil
 }
 
-// DropUserCourse mark user course as dropped
-func (sa *Adapter) DropUserCourse(appID string, orgID string, key string) error {
-	now := time.Now().UTC()
-	filter := bson.M{"org_id": orgID, "app_id": appID, "course.key": key}
-	update := bson.M{
-		"$set": bson.M{
-			"date_dropped": now,
-			"date_updated": now,
-		},
-	}
-
-	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
-	if err != nil {
-		errArgs := logutils.FieldArgs(filter)
-		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
-	}
-	return nil
-}
-
 // FindUserCourses finds user course by a set of parameters
 func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair) ([]model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID}
@@ -936,13 +905,16 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 // FindUserCourse finds a user course by id
 func (sa *Adapter) FindUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID, "course.key": courseKey}
-	var result userCourse
-	err := sa.db.userCourses.FindOne(sa.context, filter, &result, nil)
+	var result []userCourse
+	err := sa.db.userCourses.Find(sa.context, filter, &result, nil)
 	if err != nil {
 		return nil, err
 	}
+	if len(result) == 0 {
+		return nil, nil
+	}
 
-	convertedResult, err := sa.userCourseFromStorage(result)
+	convertedResult, err := sa.userCourseFromStorage(result[0])
 	if err != nil {
 		return nil, err
 	}
@@ -952,15 +924,7 @@ func (sa *Adapter) FindUserCourse(appID string, orgID string, userID string, cou
 
 // InsertUserCourse inserts a user course
 func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
-	var userCourse userCourse
-	userCourse.ID = item.ID
-	userCourse.AppID = item.AppID
-	userCourse.OrgID = item.OrgID
-	userCourse.UserID = item.UserID
-	userCourse.DateCreated = time.Now()
-	userCourse.DateUpdated = nil
-	userCourse.LastCompleted = nil
-	userCourse.Course = sa.customCourseToStorage(item.Course)
+	userCourse := sa.userCourseToStorage(item)
 
 	_, err := sa.db.userCourses.InsertOne(sa.context, userCourse)
 	if err != nil {
@@ -970,36 +934,25 @@ func (sa *Adapter) InsertUserCourse(item model.UserCourse) error {
 }
 
 // UpdateUserCourse updates a user course
-func (sa *Adapter) UpdateUserCourse(appID string, orgID string, userID string, userCourseID *string, courseKey string, streak *int, pauses *int, lastCompleted *time.Time) error {
-	filter := bson.M{"app_id": appID, "org_id": orgID, "course.key": courseKey, "user_id": userID}
-	if userCourseID != nil {
-		filter["_id"] = userCourseID
-	}
-
-	updateVals := bson.M{}
-	if streak != nil {
-		updateVals["streak"] = *streak
-	}
-	if pauses != nil {
-		updateVals["pauses"] = *pauses
-	}
-	if lastCompleted != nil {
-		updateVals["last_completed"] = *lastCompleted
-	}
-	if len(updateVals) != 0 {
-		return nil // no updates to do
-	}
-	updateVals["date_updated"] = time.Now()
-
+func (sa *Adapter) UpdateUserCourse(item model.UserCourse) error {
+	filter := bson.M{"app_id": item.AppID, "org_id": item.OrgID, "course.key": item.Course.Key, "user_id": item.UserID}
+	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
-		"$set": updateVals,
+		"$set": bson.M{
+			"streak":          item.Streak,
+			"pauses":          item.Pauses,
+			"streak_restarts": item.StreakRestarts,
+			"date_dropped":    item.DateDropped,
+			"date_updated":    time.Now().UTC(),
+			"last_completed":  item.LastCompleted,
+		},
 	}
 	result, err := sa.db.userCourses.UpdateOne(sa.context, filter, update, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionUpdate, "", &logutils.FieldArgs{}, err)
+		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
 	}
 	if result.MatchedCount == 0 {
-		return errors.WrapErrorData(logutils.StatusMissing, "", &logutils.FieldArgs{}, err)
+		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUserCourse, &errArgs, err)
 	}
 	return nil
 }
@@ -1082,9 +1035,6 @@ func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, cours
 	if len(results) == 0 {
 		return nil, nil
 	}
-	// if err != nil {
-
-	// }
 
 	// no function needs to return UserUnit so not implementating this function yet
 	convertedResult, err := sa.userUnitFromStorage(results[0])
@@ -1129,17 +1079,7 @@ func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, c
 
 // InsertUserUnit inserts a user unit
 func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
-	var userUnit userUnit
-	userUnit.ID = item.ID
-	userUnit.AppID = item.AppID
-	userUnit.OrgID = item.OrgID
-	userUnit.UserID = item.UserID
-	userUnit.DateCreated = time.Now()
-	userUnit.DateUpdated = nil
-	userUnit.CourseKey = item.CourseKey
-	userUnit.ModuleKey = item.ModuleKey
-	userUnit.Current = item.Current
-	userUnit.Unit = sa.customUnitToStorage(item.Unit)
+	userUnit := sa.userUnitToStorage(item)
 
 	_, err := sa.db.userUnits.InsertOne(sa.context, userUnit)
 	if err != nil {

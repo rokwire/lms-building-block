@@ -149,7 +149,7 @@ func (sa *Adapter) customUnitToStorage(item model.Unit) unit {
 func (sa *Adapter) userCourseFromStorage(item userCourse) (model.UserCourse, error) {
 	timezone := model.Timezone{Name: item.TimezoneName, Offset: item.TimezoneOffset}
 	result := model.UserCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, Timezone: timezone,
-		Streak: item.Streak, StreakResets: item.StreakResets, Pauses: item.Pauses, PauseUses: item.PauseUses,
+		Streak: item.Streak, StreakResets: item.StreakResets, StreakRestarts: item.StreakRestarts, Pauses: item.Pauses, PauseUses: item.PauseUses,
 		DateCreated: item.DateCreated, DateUpdated: item.DateUpdated, DateDropped: item.DateDropped, LastCompleted: item.LastCompleted}
 
 	convertedCourse, err := sa.customCourseFromStorage(item.Course)
@@ -159,6 +159,13 @@ func (sa *Adapter) userCourseFromStorage(item userCourse) (model.UserCourse, err
 	result.Course = convertedCourse
 
 	return result, nil
+}
+
+func (sa *Adapter) userCourseToStorage(item model.UserCourse) userCourse {
+	course := sa.customCourseToStorage(item.Course)
+	return userCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, TimezoneName: item.Timezone.Name, TimezoneOffset: item.Timezone.Offset,
+		Streak: item.Streak, StreakResets: item.StreakResets, StreakRestarts: item.StreakRestarts, Pauses: item.Pauses, PauseUses: item.PauseUses,
+		Course: course, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 }
 
 func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
@@ -172,4 +179,10 @@ func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
 	result.Unit = unit
 
 	return result, nil
+}
+
+func (sa *Adapter) userUnitToStorage(item model.UserUnit) userUnit {
+	unit := sa.customUnitToStorage(item.Unit)
+	return userUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, ModuleKey: item.ModuleKey, Unit: unit,
+		Current: item.Current, Completed: item.Completed, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 }

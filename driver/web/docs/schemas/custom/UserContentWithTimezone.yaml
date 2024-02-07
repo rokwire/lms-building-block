@@ -9,6 +9,4 @@ properties:
   timezone_offset:
     type: integer
   user_content:
-    type: array
-    items:
-      $ref: "./UserContent.yaml"
+    $ref: "./UserContent.yaml"

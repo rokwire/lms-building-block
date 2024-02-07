@@ -50,6 +50,7 @@ type AssignmentGroup struct {
 type Content struct {
 	AppId         *string     `json:"app_id,omitempty"`
 	Details       *string     `json:"details,omitempty"`
+	Display       Display     `json:"display"`
 	Id            *string     `json:"id,omitempty"`
 	Key           string      `json:"key"`
 	LinkedContent *[]string   `json:"linked_content"`
@@ -86,9 +87,11 @@ type CourseConfig struct {
 
 // Display defines model for Display.
 type Display struct {
-	AccentColor  *string `json:"accent_color,omitempty"`
-	Image        *string `json:"image,omitempty"`
-	PrimaryColor *string `json:"primary_color,omitempty"`
+	AccentColor     *string `json:"accent_color,omitempty"`
+	CompleteColor   *string `json:"complete_color,omitempty"`
+	Icon            *string `json:"icon,omitempty"`
+	IncompleteColor *string `json:"incomplete_color,omitempty"`
+	PrimaryColor    *string `json:"primary_color,omitempty"`
 }
 
 // Enrollment defines model for Enrollment.
@@ -179,6 +182,7 @@ type StreaksNotificationsConfig struct {
 	NotificationsMode   StreaksNotificationsConfigNotificationsMode `json:"notifications_mode"`
 	PreferEarly         bool                                        `json:"prefer_early"`
 	StreaksProcessTime  int                                         `json:"streaks_process_time"`
+	TimerDelayTolerance *int                                        `json:"timer_delay_tolerance,omitempty"`
 	TimezoneName        string                                      `json:"timezone_name"`
 	TimezoneOffset      *int                                        `json:"timezone_offset,omitempty"`
 }
@@ -219,9 +223,9 @@ type UserContent struct {
 
 // UserContentWithTimezone defines model for UserContentWithTimezone.
 type UserContentWithTimezone struct {
-	TimezoneName   string        `json:"timezone_name"`
-	TimezoneOffset int           `json:"timezone_offset"`
-	UserContent    []UserContent `json:"user_content"`
+	TimezoneName   string      `json:"timezone_name"`
+	TimezoneOffset int         `json:"timezone_offset"`
+	UserContent    UserContent `json:"user_content"`
 }
 
 // UserCourse defines model for UserCourse.
@@ -235,6 +239,7 @@ type UserCourse struct {
 	Pauses         int         `json:"pauses"`
 	Streak         int         `json:"streak"`
 	StreakResets   []time.Time `json:"streak_resets"`
+	StreakRestarts []time.Time `json:"streak_restarts"`
 	TimezoneName   string      `json:"timezone_name"`
 	TimezoneOffset int         `json:"timezone_offset"`
 	UserId         *string     `json:"user_id,omitempty"`
@@ -250,6 +255,7 @@ type UserUnit struct {
 	DateUpdated   *time.Time `json:"date_updated,omitempty"`
 	Id            *string    `json:"id,omitempty"`
 	LastCompleted *time.Time `json:"last_completed,omitempty"`
+	ModuleKey     *string    `json:"module_key,omitempty"`
 	OrgId         *string    `json:"org_id,omitempty"`
 	Unit          Unit       `json:"unit"`
 	UserId        *string    `json:"user_id,omitempty"`
@@ -463,8 +469,8 @@ type PostAdminUnitsJSONRequestBody = Unit
 // PutAdminUnitsKeyJSONRequestBody defines body for PutAdminUnitsKey for application/json ContentType.
 type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
-// PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyUnitsUnitKey for application/json ContentType.
-type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UserContentWithTimezone
+// PutApiUsersCoursesCourseKeyModulesModuleKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyModulesModuleKey for application/json ContentType.
+type PutApiUsersCoursesCourseKeyModulesModuleKeyJSONRequestBody = UserContentWithTimezone
 
 // PostApiUsersCoursesKeyJSONRequestBody defines body for PostApiUsersCoursesKey for application/json ContentType.
 type PostApiUsersCoursesKeyJSONRequestBody = Timezone
