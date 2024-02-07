@@ -237,6 +237,19 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			return errors.ErrorData(logutils.StatusInvalid, model.TypeUserCourse, &logutils.FieldArgs{"id": userCourse.ID, "date_dropped": userCourse.DateDropped})
 		}
 
+		courseConfig, err := storageTransaction.FindCourseConfig(userCourse.AppID, userCourse.OrgID, userCourse.Course.Key)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
+		}
+
+		// update timezone name and offset for all user_course of a user
+		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.Name, item.Offset)
+		if err != nil {
+			return err
+		}
+		userCourse.Timezone.Name = item.Name
+		userCourse.Timezone.Offset = item.Offset
+
 		// find the current user unit (this is managed by the streaks timer)
 		userUnit, err = storageTransaction.FindUserUnit(claims.AppID, claims.OrgID, claims.Subject, courseKey, &unitKey)
 		if err != nil {
@@ -264,7 +277,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 
 			scheduleItem := &userUnit.Unit.Schedule[0]
 			scheduleItem.UpdateUserData(item.UserContent)
-			scheduleItem.DateStarted = &now
+			scheduleItem.DateStarted = userCourse.MostRecentStreakProcessTime(&now, courseConfig.StreaksNotificationsConfig)
 			if scheduleItem.IsComplete() {
 				scheduleItem.DateCompleted = &now
 				// userUnit.Completed++
@@ -284,7 +297,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if !userUnit.Current {
 				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
 			}
-			if userUnit.LastCompleted != nil {
+			if userUnit.LastCompleted != nil && userUnit.Completed > userUnit.Unit.ScheduleStart {
 				// make copy of LastCompleted time before possibly updating it
 				lastCompletedVal := *userUnit.LastCompleted
 				lastCompleted = &lastCompletedVal
@@ -293,7 +306,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			scheduleItem := &userUnit.Unit.Schedule[userUnit.Completed]
 			scheduleItem.UpdateUserData(item.UserContent)
 			if scheduleItem.DateStarted == nil {
-				scheduleItem.DateStarted = &now
+				scheduleItem.DateStarted = userCourse.MostRecentStreakProcessTime(&now, courseConfig.StreaksNotificationsConfig)
 			}
 			if scheduleItem.IsComplete() {
 				scheduleItem.DateCompleted = &now
@@ -308,17 +321,6 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 			}
-		}
-
-		// update timezone name and offset for all user_course of a user
-		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.Name, item.Offset)
-		if err != nil {
-			return err
-		}
-
-		courseConfig, err := storageTransaction.FindCourseConfig(userCourse.AppID, userCourse.OrgID, userCourse.Course.Key)
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionFind, model.TypeCourseConfig, nil, err)
 		}
 
 		// update streak and pauses immediately, pauses are used and streaks are reset if necessary in the streaks timer

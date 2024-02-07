@@ -75,6 +75,40 @@ type UserCourse struct {
 	DateDropped *time.Time `json:"date_dropped"`
 }
 
+// MostRecentStreakProcessTime gives the time when the most recent daily streak process ran for a user
+func (u *UserCourse) MostRecentStreakProcessTime(now *time.Time, snConfig StreaksNotificationsConfig) *time.Time {
+	if u == nil {
+		return nil
+	}
+	if now == nil {
+		newNow := time.Now()
+		now = &newNow
+	}
+
+	var loc *time.Location
+	var err error
+	if snConfig.TimezoneName == "user" {
+		loc = time.FixedZone(u.Timezone.Name, u.Timezone.Offset)
+	} else {
+		loc, err = time.LoadLocation(snConfig.TimezoneName)
+		if err != nil {
+			loc = time.FixedZone(snConfig.TimezoneName, snConfig.TimezoneOffset)
+		}
+	}
+	nowLocal := now.In(loc)
+	nowLocalSeconds := utils.SecondsInHour*nowLocal.Hour() + 60*nowLocal.Minute() + nowLocal.Second()
+
+	hour := snConfig.StreaksProcessTime / utils.SecondsInHour
+	minute := (snConfig.StreaksProcessTime % utils.SecondsInHour) / 60
+	second := (snConfig.StreaksProcessTime % utils.SecondsInHour) % 60
+	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), hour, minute, second, 0, loc).UTC()
+	if nowLocalSeconds < snConfig.StreaksProcessTime {
+		// go back one day if the current moment is before the process time in the current day
+		mostRecent = mostRecent.Add(time.Duration(-24) * time.Hour)
+	}
+	return &mostRecent
+}
+
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
 type Course struct {
 	ID    string `json:"id"`
