@@ -44,6 +44,8 @@ const (
 
 	//UserTimezone indicates the user's timezone should be used
 	UserTimezone string = "user"
+	//UserContentCompleteKey is the key into user data to check for task completion
+	UserContentCompleteKey string = "complete"
 	//DefaultStreaksNotificationsTimerDelayTolerance gives the default seconds of timer delay to tolerate
 	DefaultStreaksNotificationsTimerDelayTolerance int = 10
 )
@@ -61,6 +63,7 @@ type UserCourse struct {
 	StreakResets   []time.Time `json:"streak_resets"`   // timestamps when the streak is reset for this course
 	StreakRestarts []time.Time `json:"streak_restarts"` // timestamps when the streak is restarted for this course
 	Pauses         int         `json:"pauses"`
+	PauseProgress  int         `json:"pause_progress"`
 	PauseUses      []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
 
 	Course Course `json:"course"`
@@ -112,9 +115,9 @@ type CourseConfig struct {
 	OrgID     string `json:"org_id" bson:"org_id"`
 	CourseKey string `json:"course_key" bson:"course_key"`
 
-	InitialPauses     int `json:"initial_pauses" bson:"initial_pauses"`
-	MaxPauses         int `json:"max_pauses" bson:"max_pauses"`
-	PauseRewardStreak int `json:"pause_reward_streak" bson:"pause_reward_streak"`
+	InitialPauses       int `json:"initial_pauses" bson:"initial_pauses"`
+	MaxPauses           int `json:"max_pauses" bson:"max_pauses"`
+	PauseProgressReward int `json:"pause_progress_reward" bson:"pause_progress_reward"`
 
 	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config" bson:"streaks_notifications_config"`
 
@@ -262,7 +265,7 @@ func (s *ScheduleItem) UpdateUserData(item UserContent) {
 // IsComplete gives whether every user content item in the schedule item has user data
 func (s *ScheduleItem) IsComplete() bool {
 	for _, userContent := range s.UserContent {
-		if len(userContent.UserData) == 0 {
+		if !userContent.IsComplete() {
 			return false
 		}
 	}
@@ -301,6 +304,23 @@ type UserContent struct {
 
 	// user fields (populated as user takes a course)
 	UserData map[string]interface{} `json:"user_data,omitempty" bson:"user_data,omitempty"`
+}
+
+// IsComplete gives whether the user has completed the content corresponding to ContentKey
+func (uc *UserContent) IsComplete() bool {
+	if uc == nil {
+		return false
+	}
+
+	completeVal, ok := uc.UserData[UserContentCompleteKey]
+	if !ok {
+		return false
+	}
+	complete, ok := completeVal.(bool)
+	if !ok {
+		return false
+	}
+	return complete
 }
 
 // Timezone represents user timezone information received from the client

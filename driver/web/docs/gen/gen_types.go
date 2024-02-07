@@ -50,13 +50,13 @@ type AssignmentGroup struct {
 type Content struct {
 	AppId         *string     `json:"app_id,omitempty"`
 	Details       *string     `json:"details,omitempty"`
-	Display       Display     `json:"display"`
 	Id            *string     `json:"id,omitempty"`
 	Key           string      `json:"key"`
 	LinkedContent *[]string   `json:"linked_content"`
 	Name          string      `json:"name"`
 	OrgId         *string     `json:"org_id,omitempty"`
 	Reference     Reference   `json:"reference"`
+	Styles        *Styles     `json:"styles,omitempty"`
 	Type          ContentType `json:"type"`
 }
 
@@ -81,17 +81,8 @@ type CourseConfig struct {
 	InitialPauses              int                        `json:"initial_pauses"`
 	MaxPauses                  int                        `json:"max_pauses"`
 	OrgId                      string                     `json:"org_id"`
-	PauseRewardStreak          int                        `json:"pause_reward_streak"`
+	PauseProgressReward        int                        `json:"pause_progress_reward"`
 	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config"`
-}
-
-// Display defines model for Display.
-type Display struct {
-	AccentColor     *string `json:"accent_color,omitempty"`
-	CompleteColor   *string `json:"complete_color,omitempty"`
-	Icon            *string `json:"icon,omitempty"`
-	IncompleteColor *string `json:"incomplete_color,omitempty"`
-	PrimaryColor    *string `json:"primary_color,omitempty"`
 }
 
 // Enrollment defines model for Enrollment.
@@ -108,13 +99,13 @@ type Grade struct {
 
 // Module defines model for Module.
 type Module struct {
-	AppId   *string `json:"app_id,omitempty"`
-	Display Display `json:"display"`
-	Id      *string `json:"id,omitempty"`
-	Key     string  `json:"key"`
-	Name    string  `json:"name"`
-	OrgId   *string `json:"org_id,omitempty"`
-	Units   []Unit  `json:"units"`
+	AppId  *string `json:"app_id,omitempty"`
+	Id     *string `json:"id,omitempty"`
+	Key    string  `json:"key"`
+	Name   string  `json:"name"`
+	OrgId  *string `json:"org_id,omitempty"`
+	Styles *Styles `json:"styles,omitempty"`
+	Units  []Unit  `json:"units"`
 }
 
 // Notification defines model for Notification.
@@ -189,6 +180,13 @@ type StreaksNotificationsConfig struct {
 
 // StreaksNotificationsConfigNotificationsMode defines model for StreaksNotificationsConfig.NotificationsMode.
 type StreaksNotificationsConfigNotificationsMode string
+
+// Styles defines model for Styles.
+type Styles struct {
+	Colors  *map[string]interface{} `json:"colors,omitempty"`
+	Images  *map[string]interface{} `json:"images,omitempty"`
+	Strings *map[string]interface{} `json:"strings,omitempty"`
+}
 
 // Timezone defines model for Timezone.
 type Timezone struct {

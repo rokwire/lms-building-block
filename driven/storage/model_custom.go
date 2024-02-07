@@ -32,6 +32,7 @@ type userCourse struct {
 	StreakResets   []time.Time `bson:"streak_resets"`
 	StreakRestarts []time.Time `bson:"streak_restarts"`
 	Pauses         int         `bson:"pauses"`
+	PauseProgress  int         `bson:"pause_progress"`
 	PauseUses      []time.Time `bson:"pause_uses"`
 
 	Course course `bson:"course"`

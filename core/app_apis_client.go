@@ -329,10 +329,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		if userUnit.Completed >= userUnit.Unit.ScheduleStart && userUnit.Unit.Schedule[userUnit.Completed].DateCompleted != nil &&
 			(lastCompleted == nil || (lastStreakProcess != nil && lastCompleted.Before(*lastStreakProcess))) {
 			newStreak := userCourse.Streak + 1
-			newPauses := userCourse.Pauses
-			if newStreak%courseConfig.PauseRewardStreak == 0 && userCourse.Pauses < courseConfig.MaxPauses {
-				newPauses++
-			}
+
 			// if the user has no active streak and no remaining pauses, then mark now as a streak restart (user has resumed progress after some extended time)
 			if userCourse.Streak == 0 && userCourse.Pauses == 0 {
 				if userCourse.StreakRestarts == nil {
@@ -341,12 +338,17 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				userCourse.StreakRestarts = append(userCourse.StreakRestarts, now)
 			}
 			userCourse.Streak = newStreak
-			userCourse.Pauses = newPauses
+		}
 
-			err = storageTransaction.UpdateUserCourse(*userCourse)
-			if err != nil {
-				return err
-			}
+		// always update pause progress and pauses if user responds to a task, regardless of completion
+		userCourse.PauseProgress++
+		if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
+			userCourse.Pauses++
+			userCourse.PauseProgress = 0
+		}
+		err = storageTransaction.UpdateUserCourse(*userCourse)
+		if err != nil {
+			return err
 		}
 
 		return nil

@@ -678,7 +678,7 @@ func (sa *Adapter) UpdateCourseConfig(config model.CourseConfig) error {
 		"$set": bson.M{
 			"initial_pauses":               config.InitialPauses,
 			"max_pauses":                   config.MaxPauses,
-			"pause_reward_streak":          config.PauseRewardStreak,
+			"pause_progress_reward":        config.PauseProgressReward,
 			"streaks_notifications_config": config.StreaksNotificationsConfig,
 			"date_updated":                 time.Now().UTC(),
 		},
@@ -941,6 +941,7 @@ func (sa *Adapter) UpdateUserCourse(item model.UserCourse) error {
 		"$set": bson.M{
 			"streak":          item.Streak,
 			"pauses":          item.Pauses,
+			"pause_progress":  item.PauseProgress,
 			"streak_restarts": item.StreakRestarts,
 			"date_dropped":    item.DateDropped,
 			"date_updated":    time.Now().UTC(),

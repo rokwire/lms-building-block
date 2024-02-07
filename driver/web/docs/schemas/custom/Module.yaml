@@ -25,5 +25,5 @@ properties:
     type: array
     items:
       $ref: "./Unit.yaml"
-  display:
-    $ref: "./Display.yaml"
+  styles:
+    $ref: "./Styles.yaml"
