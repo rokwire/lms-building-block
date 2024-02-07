@@ -73,8 +73,9 @@ func (n streaksNotifications) setupNotificationsTimer() {
 
 func (n streaksNotifications) processNotifications() {
 	funcName := "processNotifications"
-	now := time.Now().UTC()
-	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	// omit minutes and seconds so that we only need to handle integer multiples of seconds per hour
+	now := time.Now().UTC().Truncate(time.Hour)
+	nowSeconds := utils.SecondsInHour * now.Hour()
 
 	active := true
 	courseConfigs, err := n.storage.FindCourseConfigs(nil, nil, &active)
@@ -154,8 +155,9 @@ func (n streaksNotifications) setupStreaksTimer() {
 
 func (n streaksNotifications) processStreaks() {
 	funcName := "processStreaks"
-	now := time.Now().UTC()
-	nowSeconds := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	// omit minutes and seconds so that we only need to handle integer multiples of seconds per hour
+	now := time.Now().UTC().Truncate(time.Hour)
+	nowSeconds := utils.SecondsInHour * now.Hour()
 
 	courseConfigs, err := n.storage.FindCourseConfigs(nil, nil, nil)
 	if err != nil {
@@ -180,51 +182,40 @@ func (n streaksNotifications) processStreaks() {
 		resetStreak := make([]string, 0) // list of userIDs where streak should be reset
 		for _, userUnit := range userUnits {
 			var userCourse *model.UserCourse
-			incompleteTaskHandler := func() error {
+			incompleteTaskHandler := func(item model.UserUnit) error {
 				// if task is incomplete, use a pause or reset the streak depending on the current number of pauses
 				if userCourse.Pauses > 0 {
-					usePause = append(usePause, userUnit.UserID)
+					usePause = append(usePause, item.UserID)
 				} else {
-					resetStreak = append(resetStreak, userUnit.UserID)
+					resetStreak = append(resetStreak, item.UserID)
 				}
 				return nil
 			}
-			completeTaskHandler := func() error {
+			completeTaskHandler := func(storage interfaces.Storage, item model.UserUnit, remainsCurrent bool) error {
 				// the previous task was completed, so set the start time of the new task to now (beginning of the day)
-				userUnit.Completed++
-				userUnit.Unit.Schedule[userUnit.Completed].DateStarted = &now
-				err := n.storage.UpdateUserUnit(userUnit)
+				item.Completed++
+				item.Current = remainsCurrent
+				item.Unit.Schedule[item.Completed].DateStarted = &now
+				err := storage.UpdateUserUnit(item)
 				if err != nil {
 					return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 				}
 				return nil
 			}
-			completeUnitHandler := func() error {
+			completeUnitHandler := func(storage interfaces.Storage, item model.UserUnit) error {
 				// insert the next user unit since the current one has been completed
-				transaction := func(storage interfaces.Storage) error {
-					nextUnit := userCourse.Course.GetNextUnit(userUnit.Unit.Key)
-					if nextUnit != nil {
-						nextUnit.Schedule[nextUnit.ScheduleStart].DateStarted = &now
-						nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
-							Unit: *nextUnit, Completed: nextUnit.ScheduleStart, Current: true, LastCompleted: userUnit.LastCompleted, DateCreated: time.Now().UTC()}
-						err := storage.InsertUserUnit(nextUserUnit)
-						if err != nil {
-							return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
-						}
-					}
-
-					// set current to false on the current user unit since there is a new curernt one or the course is finished
-					userUnit.Current = false
-					userUnit.Completed++
-					err := storage.UpdateUserUnit(userUnit)
+				nextUnit := userCourse.Course.GetNextUnit(item.Unit.Key)
+				if nextUnit != nil {
+					nextUnit.Schedule[0].DateStarted = &now
+					nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: item.UserID, CourseKey: item.CourseKey,
+						Unit: *nextUnit, Completed: 0, Current: true, LastCompleted: item.LastCompleted, DateCreated: time.Now().UTC()}
+					err := storage.InsertUserUnit(nextUserUnit)
 					if err != nil {
-						return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
+						return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
 					}
-
-					return nil
 				}
 
-				return n.storage.PerformTransaction(transaction)
+				return nil
 			}
 
 			for i, userID := range userIDs {
@@ -323,9 +314,9 @@ func (n streaksNotifications) filterUsersByIncomplete(userUnits []model.UserUnit
 			continue
 		}
 
-		incompleteTaskHandler := func() error {
+		incompleteTaskHandler := func(item model.UserUnit) error {
 			// if task is incomplete, use a pause or reset the streak depending on the current number of pauses
-			filtered = append(filtered, userUnit.UserID)
+			filtered = append(filtered, item.UserID)
 			return nil
 		}
 		// equal to difference between notification process time and streaks process time (start of "day") converted to hours
@@ -341,29 +332,41 @@ func (n streaksNotifications) filterUsersByIncomplete(userUnits []model.UserUnit
 	return filtered, nil
 }
 
-func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUnit, now time.Time, incompleteTaskHandler func() error, incompleteTaskPeriodOffset int,
-	completeTaskHandler func() error, completeUnitHandler func() error) error {
+func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUnit, now time.Time, incompleteTaskHandler func(model.UserUnit) error, incompleteTaskPeriodOffset int,
+	completeTaskHandler func(interfaces.Storage, model.UserUnit, bool) error, completeUnitHandler func(interfaces.Storage, model.UserUnit) error) error {
 	if incompleteTaskHandler == nil {
 		return errors.ErrorData(logutils.StatusInvalid, "incomplete task handler", nil)
 	}
 
-	// if userUnit.Completed == userUnit.Unit.ScheduleStart {
-	// 	// user has not completed the current task
-	// 	return incompleteTaskHandler()
-	// } else
-	if userUnit.Completed+1 < userUnit.Unit.Required {
-		// check if the last completed schedule item was completed within (24*days+offset) hours before now
-		days := userUnit.Unit.Schedule[userUnit.Completed].Duration
-		if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((24*time.Duration(days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) { //TODO: may need to change this to handle user travelling
-			// not completed within specified period, so handle incomplete
-			return incompleteTaskHandler()
-		} else if completeTaskHandler != nil {
-			// completed within specified period, so handle complete if desired
-			return completeTaskHandler()
+	//TODO: make sure there are no situations where no streak is earned and no pause is used
+	// check if the last completed schedule item was completed within (24*days+offset) hours before now
+	days := userUnit.Unit.Schedule[userUnit.Completed].Duration
+	if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((24*time.Duration(days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) { //TODO: may need to change this to handle user travelling, DST
+		// not completed within specified period, so handle incomplete
+		return incompleteTaskHandler(userUnit)
+	} else if completeTaskHandler != nil {
+		// completed within specified period, so handle complete if desired
+		remainsCurrent := (userUnit.Completed+1 < userUnit.Unit.Required)
+		if remainsCurrent {
+			return completeTaskHandler(n.storage, userUnit, true)
 		}
-	} else if userUnit.Completed+1 == userUnit.Unit.Required && completeUnitHandler != nil {
-		// user completed the current unit
-		return completeUnitHandler()
+
+		// user completed the current unit because the end of the schedule has been reached, so complete the task then complete the unit
+		transaction := func(storage interfaces.Storage) error {
+			err := completeTaskHandler(storage, userUnit, false)
+			if err != nil {
+				return errors.WrapErrorAction("completing", "user unit schedule item", &logutils.FieldArgs{"id": userUnit.ID, "completed": userUnit.Completed}, err)
+			}
+
+			if completeUnitHandler != nil {
+				return completeUnitHandler(storage, userUnit)
+			}
+
+			return nil
+		}
+
+		return n.storage.PerformTransaction(transaction)
 	}
+
 	return nil
 }

@@ -343,7 +343,8 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			userCourse.Streak = newStreak
 		}
 
-		// update pause progress and pauses when user responds to a task, regardless of completion, for the first time since last streak process ("start of day")
+		// update pause progress and pauses when user responds to a required task, regardless of completion, for the first time since last streak process ("start of day")
+		//TODO
 		if userCourse.LastResponded == nil || (lastStreakProcess != nil && userCourse.LastResponded.Before(*lastStreakProcess)) {
 			userCourse.PauseProgress++
 			if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
