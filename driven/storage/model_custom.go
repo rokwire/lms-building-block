@@ -35,6 +35,8 @@ type userCourse struct {
 	PauseProgress  int         `bson:"pause_progress"`
 	PauseUses      []time.Time `bson:"pause_uses"`
 
+	LastResponded *time.Time `bson:"last_responded"`
+
 	Course course `bson:"course"`
 
 	DateCreated time.Time  `bson:"date_created"`

@@ -181,6 +181,7 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 		}
 		userCourse.Streak = 0
 		userCourse.Pauses = courseConfig.InitialPauses
+		userCourse.PauseProgress = 0
 		userCourse.DateCreated = time.Now().UTC()
 
 		// unique index on user courses collection will ensure user cannot take a course multiple times simultaneously
@@ -340,12 +341,15 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			userCourse.Streak = newStreak
 		}
 
-		// always update pause progress and pauses if user responds to a task, regardless of completion
-		userCourse.PauseProgress++
-		if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
-			userCourse.Pauses++
-			userCourse.PauseProgress = 0
+		// update pause progress and pauses when user responds to a task, regardless of completion, for the first time since last streak process ("start of day")
+		if userCourse.LastResponded == nil || (lastStreakProcess != nil && userCourse.LastResponded.Before(*lastStreakProcess)) {
+			userCourse.PauseProgress++
+			if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
+				userCourse.Pauses++
+				userCourse.PauseProgress = 0
+			}
 		}
+		userCourse.LastResponded = &now
 		err = storageTransaction.UpdateUserCourse(*userCourse)
 		if err != nil {
 			return err

@@ -943,6 +943,7 @@ func (sa *Adapter) UpdateUserCourse(item model.UserCourse) error {
 			"pauses":          item.Pauses,
 			"pause_progress":  item.PauseProgress,
 			"streak_restarts": item.StreakRestarts,
+			"last_responded":  item.LastResponded,
 			"date_dropped":    item.DateDropped,
 			"date_updated":    time.Now().UTC(),
 		},

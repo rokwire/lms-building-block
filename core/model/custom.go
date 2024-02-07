@@ -66,6 +66,8 @@ type UserCourse struct {
 	PauseProgress  int         `json:"pause_progress"`
 	PauseUses      []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
 
+	LastResponded *time.Time `json:"last_responded"`
+
 	Course Course `json:"course"`
 
 	DateCreated time.Time  `json:"date_created"`
