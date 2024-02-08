@@ -29,11 +29,11 @@ type userCourse struct {
 	TimezoneOffset int    `bson:"timezone_offset"` // in seconds east of UTC
 
 	Streak         int         `bson:"streak"`
-	StreakResets   []time.Time `bson:"streak_resets"`
-	StreakRestarts []time.Time `bson:"streak_restarts"`
+	StreakResets   []time.Time `bson:"streak_resets,omitempty"`
+	StreakRestarts []time.Time `bson:"streak_restarts,omitempty"`
 	Pauses         int         `bson:"pauses"`
 	PauseProgress  int         `bson:"pause_progress"`
-	PauseUses      []time.Time `bson:"pause_uses"`
+	PauseUses      []time.Time `bson:"pause_uses,omitempty"`
 
 	LastResponded *time.Time `bson:"last_responded"`
 
