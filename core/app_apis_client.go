@@ -276,7 +276,7 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			// create the first userUnit and set to active only if there are none under current module yet
 			module, err := storageTransaction.FindCustomModule(claims.AppID, claims.OrgID, moduleKey)
 			if err != nil {
-				return err
+				return errors.ErrorData(logutils.StatusMissing, model.TypeModule, &logutils.FieldArgs{"app_id": claims.AppID, "org_id": claims.OrgID, "module key": moduleKey})
 			}
 			if len(module.Units) == 0 {
 				return errors.ErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"no unit associatd with this module": moduleKey})
@@ -291,6 +291,9 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 				ModuleKey: moduleKey, Completed: 0, Current: true, DateCreated: time.Now().UTC()}
 			userUnit.Unit = unit
 
+			if len(userUnit.Unit.Schedule) <= userUnit.Completed {
+				return errors.ErrorData(logutils.StatusInvalid, model.TypeUnit, &logutils.FieldArgs{"num completed exceed schedule boundry": len(userUnit.Unit.Schedule)})
+			}
 			scheduleItem := &userUnit.Unit.Schedule[0]
 			scheduleItem.UpdateUserData(item.UserContent)
 			scheduleItem.DateStarted = userCourse.MostRecentStreakProcessTime(&now, courseConfig.StreaksNotificationsConfig)
@@ -298,11 +301,6 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 				scheduleItem.DateCompleted = &now
 				userCourseLastCompleted = &now
 				userUnit.LastCompleted = &now
-
-				// if userUnit.Completed+1 < len(userUnit.Unit.Schedule) { // or change to required?
-				// 	userUnit.Completed++
-				// }
-
 				if userUnit.Completed < unit.ScheduleStart {
 					userUnit.Completed++
 				}
@@ -319,12 +317,9 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			if !userUnit.Current {
 				return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"current": false})
 			}
-			// if userUnit.LastCompleted != nil {
-			// 	// make copy of LastCompleted time before possibly updating it
-			// 	lastCompletedVal := *userUnit.LastCompleted
-			// 	lastCompleted = &lastCompletedVal
-			// }
-
+			if len(userUnit.Unit.Schedule) <= userUnit.Completed {
+				return errors.ErrorData(logutils.StatusInvalid, model.TypeUnit, &logutils.FieldArgs{"num completed exceed schedule boundry": len(userUnit.Unit.Schedule)})
+			}
 			scheduleItem := &userUnit.Unit.Schedule[userUnit.Completed]
 			scheduleItem.UpdateUserData(item.UserContent)
 			if scheduleItem.DateStarted == nil {
@@ -332,12 +327,8 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			}
 			if scheduleItem.IsComplete() {
 				scheduleItem.DateCompleted = &now
-				// userUnit.Completed++
 				userUnit.LastCompleted = &now
 				userCourseLastCompleted = &now
-				// if userUnit.Completed+1 < len(userUnit.Unit.Schedule) { // or change to required?
-				// 	userUnit.Completed++
-				// }
 				if userUnit.Completed < userUnit.Unit.ScheduleStart {
 					userUnit.Completed++
 				}
@@ -384,8 +375,8 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 		// get latest started time on userUnit
 		var latestTime *time.Time
 		for _, uUnit := range activeCourseUserUnits {
-			if latestTime == nil || latestTime.Before(*uUnit.Unit.Schedule[userUnit.Completed].DateStarted) {
-				latestTime = uUnit.Unit.Schedule[userUnit.Completed].DateStarted
+			if latestTime == nil || latestTime.Before(*uUnit.Unit.Schedule[uUnit.Completed].DateStarted) {
+				latestTime = uUnit.Unit.Schedule[uUnit.Completed].DateStarted
 			}
 		}
 
@@ -412,7 +403,9 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 			userCourse.Pauses = newPauses
 		}
 
-		userCourse.LastCompleted = userCourseLastCompleted
+		if userCourseLastCompleted != nil {
+			userCourse.LastCompleted = userCourseLastCompleted
+		}
 		err = storageTransaction.UpdateUserCourse(*userCourse)
 		if err != nil {
 			return err

@@ -219,7 +219,7 @@ func (n streaksNotifications) processStreaks() {
 					if nextUnit != nil {
 						nextUnit.Schedule[nextUnit.ScheduleStart].DateStarted = &now
 						nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
-							ModuleKey: userUnit.ModuleKey, Unit: *nextUnit, Completed: nextUnit.ScheduleStart, Current: true, LastCompleted: userUnit.LastCompleted, DateCreated: time.Now().UTC()}
+							ModuleKey: userUnit.ModuleKey, Unit: *nextUnit, Completed: nextUnit.ScheduleStart, Current: true, DateCreated: time.Now().UTC()}
 						err := storage.InsertUserUnit(nextUserUnit)
 						if err != nil {
 							return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
@@ -368,7 +368,7 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnits []model.User
 			if userUnit.LastCompleted != nil && userUnit.LastCompleted.Add((time.Duration(utils.HoursInDay*days)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).Before(now) {
 				// not completed within specified period, so handle incomplete
 				//return incompleteTaskHandler()
-			} else if completeTaskHandler != nil {
+			} else if userUnit.LastCompleted != nil && completeTaskHandler != nil {
 				// completed within specified period, so handle complete if desired
 				err := completeTaskHandler(userUnit)
 				if err != nil {
@@ -376,7 +376,7 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnits []model.User
 				}
 				allIncomplete = false
 			}
-		} else if userUnit.Completed+1 == userUnit.Unit.Required && completeUnitHandler != nil {
+		} else if userUnit.LastCompleted != nil && userUnit.Completed+1 == userUnit.Unit.Required && completeUnitHandler != nil {
 			// user completed the current unit
 			err := completeUnitHandler(userUnit)
 			if err != nil {

@@ -484,6 +484,8 @@ func (s *adminImpl) UpdateCustomModule(claims *tokenauth.Claims, key string, ite
 			return err
 		}
 
+		//TODO: update userUnit's module key? what if unassociated?
+
 		return nil
 	}
 
