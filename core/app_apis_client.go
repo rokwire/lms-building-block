@@ -258,6 +258,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 
 		now := time.Now().UTC()
 		var lastCompleted *time.Time
+		var scheduleItem *model.ScheduleItem
 		if userUnit == nil {
 			// create a userUnit here if it doesn't already exist
 			unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, unitKey)
@@ -275,7 +276,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				Completed: 0, Current: true, DateCreated: time.Now().UTC()}
 			userUnit.Unit = *unit
 
-			scheduleItem := &userUnit.Unit.Schedule[0]
+			scheduleItem = &userUnit.Unit.Schedule[0]
 			scheduleItem.UpdateUserData(item.UserContent)
 			scheduleItem.DateStarted = userCourse.MostRecentStreakProcessTime(&now, courseConfig.StreaksNotificationsConfig)
 			if scheduleItem.IsComplete() {
@@ -303,7 +304,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 				lastCompleted = &lastCompletedVal
 			}
 
-			scheduleItem := &userUnit.Unit.Schedule[userUnit.Completed]
+			scheduleItem = &userUnit.Unit.Schedule[userUnit.Completed]
 			scheduleItem.UpdateUserData(item.UserContent)
 			if scheduleItem.DateStarted == nil {
 				scheduleItem.DateStarted = userCourse.MostRecentStreakProcessTime(&now, courseConfig.StreaksNotificationsConfig)
@@ -328,9 +329,9 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		// 1. the current schedule item is required
 		// 2. the current schedule item is completed
 		// 3. the previous schedule item was completed before most recent streak timer run or there is no previous schedule item
+		isRequired := userUnit.Completed >= userUnit.Unit.ScheduleStart
 		lastStreakProcess := userUnit.Unit.Schedule[userUnit.Completed].DateStarted
-		if userUnit.Completed >= userUnit.Unit.ScheduleStart && userUnit.Unit.Schedule[userUnit.Completed].DateCompleted != nil &&
-			(lastCompleted == nil || (lastStreakProcess != nil && lastCompleted.Before(*lastStreakProcess))) {
+		if isRequired && scheduleItem.IsComplete() && (lastCompleted == nil || (lastStreakProcess != nil && lastCompleted.Before(*lastStreakProcess))) {
 			newStreak := userCourse.Streak + 1
 
 			// if the user has no active streak and no remaining pauses, then mark now as a streak restart (user has resumed progress after some extended time)
@@ -344,8 +345,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		}
 
 		// update pause progress and pauses when user responds to a required task, regardless of completion, for the first time since last streak process ("start of day")
-		//TODO
-		if userCourse.LastResponded == nil || (lastStreakProcess != nil && userCourse.LastResponded.Before(*lastStreakProcess)) {
+		if isRequired && (userCourse.LastResponded == nil || (lastStreakProcess != nil && userCourse.LastResponded.Before(*lastStreakProcess))) {
 			userCourse.PauseProgress++
 			if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
 				userCourse.Pauses++
