@@ -28,7 +28,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: "../../../schemas/custom/UserContentWithTimezone.yaml"
+          $ref: "../../../schemas/custom/UserResponse.yaml"
     required: true
   responses:
     200:

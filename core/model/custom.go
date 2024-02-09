@@ -266,8 +266,9 @@ type UserUnit struct {
 	CourseKey string `json:"course_key"`
 	Unit      Unit   `json:"unit"`
 
-	Completed int  `json:"completed"` // number of schedule items the user has completed
-	Current   bool `json:"current"`
+	Completed    int                `json:"completed"` // number of schedule items the user has completed
+	Current      bool               `json:"current"`
+	UserSchedule []UserScheduleItem `json:"user_schedule"`
 
 	LastCompleted *time.Time `json:"last_completed"` // when the last required task of the previous unit was completed
 	DateCreated   time.Time  `json:"date_created"`
@@ -354,9 +355,9 @@ func (u *Unit) Validate(contentKeys []string) error {
 			return errors.ErrorData(logutils.StatusInvalid, TypeScheduleItem, &logutils.FieldArgs{"name": item.Name, "duration": item.Duration})
 		}
 
-		for _, userContent := range item.UserContent {
-			if !utils.Exist[string](contentKeys, userContent.ContentKey) {
-				return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
+		for _, key := range item.ContentKeys {
+			if !utils.Exist[string](contentKeys, key) {
+				return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": key})
 			}
 		}
 	}
@@ -365,45 +366,47 @@ func (u *Unit) Validate(contentKeys []string) error {
 	return nil
 }
 
-// UserContentWithTimezone wraps unit with time information
-type UserContentWithTimezone struct {
-	UserContent UserContent `json:"user_content"`
-	Timezone                // include user timezone info
-}
-
-// ScheduleItem represents a set of Content items to be completed in a certain amount of time
-type ScheduleItem struct {
-	Name        string        `json:"name" bson:"name"`
-	UserContent []UserContent `json:"user_content" bson:"user_content"`
-	Duration    *int          `json:"duration" bson:"duration,omitempty"` // in days
+// UserScheduleItem represents a set of UserContent references and when the corresponding ScheduleItem was started and first completed
+type UserScheduleItem struct {
+	UserContent []UserContentReference `json:"user_content" bson:"user_content"`
 
 	DateStarted   *time.Time `json:"date_started,omitempty" bson:"date_started,omitempty"`
 	DateCompleted *time.Time `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
 }
 
-// UpdateUserData updates the stored data for the user content matching item.ContentKey in the schedule item
-func (s *ScheduleItem) UpdateUserData(item UserContent) error {
-	if s == nil {
-		return errors.ErrorData(logutils.StatusMissing, TypeScheduleItem, nil)
-	}
-	for i, userContent := range s.UserContent {
-		if userContent.ContentKey == item.ContentKey {
-			s.UserContent[i].UserData = item.UserData
-			return nil
-		}
-	}
-
-	return errors.ErrorData(logutils.StatusMissing, TypeUserContent, &logutils.FieldArgs{"content_key": item.ContentKey})
+// IsComplete gives whether the DateCompleted field has been set
+func (s *UserScheduleItem) IsComplete() bool {
+	return (s.DateCompleted != nil)
 }
 
-// IsComplete gives whether every user content item in the schedule item has user data
-func (s *ScheduleItem) IsComplete() bool {
-	for _, userContent := range s.UserContent {
-		if !userContent.IsComplete() {
-			return false
-		}
-	}
-	return true
+// UserContentReference represents a set of UserContent references
+type UserContentReference struct {
+	ContentKey string   `json:"content_key" bson:"content_key"`
+	IDs        []string `json:"ids,omitempty" bson:"ids,omitempty"` // UserContent IDs
+}
+
+// ScheduleItem represents a set of Content items to be completed in a certain amount of time
+type ScheduleItem struct {
+	Name        string   `json:"name" bson:"name"`
+	ContentKeys []string `json:"content_keys" bson:"content_keys"`
+	Duration    *int     `json:"duration" bson:"duration,omitempty"` // in days
+}
+
+// UserContent represents
+type UserContent struct {
+	ID        string `json:"id"`
+	AppID     string `json:"app_id"`
+	OrgID     string `json:"org_id"`
+	UserID    string `json:"user_id"`
+	CourseKey string `json:"course_key"`
+	ModuleKey string `json:"module_key"`
+	UnitKey   string `json:"unit_key"`
+
+	Content  Content                `json:"content"`
+	Response map[string]interface{} `json:"response"`
+
+	DateCreated time.Time  `json:"date_created"`
+	DateUpdated *time.Time `json:"date_updated"`
 }
 
 // Content represents some Unit content
@@ -425,36 +428,18 @@ type Content struct {
 	DateUpdated *time.Time `json:"-" bson:"date_updated"`
 }
 
+// UserResponse includes a user response to a task with timezone info
+type UserResponse struct {
+	Timezone                          // include user timezone info
+	ContentKey string                 `json:"content_key"`
+	Response   map[string]interface{} `json:"response"`
+}
+
 // Reference represents a reference to another entity
 type Reference struct {
 	Name         string `json:"name" bson:"name"`
 	Type         string `json:"type" bson:"type"` // content item, video, PDF, survey, web URL
 	ReferenceKey string `json:"reference_key" bson:"reference_key"`
-}
-
-// UserContent represents a Content reference with some additional user data
-type UserContent struct {
-	ContentKey string `json:"content_key" bson:"content_key"`
-
-	// user fields (populated as user takes a course)
-	UserData map[string]interface{} `json:"user_data,omitempty" bson:"user_data,omitempty"`
-}
-
-// IsComplete gives whether the user has completed the content corresponding to ContentKey
-func (uc *UserContent) IsComplete() bool {
-	if uc == nil {
-		return false
-	}
-
-	completeVal, ok := uc.UserData[UserContentCompleteKey]
-	if !ok {
-		return false
-	}
-	complete, ok := completeVal.(bool)
-	if !ok {
-		return false
-	}
-	return complete
 }
 
 // Timezone represents user timezone information received from the client

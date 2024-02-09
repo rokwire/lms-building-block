@@ -457,7 +457,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserContentWithTimezone'
+              $ref: '#/components/schemas/UserResponse'
         required: true
       responses:
         '200':
@@ -474,6 +474,42 @@ paths:
           description: Internal error
       x-core-function: UpdateUserCourseUnitProgress
       x-data-type: model.UserUnit
+      x-authentication-type: User
+  /api/users/contents:
+    get:
+      tags:
+        - Client
+      summary: Get user content history
+      description: |
+        Get all user content history for a list of user content IDs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ids
+          in: query
+          description: user content ids
+          required: true
+          style: form
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserContent'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal error
+      x-core-function: GetUserContents
+      x-data-type: model.UserContent
       x-authentication-type: User
   '/api/users/units/{key}':
     get:
@@ -2233,24 +2269,17 @@ components:
     ScheduleItem:
       required:
         - name
-        - user_content
+        - content_keys
       type: object
       properties:
         name:
           type: string
-        user_content:
+        content_keys:
           type: array
           items:
-            $ref: '#/components/schemas/UserContent'
+            type: string
         duration:
           type: integer
-        date_started:
-          type: string
-          format: date-time
-        date_completed:
-          type: string
-          format: date-time
-          nullable: true
     Reference:
       required:
         - name
@@ -2337,6 +2366,7 @@ components:
         - course_key
         - completed
         - current
+        - user_schedule
         - unit
       type: object
       properties:
@@ -2359,6 +2389,11 @@ components:
           type: integer
         current:
           type: boolean
+        user_schedule:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserScheduleItem'
+          readOnly: true
         unit:
           $ref: '#/components/schemas/Unit'
         last_completed:
@@ -2372,27 +2407,91 @@ components:
           format: date-time
     UserContent:
       required:
+        - id
+        - app_id
+        - org_id
+        - user_id
+        - course_key
+        - module_key
+        - unit_key
+        - content
+        - date_created
+        - date_updated
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        app_id:
+          type: string
+          readOnly: true
+        org_id:
+          type: string
+          readOnly: true
+        user_id:
+          type: string
+          readOnly: true
+        course_key:
+          type: string
+          readOnly: true
+        module_key:
+          type: string
+          readOnly: true
+        unit_key:
+          type: string
+          readOnly: true
+        content:
+          $ref: '#/components/schemas/Content'
+        response:
+          type: object
+        date_created:
+          type: string
+          format: date-time
+          readOnly: true
+        date_updated:
+          type: string
+          format: date-time
+          readOnly: true
+    UserScheduleItem:
+      required:
+        - user_content
+      type: object
+      properties:
+        user_content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserContentReference'
+        date_started:
+          type: string
+          format: date-time
+        date_completed:
+          type: string
+          format: date-time
+          nullable: true
+    UserContentReference:
+      required:
         - content_key
+        - ids
       type: object
       properties:
         content_key:
           type: string
-        user_data:
+        ids:
+          type: array
+          items:
+            type: string
+    UserResponse:
+      allOf:
+        - $ref: '#/components/schemas/Timezone'
+        - required:
+            - content_key
+            - response
           type: object
-          nullable: true
-    UserContentWithTimezone:
-      required:
-        - timezone_name
-        - timezone_offset
-        - user_content
-      type: object
-      properties:
-        timezone_name:
-          type: string
-        timezone_offset:
-          type: integer
-        user_content:
-          $ref: '#/components/schemas/UserContent'
+          properties:
+            content_key:
+              type: string
+            response:
+              type: object
     Timezone:
       required:
         - timezone_name

@@ -111,6 +111,8 @@ type Storage interface {
 	DeleteUserUnit(appID string, orgID string, key string) error
 	DeleteUserUnits(appID string, orgID string, userID string, courseKey string) error
 
+	FindUserContents(ids []string) ([]model.UserContent, error)
+
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error
 	DeleteUnitKeyFromModules(appID string, orgID string, key string) error

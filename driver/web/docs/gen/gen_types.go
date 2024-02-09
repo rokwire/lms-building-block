@@ -159,11 +159,9 @@ type Reference struct {
 
 // ScheduleItem defines model for ScheduleItem.
 type ScheduleItem struct {
-	DateCompleted *time.Time    `json:"date_completed"`
-	DateStarted   *time.Time    `json:"date_started,omitempty"`
-	Duration      *int          `json:"duration,omitempty"`
-	Name          string        `json:"name"`
-	UserContent   []UserContent `json:"user_content"`
+	ContentKeys []string `json:"content_keys"`
+	Duration    *int     `json:"duration,omitempty"`
+	Name        string   `json:"name"`
 }
 
 // StreaksNotificationsConfig defines model for StreaksNotificationsConfig.
@@ -214,15 +212,23 @@ type User struct {
 
 // UserContent defines model for UserContent.
 type UserContent struct {
-	ContentKey string                  `json:"content_key"`
-	UserData   *map[string]interface{} `json:"user_data"`
+	AppId       *string                 `json:"app_id,omitempty"`
+	Content     Content                 `json:"content"`
+	CourseKey   *string                 `json:"course_key,omitempty"`
+	DateCreated *time.Time              `json:"date_created,omitempty"`
+	DateUpdated *time.Time              `json:"date_updated,omitempty"`
+	Id          *string                 `json:"id,omitempty"`
+	ModuleKey   *string                 `json:"module_key,omitempty"`
+	OrgId       *string                 `json:"org_id,omitempty"`
+	Response    *map[string]interface{} `json:"response,omitempty"`
+	UnitKey     *string                 `json:"unit_key,omitempty"`
+	UserId      *string                 `json:"user_id,omitempty"`
 }
 
-// UserContentWithTimezone defines model for UserContentWithTimezone.
-type UserContentWithTimezone struct {
-	TimezoneName   string      `json:"timezone_name"`
-	TimezoneOffset int         `json:"timezone_offset"`
-	UserContent    UserContent `json:"user_content"`
+// UserContentReference defines model for UserContentReference.
+type UserContentReference struct {
+	ContentKey string   `json:"content_key"`
+	Ids        []string `json:"ids"`
 }
 
 // UserCourse defines model for UserCourse.
@@ -244,19 +250,35 @@ type UserCourse struct {
 	UserId         *string     `json:"user_id,omitempty"`
 }
 
+// UserResponse defines model for UserResponse.
+type UserResponse struct {
+	ContentKey     string                 `json:"content_key"`
+	Response       map[string]interface{} `json:"response"`
+	TimezoneName   string                 `json:"timezone_name"`
+	TimezoneOffset int                    `json:"timezone_offset"`
+}
+
+// UserScheduleItem defines model for UserScheduleItem.
+type UserScheduleItem struct {
+	DateCompleted *time.Time             `json:"date_completed"`
+	DateStarted   *time.Time             `json:"date_started,omitempty"`
+	UserContent   []UserContentReference `json:"user_content"`
+}
+
 // UserUnit defines model for UserUnit.
 type UserUnit struct {
-	AppId         *string    `json:"app_id,omitempty"`
-	Completed     int        `json:"completed"`
-	CourseKey     *string    `json:"course_key,omitempty"`
-	Current       bool       `json:"current"`
-	DateCreated   *time.Time `json:"date_created,omitempty"`
-	DateUpdated   *time.Time `json:"date_updated,omitempty"`
-	Id            *string    `json:"id,omitempty"`
-	LastCompleted *time.Time `json:"last_completed,omitempty"`
-	OrgId         *string    `json:"org_id,omitempty"`
-	Unit          Unit       `json:"unit"`
-	UserId        *string    `json:"user_id,omitempty"`
+	AppId         *string             `json:"app_id,omitempty"`
+	Completed     int                 `json:"completed"`
+	CourseKey     *string             `json:"course_key,omitempty"`
+	Current       bool                `json:"current"`
+	DateCreated   *time.Time          `json:"date_created,omitempty"`
+	DateUpdated   *time.Time          `json:"date_updated,omitempty"`
+	Id            *string             `json:"id,omitempty"`
+	LastCompleted *time.Time          `json:"last_completed,omitempty"`
+	OrgId         *string             `json:"org_id,omitempty"`
+	Unit          Unit                `json:"unit"`
+	UserId        *string             `json:"user_id,omitempty"`
+	UserSchedule  *[]UserScheduleItem `json:"user_schedule,omitempty"`
 }
 
 // UsersSource defines model for UsersSource.
@@ -410,6 +432,12 @@ type GetApiCoursesIdUsersParams struct {
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
+// GetApiUsersContentsParams defines parameters for GetApiUsersContents.
+type GetApiUsersContentsParams struct {
+	// Ids user content ids
+	Ids string `form:"ids" json:"ids"`
+}
+
 // GetApiUsersCoursesParams defines parameters for GetApiUsersCourses.
 type GetApiUsersCoursesParams struct {
 	// Id userCourse ID
@@ -468,7 +496,7 @@ type PostAdminUnitsJSONRequestBody = Unit
 type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
 // PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyUnitsUnitKey for application/json ContentType.
-type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UserContentWithTimezone
+type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UserResponse
 
 // PostApiUsersCoursesKeyJSONRequestBody defines body for PostApiUsersCoursesKey for application/json ContentType.
 type PostApiUsersCoursesKeyJSONRequestBody = Timezone

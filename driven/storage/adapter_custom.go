@@ -7,6 +7,7 @@ import (
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // FindCustomCourses finds courses by a set of parameters
@@ -534,6 +535,23 @@ func (sa *Adapter) DeleteCustomUnit(appID string, orgID string, key string) erro
 		return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &errArgs, err)
 	}
 	return nil
+}
+
+// FindUserContents finds a list of user content items by a list of ids
+func (sa *Adapter) FindUserContents(ids []string) ([]model.UserContent, error) {
+	filter := bson.M{"$in": ids}
+	errArgs := logutils.FieldArgs(filter)
+
+	var result []model.UserContent
+	opts := options.FindOptions{}
+	opts.SetSort(bson.M{"date_created": -1})
+
+	err := sa.db.userContents.Find(sa.context, filter, result, &opts)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserContent, &errArgs, err)
+	}
+
+	return result, nil
 }
 
 // FindCustomContents finds contents by a set of parameters

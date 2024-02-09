@@ -200,13 +200,29 @@ func (s *clientImpl) CreateUserCourse(claims *tokenauth.Claims, courseKey string
 	return userCourse, nil
 }
 
-// get all userUnits from a user's given course
-func (s *clientImpl) GetUserCourseUnits(claims *tokenauth.Claims, courseKey string) ([]model.UserUnit, error) {
-	userUnits, err := s.app.storage.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil)
+func (s *clientImpl) UpdateUserCourse(claims *tokenauth.Claims, key string, drop *bool) (*model.UserCourse, error) {
+	userCourse, err := s.app.storage.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, key)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
 	}
-	return userUnits, nil
+	if userCourse == nil {
+		return nil, errors.ErrorData(logutils.StatusMissing, model.TypeUserCourse, &logutils.FieldArgs{"course.key": key})
+	}
+
+	if drop != nil && *drop {
+		if userCourse.DateDropped != nil {
+			return nil, errors.ErrorData(logutils.StatusInvalid, model.TypeUserCourse, &logutils.FieldArgs{"course.key": key, "date_dropped": *userCourse.DateDropped})
+		}
+
+		now := time.Now().UTC()
+		userCourse.DateDropped = &now
+		err := s.app.storage.UpdateUserCourse(*userCourse)
+		if err != nil {
+			return nil, errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &logutils.FieldArgs{"drop": true}, err)
+		}
+	}
+
+	return nil, nil
 }
 
 // delete all user course derieved from a custom course
@@ -228,7 +244,32 @@ func (s *clientImpl) DeleteUserCourse(claims *tokenauth.Claims, courseKey string
 	return s.app.storage.PerformTransaction(transaction)
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UserContentWithTimezone) (*model.UserUnit, error) {
+func (s *clientImpl) GetCustomCourses(claims *tokenauth.Claims) ([]model.Course, error) {
+	courses, err := s.app.storage.FindCustomCourses(claims.AppID, claims.OrgID, nil, nil, nil, nil)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
+	}
+	return courses, nil
+}
+
+func (s *clientImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error) {
+	course, err := s.app.storage.FindCustomCourse(claims.AppID, claims.OrgID, key)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
+	}
+	return course, nil
+}
+
+// get all userUnits from a user's given course
+func (s *clientImpl) GetUserCourseUnits(claims *tokenauth.Claims, courseKey string) ([]model.UserUnit, error) {
+	userUnits, err := s.app.storage.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil)
+	if err != nil {
+		return nil, err
+	}
+	return userUnits, nil
+}
+
+func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UserResponse) (*model.UserUnit, error) {
 	err := item.Validate()
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionValidate, "user timezone", nil, err)
@@ -412,45 +453,14 @@ func (s *clientImpl) updateCurrentScheduleItem(userUnit *model.UserUnit, userCon
 	return scheduleItem, isRequired, updatedUserCourse, nil
 }
 
-func (s *clientImpl) UpdateUserCourse(claims *tokenauth.Claims, key string, drop *bool) (*model.UserCourse, error) {
-	userCourse, err := s.app.storage.FindUserCourse(claims.AppID, claims.OrgID, claims.Subject, key)
+func (s *clientImpl) GetUserContents(claims *tokenauth.Claims, ids string) ([]model.UserContent, error) {
+	idsList := strings.Split(ids, ",")
+	userContents, err := s.app.storage.FindUserContents(idsList)
 	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserCourse, nil, err)
-	}
-	if userCourse == nil {
-		return nil, errors.ErrorData(logutils.StatusMissing, model.TypeUserCourse, &logutils.FieldArgs{"course.key": key})
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserContent, nil, err)
 	}
 
-	if drop != nil && *drop {
-		if userCourse.DateDropped != nil {
-			return nil, errors.ErrorData(logutils.StatusInvalid, model.TypeUserCourse, &logutils.FieldArgs{"course.key": key, "date_dropped": *userCourse.DateDropped})
-		}
-
-		now := time.Now().UTC()
-		userCourse.DateDropped = &now
-		err := s.app.storage.UpdateUserCourse(*userCourse)
-		if err != nil {
-			return nil, errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &logutils.FieldArgs{"drop": true}, err)
-		}
-	}
-
-	return nil, nil
-}
-
-func (s *clientImpl) GetCustomCourses(claims *tokenauth.Claims) ([]model.Course, error) {
-	courses, err := s.app.storage.FindCustomCourses(claims.AppID, claims.OrgID, nil, nil, nil, nil)
-	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
-	}
-	return courses, nil
-}
-
-func (s *clientImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*model.Course, error) {
-	course, err := s.app.storage.FindCustomCourse(claims.AppID, claims.OrgID, key)
-	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeCourse, nil, err)
-	}
-	return course, nil
+	return userContents, nil
 }
 
 func (s *clientImpl) GetCustomCourseConfig(claims *tokenauth.Claims, key string) (*model.CourseConfig, error) {

@@ -27,6 +27,7 @@ type apiDataType interface {
 		model.SentNudge |
 		model.Unit |
 		model.User |
+		model.UserContent |
 		model.UserCourse |
 		model.UserUnit
 }
@@ -36,7 +37,7 @@ type requestDataType interface {
 	apiDataType |
 		Def.NudgesConfig |
 		model.Timezone |
-		model.UserContentWithTimezone |
+		model.UserResponse |
 		Def.AdminReqCreateNudge |
 		Def.AdminReqUpdateCourse |
 		Def.AdminReqUpdateModule |
@@ -262,6 +263,14 @@ func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method str
 		}
 
 		router.HandleFunc(pathStr, handleRequest[model.User, model.User, model.User](&handler, a.paths, a.logger)).Methods(method)
+	case "model.UserContent":
+		handler := apiHandler[model.UserContent, model.UserContent, model.UserContent]{authorization: authorization, messageDataType: model.TypeUserContent}
+		err = setCoreHandler[model.UserContent, model.UserContent, model.UserContent](&handler, coreHandler, method, tag, coreFunc)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionApply, "api core handler", &logutils.FieldArgs{"name": tag + "." + coreFunc}, err)
+		}
+
+		router.HandleFunc(pathStr, handleRequest[model.UserContent, model.UserContent, model.UserContent](&handler, a.paths, a.logger)).Methods(method)
 	case "model.UserCourse":
 		switch requestBody {
 		case "#/components/schemas/Timezone":
@@ -283,14 +292,14 @@ func (a *Adapter) registerHandler(router *mux.Router, pathStr string, method str
 		}
 	case "model.UserUnit":
 		switch requestBody {
-		case "#/components/schemas/UserContentWithTimezone":
-			handler := apiHandler[model.UserUnit, model.UserUnit, model.UserContentWithTimezone]{authorization: authorization, messageDataType: model.TypeUserUnit}
-			err = setCoreHandler[model.UserUnit, model.UserUnit, model.UserContentWithTimezone](&handler, coreHandler, method, tag, coreFunc)
+		case "#/components/schemas/UserResponse":
+			handler := apiHandler[model.UserUnit, model.UserUnit, model.UserResponse]{authorization: authorization, messageDataType: model.TypeUserUnit}
+			err = setCoreHandler[model.UserUnit, model.UserUnit, model.UserResponse](&handler, coreHandler, method, tag, coreFunc)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionApply, "api core handler", &logutils.FieldArgs{"name": tag + "." + coreFunc}, err)
 			}
 
-			router.HandleFunc(pathStr, handleRequest[model.UserUnit, model.UserUnit, model.UserContentWithTimezone](&handler, a.paths, a.logger)).Methods(method)
+			router.HandleFunc(pathStr, handleRequest[model.UserUnit, model.UserUnit, model.UserResponse](&handler, a.paths, a.logger)).Methods(method)
 		default:
 			handler := apiHandler[model.UserUnit, model.UserUnit, model.UserUnit]{authorization: authorization, messageDataType: model.TypeUserUnit}
 			err = setCoreHandler[model.UserUnit, model.UserUnit, model.UserUnit](&handler, coreHandler, method, tag, coreFunc)
@@ -362,6 +371,8 @@ func (a *Adapter) getCoreHandler(tag string, ref string) (interface{}, error) {
 		return a.apisHandler.clientUpdateUserCourse, nil
 	case "ClientUpdateUserCourseUnitProgress":
 		return a.apisHandler.clientUpdateUserCourseUnitProgress, nil
+	case "ClientGetUserContents":
+		return a.apisHandler.clientGetUserContents, nil
 	case "ClientGetUserCourseUnits":
 		return a.apisHandler.clientGetUserCourseUnits, nil
 	case "ClientGetCustomCourses":

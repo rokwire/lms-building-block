@@ -1,0 +1,15 @@
+required:
+  - user_content
+type: object
+properties:
+  user_content:
+    type: array
+    items:
+      $ref: "./UserContentReference.yaml"
+  date_started:
+    type: string
+    format: date-time
+  date_completed:
+    type: string
+    format: date-time
+    nullable: true

@@ -39,8 +39,12 @@ UserUnit:
   $ref: "./custom/UserUnit.yaml"
 UserContent:
   $ref: "./custom/UserContent.yaml"
-UserContentWithTimezone:
-  $ref: "./custom/UserContentWithTimezone.yaml"
+UserScheduleItem:
+  $ref: "./custom/UserScheduleItem.yaml"
+UserContentReference:
+  $ref: "./custom/UserContentReference.yaml"
+UserResponse:
+  $ref: "./custom/UserResponse.yaml"
 Timezone:
   $ref: "./custom/Timezone.yaml"
 CourseConfig:
