@@ -38,5 +38,5 @@ properties:
     items:
       type: string
     nullable: true
-  display:
-    $ref: "./Display.yaml"
+  styles:
+    $ref: "./Styles.yaml"

@@ -31,6 +31,8 @@ const (
 	TypeUserCourse logutils.MessageDataType = "user course"
 	//TypeUserUnit user unit type
 	TypeUserUnit logutils.MessageDataType = "user unit"
+	//TypeUserContent user content type
+	TypeUserContent logutils.MessageDataType = "user content"
 	//TypeCourse course type
 	TypeCourse logutils.MessageDataType = "course"
 	//TypeModule module type
@@ -39,13 +41,15 @@ const (
 	TypeUnit logutils.MessageDataType = "unit"
 	//TypeContent content type
 	TypeContent logutils.MessageDataType = "content"
+	//TypeScheduleItem schedule item type
+	TypeScheduleItem logutils.MessageDataType = "schedule item"
 	//TypeTimezone timezone type
 	TypeTimezone logutils.MessageDataType = "timezone"
 
 	//UserTimezone indicates the user's timezone should be used
 	UserTimezone string = "user"
-	//DefaultStreaksNotificationsTimerDelayTolerance gives the default seconds of timer delay to tolerate
-	DefaultStreaksNotificationsTimerDelayTolerance int = 10
+	//UserContentCompleteKey is the key into user data to check for task completion
+	UserContentCompleteKey string = "complete"
 )
 
 // UserCourse represents a copy of a course that the user modifies as progress is made
@@ -61,13 +65,51 @@ type UserCourse struct {
 	StreakResets   []time.Time `json:"streak_resets"`   // timestamps when the streak is reset for this course
 	StreakRestarts []time.Time `json:"streak_restarts"` // timestamps when the streak is restarted for this course
 	Pauses         int         `json:"pauses"`
+	PauseProgress  int         `json:"pause_progress"`
 	PauseUses      []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
+
+	LastResponded *time.Time `json:"last_responded"`
 
 	Course Course `json:"course"`
 
-	DateCreated time.Time  `json:"date_created"`
-	DateUpdated *time.Time `json:"date_updated"`
-	DateDropped *time.Time `json:"date_dropped"`
+	DateCreated   time.Time  `json:"date_created"`
+	DateUpdated   *time.Time `json:"date_updated"`
+	DateCompleted *time.Time `json:"date_completed"`
+	DateDropped   *time.Time `json:"date_dropped"`
+}
+
+// MostRecentStreakProcessTime gives the time when the most recent daily streak process ran for a user
+func (u *UserCourse) MostRecentStreakProcessTime(now *time.Time, snConfig StreaksNotificationsConfig) *time.Time {
+	if u == nil {
+		return nil
+	}
+	if now == nil {
+		newNow := time.Now()
+		now = &newNow
+	}
+
+	var loc *time.Location
+	var err error
+	if snConfig.TimezoneName == UserTimezone {
+		loc = time.FixedZone(u.Timezone.Name, u.Timezone.Offset)
+	} else {
+		loc, err = time.LoadLocation(snConfig.TimezoneName)
+		if err != nil {
+			loc = time.FixedZone(snConfig.TimezoneName, snConfig.TimezoneOffset)
+		}
+	}
+	nowLocal := now.In(loc)
+	nowLocalSeconds := utils.SecondsInHour*nowLocal.Hour() + 60*nowLocal.Minute() + nowLocal.Second()
+
+	hour := snConfig.StreaksProcessTime / utils.SecondsInHour
+	minute := (snConfig.StreaksProcessTime % utils.SecondsInHour) / 60
+	second := (snConfig.StreaksProcessTime % utils.SecondsInHour) % 60
+	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), hour, minute, second, 0, loc).UTC()
+	if nowLocalSeconds < snConfig.StreaksProcessTime {
+		// go back one day if the current moment is before the process time in the current day
+		mostRecent = mostRecent.Add(time.Duration(-24) * time.Hour)
+	}
+	return &mostRecent
 }
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
@@ -86,19 +128,39 @@ type Course struct {
 
 // GetNextUnit returns the next unit in a course given the current unit key
 func (c *Course) GetNextUnit(currentUnitKey string) *Unit {
-	returnNextModuleUnit := false
+	if c == nil {
+		return nil
+	}
+
+	returnNextUnit := false
 	for _, module := range c.Modules {
-		for i, unit := range module.Units {
-			if returnNextModuleUnit {
+		for _, unit := range module.Units {
+			if returnNextUnit {
 				nextUnit := unit
 				return &nextUnit
 			}
 			if unit.Key == currentUnitKey {
-				if i+1 < len(module.Units) {
-					nextUnit := module.Units[i+1]
-					return &nextUnit
+				returnNextUnit = true
+			}
+		}
+	}
+	return nil
+}
+
+// NextRequiredScheduleItem returns the next required schedule item in a course given the current unit key and schedule index (set allowCurrent to return the schedule item corresponding to scheduleIndex if required)
+func (c *Course) NextRequiredScheduleItem(currentUnitKey string, scheduleIndex int, allowCurrent bool) *ScheduleItem {
+	//TODO: not working
+	returnNextRequired := false
+	for _, module := range c.Modules {
+		for _, unit := range module.Units {
+			if returnNextRequired || unit.Key == currentUnitKey {
+				for j, scheduleItem := range unit.Schedule {
+					if (returnNextRequired || j > scheduleIndex || (allowCurrent && j == scheduleIndex)) && j >= unit.ScheduleStart {
+						nextScheduleItem := scheduleItem
+						return &nextScheduleItem
+					}
 				}
-				returnNextModuleUnit = true
+				returnNextRequired = true
 			}
 		}
 	}
@@ -112,9 +174,9 @@ type CourseConfig struct {
 	OrgID     string `json:"org_id" bson:"org_id"`
 	CourseKey string `json:"course_key" bson:"course_key"`
 
-	InitialPauses     int `json:"initial_pauses" bson:"initial_pauses"`
-	MaxPauses         int `json:"max_pauses" bson:"max_pauses"`
-	PauseRewardStreak int `json:"pause_reward_streak" bson:"pause_reward_streak"`
+	InitialPauses       int `json:"initial_pauses" bson:"initial_pauses"`
+	MaxPauses           int `json:"max_pauses" bson:"max_pauses"`
+	PauseProgressReward int `json:"pause_progress_reward" bson:"pause_progress_reward"`
 
 	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config" bson:"streaks_notifications_config"`
 
@@ -124,9 +186,8 @@ type CourseConfig struct {
 
 // StreaksNotificationsConfig entity
 type StreaksNotificationsConfig struct {
-	TimezoneName        string `json:"timezone_name" bson:"timezone_name"`                 // either an IANA timezone database identifier or "user" to for users' most recent known timezone
-	TimezoneOffset      int    `json:"timezone_offset" bson:"timezone_offset"`             // in seconds east of UTC (only valid if TimezoneName is not "user")
-	TimerDelayTolerance int    `json:"timer_delay_tolerance" bson:"timer_delay_tolerance"` // for static timezone (e.g., America/Chicago), the maximum number of seconds of timer delay to tolerate
+	TimezoneName   string `json:"timezone_name" bson:"timezone_name"`     // either an IANA timezone database identifier or "user" to for users' most recent known timezone
+	TimezoneOffset int    `json:"timezone_offset" bson:"timezone_offset"` // in seconds east of UTC (only valid if TimezoneName is not "user")
 
 	StreaksProcessTime  int  `json:"streaks_process_time" bson:"streaks_process_time"` // seconds since midnight in selected timezone at which to process streaks
 	PreferEarly         bool `json:"prefer_early" bson:"prefer_early"`                 // whether notification should be sent early or late if it cannot be sent at exactly ProcessTime
@@ -151,11 +212,11 @@ func (c *StreaksNotificationsConfig) ValidateTimings() error {
 		}
 		c.TimezoneOffset = timezone.Offset
 	}
-	if c.StreaksProcessTime < 0 || c.StreaksProcessTime > utils.SecondsInDay {
+	if c.StreaksProcessTime < 0 || c.StreaksProcessTime >= utils.SecondsInDay || c.StreaksProcessTime%utils.SecondsInHour != 0 {
 		return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
 	}
 	for _, notification := range c.Notifications {
-		if notification.ProcessTime < 0 || notification.ProcessTime > utils.SecondsInDay {
+		if notification.ProcessTime < 0 || notification.ProcessTime >= utils.SecondsInDay || c.StreaksProcessTime%utils.SecondsInHour != 0 {
 			return errors.ErrorData(logutils.StatusInvalid, "notification process time", &logutils.FieldArgs{"process_time": notification.ProcessTime})
 		}
 	}
@@ -190,7 +251,7 @@ type Module struct {
 	Name  string `json:"name"`
 	Units []Unit `json:"units"`
 
-	Display Display `json:"display"`
+	Styles Styles `json:"styles"`
 
 	DateCreated time.Time  `json:"-"`
 	DateUpdated *time.Time `json:"-"`
@@ -208,9 +269,46 @@ type UserUnit struct {
 	Completed int  `json:"completed"` // number of schedule items the user has completed
 	Current   bool `json:"current"`
 
-	LastCompleted *time.Time `json:"last_completed"`
+	LastCompleted *time.Time `json:"last_completed"` // when the last required task of the previous unit was completed
 	DateCreated   time.Time  `json:"date_created"`
 	DateUpdated   *time.Time `json:"date_updated"`
+}
+
+// CurrentScheduleItem returns a pointer to the schedule item in the unit the user is working on
+func (u *UserUnit) CurrentScheduleItem() *ScheduleItem {
+	if u == nil {
+		return nil
+	}
+	if u.Completed < 0 || u.Completed >= u.Unit.Required {
+		return nil
+	}
+
+	return &u.Unit.Schedule[u.Completed]
+}
+
+// PreviousScheduleItem returns a pointer to the schedule item in the unit immediately before the current on
+func (u *UserUnit) PreviousScheduleItem() *ScheduleItem {
+	if u == nil {
+		return nil
+	}
+	if u.Completed <= 0 || u.Completed > u.Unit.Required {
+		return nil
+	}
+
+	return &u.Unit.Schedule[u.Completed-1]
+}
+
+// IsCurrentScheduleItemRequired returns whether the current schedule item is required
+func (u *UserUnit) IsCurrentScheduleItemRequired() *bool {
+	if u == nil {
+		return nil
+	}
+	if u.Completed < 0 || u.Completed >= u.Unit.Required {
+		return nil
+	}
+
+	isRequired := u.Completed >= u.Unit.ScheduleStart
+	return &isRequired
 }
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
@@ -231,6 +329,42 @@ type Unit struct {
 	DateUpdated *time.Time `json:"-"`
 }
 
+// Validate checks the unit schedule to make sure it is valid
+func (u *Unit) Validate(contentKeys []string) error {
+	if u == nil {
+		return errors.ErrorData(logutils.StatusMissing, TypeUnit, nil)
+	}
+	if len(u.Schedule) == 0 {
+		return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": u.Key})
+	}
+	if u.ScheduleStart < 0 || u.ScheduleStart >= len(u.Schedule) {
+		return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": u.ScheduleStart})
+	}
+	if len(contentKeys) == 0 {
+		contentKeys = make([]string, 0)
+		for _, content := range u.Contents {
+			if !utils.Exist[string](contentKeys, content.Key) {
+				contentKeys = append(contentKeys, content.Key)
+			}
+		}
+	}
+
+	for i, item := range u.Schedule {
+		if i >= u.ScheduleStart && item.Duration == nil {
+			return errors.ErrorData(logutils.StatusInvalid, TypeScheduleItem, &logutils.FieldArgs{"name": item.Name, "duration": item.Duration})
+		}
+
+		for _, userContent := range item.UserContent {
+			if !utils.Exist[string](contentKeys, userContent.ContentKey) {
+				return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
+			}
+		}
+	}
+
+	u.Required = len(u.Schedule)
+	return nil
+}
+
 // UserContentWithTimezone wraps unit with time information
 type UserContentWithTimezone struct {
 	UserContent UserContent `json:"user_content"`
@@ -241,28 +375,31 @@ type UserContentWithTimezone struct {
 type ScheduleItem struct {
 	Name        string        `json:"name" bson:"name"`
 	UserContent []UserContent `json:"user_content" bson:"user_content"`
-	Duration    int           `json:"duration" bson:"duration"` // in days
+	Duration    *int          `json:"duration" bson:"duration,omitempty"` // in days
 
 	DateStarted   *time.Time `json:"date_started,omitempty" bson:"date_started,omitempty"`
 	DateCompleted *time.Time `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
 }
 
 // UpdateUserData updates the stored data for the user content matching item.ContentKey in the schedule item
-func (s *ScheduleItem) UpdateUserData(item UserContent) {
+func (s *ScheduleItem) UpdateUserData(item UserContent) error {
 	if s == nil {
-		return
+		return errors.ErrorData(logutils.StatusMissing, TypeScheduleItem, nil)
 	}
 	for i, userContent := range s.UserContent {
 		if userContent.ContentKey == item.ContentKey {
 			s.UserContent[i].UserData = item.UserData
+			return nil
 		}
 	}
+
+	return errors.ErrorData(logutils.StatusMissing, TypeUserContent, &logutils.FieldArgs{"content_key": item.ContentKey})
 }
 
 // IsComplete gives whether every user content item in the schedule item has user data
 func (s *ScheduleItem) IsComplete() bool {
 	for _, userContent := range s.UserContent {
-		if len(userContent.UserData) == 0 {
+		if !userContent.IsComplete() {
 			return false
 		}
 	}
@@ -282,7 +419,7 @@ type Content struct {
 	Reference     Reference `json:"reference" bson:"reference"`
 	LinkedContent []string  `json:"linked_content" bson:"linked_content"`
 
-	Display Display `json:"display" bson:"display"`
+	Styles Styles `json:"styles" bson:"styles"`
 
 	DateCreated time.Time  `json:"-" bson:"date_created"`
 	DateUpdated *time.Time `json:"-" bson:"date_updated"`
@@ -301,6 +438,23 @@ type UserContent struct {
 
 	// user fields (populated as user takes a course)
 	UserData map[string]interface{} `json:"user_data,omitempty" bson:"user_data,omitempty"`
+}
+
+// IsComplete gives whether the user has completed the content corresponding to ContentKey
+func (uc *UserContent) IsComplete() bool {
+	if uc == nil {
+		return false
+	}
+
+	completeVal, ok := uc.UserData[UserContentCompleteKey]
+	if !ok {
+		return false
+	}
+	complete, ok := completeVal.(bool)
+	if !ok {
+		return false
+	}
+	return complete
 }
 
 // Timezone represents user timezone information received from the client
@@ -350,11 +504,9 @@ type TZOffsetPair struct {
 	Upper int
 }
 
-// Display represents data used to determine how to display course data in the client
-type Display struct {
-	PrimaryColor    string `json:"primary_color" bson:"primary_color"`
-	AccentColor     string `json:"accent_color" bson:"accent_color"`
-	CompleteColor   string `json:"complete_color" bson:"complete_color"`
-	IncompleteColor string `json:"incomplete_color" bson:"incomplete_color"`
-	Icon            string `json:"icon" bson:"icon"`
+// Styles represents data used to determine how to display course data in the client
+type Styles struct {
+	Colors  map[string]interface{} `json:"colors,omitempty" bson:"colors,omitempty"`
+	Images  map[string]interface{} `json:"images,omitempty" bson:"images,omitempty"`
+	Strings map[string]interface{} `json:"strings,omitempty" bson:"strings,omitempty"`
 }

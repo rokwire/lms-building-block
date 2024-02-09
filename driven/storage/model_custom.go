@@ -29,16 +29,20 @@ type userCourse struct {
 	TimezoneOffset int    `bson:"timezone_offset"` // in seconds east of UTC
 
 	Streak         int         `bson:"streak"`
-	StreakResets   []time.Time `bson:"streak_resets"`
-	StreakRestarts []time.Time `bson:"streak_restarts"`
+	StreakResets   []time.Time `bson:"streak_resets,omitempty"`
+	StreakRestarts []time.Time `bson:"streak_restarts,omitempty"`
 	Pauses         int         `bson:"pauses"`
-	PauseUses      []time.Time `bson:"pause_uses"`
+	PauseProgress  int         `bson:"pause_progress"`
+	PauseUses      []time.Time `bson:"pause_uses,omitempty"`
+
+	LastResponded *time.Time `bson:"last_responded"`
 
 	Course course `bson:"course"`
 
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
-	DateDropped *time.Time `bson:"date_dropped"`
+	DateCreated   time.Time  `bson:"date_created"`
+	DateUpdated   *time.Time `bson:"date_updated"`
+	DateCompleted *time.Time `bson:"date_completed"`
+	DateDropped   *time.Time `bson:"date_dropped"`
 }
 
 type course struct {
@@ -63,7 +67,7 @@ type module struct {
 	Name     string   `bson:"name"`
 	UnitKeys []string `bson:"unit_keys"`
 
-	Display model.Display `bson:"display"`
+	Styles model.Styles `bson:"styles"`
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`

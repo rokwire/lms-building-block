@@ -62,7 +62,7 @@ func (sa *Adapter) customModuleFromStorage(item module) (model.Module, error) {
 	result.OrgID = item.OrgID
 	result.Key = item.Key
 	result.Name = item.Name
-	result.Display = item.Display
+	result.Styles = item.Styles
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated
 
@@ -100,7 +100,7 @@ func (sa *Adapter) customModuleToStorage(item model.Module) module {
 	module.Key = item.Key
 	module.Name = item.Name
 	module.UnitKeys = unitKeys
-	module.Display = item.Display
+	module.Styles = item.Styles
 	module.DateCreated = item.DateCreated
 	module.DateUpdated = item.DateUpdated
 
@@ -148,9 +148,9 @@ func (sa *Adapter) customUnitToStorage(item model.Unit) unit {
 // userCourseConversionHelper formats storage struct to appropriate struct for API request
 func (sa *Adapter) userCourseFromStorage(item userCourse) (model.UserCourse, error) {
 	timezone := model.Timezone{Name: item.TimezoneName, Offset: item.TimezoneOffset}
-	result := model.UserCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, Timezone: timezone,
-		Streak: item.Streak, StreakResets: item.StreakResets, StreakRestarts: item.StreakRestarts, Pauses: item.Pauses,
-		PauseUses: item.PauseUses, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated, DateDropped: item.DateDropped}
+	result := model.UserCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, Timezone: timezone, Streak: item.Streak,
+		StreakResets: item.StreakResets, StreakRestarts: item.StreakRestarts, Pauses: item.Pauses, PauseProgress: item.PauseProgress, PauseUses: item.PauseUses,
+		LastResponded: item.LastResponded, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated, DateCompleted: item.DateCompleted, DateDropped: item.DateDropped}
 
 	convertedCourse, err := sa.customCourseFromStorage(item.Course)
 	if err != nil {
@@ -165,7 +165,8 @@ func (sa *Adapter) userCourseToStorage(item model.UserCourse) userCourse {
 	course := sa.customCourseToStorage(item.Course)
 	return userCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, TimezoneName: item.Timezone.Name, TimezoneOffset: item.Timezone.Offset,
 		Streak: item.Streak, StreakResets: item.StreakResets, StreakRestarts: item.StreakRestarts, Pauses: item.Pauses, PauseUses: item.PauseUses,
-		Course: course, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+		PauseProgress: item.PauseProgress, LastResponded: item.LastResponded, Course: course, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated,
+		DateCompleted: item.DateCompleted, DateDropped: item.DateDropped}
 }
 
 func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {

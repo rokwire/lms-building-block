@@ -1,7 +1,6 @@
 required:
   - name
   - user_content
-  - duration
 type: object
 properties:
   name:

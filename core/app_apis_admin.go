@@ -176,13 +176,6 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 
 		for _, module := range item.Modules {
 			for _, unit := range module.Units {
-				if len(unit.Schedule) == 0 {
-					return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
-				}
-				if unit.ScheduleStart < 0 {
-					return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": unit.ScheduleStart})
-				}
-
 				for _, content := range unit.Contents {
 					if !utils.Exist[string](contentKeys, content.Key) {
 						content.ID = uuid.NewString()
@@ -192,18 +185,15 @@ func (s *adminImpl) CreateCustomCourse(claims *tokenauth.Claims, item model.Cour
 						contentKeys = append(contentKeys, content.Key)
 					}
 				}
-				for _, scheduleItem := range unit.Schedule {
-					for _, userContent := range scheduleItem.UserContent {
-						if !utils.Exist[string](contentKeys, userContent.ContentKey) {
-							return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
-						}
-					}
+
+				err := unit.Validate(contentKeys)
+				if err != nil {
+					return errors.WrapErrorAction(logutils.ActionValidate, model.TypeUnit, nil, err)
 				}
 
 				unit.ID = uuid.NewString()
 				unit.AppID = claims.AppID
 				unit.OrgID = claims.OrgID
-				unit.Required = len(unit.Schedule)
 				unit.DateCreated = time.Now().UTC()
 				units = append(units, unit)
 			}
@@ -369,13 +359,6 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 		var contentKeys []string
 
 		for _, unit := range item.Units {
-			if len(unit.Schedule) == 0 {
-				return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": unit.Key})
-			}
-			if unit.ScheduleStart < 0 {
-				return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": unit.ScheduleStart})
-			}
-
 			for _, content := range unit.Contents {
 				if !utils.Exist[string](contentKeys, content.Key) {
 					content.ID = uuid.NewString()
@@ -385,18 +368,15 @@ func (s *adminImpl) CreateCustomModule(claims *tokenauth.Claims, item model.Modu
 					contentKeys = append(contentKeys, content.Key)
 				}
 			}
-			for _, scheduleItem := range unit.Schedule {
-				for _, userContent := range scheduleItem.UserContent {
-					if !utils.Exist[string](contentKeys, userContent.ContentKey) {
-						return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
-					}
-				}
+
+			err := unit.Validate(contentKeys)
+			if err != nil {
+				return errors.WrapErrorAction(logutils.ActionValidate, model.TypeUnit, nil, err)
 			}
 
 			unit.ID = uuid.NewString()
 			unit.AppID = claims.AppID
 			unit.OrgID = claims.OrgID
-			unit.Required = len(unit.Schedule)
 			unit.DateCreated = time.Now().UTC()
 			units = append(units, unit)
 		}
@@ -504,11 +484,6 @@ func (s *adminImpl) DeleteCustomModule(claims *tokenauth.Claims, key string) err
 			return err
 		}
 
-		err = storageTransaction.DeleteModuleKeyFromUserCourses(appID, orgID, key)
-		if err != nil {
-			return err
-		}
-
 		return err
 	}
 	return s.app.storage.PerformTransaction(transaction)
@@ -538,19 +513,8 @@ func (s *adminImpl) GetCustomUnits(claims *tokenauth.Claims, id *string, name *s
 
 func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) (*model.Unit, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
-		if len(item.Schedule) == 0 {
-			return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": item.Key})
-		}
-		if item.ScheduleStart < 0 {
-			return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": item.ScheduleStart})
-		}
-
-		item.ID = uuid.NewString()
-		item.AppID = claims.AppID
-		item.OrgID = claims.OrgID
-
 		//extract sublayer(s) key and struct, insert those not yet present in db according to key
-		var contents, newContents []model.Content
+		var contents []model.Content
 		var contentKeys []string
 
 		//contents
@@ -563,12 +527,9 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 				contentKeys = append(contentKeys, content.Key)
 			}
 		}
-		for _, scheduleItem := range item.Schedule {
-			for _, userContent := range scheduleItem.UserContent {
-				if !utils.Exist[string](contentKeys, userContent.ContentKey) {
-					return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
-				}
-			}
+		err := item.Validate(contentKeys)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionValidate, model.TypeUnit, nil, err)
 		}
 
 		newContents, err := s.contentsNotInDB(storageTransaction, claims.AppID, claims.OrgID, contents)
@@ -583,7 +544,9 @@ func (s *adminImpl) CreateCustomUnit(claims *tokenauth.Claims, item model.Unit) 
 			}
 		}
 
-		item.Required = len(item.Schedule)
+		item.ID = uuid.NewString()
+		item.AppID = claims.AppID
+		item.OrgID = claims.OrgID
 		item.DateCreated = time.Now().UTC()
 		err = storageTransaction.InsertCustomUnit(item)
 		if err != nil {
@@ -604,11 +567,14 @@ func (s *adminImpl) GetCustomUnit(claims *tokenauth.Claims, key string) (*model.
 
 func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item model.Unit) (*model.Unit, error) {
 	transaction := func(storageTransaction interfaces.Storage) error {
-		if len(item.Schedule) == 0 {
-			return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": item.Key})
+		var newKeys []string
+		for _, val := range item.Contents {
+			newKeys = append(newKeys, val.Key)
 		}
-		if item.ScheduleStart < 0 {
-			return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": item.ScheduleStart})
+
+		err := item.Validate(newKeys)
+		if err != nil {
+			return errors.WrapErrorAction(logutils.ActionValidate, model.TypeUnit, nil, err)
 		}
 
 		item.AppID = claims.AppID
@@ -622,12 +588,9 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 		}
 
 		// checks if subcategory associated array keys are updated
-		var curKeys, newKeys []string
+		var curKeys []string
 		for _, val := range unit.Contents {
 			curKeys = append(curKeys, val.Key)
-		}
-		for _, val := range item.Contents {
-			newKeys = append(newKeys, val.Key)
 		}
 
 		// checks if new associated array keys all present in database
@@ -646,10 +609,10 @@ func (s *adminImpl) UpdateCustomUnit(claims *tokenauth.Claims, key string, item 
 			return err
 		}
 
-		err = storageTransaction.UpdateUserUnits(key, item) //TODO: can cause problems if user unit has data stored in schedule
-		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
-		}
+		// err = storageTransaction.UpdateUserUnits(key, item) //TODO: can cause problems if user unit has data stored in schedule
+		// if err != nil {
+		// 	return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
+		// }
 
 		return nil
 	}
@@ -661,11 +624,6 @@ func (s *adminImpl) DeleteCustomUnit(claims *tokenauth.Claims, key string) error
 		err := storageTransaction.DeleteCustomUnit(claims.AppID, claims.OrgID, key)
 		if err != nil {
 			return nil
-		}
-		// delete userUnit derived from customUnit
-		err = storageTransaction.DeleteUserUnit(claims.AppID, claims.OrgID, key)
-		if err != nil {
-			return err
 		}
 
 		err = storageTransaction.DeleteUnitKeyFromModules(claims.AppID, claims.OrgID, key)
@@ -771,11 +729,7 @@ func (s *adminImpl) DeleteCustomContent(claims *tokenauth.Claims, key string) er
 			return err
 		}
 
-		err = storageTransaction.DeleteContentKeyFromUserUnits(claims.AppID, claims.OrgID, key)
-		if err != nil {
-			return err
-		}
-		return err
+		return nil
 	}
 	return s.app.storage.PerformTransaction(transaction)
 }
@@ -793,10 +747,6 @@ func (s *adminImpl) CreateCustomCourseConfig(claims *tokenauth.Claims, item mode
 	err := item.StreaksNotificationsConfig.ValidateTimings()
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeStreaksNotificationsConfig, nil, err)
-	}
-
-	if item.StreaksNotificationsConfig.TimerDelayTolerance <= 0 {
-		item.StreaksNotificationsConfig.TimerDelayTolerance = model.DefaultStreaksNotificationsTimerDelayTolerance
 	}
 
 	item.ID = uuid.NewString()
@@ -820,10 +770,6 @@ func (s *adminImpl) UpdateCustomCourseConfig(claims *tokenauth.Claims, key strin
 	err := item.StreaksNotificationsConfig.ValidateTimings()
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeStreaksNotificationsConfig, nil, err)
-	}
-
-	if item.StreaksNotificationsConfig.TimerDelayTolerance <= 0 {
-		item.StreaksNotificationsConfig.TimerDelayTolerance = model.DefaultStreaksNotificationsTimerDelayTolerance
 	}
 
 	item.AppID = claims.AppID

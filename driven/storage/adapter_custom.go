@@ -147,7 +147,7 @@ func (sa *Adapter) DecrementUserCoursePauses(appID string, orgID string, userIDs
 			"pauses": -1,
 		},
 		"$push": bson.M{
-			"pause_uses": now,
+			"pause_uses": now.Truncate(time.Hour),
 		},
 		"$set": bson.M{
 			"date_updated": now,
@@ -178,7 +178,7 @@ func (sa *Adapter) ResetUserCourseStreaks(appID string, orgID string, userIDs []
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$push": bson.M{
-			"streak_resets": now,
+			"streak_resets": now.Truncate(time.Hour),
 		},
 		"$set": bson.M{
 			"streak":       0,
@@ -318,7 +318,7 @@ func (sa *Adapter) UpdateCustomModule(key string, item model.Module) error {
 			"date_updated": time.Now(),
 			"name":         item.Name,
 			"unit_keys":    unitKeys,
-			"display":      item.Display,
+			"styles":       item.Styles,
 		},
 	}
 	result, err := sa.db.customModules.UpdateOne(sa.context, filter, update, nil)
@@ -446,7 +446,7 @@ func (sa *Adapter) UpdateCustomUnit(key string, item model.Unit) error {
 			"name":         item.Name,
 			"content_keys": extractedKey,
 			"schedule":     item.Schedule,
-			"required":     len(item.Schedule),
+			"required":     item.Required,
 			"date_updated": time.Now(),
 		},
 	}
@@ -488,17 +488,33 @@ func (sa *Adapter) UpdateUserUnits(key string, item model.Unit) error {
 // DeleteUserUnit deletes all userUnit derieved from a custom unit
 func (sa *Adapter) DeleteUserUnit(appID string, orgID string, key string) error {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "unit.key": key}
+	errArgs := logutils.FieldArgs(filter)
 	result, err := sa.db.userUnits.DeleteMany(sa.context, filter, nil)
 	if err != nil {
-		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeUnit, &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeUserUnit, &errArgs, err)
 	}
 	if result == nil {
-		return errors.WrapErrorData(logutils.StatusInvalid, "result", &logutils.FieldArgs{"key": key}, err)
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &errArgs, err)
 	}
 	// deletedCount := result.DeletedCount
 	// if deletedCount == 0 {
-	// 	return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": key}, err)
+	// 	return errors.WrapErrorData(logutils.StatusMissing, model.TypeUnit, &errArgs, err)
 	// }
+	return nil
+}
+
+// DeleteUserUnits deletes all user units for a given course key
+func (sa *Adapter) DeleteUserUnits(appID string, orgID string, userID string, courseKey string) error {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey}
+	errArgs := logutils.FieldArgs(filter)
+	result, err := sa.db.userUnits.DeleteMany(sa.context, filter, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeUserUnit, &errArgs, err)
+	}
+	if result == nil {
+		return errors.WrapErrorData(logutils.StatusInvalid, "result", &errArgs, err)
+	}
+
 	return nil
 }
 
@@ -593,7 +609,7 @@ func (sa *Adapter) UpdateCustomContent(key string, item model.Content) error {
 			"name":           item.Name,
 			"reference":      item.Reference,
 			"linked_content": item.LinkedContent,
-			"display":        item.Display,
+			"styles":         item.Styles,
 			"date_updated":   time.Now(),
 		},
 	}
@@ -678,7 +694,7 @@ func (sa *Adapter) UpdateCourseConfig(config model.CourseConfig) error {
 		"$set": bson.M{
 			"initial_pauses":               config.InitialPauses,
 			"max_pauses":                   config.MaxPauses,
-			"pause_reward_streak":          config.PauseRewardStreak,
+			"pause_progress_reward":        config.PauseProgressReward,
 			"streaks_notifications_config": config.StreaksNotificationsConfig,
 			"date_updated":                 time.Now().UTC(),
 		},
@@ -761,27 +777,6 @@ func (sa *Adapter) DeleteContentKeyFromUnits(appID string, orgID string, key str
 	return err
 }
 
-// DeleteContentKeyFromUserUnits deletes given content key from all content.contentKey field within user_unit collection
-func (sa *Adapter) DeleteContentKeyFromUserUnits(appID string, orgID string, key string) error {
-	var keyArr []string
-	keyArr = append(keyArr, key)
-	filter := bson.M{"org_id": orgID, "app_id": appID}
-	update := bson.M{
-		"$pull": bson.M{
-			"unit.content_keys": bson.M{
-				"$in": keyArr,
-			},
-		},
-	}
-
-	_, err := sa.db.userUnits.UpdateMany(sa.context, filter, update, nil)
-	if err != nil {
-		errArgs := logutils.FieldArgs(filter)
-		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, &errArgs, err)
-	}
-	return nil
-}
-
 // DeleteUnitKeyFromModules deletes a unit key from unitKey field within customModule collection
 func (sa *Adapter) DeleteUnitKeyFromModules(appID string, orgID string, key string) error {
 	var keyArr []string
@@ -824,29 +819,8 @@ func (sa *Adapter) DeleteModuleKeyFromCourses(appID string, orgID string, key st
 	return nil
 }
 
-// DeleteModuleKeyFromUserCourses deletes given module key from all module.moduleKey fields within user_course collection
-func (sa *Adapter) DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error {
-	var keyArr []string
-	keyArr = append(keyArr, key)
-	filter := bson.M{"org_id": orgID, "app_id": appID}
-	update := bson.M{
-		"$pull": bson.M{
-			"course.module_keys": bson.M{
-				"$in": keyArr,
-			},
-		},
-	}
-
-	_, err := sa.db.userCourses.UpdateMany(sa.context, filter, update, nil)
-	if err != nil {
-		errArgs := logutils.FieldArgs(filter)
-		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, &errArgs, err)
-	}
-	return nil
-}
-
 // FindUserCourses finds user course by a set of parameters
-func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair) ([]model.UserCourse, error) {
+func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsetPairs []model.TZOffsetPair, completed *bool) ([]model.UserCourse, error) {
 	filter := bson.M{"app_id": appID, "org_id": orgID}
 	if len(id) != 0 {
 		filter["_id"] = bson.M{"$in": id}
@@ -878,6 +852,14 @@ func (sa *Adapter) FindUserCourses(id []string, appID string, orgID string, name
 			)
 		}
 		filter["$or"] = offsetFilters
+	}
+
+	if completed != nil {
+		if *completed {
+			filter["date_completed"] = bson.M{"$ne": nil}
+		} else {
+			filter["date_completed"] = bson.M{"$eq": nil}
+		}
 	}
 
 	var result []userCourse
@@ -941,8 +923,11 @@ func (sa *Adapter) UpdateUserCourse(item model.UserCourse) error {
 		"$set": bson.M{
 			"streak":          item.Streak,
 			"pauses":          item.Pauses,
+			"pause_progress":  item.PauseProgress,
 			"streak_restarts": item.StreakRestarts,
+			"last_responded":  item.LastResponded,
 			"date_dropped":    item.DateDropped,
+			"date_completed":  item.DateCompleted,
 			"date_updated":    time.Now().UTC(),
 		},
 	}
@@ -1082,11 +1067,10 @@ func (sa *Adapter) UpdateUserUnit(item model.UserUnit) error {
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
-			"unit.schedule":  item.Unit.Schedule,
-			"completed":      item.Completed,
-			"current":        item.Current,
-			"last_completed": item.LastCompleted,
-			"date_updated":   time.Now().UTC(),
+			"unit.schedule": item.Unit.Schedule,
+			"completed":     item.Completed,
+			"current":       item.Current,
+			"date_updated":  time.Now().UTC(),
 		},
 	}
 	result, err := sa.db.userUnits.UpdateOne(sa.context, filter, update, nil)
