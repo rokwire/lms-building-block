@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- enable user to work on mutiple modules [#98](https://github.com/rokwire/lms-building-block/issues/98)
+- Allow users to progress on multiple modules [#98](https://github.com/rokwire/lms-building-block/issues/98)
 
 ## [1.10.2] - 2024-02-01
 ### Fixed

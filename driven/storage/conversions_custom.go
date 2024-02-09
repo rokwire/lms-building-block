@@ -165,7 +165,7 @@ func (sa *Adapter) userCourseToStorage(item model.UserCourse) userCourse {
 	course := sa.customCourseToStorage(item.Course)
 	return userCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, TimezoneName: item.Timezone.Name, TimezoneOffset: item.Timezone.Offset,
 		Streak: item.Streak, StreakResets: item.StreakResets, StreakRestarts: item.StreakRestarts, Pauses: item.Pauses, PauseUses: item.PauseUses,
-		Course: course, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+		Course: course, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated, DateDropped: item.DateDropped, LastCompleted: item.LastCompleted}
 }
 
 func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
