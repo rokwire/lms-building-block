@@ -92,7 +92,7 @@ type Storage interface {
 	UpdateCourseConfig(config model.CourseConfig) error
 	DeleteCourseConfig(appID string, orgID string, key string) error
 
-	FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsets []model.TZOffsetPair) ([]model.UserCourse, error)
+	FindUserCourses(id []string, appID string, orgID string, name []string, key []string, userID *string, timezoneOffsets []model.TZOffsetPair, completed *bool) ([]model.UserCourse, error)
 	FindUserCourse(appID string, orgID string, userID string, courseKey string) (*model.UserCourse, error)
 	InsertUserCourse(item model.UserCourse) error
 	UpdateUserCourses(key string, item model.Course) error
@@ -109,13 +109,12 @@ type Storage interface {
 	UpdateUserUnit(item model.UserUnit) error
 	UpdateUserUnits(key string, item model.Unit) error
 	DeleteUserUnit(appID string, orgID string, key string) error
+	DeleteUserUnits(appID string, orgID string, userID string, courseKey string) error
 
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error
-	DeleteContentKeyFromUserUnits(appID string, orgID string, key string) error
 	DeleteUnitKeyFromModules(appID string, orgID string, key string) error
 	DeleteModuleKeyFromCourses(appID string, orgID string, key string) error
-	DeleteModuleKeyFromUserCourses(appID string, orgID string, key string) error
 }
 
 // Provider interface for LMS provider

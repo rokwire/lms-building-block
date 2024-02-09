@@ -2234,7 +2234,6 @@ components:
       required:
         - name
         - user_content
-        - duration
       type: object
       properties:
         name:
@@ -2279,6 +2278,8 @@ components:
             - pauses
             - pause_uses
             - course
+            - date_created
+            - date_completed
             - date_dropped
           type: object
           properties:
@@ -2315,6 +2316,14 @@ components:
                 format: date-time
             course:
               $ref: '#/components/schemas/Course'
+            date_created:
+              type: string
+              readOnly: true
+              format: date-time
+            date_completed:
+              type: string
+              readOnly: true
+              format: date-time
             date_dropped:
               type: string
               readOnly: true
@@ -2436,8 +2445,6 @@ components:
         timezone_name:
           type: string
         timezone_offset:
-          type: integer
-        timer_delay_tolerance:
           type: integer
         streaks_process_time:
           type: integer

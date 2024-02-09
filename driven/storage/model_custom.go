@@ -39,9 +39,10 @@ type userCourse struct {
 
 	Course course `bson:"course"`
 
-	DateCreated time.Time  `bson:"date_created"`
-	DateUpdated *time.Time `bson:"date_updated"`
-	DateDropped *time.Time `bson:"date_dropped"`
+	DateCreated   time.Time  `bson:"date_created"`
+	DateUpdated   *time.Time `bson:"date_updated"`
+	DateCompleted *time.Time `bson:"date_completed"`
+	DateDropped   *time.Time `bson:"date_dropped"`
 }
 
 type course struct {

@@ -161,7 +161,7 @@ type Reference struct {
 type ScheduleItem struct {
 	DateCompleted *time.Time    `json:"date_completed"`
 	DateStarted   *time.Time    `json:"date_started,omitempty"`
-	Duration      int           `json:"duration"`
+	Duration      *int          `json:"duration,omitempty"`
 	Name          string        `json:"name"`
 	UserContent   []UserContent `json:"user_content"`
 }
@@ -173,7 +173,6 @@ type StreaksNotificationsConfig struct {
 	NotificationsMode   StreaksNotificationsConfigNotificationsMode `json:"notifications_mode"`
 	PreferEarly         bool                                        `json:"prefer_early"`
 	StreaksProcessTime  int                                         `json:"streaks_process_time"`
-	TimerDelayTolerance *int                                        `json:"timer_delay_tolerance,omitempty"`
 	TimezoneName        string                                      `json:"timezone_name"`
 	TimezoneOffset      *int                                        `json:"timezone_offset,omitempty"`
 }
@@ -230,6 +229,8 @@ type UserContentWithTimezone struct {
 type UserCourse struct {
 	AppId          *string     `json:"app_id,omitempty"`
 	Course         Course      `json:"course"`
+	DateCompleted  *time.Time  `json:"date_completed,omitempty"`
+	DateCreated    *time.Time  `json:"date_created,omitempty"`
 	DateDropped    *time.Time  `json:"date_dropped,omitempty"`
 	Id             *string     `json:"id,omitempty"`
 	OrgId          *string     `json:"org_id,omitempty"`

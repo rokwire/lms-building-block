@@ -11,8 +11,6 @@ properties:
     type: string
   timezone_offset:
     type: integer
-  timer_delay_tolerance:
-    type: integer
   streaks_process_time:
     type: integer
   prefer_early:
