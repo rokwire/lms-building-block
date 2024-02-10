@@ -100,8 +100,7 @@ type unit struct {
 	ContentKeys []string             `bson:"content_keys"`
 	Schedule    []model.ScheduleItem `bson:"schedule"`
 
-	ScheduleStart int `bson:"schedule_start"`
-	Required      int `bson:"required"` // number of schedule items required to be completed
+	Required int `bson:"required"` // number of schedule items required to be completed
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`

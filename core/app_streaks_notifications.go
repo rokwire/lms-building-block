@@ -206,7 +206,11 @@ func (n streaksNotifications) processStreaks() {
 				item.Completed++
 				item.Current = remainsCurrent
 				if remainsCurrent {
-					item.CurrentScheduleItem().DateStarted = &now
+					userScheduleItem, _, _, _ := item.GetScheduleItem("", true)
+					if userScheduleItem == nil {
+						return errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})
+					}
+					userScheduleItem.DateStarted = &now
 				}
 				err := storage.UpdateUserUnit(item)
 				if err != nil {
@@ -218,9 +222,16 @@ func (n streaksNotifications) processStreaks() {
 				// insert the next user unit since the current one has been completed
 				nextUnit := userCourse.Course.GetNextUnit(item.Unit.Key)
 				if nextUnit != nil {
-					nextUnit.Schedule[0].DateStarted = &now
+					userScheduleItem, _, _, _ := item.GetScheduleItem("", true)
+					if userScheduleItem == nil {
+						return errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})
+					}
+
+					nextUserSchedule := nextUnit.GenerateUserSchedule()
+					nextUserSchedule[0].DateStarted = &now
 					nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: item.UserID, CourseKey: item.CourseKey,
-						Unit: *nextUnit, Completed: 0, Current: true, LastCompleted: item.CurrentScheduleItem().DateCompleted, DateCreated: time.Now().UTC()}
+						Unit: *nextUnit, Completed: 0, Current: true, UserSchedule: nextUserSchedule, LastCompleted: userScheduleItem.DateCompleted, DateCreated: time.Now().UTC()}
+
 					err := storage.InsertUserUnit(nextUserUnit)
 					if err != nil {
 						return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
@@ -345,23 +356,20 @@ func (n streaksNotifications) checkScheduleTaskCompletion(userUnit model.UserUni
 		return errors.ErrorData(logutils.StatusInvalid, "incomplete task handler", nil)
 	}
 
-	scheduleItem := userUnit.CurrentScheduleItem()
-	if scheduleItem == nil {
+	userScheduleItem, scheduleItem, _, isRequired := userUnit.GetScheduleItem("", true)
+	if userScheduleItem == nil || scheduleItem == nil {
 		return errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})
-	}
-	isRequired := userUnit.IsCurrentScheduleItemRequired()
-	if isRequired == nil {
-		return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"completed": userUnit.Completed, "schedule_start": userUnit.Unit.ScheduleStart})
 	}
 
 	// if the current schedule item is not required, it means the user has not completed the first required schedule item after it
-	if !*isRequired || scheduleItem.Duration == nil {
+	if !isRequired || scheduleItem.Duration == nil {
 		return incompleteTaskHandler(userUnit)
 	}
 
 	// check if the current schedule item is incomplete and current schedule item start date is missing or at least (24*days+offset) hours before now
 	//TODO: may need to change this check to handle user travelling, DST
-	if scheduleItem.DateCompleted == nil && (scheduleItem.DateStarted == nil || !scheduleItem.DateStarted.Add((24*time.Duration(*scheduleItem.Duration)+time.Duration(incompleteTaskPeriodOffset))*time.Hour).After(now)) {
+	startDateOffset := (24*time.Duration(*scheduleItem.Duration) + time.Duration(incompleteTaskPeriodOffset)) * time.Hour
+	if !userScheduleItem.IsComplete() && (userScheduleItem.DateStarted == nil || !userScheduleItem.DateStarted.Add(startDateOffset).After(now)) {
 		// not completed within specified period, so handle incomplete
 		return incompleteTaskHandler(userUnit)
 	} else if completeTaskHandler != nil {

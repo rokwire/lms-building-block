@@ -9,7 +9,7 @@ get:
   parameters:
     - name: ids
       in: query
-      description: user content ids
+      description: comma separated list of user content ids
       required: true
       style: form
       explode: false

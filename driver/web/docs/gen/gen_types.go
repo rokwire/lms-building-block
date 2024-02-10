@@ -193,14 +193,13 @@ type Timezone struct {
 
 // Unit defines model for Unit.
 type Unit struct {
-	AppId         *string        `json:"app_id,omitempty"`
-	Content       []Content      `json:"content"`
-	Id            *string        `json:"id,omitempty"`
-	Key           string         `json:"key"`
-	Name          string         `json:"name"`
-	OrgId         *string        `json:"org_id,omitempty"`
-	Schedule      []ScheduleItem `json:"schedule"`
-	ScheduleStart *int           `json:"schedule_start,omitempty"`
+	AppId    *string        `json:"app_id,omitempty"`
+	Content  []Content      `json:"content"`
+	Id       *string        `json:"id,omitempty"`
+	Key      string         `json:"key"`
+	Name     string         `json:"name"`
+	OrgId    *string        `json:"org_id,omitempty"`
+	Schedule []ScheduleItem `json:"schedule"`
 }
 
 // User defines model for User.
@@ -434,7 +433,7 @@ type GetApiCoursesIdUsersParams struct {
 
 // GetApiUsersContentsParams defines parameters for GetApiUsersContents.
 type GetApiUsersContentsParams struct {
-	// Ids user content ids
+	// Ids comma separated list of user content ids
 	Ids string `form:"ids" json:"ids"`
 }
 

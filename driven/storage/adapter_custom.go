@@ -538,8 +538,11 @@ func (sa *Adapter) DeleteCustomUnit(appID string, orgID string, key string) erro
 }
 
 // FindUserContents finds a list of user content items by a list of ids
-func (sa *Adapter) FindUserContents(ids []string) ([]model.UserContent, error) {
-	filter := bson.M{"$in": ids}
+func (sa *Adapter) FindUserContents(id []string, appID string, orgID string, userID string) ([]model.UserContent, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID}
+	if len(id) > 0 {
+		filter["_id"] = bson.M{"$in": id}
+	}
 	errArgs := logutils.FieldArgs(filter)
 
 	var result []model.UserContent
@@ -552,6 +555,40 @@ func (sa *Adapter) FindUserContents(ids []string) ([]model.UserContent, error) {
 	}
 
 	return result, nil
+}
+
+// InsertUserContent inserts a new user content item
+func (sa *Adapter) InsertUserContent(item model.UserContent) error {
+	_, err := sa.db.userContents.InsertOne(sa.context, item)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserContent,
+			&logutils.FieldArgs{"app_id": item.AppID, "org_id": item.OrgID, "user_id": item.UserID, "course_key": item.CourseKey, "module_key": item.ModuleKey, "unit_key": item.UnitKey, "content_key": item.Content.Key}, err)
+	}
+	return nil
+}
+
+// UpdateUserContent updates an existing user content item
+func (sa *Adapter) UpdateUserContent(item model.UserContent, updateContent bool) error {
+	filter := bson.M{"_id": item.ID, "app_id": item.AppID, "org_id": item.OrgID, "user_id": item.UserID}
+	errArgs := logutils.FieldArgs(filter)
+	setUpdate := bson.M{
+		"response":     item.Response,
+		"date_updated": item.DateUpdated,
+	}
+	if updateContent {
+		setUpdate["content"] = item.Content
+	}
+	update := bson.M{"$set": setUpdate}
+
+	res, err := sa.db.userContents.UpdateOne(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserContent, &errArgs, err)
+	}
+	if res.ModifiedCount != 1 {
+		errArgs["modified"] = res.ModifiedCount
+		return errors.ErrorAction(logutils.ActionInsert, model.TypeUserContent, &errArgs)
+	}
+	return nil
 }
 
 // FindCustomContents finds contents by a set of parameters
@@ -1085,7 +1122,7 @@ func (sa *Adapter) UpdateUserUnit(item model.UserUnit) error {
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
-			"unit.schedule": item.Unit.Schedule,
+			"user_schedule": item.UserSchedule,
 			"completed":     item.Completed,
 			"current":       item.Current,
 			"date_updated":  time.Now().UTC(),
