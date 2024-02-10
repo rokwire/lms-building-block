@@ -227,7 +227,7 @@ func (n streaksNotifications) processStreaks() {
 						return errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})
 					}
 
-					nextUserSchedule := nextUnit.GenerateUserSchedule()
+					nextUserSchedule := nextUnit.CreateUserSchedule()
 					nextUserSchedule[0].DateStarted = &now
 					nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: item.UserID, CourseKey: item.CourseKey,
 						Unit: *nextUnit, Completed: 0, Current: true, UserSchedule: nextUserSchedule, LastCompleted: userScheduleItem.DateCompleted, DateCreated: time.Now().UTC()}

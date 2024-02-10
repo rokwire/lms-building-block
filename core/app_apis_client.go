@@ -326,7 +326,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			}
 
 			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey, Unit: *unit,
-				Completed: 0, Current: true, UserSchedule: unit.GenerateUserSchedule(), DateCreated: now}
+				Completed: 0, Current: true, UserSchedule: unit.CreateUserSchedule(), DateCreated: now}
 
 			lastStreakProcess, err := s.updateUserContent(storageTransaction, userUnit, item, userCourse, &now, courseConfig.StreaksNotificationsConfig)
 			if err != nil {
@@ -378,7 +378,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		var previousScheduleItem *model.UserScheduleItem
 		var previousScheduleItemCompleted *time.Time
 		if isCurrent {
-			previousScheduleItem, _ = userUnit.PreviousScheduleItem()
+			previousScheduleItem = userUnit.PreviousScheduleItem()
 		}
 		if previousScheduleItem != nil {
 			previousScheduleItemCompleted = previousScheduleItem.DateCompleted

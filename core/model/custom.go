@@ -151,13 +151,12 @@ func (c *Course) GetNextUnit(currentUnitKey string) *Unit {
 
 // NextRequiredScheduleItem returns the next required schedule item in a course given the current unit key and schedule index (set allowCurrent to return the schedule item corresponding to scheduleIndex if required)
 func (c *Course) NextRequiredScheduleItem(currentUnitKey string, scheduleIndex int, allowCurrent bool) *ScheduleItem {
-	//TODO: not working
 	returnNextRequired := false
 	for _, module := range c.Modules {
 		for _, unit := range module.Units {
 			if returnNextRequired || unit.Key == currentUnitKey {
 				for j, scheduleItem := range unit.Schedule {
-					if (returnNextRequired || j > scheduleIndex || (allowCurrent && j == scheduleIndex)) && scheduleItem.Duration != nil {
+					if (returnNextRequired || j > scheduleIndex || (allowCurrent && j == scheduleIndex)) && scheduleItem.IsRequired() {
 						nextScheduleItem := scheduleItem
 						return &nextScheduleItem
 					}
@@ -282,7 +281,7 @@ func (u *UserUnit) GetScheduleItem(contentKey string, requireCurrent bool) (*Use
 	if u == nil {
 		return nil, nil, false, false
 	}
-	if u.Completed < 0 || u.Completed >= u.Unit.Required || u.Completed >= len(u.UserSchedule) {
+	if u.Completed < 0 || u.Completed >= len(u.Unit.Schedule) || u.Completed >= len(u.UserSchedule) {
 		return nil, nil, false, false
 	}
 
@@ -303,16 +302,16 @@ func (u *UserUnit) GetScheduleItem(contentKey string, requireCurrent bool) (*Use
 	return nil, nil, false, false
 }
 
-// PreviousScheduleItem returns pointers to the UserScheduleItem and ScheduleItem in the unit immediately before the user's current position in the schedule
-func (u *UserUnit) PreviousScheduleItem() (*UserScheduleItem, *ScheduleItem) {
+// PreviousScheduleItem returns a pointer to the UserScheduleItem in the unit immediately before the user's current position in the schedule
+func (u *UserUnit) PreviousScheduleItem() *UserScheduleItem {
 	if u == nil {
-		return nil, nil
+		return nil
 	}
-	if u.Completed <= 0 || u.Completed > u.Unit.Required || u.Completed > len(u.UserSchedule) {
-		return nil, nil
+	if u.Completed <= 0 || u.Completed > len(u.Unit.Schedule) || u.Completed > len(u.UserSchedule) {
+		return nil
 	}
 
-	return &u.UserSchedule[u.Completed-1], &u.Unit.Schedule[u.Completed-1]
+	return &u.UserSchedule[u.Completed-1]
 }
 
 // GetUserContentReferenceForKey returns the user content reference in the user schedule containing contentKey
@@ -378,8 +377,8 @@ func (u *Unit) Validate(contentKeys []string) error {
 	return nil
 }
 
-// GenerateUserSchedule creates the list of UserScheduleItems for Schedule with no associated UserContent ids
-func (u *Unit) GenerateUserSchedule() []UserScheduleItem {
+// CreateUserSchedule creates the list of UserScheduleItems for Schedule with no associated UserContent ids
+func (u *Unit) CreateUserSchedule() []UserScheduleItem {
 	if u == nil {
 		return nil
 	}
