@@ -52,6 +52,7 @@ type database struct {
 	customContents  *collectionWrapper
 	userCourses     *collectionWrapper
 	userUnits       *collectionWrapper
+	userContents    *collectionWrapper
 }
 
 func (m *database) start() error {
@@ -156,6 +157,12 @@ func (m *database) start() error {
 		return err
 	}
 
+	userContents := &collectionWrapper{database: m, coll: db.Collection("user_contents")}
+	err = m.applyUserContentsChecks(userContents)
+	if err != nil {
+		return err
+	}
+
 	//asign the db, db client and the collections
 	m.db = db
 	m.dbClient = client
@@ -173,6 +180,7 @@ func (m *database) start() error {
 	m.customContents = customContents
 	m.userCourses = userCourses
 	m.userUnits = userUnits
+	m.userContents = userContents
 
 	go m.configs.Watch(nil, m.logger)
 
@@ -388,6 +396,25 @@ func (m *database) applyUserUnitsChecks(userUnits *collectionWrapper) error {
 		return err
 	}
 	m.logger.Info("user unit check passed")
+	return nil
+}
+
+func (m *database) applyUserContentsChecks(userContents *collectionWrapper) error {
+	m.logger.Info("apply user content check.....")
+	err := userContents.AddIndex(
+		bson.D{
+			primitive.E{Key: "app_id", Value: 1},
+			primitive.E{Key: "org_id", Value: 1},
+			primitive.E{Key: "user_id", Value: 1},
+			primitive.E{Key: "course_key", Value: 1},
+			primitive.E{Key: "module_key", Value: 1},
+			primitive.E{Key: "unit_key", Value: 1},
+			primitive.E{Key: "content.key", Value: 1},
+		}, false)
+	if err != nil {
+		return err
+	}
+	m.logger.Info("user content check passed")
 	return nil
 }
 

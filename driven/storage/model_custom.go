@@ -29,17 +29,22 @@ type userCourse struct {
 	TimezoneOffset int    `bson:"timezone_offset"` // in seconds east of UTC
 
 	Streak         int         `bson:"streak"`
-	StreakResets   []time.Time `bson:"streak_resets"`
-	StreakRestarts []time.Time `bson:"streak_restarts"`
+	StreakResets   []time.Time `bson:"streak_resets,omitempty"`
+	StreakRestarts []time.Time `bson:"streak_restarts,omitempty"`
 	Pauses         int         `bson:"pauses"`
-	PauseUses      []time.Time `bson:"pause_uses"`
+	PauseProgress  int         `bson:"pause_progress"`
+	PauseUses      []time.Time `bson:"pause_uses,omitempty"`
+
+	LastCompleted    *time.Time           `bson:"last_completed"`
+	LastResponded    *time.Time           `bson:"last_responded"`
+	CompletedModules map[string]time.Time `bson:"completed_modules,omitempty"`
 
 	Course course `bson:"course"`
 
 	DateCreated   time.Time  `bson:"date_created"`
 	DateUpdated   *time.Time `bson:"date_updated"`
+	DateCompleted *time.Time `bson:"date_completed"`
 	DateDropped   *time.Time `bson:"date_dropped"`
-	LastCompleted *time.Time `bson:"last_completed"`
 }
 
 type course struct {
@@ -64,7 +69,7 @@ type module struct {
 	Name     string   `bson:"name"`
 	UnitKeys []string `bson:"unit_keys"`
 
-	Display model.Display `bson:"display"`
+	Styles model.Styles `bson:"styles"`
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`
@@ -79,12 +84,13 @@ type userUnit struct {
 	ModuleKey string `bson:"module_key"`
 	Unit      unit   `bson:"unit"`
 
-	Completed int  `bson:"completed"` // number of schedule items the user has completed
-	Current   bool `bson:"current"`
+	Completed    int                      `bson:"completed"` // number of schedule items the user has completed
+	Current      bool                     `bson:"current"`
+	UserSchedule []model.UserScheduleItem `bson:"user_schedule"`
 
-	LastCompleted *time.Time `bson:"last_completed"`
-	DateCreated   time.Time  `bson:"date_created"`
-	DateUpdated   *time.Time `bson:"date_updated"`
+	PreviousCompleted *time.Time `bson:"previous_completed"`
+	DateCreated       time.Time  `bson:"date_created"`
+	DateUpdated       *time.Time `bson:"date_updated"`
 }
 
 type unit struct {
@@ -97,8 +103,7 @@ type unit struct {
 	ContentKeys []string             `bson:"content_keys"`
 	Schedule    []model.ScheduleItem `bson:"schedule"`
 
-	ScheduleStart int `bson:"schedule_start"`
-	Required      int `bson:"required"` // number of schedule items required to be completed
+	Required int `bson:"required"` // number of schedule items required to be completed
 
 	DateCreated time.Time  `bson:"date_created"`
 	DateUpdated *time.Time `bson:"date_updated"`

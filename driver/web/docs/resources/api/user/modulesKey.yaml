@@ -9,7 +9,7 @@ put:
   parameters:
     - name: course_key
       in: path
-      description: course key associated with userUnit
+      description: key of course to update progress
       required: true
       style: simple
       explode: false
@@ -17,7 +17,7 @@ put:
         type: string
     - name: module_key
       in: path
-      description: module key associated with userUnit
+      description: key of module to update progress
       required: true
       style: simple
       explode: false
@@ -28,7 +28,7 @@ put:
     content:
       application/json:
         schema:
-          $ref: "../../../schemas/custom/UserContentWithTimezone.yaml"
+          $ref: "../../../schemas/custom/UserResponse.yaml"
     required: true
   responses:
     200:

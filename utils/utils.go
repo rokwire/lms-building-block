@@ -184,6 +184,11 @@ func GetLogValue(value string) string {
 	return fmt.Sprintf("***%s", last3)
 }
 
+// DeepEqual checks whether a and b are “deeply equal”
+func DeepEqual(a, b interface{}) bool {
+	return reflect.DeepEqual(a, b)
+}
+
 // Equal compares two slices
 func Equal(a, b []string, strict bool) bool {
 	if !strict {

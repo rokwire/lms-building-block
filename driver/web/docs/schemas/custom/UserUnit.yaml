@@ -7,6 +7,7 @@ required:
   - module_key
   - completed
   - current
+  - user_schedule
   - unit
 type: object
 properties:
@@ -32,11 +33,13 @@ properties:
     type: integer
   current:
     type: boolean
+  user_schedule:
+    type: array
+    items:
+      $ref: "./UserScheduleItem.yaml"
+    readOnly: true
   unit:
     $ref: "./Unit.yaml"
-  last_completed:
-    type: string
-    format: date-time
   date_created:
     type: string
     format: date-time

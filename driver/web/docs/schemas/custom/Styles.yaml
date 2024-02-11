@@ -1,0 +1,8 @@
+type: object
+properties:
+  colors:
+    type: object
+  images:
+    type: object
+  strings:
+    type: object

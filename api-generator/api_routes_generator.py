@@ -83,7 +83,7 @@ class APIRoutesGenerator:
                         interface_params.append(param_name)
                         data += f'{param_name}, err := utils.GetValue[{param_type}](params, "{param_api_name}", {str(required).lower()})\n'
 
-                        ret = f'errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("{param_name}"), err)'
+                        ret = f'errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("{param_api_name}"), err)'
                         if interface_prototype.count('(') > 1:
                             ret = 'nil, ' + ret
                         data += f'if err != nil {{\nreturn {ret}\n}}\n\n'
