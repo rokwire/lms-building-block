@@ -409,7 +409,7 @@ func (m *database) applyUserContentsChecks(userContents *collectionWrapper) erro
 			primitive.E{Key: "module_key", Value: 1},
 			primitive.E{Key: "unit_key", Value: 1},
 			primitive.E{Key: "content.key", Value: 1},
-		}, true)
+		}, false)
 	if err != nil {
 		return err
 	}

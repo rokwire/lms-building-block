@@ -116,6 +116,19 @@ func (u *UserCourse) MostRecentStreakProcessTime(now *time.Time, snConfig Streak
 	return &mostRecent
 }
 
+// CanMakePauseProgress returns whether the last user response was before the most recent streak process
+func (u *UserCourse) CanMakePauseProgress(now *time.Time, snConfig StreaksNotificationsConfig) bool {
+	if u == nil {
+		return false
+	}
+
+	lastStreakProcess := u.MostRecentStreakProcessTime(now, snConfig)
+	if lastStreakProcess == nil {
+		return false
+	}
+	return u.LastResponded == nil || u.LastResponded.Before(*lastStreakProcess)
+}
+
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
 type Course struct {
 	ID    string `json:"id"`
@@ -318,6 +331,24 @@ func (u *UserUnit) GetPreviousScheduleItem(forceRequired bool) *UserScheduleItem
 			continue
 		}
 		return &u.UserSchedule[u.Completed-i]
+	}
+	return nil
+}
+
+// GetNextScheduleItem returns a pointer to a UserScheduleItem in the unit after the current position based on forceRequired
+func (u *UserUnit) GetNextScheduleItem(forceRequired bool) *UserScheduleItem {
+	if u == nil {
+		return nil
+	}
+	if u.Completed < -1 || u.Completed+1 > len(u.Unit.Schedule) || u.Completed+1 > len(u.UserSchedule) {
+		return nil
+	}
+
+	for i := u.Completed + 1; i < u.Unit.Required; i++ {
+		if forceRequired && !u.Unit.Schedule[i].IsRequired() {
+			continue
+		}
+		return &u.UserSchedule[i]
 	}
 	return nil
 }

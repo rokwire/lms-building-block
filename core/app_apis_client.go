@@ -379,10 +379,7 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			}
 		}
 
-		// update streak if the following are true:
-		// 1. the current schedule item is required
-		// 2. the current schedule item is completed
-		// 3. the previous schedule item was completed before current schedule item was started or there is no previous schedule item
+		// get the completion time of the last required schedule item
 		var previousRequired *model.UserScheduleItem
 		var previousRequiredCompleted *time.Time
 		if isCurrent {
@@ -394,8 +391,22 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			previousRequiredCompleted = userUnit.LastCompleted
 		}
 
-		userScheduleItemStart := userScheduleItem.DateStarted
-		if isCurrent && isRequired && userScheduleItem.IsComplete() && (previousRequiredCompleted == nil || (userScheduleItemStart != nil && previousRequiredCompleted.Before(*userScheduleItemStart))) {
+		// use the start time of the current schedule item to determine streak and pauses
+		currentScheduleItem := userScheduleItem
+		currentScheduleItemStart := userScheduleItem.DateStarted
+		if !isCurrent {
+			currentScheduleItem, _, _, _ = userUnit.GetScheduleItem("", true)
+			if currentScheduleItem == nil {
+				return errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})
+			}
+			currentScheduleItemStart = currentScheduleItem.DateStarted
+		}
+
+		// update streak if the following are true:
+		// 1. the current schedule item is required
+		// 2. the current schedule item is completed
+		// 3. the previous schedule item was completed before current schedule item was started or there is no previous schedule item
+		if isRequired && currentScheduleItem.IsComplete() && (previousRequiredCompleted == nil || (currentScheduleItemStart != nil && previousRequiredCompleted.Before(*currentScheduleItemStart))) {
 			newStreak := userCourse.Streak + 1
 
 			// if the user has no active streak and no remaining pauses, then add a streak restart (user has resumed progress after some extended time)
@@ -409,8 +420,8 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			updatedUserCourse = true
 		}
 
-		// update pause progress and pauses when user responds to a required task, regardless of completion, for the first time since last streak process ("start of day")
-		if isRequired && (userCourse.LastResponded == nil || (userScheduleItemStart != nil && userCourse.LastResponded.Before(*userScheduleItemStart))) {
+		// update pause progress and pauses when user responds to any required task for the first time since last streak process
+		if isRequired && userCourse.CanMakePauseProgress(&now, courseConfig.StreaksNotificationsConfig) {
 			userCourse.PauseProgress++
 			userCourse.LastResponded = &now
 			if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
@@ -497,7 +508,7 @@ func (s *clientImpl) updateUserContent(storage interfaces.Storage, userUnit *mod
 			if updateContent {
 				lastUserContent.Content = *content
 			}
-			userContentReference.Complete = lastUserContent.IsComplete()
+			userContentReference.Complete = userContentReference.Complete || lastUserContent.IsComplete() // reference is complete if completed now or already complete
 
 			if updatedResponse || updateContent {
 				err = storage.UpdateUserContent(lastUserContent, updateContent)
@@ -527,7 +538,7 @@ func (s *clientImpl) createUserContent(storage interfaces.Storage, userUnit *mod
 		userContentReference.IDs = make([]string, 0)
 	}
 	userContentReference.IDs = append(userContentReference.IDs, id)
-	userContentReference.Complete = userContent.IsComplete()
+	userContentReference.Complete = userContentReference.Complete || userContent.IsComplete() // reference is complete if completed now or already complete
 	return nil
 }
 
@@ -549,6 +560,12 @@ func (s *clientImpl) updateUserScheduleItem(storage interfaces.Storage, userUnit
 	if isCurrent && userScheduleItem.IsComplete() {
 		userScheduleItem.DateCompleted = now
 		if !isRequired {
+			// set start time of next schedule item if immediately completing the current schedule item
+			nextScheduleItem := userUnit.GetNextScheduleItem(false)
+			if nextScheduleItem != nil {
+				nextScheduleItem.DateStarted = userCourse.MostRecentStreakProcessTime(now, snConfig)
+			}
+
 			userUnit.Completed++
 		}
 
@@ -574,7 +591,7 @@ func (s *clientImpl) updateUserScheduleItem(storage interfaces.Storage, userUnit
 				}
 
 				nextUserSchedule := nextUnit.CreateUserSchedule()
-				nextUserSchedule[0].DateStarted = now
+				nextUserSchedule[0].DateStarted = userCourse.MostRecentStreakProcessTime(now, snConfig)
 				nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: userUnit.AppID, OrgID: userUnit.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
 					Unit: *nextUnit, Completed: 0, Current: true, UserSchedule: nextUserSchedule, LastCompleted: lastCompleted, DateCreated: time.Now().UTC()}
 
