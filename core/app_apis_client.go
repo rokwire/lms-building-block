@@ -400,30 +400,34 @@ func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, co
 		if isCurrent && isRequired && userScheduleItem.IsComplete() {
 			// update streak when user completes any required current task for the first time since last streak process
 			if userCourse.CanIncrementStreak(lastStreakProcess, &now, courseConfig.StreaksNotificationsConfig) {
-				newStreak := userCourse.Streak + 1
+				userCourse.Streak++
 
 				// if the user has no active streak and no remaining pauses, then add a streak restart (user has resumed progress after some extended time)
-				if userCourse.Streak == 0 && userCourse.Pauses == 0 {
+				if userCourse.Streak == 1 && userCourse.Pauses == 0 {
 					if userCourse.StreakRestarts == nil {
 						userCourse.StreakRestarts = make([]time.Time, 0)
 					}
 					userCourse.StreakRestarts = append(userCourse.StreakRestarts, now)
 				}
-				userCourse.Streak = newStreak
 			}
 
 			userCourse.LastCompleted = &now // a current schedule item has been completed
 			updatedUserCourse = true
 		}
 
-		// update pause progress and pauses when user responds to any required task for the first time since last streak process
-		if isRequired && userCourse.CanMakePauseProgress(lastStreakProcess, &now, courseConfig.StreaksNotificationsConfig) {
-			userCourse.PauseProgress++
-			userCourse.LastResponded = &now
-			if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
-				userCourse.Pauses++
-				userCourse.PauseProgress = 0
+		if isRequired {
+			// update pause progress and pauses when user responds to any required task for the first time since last streak process
+			if userCourse.CanMakePauseProgress(lastStreakProcess, &now, courseConfig.StreaksNotificationsConfig) {
+				userCourse.PauseProgress++
+
+				// if the user has enough pause progress and has not reached the pause limit, add a pause
+				if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
+					userCourse.Pauses++
+					userCourse.PauseProgress = 0
+				}
 			}
+
+			userCourse.LastResponded = &now // the user has responded to a required task
 			updatedUserCourse = true
 		}
 
