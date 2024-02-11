@@ -222,6 +222,7 @@ func (n streaksNotifications) processStreaks() {
 				// insert the next user unit since the current one has been completed
 				nextUnit := userCourse.Course.GetNextUnit(item.Unit.Key)
 				if nextUnit != nil {
+					// userScheduleItem must be required since completeUnitHandler cannot run otherwise
 					userScheduleItem, _, _, _ := item.GetScheduleItem("", true)
 					if userScheduleItem == nil {
 						return errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})

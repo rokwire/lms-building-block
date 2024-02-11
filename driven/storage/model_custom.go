@@ -82,8 +82,9 @@ type userUnit struct {
 
 	Unit unit `bson:"unit"`
 
-	Completed int  `bson:"completed"` // number of schedule items the user has completed
-	Current   bool `bson:"current"`
+	Completed    int                      `bson:"completed"` // number of schedule items the user has completed
+	Current      bool                     `bson:"current"`
+	UserSchedule []model.UserScheduleItem `bson:"user_schedule"`
 
 	LastCompleted *time.Time `bson:"last_completed"`
 	DateCreated   time.Time  `bson:"date_created"`

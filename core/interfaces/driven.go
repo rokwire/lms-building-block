@@ -114,6 +114,7 @@ type Storage interface {
 	FindUserContents(id []string, appID string, orgID string, userID string) ([]model.UserContent, error)
 	InsertUserContent(item model.UserContent) error
 	UpdateUserContent(item model.UserContent, updateContent bool) error
+	DeleteUserContents(appID string, orgID string, userID string, courseKey *string) error
 
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error

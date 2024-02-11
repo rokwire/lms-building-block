@@ -549,7 +549,7 @@ func (sa *Adapter) FindUserContents(id []string, appID string, orgID string, use
 	opts := options.FindOptions{}
 	opts.SetSort(bson.M{"date_created": -1})
 
-	err := sa.db.userContents.Find(sa.context, filter, result, &opts)
+	err := sa.db.userContents.Find(sa.context, filter, &result, &opts)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserContent, &errArgs, err)
 	}
@@ -573,7 +573,7 @@ func (sa *Adapter) UpdateUserContent(item model.UserContent, updateContent bool)
 	errArgs := logutils.FieldArgs(filter)
 	setUpdate := bson.M{
 		"response":     item.Response,
-		"date_updated": item.DateUpdated,
+		"date_updated": time.Now().UTC(),
 	}
 	if updateContent {
 		setUpdate["content"] = item.Content
@@ -588,6 +588,22 @@ func (sa *Adapter) UpdateUserContent(item model.UserContent, updateContent bool)
 		errArgs["modified"] = res.ModifiedCount
 		return errors.ErrorAction(logutils.ActionInsert, model.TypeUserContent, &errArgs)
 	}
+	return nil
+}
+
+// DeleteUserContents deletes all user content matching the given arguments
+func (sa *Adapter) DeleteUserContents(appID string, orgID string, userID string, courseKey *string) error {
+	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID}
+	if courseKey != nil {
+		filter["course_key"] = *courseKey
+	}
+	errArgs := logutils.FieldArgs(filter)
+
+	_, err := sa.db.userContents.DeleteMany(sa.context, filter, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeUserContent, &errArgs, err)
+	}
+
 	return nil
 }
 

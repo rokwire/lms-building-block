@@ -169,8 +169,8 @@ func (sa *Adapter) userCourseToStorage(item model.UserCourse) userCourse {
 }
 
 func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
-	result := model.UserUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey,
-		Completed: item.Completed, Current: item.Current, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+	result := model.UserUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, Completed: item.Completed,
+		Current: item.Current, UserSchedule: item.UserSchedule, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	unit, err := sa.customUnitFromStorage(item.Unit)
 	if err != nil {
@@ -183,6 +183,6 @@ func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
 
 func (sa *Adapter) userUnitToStorage(item model.UserUnit) userUnit {
 	unit := sa.customUnitToStorage(item.Unit)
-	return userUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, Unit: unit,
-		Current: item.Current, Completed: item.Completed, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+	return userUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, Unit: unit, Current: item.Current,
+		Completed: item.Completed, UserSchedule: item.UserSchedule, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 }

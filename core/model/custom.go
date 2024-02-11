@@ -35,6 +35,8 @@ const (
 	TypeUserContent logutils.MessageDataType = "user content"
 	//TypeUserContentReference user content reference type
 	TypeUserContentReference logutils.MessageDataType = "user content reference"
+	//TypeUserResponse user response type
+	TypeUserResponse logutils.MessageDataType = "user response"
 	//TypeCourse course type
 	TypeCourse logutils.MessageDataType = "course"
 	//TypeModule module type
@@ -276,8 +278,8 @@ type UserUnit struct {
 	DateUpdated   *time.Time `json:"date_updated"`
 }
 
-// GetScheduleItem returns pointers, current status, and required status for the UserScheduleItem and ScheduleItem requested by contentKey or requireCurrent
-func (u *UserUnit) GetScheduleItem(contentKey string, requireCurrent bool) (*UserScheduleItem, *ScheduleItem, bool, bool) {
+// GetScheduleItem returns pointers, current status, and required status for the UserScheduleItem and ScheduleItem requested by contentKey or forceCurrent
+func (u *UserUnit) GetScheduleItem(contentKey string, forceCurrent bool) (*UserScheduleItem, *ScheduleItem, bool, bool) {
 	if u == nil {
 		return nil, nil, false, false
 	}
@@ -285,7 +287,7 @@ func (u *UserUnit) GetScheduleItem(contentKey string, requireCurrent bool) (*Use
 		return nil, nil, false, false
 	}
 
-	if requireCurrent {
+	if forceCurrent {
 		unitScheduleItem := u.Unit.Schedule[u.Completed]
 		return &u.UserSchedule[u.Completed], &unitScheduleItem, true, unitScheduleItem.IsRequired()
 	}
@@ -302,8 +304,8 @@ func (u *UserUnit) GetScheduleItem(contentKey string, requireCurrent bool) (*Use
 	return nil, nil, false, false
 }
 
-// PreviousScheduleItem returns a pointer to the UserScheduleItem in the unit immediately before the user's current position in the schedule
-func (u *UserUnit) PreviousScheduleItem() *UserScheduleItem {
+// GetPreviousScheduleItem returns a pointer to a UserScheduleItem in the unit prior the current position based on forceRequired
+func (u *UserUnit) GetPreviousScheduleItem(forceRequired bool) *UserScheduleItem {
 	if u == nil {
 		return nil
 	}
@@ -311,23 +313,29 @@ func (u *UserUnit) PreviousScheduleItem() *UserScheduleItem {
 		return nil
 	}
 
-	return &u.UserSchedule[u.Completed-1]
+	for i := 1; i <= u.Completed; i++ {
+		if forceRequired && !u.Unit.Schedule[u.Completed-i].IsRequired() {
+			continue
+		}
+		return &u.UserSchedule[u.Completed-i]
+	}
+	return nil
 }
 
-// GetUserContentReferenceForKey returns the user content reference in the user schedule containing contentKey
-func (u *UserUnit) GetUserContentReferenceForKey(contentKey string) *UserContentReference {
+// GetUserContentReferenceForKey returns the user content reference in the user schedule containing contentKey and whether the reference is in the current UserScheduleItem
+func (u *UserUnit) GetUserContentReferenceForKey(contentKey string) (*UserContentReference, bool) {
 	if u == nil {
-		return nil
+		return nil, false
 	}
 
-	for _, scheduleItem := range u.UserSchedule {
-		for _, reference := range scheduleItem.UserContent {
+	for i, scheduleItem := range u.UserSchedule {
+		for j, reference := range scheduleItem.UserContent {
 			if reference.ContentKey == contentKey {
-				return &reference
+				return &u.UserSchedule[i].UserContent[j], u.Current && i == u.Completed
 			}
 		}
 	}
-	return nil
+	return nil, false
 }
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
@@ -433,19 +441,19 @@ func (s ScheduleItem) IsRequired() bool {
 
 // UserContent represents
 type UserContent struct {
-	ID        string `json:"id"`
-	AppID     string `json:"app_id"`
-	OrgID     string `json:"org_id"`
-	UserID    string `json:"user_id"`
-	CourseKey string `json:"course_key"`
-	ModuleKey string `json:"module_key"`
-	UnitKey   string `json:"unit_key"`
+	ID        string `json:"id" bson:"_id"`
+	AppID     string `json:"app_id" bson:"app_id"`
+	OrgID     string `json:"org_id" bson:"org_id"`
+	UserID    string `json:"user_id" bson:"user_id"`
+	CourseKey string `json:"course_key" bson:"course_key"`
+	ModuleKey string `json:"module_key" bson:"module_key"`
+	UnitKey   string `json:"unit_key" bson:"unit_key"`
 
-	Content  Content                `json:"content"`
-	Response map[string]interface{} `json:"response"`
+	Content  Content                `json:"content" bson:"content"`
+	Response map[string]interface{} `json:"response" bson:"response"`
 
-	DateCreated time.Time  `json:"date_created"`
-	DateUpdated *time.Time `json:"date_updated"`
+	DateCreated time.Time  `json:"date_created" bson:"date_created"`
+	DateUpdated *time.Time `json:"date_updated" bson:"date_updated"`
 }
 
 // IsComplete gives whether Response contains the entry {UserContentCompleteKey: true}
@@ -460,6 +468,22 @@ func (u *UserContent) IsComplete() bool {
 	}
 	complete, ok := completeVal.(bool)
 	return complete && ok
+}
+
+// UpdateResponse updates the existing Response data with the incoming data, except UserContentCompleteKey if u.IsComplete()
+func (u *UserContent) UpdateResponse(response map[string]interface{}) (bool, bool) {
+	if u == nil {
+		return false, false
+	}
+
+	completedNow := !u.IsComplete() && (response[UserContentCompleteKey] == true)
+	if !completedNow {
+		response[UserContentCompleteKey] = u.IsComplete()
+	}
+	updatedResponse := !utils.DeepEqual(response, u.Response)
+	u.Response = response
+
+	return updatedResponse, completedNow
 }
 
 // Content represents some Unit content
@@ -497,6 +521,9 @@ func (c *Content) Equals(other *Content) bool {
 		return false
 	}
 	if !utils.Equal(c.LinkedContent, other.LinkedContent, false) {
+		return false
+	}
+	if !utils.DeepEqual(c.Styles, other.Styles) {
 		return false
 	}
 	return true
