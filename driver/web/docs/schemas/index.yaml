@@ -39,8 +39,12 @@ UserUnit:
   $ref: "./custom/UserUnit.yaml"
 UserContent:
   $ref: "./custom/UserContent.yaml"
-UserContentWithTimezone:
-  $ref: "./custom/UserContentWithTimezone.yaml"
+UserScheduleItem:
+  $ref: "./custom/UserScheduleItem.yaml"
+UserContentReference:
+  $ref: "./custom/UserContentReference.yaml"
+UserResponse:
+  $ref: "./custom/UserResponse.yaml"
 Timezone:
   $ref: "./custom/Timezone.yaml"
 CourseConfig:
@@ -49,8 +53,8 @@ StreaksNotificationsConfig:
   $ref: "./custom/StreaksNotificationsConfig.yaml"
 Notification:
   $ref: "./custom/Notification.yaml"
-Display:
-  $ref: "./custom/Display.yaml"
+Styles:
+  $ref: "./custom/Styles.yaml"
 
 ### nudges api
 _admin_req_create_nudge:

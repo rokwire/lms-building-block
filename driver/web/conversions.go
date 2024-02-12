@@ -112,18 +112,7 @@ func customUnitUpdateFromDef(claims *tokenauth.Claims, item *Def.AdminReqUpdateU
 
 	schedule := make([]model.ScheduleItem, len(item.Schedule))
 	for i, si := range item.Schedule {
-		userContent := make([]model.UserContent, len(si.UserContent))
-		for j, uc := range si.UserContent {
-			var userData map[string]interface{}
-			if uc.UserData != nil {
-				userData = *uc.UserData
-			}
-			userContent[j] = model.UserContent{ContentKey: uc.ContentKey, UserData: userData}
-		}
-
-		dateStarted := si.DateStarted
-		dateCompleted := si.DateCompleted
-		schedule[i] = model.ScheduleItem{Name: si.Name, Duration: si.Duration, DateStarted: dateStarted, DateCompleted: dateCompleted}
+		schedule[i] = model.ScheduleItem{Name: si.Name, Duration: si.Duration, ContentKeys: item.ContentKeys}
 	}
 
 	return &model.Unit{AppID: claims.AppID, OrgID: claims.OrgID, Name: item.Name, Contents: contents, Schedule: schedule}, nil

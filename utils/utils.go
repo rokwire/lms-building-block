@@ -33,10 +33,14 @@ import (
 )
 
 const (
+	// HoursInDay is the number of hours in one day
+	HoursInDay int = 24
 	// SecondsInDay is the number of seconds in one 24-hour day
-	SecondsInDay int = 24 * 60 * 60
+	SecondsInDay int = HoursInDay * SecondsInHour
 	// SecondsInHour is the number of seconds in one hour
-	SecondsInHour int = 60 * 60
+	SecondsInHour int = 60 * SecondsInMinute
+	// SecondsInMinute is the number of seconds in one minute
+	SecondsInMinute int = 60
 	// MinTZOffset is the minimum allowed timezone offset from UTC in seconds (UTC-12 = -43200)
 	MinTZOffset int = -12 * SecondsInHour
 	// MaxTZOffset is the maximum allowed timezone offset from UTC in seconds (UTC+14 = 50400)
@@ -178,6 +182,11 @@ func GetLogValue(value string) string {
 	}
 	last3 := value[len(value)-3:]
 	return fmt.Sprintf("***%s", last3)
+}
+
+// DeepEqual checks whether a and b are “deeply equal”
+func DeepEqual(a, b interface{}) bool {
+	return reflect.DeepEqual(a, b)
 }
 
 // Equal compares two slices

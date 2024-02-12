@@ -50,13 +50,13 @@ type AssignmentGroup struct {
 type Content struct {
 	AppId         *string     `json:"app_id,omitempty"`
 	Details       *string     `json:"details,omitempty"`
-	Display       Display     `json:"display"`
 	Id            *string     `json:"id,omitempty"`
 	Key           string      `json:"key"`
 	LinkedContent *[]string   `json:"linked_content"`
 	Name          string      `json:"name"`
 	OrgId         *string     `json:"org_id,omitempty"`
 	Reference     Reference   `json:"reference"`
+	Styles        *Styles     `json:"styles,omitempty"`
 	Type          ContentType `json:"type"`
 }
 
@@ -81,17 +81,8 @@ type CourseConfig struct {
 	InitialPauses              int                        `json:"initial_pauses"`
 	MaxPauses                  int                        `json:"max_pauses"`
 	OrgId                      string                     `json:"org_id"`
-	PauseRewardStreak          int                        `json:"pause_reward_streak"`
+	PauseProgressReward        int                        `json:"pause_progress_reward"`
 	StreaksNotificationsConfig StreaksNotificationsConfig `json:"streaks_notifications_config"`
-}
-
-// Display defines model for Display.
-type Display struct {
-	AccentColor     *string `json:"accent_color,omitempty"`
-	CompleteColor   *string `json:"complete_color,omitempty"`
-	Icon            *string `json:"icon,omitempty"`
-	IncompleteColor *string `json:"incomplete_color,omitempty"`
-	PrimaryColor    *string `json:"primary_color,omitempty"`
 }
 
 // Enrollment defines model for Enrollment.
@@ -108,13 +99,13 @@ type Grade struct {
 
 // Module defines model for Module.
 type Module struct {
-	AppId   *string `json:"app_id,omitempty"`
-	Display Display `json:"display"`
-	Id      *string `json:"id,omitempty"`
-	Key     string  `json:"key"`
-	Name    string  `json:"name"`
-	OrgId   *string `json:"org_id,omitempty"`
-	Units   []Unit  `json:"units"`
+	AppId  *string `json:"app_id,omitempty"`
+	Id     *string `json:"id,omitempty"`
+	Key    string  `json:"key"`
+	Name   string  `json:"name"`
+	OrgId  *string `json:"org_id,omitempty"`
+	Styles *Styles `json:"styles,omitempty"`
+	Units  []Unit  `json:"units"`
 }
 
 // Notification defines model for Notification.
@@ -168,11 +159,9 @@ type Reference struct {
 
 // ScheduleItem defines model for ScheduleItem.
 type ScheduleItem struct {
-	DateCompleted *time.Time    `json:"date_completed"`
-	DateStarted   *time.Time    `json:"date_started,omitempty"`
-	Duration      int           `json:"duration"`
-	Name          string        `json:"name"`
-	UserContent   []UserContent `json:"user_content"`
+	ContentKeys []string `json:"content_keys"`
+	Duration    *int     `json:"duration,omitempty"`
+	Name        string   `json:"name"`
 }
 
 // StreaksNotificationsConfig defines model for StreaksNotificationsConfig.
@@ -182,13 +171,19 @@ type StreaksNotificationsConfig struct {
 	NotificationsMode   StreaksNotificationsConfigNotificationsMode `json:"notifications_mode"`
 	PreferEarly         bool                                        `json:"prefer_early"`
 	StreaksProcessTime  int                                         `json:"streaks_process_time"`
-	TimerDelayTolerance *int                                        `json:"timer_delay_tolerance,omitempty"`
 	TimezoneName        string                                      `json:"timezone_name"`
 	TimezoneOffset      *int                                        `json:"timezone_offset,omitempty"`
 }
 
 // StreaksNotificationsConfigNotificationsMode defines model for StreaksNotificationsConfig.NotificationsMode.
 type StreaksNotificationsConfigNotificationsMode string
+
+// Styles defines model for Styles.
+type Styles struct {
+	Colors  *map[string]interface{} `json:"colors,omitempty"`
+	Images  *map[string]interface{} `json:"images,omitempty"`
+	Strings *map[string]interface{} `json:"strings,omitempty"`
+}
 
 // Timezone defines model for Timezone.
 type Timezone struct {
@@ -198,14 +193,13 @@ type Timezone struct {
 
 // Unit defines model for Unit.
 type Unit struct {
-	AppId         *string        `json:"app_id,omitempty"`
-	Content       []Content      `json:"content"`
-	Id            *string        `json:"id,omitempty"`
-	Key           string         `json:"key"`
-	Name          string         `json:"name"`
-	OrgId         *string        `json:"org_id,omitempty"`
-	Schedule      []ScheduleItem `json:"schedule"`
-	ScheduleStart *int           `json:"schedule_start,omitempty"`
+	AppId    *string        `json:"app_id,omitempty"`
+	Content  []Content      `json:"content"`
+	Id       *string        `json:"id,omitempty"`
+	Key      string         `json:"key"`
+	Name     string         `json:"name"`
+	OrgId    *string        `json:"org_id,omitempty"`
+	Schedule []ScheduleItem `json:"schedule"`
 }
 
 // User defines model for User.
@@ -217,21 +211,31 @@ type User struct {
 
 // UserContent defines model for UserContent.
 type UserContent struct {
-	ContentKey string                  `json:"content_key"`
-	UserData   *map[string]interface{} `json:"user_data"`
+	AppId       *string                 `json:"app_id,omitempty"`
+	Content     Content                 `json:"content"`
+	CourseKey   *string                 `json:"course_key,omitempty"`
+	DateCreated *time.Time              `json:"date_created,omitempty"`
+	DateUpdated *time.Time              `json:"date_updated,omitempty"`
+	Id          *string                 `json:"id,omitempty"`
+	ModuleKey   *string                 `json:"module_key,omitempty"`
+	OrgId       *string                 `json:"org_id,omitempty"`
+	Response    *map[string]interface{} `json:"response,omitempty"`
+	UnitKey     *string                 `json:"unit_key,omitempty"`
+	UserId      *string                 `json:"user_id,omitempty"`
 }
 
-// UserContentWithTimezone defines model for UserContentWithTimezone.
-type UserContentWithTimezone struct {
-	TimezoneName   string      `json:"timezone_name"`
-	TimezoneOffset int         `json:"timezone_offset"`
-	UserContent    UserContent `json:"user_content"`
+// UserContentReference defines model for UserContentReference.
+type UserContentReference struct {
+	ContentKey string   `json:"content_key"`
+	Ids        []string `json:"ids"`
 }
 
 // UserCourse defines model for UserCourse.
 type UserCourse struct {
 	AppId          *string     `json:"app_id,omitempty"`
 	Course         Course      `json:"course"`
+	DateCompleted  *time.Time  `json:"date_completed,omitempty"`
+	DateCreated    *time.Time  `json:"date_created,omitempty"`
 	DateDropped    *time.Time  `json:"date_dropped,omitempty"`
 	Id             *string     `json:"id,omitempty"`
 	OrgId          *string     `json:"org_id,omitempty"`
@@ -245,19 +249,36 @@ type UserCourse struct {
 	UserId         *string     `json:"user_id,omitempty"`
 }
 
+// UserResponse defines model for UserResponse.
+type UserResponse struct {
+	ContentKey     string                 `json:"content_key"`
+	Response       map[string]interface{} `json:"response"`
+	TimezoneName   string                 `json:"timezone_name"`
+	TimezoneOffset int                    `json:"timezone_offset"`
+	UnitKey        string                 `json:"unit_key"`
+}
+
+// UserScheduleItem defines model for UserScheduleItem.
+type UserScheduleItem struct {
+	DateCompleted *time.Time             `json:"date_completed"`
+	DateStarted   *time.Time             `json:"date_started,omitempty"`
+	UserContent   []UserContentReference `json:"user_content"`
+}
+
 // UserUnit defines model for UserUnit.
 type UserUnit struct {
-	AppId         *string    `json:"app_id,omitempty"`
-	Completed     int        `json:"completed"`
-	CourseKey     *string    `json:"course_key,omitempty"`
-	Current       bool       `json:"current"`
-	DateCreated   *time.Time `json:"date_created,omitempty"`
-	DateUpdated   *time.Time `json:"date_updated,omitempty"`
-	Id            *string    `json:"id,omitempty"`
-	LastCompleted *time.Time `json:"last_completed,omitempty"`
-	OrgId         *string    `json:"org_id,omitempty"`
-	Unit          Unit       `json:"unit"`
-	UserId        *string    `json:"user_id,omitempty"`
+	AppId        *string             `json:"app_id,omitempty"`
+	Completed    int                 `json:"completed"`
+	CourseKey    *string             `json:"course_key,omitempty"`
+	Current      bool                `json:"current"`
+	DateCreated  *time.Time          `json:"date_created,omitempty"`
+	DateUpdated  *time.Time          `json:"date_updated,omitempty"`
+	Id           *string             `json:"id,omitempty"`
+	ModuleKey    *string             `json:"module_key,omitempty"`
+	OrgId        *string             `json:"org_id,omitempty"`
+	Unit         Unit                `json:"unit"`
+	UserId       *string             `json:"user_id,omitempty"`
+	UserSchedule *[]UserScheduleItem `json:"user_schedule,omitempty"`
 }
 
 // UsersSource defines model for UsersSource.
@@ -411,6 +432,12 @@ type GetApiCoursesIdUsersParams struct {
 	Include *string `form:"include,omitempty" json:"include,omitempty"`
 }
 
+// GetApiUsersContentsParams defines parameters for GetApiUsersContents.
+type GetApiUsersContentsParams struct {
+	// Ids comma separated list of user content ids
+	Ids string `form:"ids" json:"ids"`
+}
+
 // GetApiUsersCoursesParams defines parameters for GetApiUsersCourses.
 type GetApiUsersCoursesParams struct {
 	// Id userCourse ID
@@ -468,8 +495,8 @@ type PostAdminUnitsJSONRequestBody = Unit
 // PutAdminUnitsKeyJSONRequestBody defines body for PutAdminUnitsKey for application/json ContentType.
 type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
-// PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyUnitsUnitKey for application/json ContentType.
-type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UserContentWithTimezone
+// PutApiUsersCoursesCourseKeyModulesModuleKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyModulesModuleKey for application/json ContentType.
+type PutApiUsersCoursesCourseKeyModulesModuleKeyJSONRequestBody = UserResponse
 
 // PostApiUsersCoursesKeyJSONRequestBody defines body for PostApiUsersCoursesKey for application/json ContentType.
 type PostApiUsersCoursesKeyJSONRequestBody = Timezone

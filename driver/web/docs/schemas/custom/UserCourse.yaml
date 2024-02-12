@@ -11,6 +11,8 @@ allOf:
       - pauses
       - pause_uses
       - course
+      - date_created
+      - date_completed
       - date_dropped
     type: object
     properties:
@@ -47,6 +49,14 @@ allOf:
           format: date-time
       course:
         $ref: "./Course.yaml"
+      date_created:
+        type: string
+        readOnly: true
+        format: date-time
+      date_completed:
+        type: string
+        readOnly: true
+        format: date-time
       date_dropped:
         type: string
         readOnly: true

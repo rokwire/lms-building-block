@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rokwire LMS Building Block API
   description: LMS Building Block API Documentation
-  version: 1.10.2
+  version: 1.10.3
 servers:
   - url: 'https://api.rokwire.illinois.edu/lms'
     description: Production server
@@ -39,8 +39,10 @@ paths:
     $ref: "./resources/api/user/courses.yaml"
   /api/users/courses/{key}:
     $ref: "./resources/api/user/coursesKey.yaml"
-  /api/users/courses/{course_key}/units/{unit_key}:
-    $ref: "./resources/api/user/unitsKey.yaml"
+  /api/users/courses/{course_key}/modules/{module_key}:
+    $ref: "./resources/api/user/modulesKey.yaml"
+  /api/users/contents:
+    $ref: "./resources/api/user/contents.yaml"
   /api/users/units/{key}:
     $ref: "./resources/api/user/units.yaml"
   /api/custom/courses:
