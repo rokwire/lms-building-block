@@ -147,12 +147,9 @@ func (n streaksNotifications) setupStreaksTimer() {
 		n.logger.Info("setupStreaksTimer -> streaks have already been processed this hour")
 		durationInSeconds = (utils.SecondsInHour - nowSecondsInHour) + desiredMoment // the time which left this hour + desired moment from next hour
 	}
-	initialDuration := time.Second * time.Duration(durationInSeconds)
-	//change initialduration to 60 and time.hour to time.minute for testing purpose
-	//initialDuration = 60
-	//utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Minute, n.processStreaks, "processStreaks", n.logger)
-	utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Hour, n.processStreaks, "processStreaks", n.logger)
 
+	initialDuration := time.Second * time.Duration(durationInSeconds)
+	utils.StartTimer(n.streaksTimer, n.streaksTimerDone, &initialDuration, time.Hour, n.processStreaks, "processStreaks", n.logger)
 }
 
 func (n streaksNotifications) processStreaks() {
@@ -215,33 +212,45 @@ func (n streaksNotifications) processStreaks() {
 					}
 					userScheduleItem.DateStarted = &now
 				}
+
 				err := storage.UpdateUserUnit(item)
 				if err != nil {
 					return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserUnit, nil, err)
 				}
+
+				// if there are no more required schedule items to be done in the course, set date completed
+				// allow the new current schedule item to be returned if current schedule item not required because userUnit.Completed has already been incremented
+				if userCourse.Course.GetNextRequiredScheduleItem(item.ModuleKey, item.Unit.Key, item.Completed, true) == nil {
+					if userCourse.CompletedModules == nil {
+						userCourse.CompletedModules = make(map[string]time.Time)
+					}
+					userCourse.CompletedModules[item.ModuleKey] = now
+
+					if userCourse.DateCompleted == nil && userCourse.IsComplete() {
+						userCourse.DateCompleted = &now // prevents streak timer from operating on any data associated with this UserCourse
+					}
+
+					err := storage.UpdateUserCourse(*userCourse)
+					if err != nil {
+						return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserCourse, nil, err)
+					}
+				}
+
 				return nil
 			}
 			completeUnitHandler := func(storage interfaces.Storage, item model.UserUnit) error {
-				// insert the next user unit since the current one has been completed
+				// insert the next user unit if the unit exists since the current one has been completed
 				nextUnit := userCourse.Course.GetNextUnit(item.ModuleKey, item.Unit.Key)
-				if nextUnit == nil {
-					return errors.ErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"module_key": item.ModuleKey, "key": item.Unit.Key, "next": true})
-				}
+				if nextUnit != nil {
+					nextUserSchedule := nextUnit.CreateUserSchedule()
+					nextUserSchedule[0].DateStarted = &now
+					nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, ModuleKey: item.ModuleKey,
+						Unit: *nextUnit, Completed: 0, Current: true, UserSchedule: nextUserSchedule, DateCreated: time.Now().UTC()}
 
-				// userScheduleItem must be required since completeUnitHandler cannot run otherwise
-				userScheduleItem, _, _, _ := item.GetScheduleItem("", true)
-				if userScheduleItem == nil {
-					return errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})
-				}
-
-				nextUserSchedule := nextUnit.CreateUserSchedule()
-				nextUserSchedule[0].DateStarted = &now
-				nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: config.AppID, OrgID: config.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, ModuleKey: item.ModuleKey,
-					Unit: *nextUnit, Completed: 0, Current: true, UserSchedule: nextUserSchedule, PreviousCompleted: userScheduleItem.DateCompleted, DateCreated: time.Now().UTC()}
-
-				err := storage.InsertUserUnit(nextUserUnit)
-				if err != nil {
-					return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
+					err := storage.InsertUserUnit(nextUserUnit)
+					if err != nil {
+						return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
+					}
 				}
 
 				return nil

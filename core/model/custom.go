@@ -105,12 +105,9 @@ func (u *UserCourse) MostRecentStreakProcessTime(now *time.Time, snConfig Streak
 		}
 	}
 	nowLocal := now.In(loc)
-	nowLocalSeconds := utils.SecondsInHour*nowLocal.Hour() + utils.SecondsInMinute*nowLocal.Minute() + nowLocal.Second()
+	nowLocalSeconds := utils.SecondsInHour * nowLocal.Hour()
 
-	hour := snConfig.StreaksProcessTime / utils.SecondsInHour
-	minute := (snConfig.StreaksProcessTime % utils.SecondsInHour) / utils.SecondsInMinute
-	second := (snConfig.StreaksProcessTime % utils.SecondsInHour) % utils.SecondsInMinute
-	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), hour, minute, second, 0, loc).UTC()
+	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), snConfig.StreaksProcessTime/utils.SecondsInHour, 0, 0, 0, loc).UTC()
 	if nowLocalSeconds < snConfig.StreaksProcessTime {
 		// go back one day if the current moment is before the process time in the current day
 		mostRecent = mostRecent.Add(time.Duration(-utils.HoursInDay) * time.Hour)
@@ -264,7 +261,12 @@ func (c *StreaksNotificationsConfig) ValidateTimings() error {
 		c.TimezoneOffset = timezone.Offset
 	}
 	if c.StreaksProcessTime < 0 || c.StreaksProcessTime >= utils.SecondsInDay || c.StreaksProcessTime%utils.SecondsInHour != 0 {
-		return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
+		if c.StreaksProcessTime >= 0 && c.StreaksProcessTime < utils.HoursInDay {
+			// allow process time in hours from [0, 24) to be specified, then scale to get seconds
+			c.StreaksProcessTime *= utils.SecondsInHour
+		} else {
+			return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
+		}
 	}
 	for _, notification := range c.Notifications {
 		if notification.ProcessTime < 0 || notification.ProcessTime >= utils.SecondsInDay || c.StreaksProcessTime%utils.SecondsInHour != 0 {
@@ -322,9 +324,8 @@ type UserUnit struct {
 	Current      bool               `json:"current"`
 	UserSchedule []UserScheduleItem `json:"user_schedule"`
 
-	PreviousCompleted *time.Time `json:"-"` // when the last required task of the previous unit was completed
-	DateCreated       time.Time  `json:"date_created"`
-	DateUpdated       *time.Time `json:"date_updated"`
+	DateCreated time.Time  `json:"date_created"`
+	DateUpdated *time.Time `json:"date_updated"`
 }
 
 // GetScheduleItem returns pointers, current status, and required status for the UserScheduleItem and ScheduleItem requested by contentKey or forceCurrent
@@ -332,11 +333,11 @@ func (u *UserUnit) GetScheduleItem(contentKey string, forceCurrent bool) (*UserS
 	if u == nil {
 		return nil, nil, false, false
 	}
-	if u.Completed < 0 || u.Completed >= len(u.Unit.Schedule) || u.Completed >= len(u.UserSchedule) {
-		return nil, nil, false, false
-	}
 
 	if forceCurrent {
+		if u.Completed < 0 || u.Completed >= len(u.Unit.Schedule) || u.Completed >= len(u.UserSchedule) {
+			return nil, nil, false, false
+		}
 		unitScheduleItem := u.Unit.Schedule[u.Completed]
 		return &u.UserSchedule[u.Completed], &unitScheduleItem, true, unitScheduleItem.IsRequired()
 	}
@@ -351,24 +352,6 @@ func (u *UserUnit) GetScheduleItem(contentKey string, forceCurrent bool) (*UserS
 	}
 
 	return nil, nil, false, false
-}
-
-// GetPreviousScheduleItem returns a pointer to a UserScheduleItem in the unit prior the current position based on forceRequired
-func (u *UserUnit) GetPreviousScheduleItem(forceRequired bool) *UserScheduleItem {
-	if u == nil {
-		return nil
-	}
-	if u.Completed <= 0 || u.Completed > len(u.Unit.Schedule) || u.Completed > len(u.UserSchedule) {
-		return nil
-	}
-
-	for i := 1; i <= u.Completed; i++ {
-		if forceRequired && !u.Unit.Schedule[u.Completed-i].IsRequired() {
-			continue
-		}
-		return &u.UserSchedule[u.Completed-i]
-	}
-	return nil
 }
 
 // GetNextScheduleItem returns a pointer to a UserScheduleItem in the unit after the current position based on forceRequired

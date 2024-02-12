@@ -88,9 +88,8 @@ type userUnit struct {
 	Current      bool                     `bson:"current"`
 	UserSchedule []model.UserScheduleItem `bson:"user_schedule"`
 
-	PreviousCompleted *time.Time `bson:"previous_completed"`
-	DateCreated       time.Time  `bson:"date_created"`
-	DateUpdated       *time.Time `bson:"date_updated"`
+	DateCreated time.Time  `bson:"date_created"`
+	DateUpdated *time.Time `bson:"date_updated"`
 }
 
 type unit struct {
