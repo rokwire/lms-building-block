@@ -4,8 +4,10 @@ required:
   - org_id
   - user_id
   - course_key
+  - module_key
   - completed
   - current
+  - user_schedule
   - unit
 type: object
 properties:
@@ -24,15 +26,20 @@ properties:
   course_key:
     type: string
     readOnly: true
+  module_key:
+    type: string
+    readOnly: true
   completed:
     type: integer
   current:
     type: boolean
+  user_schedule:
+    type: array
+    items:
+      $ref: "./UserScheduleItem.yaml"
+    readOnly: true
   unit:
     $ref: "./Unit.yaml"
-  last_completed:
-    type: string
-    format: date-time
   date_created:
     type: string
     format: date-time

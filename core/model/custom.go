@@ -33,6 +33,10 @@ const (
 	TypeUserUnit logutils.MessageDataType = "user unit"
 	//TypeUserContent user content type
 	TypeUserContent logutils.MessageDataType = "user content"
+	//TypeUserContentReference user content reference type
+	TypeUserContentReference logutils.MessageDataType = "user content reference"
+	//TypeUserResponse user response type
+	TypeUserResponse logutils.MessageDataType = "user response"
 	//TypeCourse course type
 	TypeCourse logutils.MessageDataType = "course"
 	//TypeModule module type
@@ -68,7 +72,9 @@ type UserCourse struct {
 	PauseProgress  int         `json:"pause_progress"`
 	PauseUses      []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
 
-	LastResponded *time.Time `json:"last_responded"`
+	LastCompleted    *time.Time           `json:"last_completed"`
+	LastResponded    *time.Time           `json:"last_responded"`
+	CompletedModules map[string]time.Time `json:"completed_modules"`
 
 	Course Course `json:"course"`
 
@@ -99,17 +105,55 @@ func (u *UserCourse) MostRecentStreakProcessTime(now *time.Time, snConfig Streak
 		}
 	}
 	nowLocal := now.In(loc)
-	nowLocalSeconds := utils.SecondsInHour*nowLocal.Hour() + 60*nowLocal.Minute() + nowLocal.Second()
+	nowLocalSeconds := utils.SecondsInHour * nowLocal.Hour()
 
-	hour := snConfig.StreaksProcessTime / utils.SecondsInHour
-	minute := (snConfig.StreaksProcessTime % utils.SecondsInHour) / 60
-	second := (snConfig.StreaksProcessTime % utils.SecondsInHour) % 60
-	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), hour, minute, second, 0, loc).UTC()
+	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), snConfig.StreaksProcessTime/utils.SecondsInHour, 0, 0, 0, loc).UTC()
 	if nowLocalSeconds < snConfig.StreaksProcessTime {
 		// go back one day if the current moment is before the process time in the current day
-		mostRecent = mostRecent.Add(time.Duration(-24) * time.Hour)
+		mostRecent = mostRecent.Add(time.Duration(-utils.HoursInDay) * time.Hour)
 	}
 	return &mostRecent
+}
+
+// CanIncrementStreak returns whether the last required task was completed before the most recent streak process
+func (u *UserCourse) CanIncrementStreak(lastStreakProcess *time.Time, now *time.Time, snConfig StreaksNotificationsConfig) bool {
+	if u == nil {
+		return false
+	}
+
+	if lastStreakProcess == nil {
+		lastStreakProcess = u.MostRecentStreakProcessTime(now, snConfig)
+		if lastStreakProcess == nil {
+			return false
+		}
+	}
+
+	return u.LastCompleted == nil || u.LastCompleted.Before(*lastStreakProcess)
+}
+
+// CanMakePauseProgress returns whether the last user response was before the most recent streak process
+func (u *UserCourse) CanMakePauseProgress(lastStreakProcess *time.Time, now *time.Time, snConfig StreaksNotificationsConfig) bool {
+	if u == nil {
+		return false
+	}
+
+	if lastStreakProcess == nil {
+		lastStreakProcess = u.MostRecentStreakProcessTime(now, snConfig)
+		if lastStreakProcess == nil {
+			return false
+		}
+	}
+
+	return u.LastResponded == nil || u.LastResponded.Before(*lastStreakProcess)
+}
+
+// IsComplete returns whether all required schedule items in the course have been completed
+func (u *UserCourse) IsComplete() bool {
+	if u == nil {
+		return false
+	}
+
+	return len(u.CompletedModules) == len(u.Course.Modules)
 }
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
@@ -126,42 +170,46 @@ type Course struct {
 	DateUpdated *time.Time `json:"-"`
 }
 
-// GetNextUnit returns the next unit in a course given the current unit key
-func (c *Course) GetNextUnit(currentUnitKey string) *Unit {
-	if c == nil {
-		return nil
-	}
-
+// GetNextUnit returns the unit after the one specified by unitKey in the same module as the one specified by moduleKey
+func (c *Course) GetNextUnit(moduleKey string, unitKey string) *Unit {
 	returnNextUnit := false
 	for _, module := range c.Modules {
-		for _, unit := range module.Units {
-			if returnNextUnit {
-				nextUnit := unit
-				return &nextUnit
+		if module.Key == moduleKey {
+			for _, unit := range module.Units {
+				if returnNextUnit {
+					nextUnit := unit
+					return &nextUnit
+				}
+				if unit.Key == unitKey {
+					returnNextUnit = true
+				}
 			}
-			if unit.Key == currentUnitKey {
-				returnNextUnit = true
-			}
+			break
 		}
 	}
 	return nil
 }
 
-// NextRequiredScheduleItem returns the next required schedule item in a course given the current unit key and schedule index (set allowCurrent to return the schedule item corresponding to scheduleIndex if required)
-func (c *Course) NextRequiredScheduleItem(currentUnitKey string, scheduleIndex int, allowCurrent bool) *ScheduleItem {
-	//TODO: not working
+// GetNextRequiredScheduleItem returns the next required schedule item in the same module as the one specified by moduleKey given the current unitKey and schedule index (set allowCurrent to return the schedule item corresponding to scheduleIndex if it is required)
+func (c *Course) GetNextRequiredScheduleItem(moduleKey string, unitKey string, scheduleIndex int, allowCurrent bool) *ScheduleItem {
+	if c == nil {
+		return nil
+	}
+
 	returnNextRequired := false
-	for _, module := range c.Modules {
-		for _, unit := range module.Units {
-			if returnNextRequired || unit.Key == currentUnitKey {
-				for j, scheduleItem := range unit.Schedule {
-					if (returnNextRequired || j > scheduleIndex || (allowCurrent && j == scheduleIndex)) && j >= unit.ScheduleStart {
-						nextScheduleItem := scheduleItem
-						return &nextScheduleItem
+	for i, module := range c.Modules {
+		if module.Key == moduleKey {
+			for j, unit := range module.Units {
+				if returnNextRequired || unit.Key == unitKey {
+					for k, scheduleItem := range unit.Schedule {
+						if (returnNextRequired || k > scheduleIndex || (allowCurrent && k == scheduleIndex)) && scheduleItem.IsRequired() {
+							return &c.Modules[i].Units[j].Schedule[k]
+						}
 					}
+					returnNextRequired = true
 				}
-				returnNextRequired = true
 			}
+			break
 		}
 	}
 	return nil
@@ -208,12 +256,17 @@ func (c *StreaksNotificationsConfig) ValidateTimings() error {
 		timezone := Timezone{Name: c.TimezoneName, Offset: c.TimezoneOffset}
 		err := timezone.Validate()
 		if err != nil {
-			return errors.WrapErrorAction(logutils.ActionValidate, "streaks and notifications timezone", nil, err)
+			return errors.WrapErrorAction(logutils.ActionValidate, TypeTimezone, nil, err)
 		}
 		c.TimezoneOffset = timezone.Offset
 	}
 	if c.StreaksProcessTime < 0 || c.StreaksProcessTime >= utils.SecondsInDay || c.StreaksProcessTime%utils.SecondsInHour != 0 {
-		return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
+		if c.StreaksProcessTime >= 0 && c.StreaksProcessTime < utils.HoursInDay {
+			// allow process time in hours from [0, 24) to be specified, then scale to get seconds
+			c.StreaksProcessTime *= utils.SecondsInHour
+		} else {
+			return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
+		}
 	}
 	for _, notification := range c.Notifications {
 		if notification.ProcessTime < 0 || notification.ProcessTime >= utils.SecondsInDay || c.StreaksProcessTime%utils.SecondsInHour != 0 {
@@ -264,51 +317,75 @@ type UserUnit struct {
 	OrgID     string `json:"org_id"`
 	UserID    string `json:"user_id"`
 	CourseKey string `json:"course_key"`
+	ModuleKey string `json:"module_key"`
 	Unit      Unit   `json:"unit"`
 
-	Completed int  `json:"completed"` // number of schedule items the user has completed
-	Current   bool `json:"current"`
+	Completed    int                `json:"completed"` // number of schedule items the user has completed
+	Current      bool               `json:"current"`
+	UserSchedule []UserScheduleItem `json:"user_schedule"`
 
-	LastCompleted *time.Time `json:"last_completed"` // when the last required task of the previous unit was completed
-	DateCreated   time.Time  `json:"date_created"`
-	DateUpdated   *time.Time `json:"date_updated"`
+	DateCreated time.Time  `json:"date_created"`
+	DateUpdated *time.Time `json:"date_updated"`
 }
 
-// CurrentScheduleItem returns a pointer to the schedule item in the unit the user is working on
-func (u *UserUnit) CurrentScheduleItem() *ScheduleItem {
+// GetScheduleItem returns pointers, current status, and required status for the UserScheduleItem and ScheduleItem requested by contentKey or forceCurrent
+func (u *UserUnit) GetScheduleItem(contentKey string, forceCurrent bool) (*UserScheduleItem, *ScheduleItem, bool, bool) {
+	if u == nil {
+		return nil, nil, false, false
+	}
+
+	if forceCurrent {
+		if u.Completed < 0 || u.Completed >= len(u.Unit.Schedule) || u.Completed >= len(u.UserSchedule) {
+			return nil, nil, false, false
+		}
+		unitScheduleItem := u.Unit.Schedule[u.Completed]
+		return &u.UserSchedule[u.Completed], &unitScheduleItem, true, unitScheduleItem.IsRequired()
+	}
+
+	for i, item := range u.Unit.Schedule {
+		for _, key := range item.ContentKeys {
+			if key == contentKey {
+				isCurrent := u.Current && (i == u.Completed)
+				return &u.UserSchedule[i], &item, isCurrent, item.IsRequired()
+			}
+		}
+	}
+
+	return nil, nil, false, false
+}
+
+// GetNextScheduleItem returns a pointer to a UserScheduleItem in the unit after the current position based on forceRequired
+func (u *UserUnit) GetNextScheduleItem(forceRequired bool) *UserScheduleItem {
 	if u == nil {
 		return nil
 	}
-	if u.Completed < 0 || u.Completed >= u.Unit.Required {
+	if u.Completed < -1 || u.Completed+1 > len(u.Unit.Schedule) || u.Completed+1 > len(u.UserSchedule) {
 		return nil
 	}
 
-	return &u.Unit.Schedule[u.Completed]
+	for i := u.Completed + 1; i < u.Unit.Required; i++ {
+		if forceRequired && !u.Unit.Schedule[i].IsRequired() {
+			continue
+		}
+		return &u.UserSchedule[i]
+	}
+	return nil
 }
 
-// PreviousScheduleItem returns a pointer to the schedule item in the unit immediately before the current on
-func (u *UserUnit) PreviousScheduleItem() *ScheduleItem {
+// GetUserContentReferenceForKey returns the user content reference in the user schedule containing contentKey and whether the reference is in the current UserScheduleItem
+func (u *UserUnit) GetUserContentReferenceForKey(contentKey string) (*UserContentReference, bool) {
 	if u == nil {
-		return nil
-	}
-	if u.Completed <= 0 || u.Completed > u.Unit.Required {
-		return nil
+		return nil, false
 	}
 
-	return &u.Unit.Schedule[u.Completed-1]
-}
-
-// IsCurrentScheduleItemRequired returns whether the current schedule item is required
-func (u *UserUnit) IsCurrentScheduleItemRequired() *bool {
-	if u == nil {
-		return nil
+	for i, scheduleItem := range u.UserSchedule {
+		for j, reference := range scheduleItem.UserContent {
+			if reference.ContentKey == contentKey {
+				return &u.UserSchedule[i].UserContent[j], u.Current && i == u.Completed
+			}
+		}
 	}
-	if u.Completed < 0 || u.Completed >= u.Unit.Required {
-		return nil
-	}
-
-	isRequired := u.Completed >= u.Unit.ScheduleStart
-	return &isRequired
+	return nil, false
 }
 
 // Unit represents an individual unit of a Module (e.g. The Physical Side of Communication)
@@ -322,8 +399,7 @@ type Unit struct {
 	Contents []Content      `json:"content"`
 	Schedule []ScheduleItem `json:"schedule"`
 
-	ScheduleStart int `json:"schedule_start"` // index of the first schedule item the user should submit data for
-	Required      int `json:"required"`       // number of schedule items required to be completed (may add required flags to each schedule item in future)
+	Required int `json:"required"` // number of schedule items to complete = length of Schedule (may add required flags to each schedule item in future)
 
 	DateCreated time.Time  `json:"-"`
 	DateUpdated *time.Time `json:"-"`
@@ -337,9 +413,7 @@ func (u *Unit) Validate(contentKeys []string) error {
 	if len(u.Schedule) == 0 {
 		return errors.ErrorData(logutils.StatusMissing, "unit schedule", &logutils.FieldArgs{"key": u.Key})
 	}
-	if u.ScheduleStart < 0 || u.ScheduleStart >= len(u.Schedule) {
-		return errors.ErrorData(logutils.StatusInvalid, "unit schedule start", &logutils.FieldArgs{"schedule_start": u.ScheduleStart})
-	}
+
 	if len(contentKeys) == 0 {
 		contentKeys = make([]string, 0)
 		for _, content := range u.Contents {
@@ -349,14 +423,10 @@ func (u *Unit) Validate(contentKeys []string) error {
 		}
 	}
 
-	for i, item := range u.Schedule {
-		if i >= u.ScheduleStart && item.Duration == nil {
-			return errors.ErrorData(logutils.StatusInvalid, TypeScheduleItem, &logutils.FieldArgs{"name": item.Name, "duration": item.Duration})
-		}
-
-		for _, userContent := range item.UserContent {
-			if !utils.Exist[string](contentKeys, userContent.ContentKey) {
-				return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": userContent.ContentKey})
+	for _, item := range u.Schedule {
+		for _, key := range item.ContentKeys {
+			if !utils.Exist[string](contentKeys, key) {
+				return errors.ErrorData(logutils.StatusInvalid, "schedule content key", &logutils.FieldArgs{"content_key": key})
 			}
 		}
 	}
@@ -365,45 +435,105 @@ func (u *Unit) Validate(contentKeys []string) error {
 	return nil
 }
 
-// UserContentWithTimezone wraps unit with time information
-type UserContentWithTimezone struct {
-	UserContent UserContent `json:"user_content"`
-	Timezone                // include user timezone info
+// CreateUserSchedule creates the list of UserScheduleItems for Schedule with no associated UserContent ids
+func (u *Unit) CreateUserSchedule() []UserScheduleItem {
+	if u == nil {
+		return nil
+	}
+
+	userSchedule := make([]UserScheduleItem, len(u.Schedule))
+	for i, item := range u.Schedule {
+		userContentRefs := make([]UserContentReference, len(item.ContentKeys))
+		for j, key := range item.ContentKeys {
+			userContentRefs[j] = UserContentReference{ContentKey: key, Complete: false}
+		}
+		userSchedule[i] = UserScheduleItem{UserContent: userContentRefs}
+	}
+	return userSchedule
 }
 
-// ScheduleItem represents a set of Content items to be completed in a certain amount of time
-type ScheduleItem struct {
-	Name        string        `json:"name" bson:"name"`
-	UserContent []UserContent `json:"user_content" bson:"user_content"`
-	Duration    *int          `json:"duration" bson:"duration,omitempty"` // in days
+// UserScheduleItem represents a set of UserContent references and when the corresponding ScheduleItem was started and first completed
+type UserScheduleItem struct {
+	UserContent []UserContentReference `json:"user_content" bson:"user_content"`
 
 	DateStarted   *time.Time `json:"date_started,omitempty" bson:"date_started,omitempty"`
 	DateCompleted *time.Time `json:"date_completed,omitempty" bson:"date_completed,omitempty"`
 }
 
-// UpdateUserData updates the stored data for the user content matching item.ContentKey in the schedule item
-func (s *ScheduleItem) UpdateUserData(item UserContent) error {
-	if s == nil {
-		return errors.ErrorData(logutils.StatusMissing, TypeScheduleItem, nil)
-	}
-	for i, userContent := range s.UserContent {
-		if userContent.ContentKey == item.ContentKey {
-			s.UserContent[i].UserData = item.UserData
-			return nil
-		}
-	}
-
-	return errors.ErrorData(logutils.StatusMissing, TypeUserContent, &logutils.FieldArgs{"content_key": item.ContentKey})
-}
-
-// IsComplete gives whether every user content item in the schedule item has user data
-func (s *ScheduleItem) IsComplete() bool {
-	for _, userContent := range s.UserContent {
-		if !userContent.IsComplete() {
+// IsComplete gives whether all UserContent items are complete
+func (u UserScheduleItem) IsComplete() bool {
+	for _, reference := range u.UserContent {
+		if !reference.Complete {
 			return false
 		}
 	}
 	return true
+}
+
+// UserContentReference represents a set of UserContent references
+type UserContentReference struct {
+	ContentKey string   `json:"content_key" bson:"content_key"`
+	IDs        []string `json:"ids,omitempty" bson:"ids,omitempty"` // UserContent IDs
+	Complete   bool     `json:"complete" bson:"complete"`
+}
+
+// ScheduleItem represents a set of Content items to be completed in a certain amount of time
+type ScheduleItem struct {
+	Name        string   `json:"name" bson:"name"`
+	ContentKeys []string `json:"content_keys" bson:"content_keys"`
+	Duration    *int     `json:"duration" bson:"duration,omitempty"` // in days (if nil, this ScheduleItem is considered optional to complete)
+}
+
+// IsRequired returns whether the schedule item is required
+func (s ScheduleItem) IsRequired() bool {
+	return (s.Duration != nil)
+}
+
+// UserContent represents
+type UserContent struct {
+	ID        string `json:"id" bson:"_id"`
+	AppID     string `json:"app_id" bson:"app_id"`
+	OrgID     string `json:"org_id" bson:"org_id"`
+	UserID    string `json:"user_id" bson:"user_id"`
+	CourseKey string `json:"course_key" bson:"course_key"`
+	ModuleKey string `json:"module_key" bson:"module_key"`
+	UnitKey   string `json:"unit_key" bson:"unit_key"`
+
+	Content  Content                `json:"content" bson:"content"`
+	Response map[string]interface{} `json:"response" bson:"response"`
+
+	DateCreated time.Time  `json:"date_created" bson:"date_created"`
+	DateUpdated *time.Time `json:"date_updated" bson:"date_updated"`
+}
+
+// IsComplete gives whether Response contains the entry {UserContentCompleteKey: true}
+func (u *UserContent) IsComplete() bool {
+	if u == nil {
+		return false
+	}
+
+	completeVal, exists := u.Response[UserContentCompleteKey]
+	if !exists {
+		return false
+	}
+	complete, ok := completeVal.(bool)
+	return complete && ok
+}
+
+// UpdateResponse updates the existing Response data with the incoming data, except UserContentCompleteKey if u.IsComplete()
+func (u *UserContent) UpdateResponse(response map[string]interface{}) (bool, bool) {
+	if u == nil {
+		return false, false
+	}
+
+	completedNow := !u.IsComplete() && (response[UserContentCompleteKey] == true)
+	if !completedNow {
+		response[UserContentCompleteKey] = u.IsComplete()
+	}
+	updatedResponse := !utils.DeepEqual(response, u.Response)
+	u.Response = response
+
+	return updatedResponse, completedNow
 }
 
 // Content represents some Unit content
@@ -425,36 +555,43 @@ type Content struct {
 	DateUpdated *time.Time `json:"-" bson:"date_updated"`
 }
 
+// Equals returns whether two Content objects have the same underlying data (except styles and timestamps)
+func (c *Content) Equals(other *Content) bool {
+	if (c == nil) != (other == nil) {
+		return false
+	}
+	if c == nil && other == nil {
+		return true
+	}
+
+	if c.ID != other.ID || c.AppID != other.AppID || c.OrgID != other.OrgID || c.Key != other.Key || c.Type != other.Type || c.Name != other.Name || c.Details != other.Details {
+		return false
+	}
+	if c.Reference.Name != other.Reference.Name || c.Reference.Type != other.Reference.Type || c.Reference.ReferenceKey != other.Reference.ReferenceKey {
+		return false
+	}
+	if !utils.Equal(c.LinkedContent, other.LinkedContent, false) {
+		return false
+	}
+	if !utils.DeepEqual(c.Styles, other.Styles) {
+		return false
+	}
+	return true
+}
+
+// UserResponse includes a user response to a task with timezone info
+type UserResponse struct {
+	Timezone                          // include user timezone info
+	UnitKey    string                 `json:"unit_key"`
+	ContentKey string                 `json:"content_key"`
+	Response   map[string]interface{} `json:"response"`
+}
+
 // Reference represents a reference to another entity
 type Reference struct {
 	Name         string `json:"name" bson:"name"`
 	Type         string `json:"type" bson:"type"` // content item, video, PDF, survey, web URL
 	ReferenceKey string `json:"reference_key" bson:"reference_key"`
-}
-
-// UserContent represents a Content reference with some additional user data
-type UserContent struct {
-	ContentKey string `json:"content_key" bson:"content_key"`
-
-	// user fields (populated as user takes a course)
-	UserData map[string]interface{} `json:"user_data,omitempty" bson:"user_data,omitempty"`
-}
-
-// IsComplete gives whether the user has completed the content corresponding to ContentKey
-func (uc *UserContent) IsComplete() bool {
-	if uc == nil {
-		return false
-	}
-
-	completeVal, ok := uc.UserData[UserContentCompleteKey]
-	if !ok {
-		return false
-	}
-	complete, ok := completeVal.(bool)
-	if !ok {
-		return false
-	}
-	return complete
 }
 
 // Timezone represents user timezone information received from the client
@@ -466,13 +603,13 @@ type Timezone struct {
 // Validate checks whether name and offset refer to a valid timezone (sets offset if name is valid but offset is not)
 func (t *Timezone) Validate() error {
 	if t == nil {
-		return errors.ErrorData(logutils.StatusMissing, "timezone", nil)
+		return errors.ErrorData(logutils.StatusMissing, TypeTimezone, nil)
 	}
 
 	if t.Offset < utils.MinTZOffset || t.Offset > utils.MaxTZOffset {
 		tzLoc, err := time.LoadLocation(t.Name)
 		if err != nil {
-			return errors.WrapErrorData(logutils.StatusInvalid, "user timezone", &logutils.FieldArgs{"name": t.Name, "offset": t.Offset}, err)
+			return errors.WrapErrorData(logutils.StatusInvalid, TypeTimezone, &logutils.FieldArgs{"name": t.Name, "offset": t.Offset}, err)
 		}
 
 		// set the offset if it was invalid, but could load location from name

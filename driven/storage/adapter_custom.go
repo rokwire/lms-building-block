@@ -7,6 +7,7 @@ import (
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logutils"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // FindCustomCourses finds courses by a set of parameters
@@ -536,6 +537,76 @@ func (sa *Adapter) DeleteCustomUnit(appID string, orgID string, key string) erro
 	return nil
 }
 
+// FindUserContents finds a list of user content items by a list of ids
+func (sa *Adapter) FindUserContents(id []string, appID string, orgID string, userID string) ([]model.UserContent, error) {
+	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID}
+	if len(id) > 0 {
+		filter["_id"] = bson.M{"$in": id}
+	}
+	errArgs := logutils.FieldArgs(filter)
+
+	var result []model.UserContent
+	opts := options.FindOptions{}
+	opts.SetSort(bson.M{"date_created": -1})
+
+	err := sa.db.userContents.Find(sa.context, filter, &result, &opts)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserContent, &errArgs, err)
+	}
+
+	return result, nil
+}
+
+// InsertUserContent inserts a new user content item
+func (sa *Adapter) InsertUserContent(item model.UserContent) error {
+	_, err := sa.db.userContents.InsertOne(sa.context, item)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserContent,
+			&logutils.FieldArgs{"app_id": item.AppID, "org_id": item.OrgID, "user_id": item.UserID, "course_key": item.CourseKey, "module_key": item.ModuleKey, "unit_key": item.UnitKey, "content_key": item.Content.Key}, err)
+	}
+	return nil
+}
+
+// UpdateUserContent updates an existing user content item
+func (sa *Adapter) UpdateUserContent(item model.UserContent, updateContent bool) error {
+	filter := bson.M{"_id": item.ID, "app_id": item.AppID, "org_id": item.OrgID, "user_id": item.UserID}
+	errArgs := logutils.FieldArgs(filter)
+	setUpdate := bson.M{
+		"response":     item.Response,
+		"date_updated": time.Now().UTC(),
+	}
+	if updateContent {
+		setUpdate["content"] = item.Content
+	}
+	update := bson.M{"$set": setUpdate}
+
+	res, err := sa.db.userContents.UpdateOne(sa.context, filter, update, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserContent, &errArgs, err)
+	}
+	if res.ModifiedCount != 1 {
+		errArgs["modified"] = res.ModifiedCount
+		return errors.ErrorAction(logutils.ActionInsert, model.TypeUserContent, &errArgs)
+	}
+	return nil
+}
+
+// DeleteUserContents deletes all user content matching the given arguments
+func (sa *Adapter) DeleteUserContents(appID string, orgID string, userID string, courseKey *string) error {
+	filter := bson.M{"app_id": appID, "org_id": orgID, "user_id": userID}
+	if courseKey != nil {
+		filter["course_key"] = *courseKey
+	}
+	errArgs := logutils.FieldArgs(filter)
+
+	_, err := sa.db.userContents.DeleteMany(sa.context, filter, nil)
+	if err != nil {
+		return errors.WrapErrorAction(logutils.ActionDelete, model.TypeUserContent, &errArgs, err)
+	}
+
+	return nil
+}
+
 // FindCustomContents finds contents by a set of parameters
 func (sa *Adapter) FindCustomContents(appID string, orgID string, id []string, name []string, key []string) ([]model.Content, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID}
@@ -921,14 +992,16 @@ func (sa *Adapter) UpdateUserCourse(item model.UserCourse) error {
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
-			"streak":          item.Streak,
-			"pauses":          item.Pauses,
-			"pause_progress":  item.PauseProgress,
-			"streak_restarts": item.StreakRestarts,
-			"last_responded":  item.LastResponded,
-			"date_dropped":    item.DateDropped,
-			"date_completed":  item.DateCompleted,
-			"date_updated":    time.Now().UTC(),
+			"streak":            item.Streak,
+			"pauses":            item.Pauses,
+			"pause_progress":    item.PauseProgress,
+			"streak_restarts":   item.StreakRestarts,
+			"last_completed":    item.LastCompleted,
+			"last_responded":    item.LastResponded,
+			"completed_modules": item.CompletedModules,
+			"date_completed":    item.DateCompleted,
+			"date_dropped":      item.DateDropped,
+			"date_updated":      time.Now().UTC(),
 		},
 	}
 	result, err := sa.db.userCourses.UpdateOne(sa.context, filter, update, nil)
@@ -997,10 +1070,17 @@ func (sa *Adapter) DeleteUserCourses(appID string, orgID string, key string) err
 }
 
 // FindUserUnit finds a user unit
-func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey *string) (*model.UserUnit, error) {
+func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey *string, unitKey *string, current *bool) (*model.UserUnit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey}
+
+	if moduleKey != nil {
+		filter["module_key"] = *moduleKey
+	}
 	if unitKey != nil {
 		filter["unit.key"] = *unitKey
+	}
+	if current != nil {
+		filter["current"] = *current
 	}
 
 	var results []userUnit
@@ -1022,13 +1102,17 @@ func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, cours
 }
 
 // FindUserUnits finds user units by search parameters
-func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, current *bool) ([]model.UserUnit, error) {
+func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, moduleKey *string, current *bool) ([]model.UserUnit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "course_key": courseKey}
 	if len(userIDs) != 0 {
 		filter["user_id"] = bson.M{"$in": userIDs}
 	}
 	if current != nil {
 		filter["current"] = *current
+	}
+
+	if moduleKey != nil {
+		filter["module_key"] = moduleKey
 	}
 
 	var results []userUnit
@@ -1063,11 +1147,11 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 
 // UpdateUserUnit updates shcedules in a user unit
 func (sa *Adapter) UpdateUserUnit(item model.UserUnit) error {
-	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "user_id": item.UserID, "course_key": item.CourseKey, "unit.key": item.Unit.Key}
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "user_id": item.UserID, "course_key": item.CourseKey, "module_key": item.ModuleKey, "unit.key": item.Unit.Key}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
-			"unit.schedule": item.Unit.Schedule,
+			"user_schedule": item.UserSchedule,
 			"completed":     item.Completed,
 			"current":       item.Current,
 			"date_updated":  time.Now().UTC(),

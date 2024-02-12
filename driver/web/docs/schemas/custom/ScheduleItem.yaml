@@ -1,20 +1,13 @@
 required:
   - name
-  - user_content
+  - content_keys
 type: object
 properties:
   name:
     type: string
-  user_content:
+  content_keys:
     type: array
     items:
-      $ref: "./UserContent.yaml"
+      type: string
   duration:
     type: integer
-  date_started:
-    type: string
-    format: date-time
-  date_completed:
-    type: string
-    format: date-time
-    nullable: true

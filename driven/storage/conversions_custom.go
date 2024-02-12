@@ -110,7 +110,7 @@ func (sa *Adapter) customModuleToStorage(item model.Module) module {
 // customUnitFromStorage formats storage struct to appropriate struct for API request
 func (sa *Adapter) customUnitFromStorage(item unit) (model.Unit, error) {
 	result := model.Unit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, Key: item.Key, Name: item.Name, Schedule: item.Schedule,
-		ScheduleStart: item.ScheduleStart, Required: item.Required, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+		Required: item.Required, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	if len(item.ContentKeys) > 0 {
 		contents, err := sa.FindCustomContents(item.AppID, item.OrgID, nil, nil, item.ContentKeys)
@@ -137,7 +137,6 @@ func (sa *Adapter) customUnitToStorage(item model.Unit) unit {
 	result.Name = item.Name
 	result.ContentKeys = extractedKey
 	result.Schedule = item.Schedule
-	result.ScheduleStart = item.ScheduleStart
 	result.Required = item.Required
 	result.DateCreated = item.DateCreated
 	result.DateUpdated = item.DateUpdated
@@ -150,7 +149,8 @@ func (sa *Adapter) userCourseFromStorage(item userCourse) (model.UserCourse, err
 	timezone := model.Timezone{Name: item.TimezoneName, Offset: item.TimezoneOffset}
 	result := model.UserCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, Timezone: timezone, Streak: item.Streak,
 		StreakResets: item.StreakResets, StreakRestarts: item.StreakRestarts, Pauses: item.Pauses, PauseProgress: item.PauseProgress, PauseUses: item.PauseUses,
-		LastResponded: item.LastResponded, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated, DateCompleted: item.DateCompleted, DateDropped: item.DateDropped}
+		LastCompleted: item.LastCompleted, LastResponded: item.LastResponded, CompletedModules: item.CompletedModules, DateCreated: item.DateCreated,
+		DateUpdated: item.DateUpdated, DateCompleted: item.DateCompleted, DateDropped: item.DateDropped}
 
 	convertedCourse, err := sa.customCourseFromStorage(item.Course)
 	if err != nil {
@@ -165,13 +165,13 @@ func (sa *Adapter) userCourseToStorage(item model.UserCourse) userCourse {
 	course := sa.customCourseToStorage(item.Course)
 	return userCourse{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, TimezoneName: item.Timezone.Name, TimezoneOffset: item.Timezone.Offset,
 		Streak: item.Streak, StreakResets: item.StreakResets, StreakRestarts: item.StreakRestarts, Pauses: item.Pauses, PauseUses: item.PauseUses,
-		PauseProgress: item.PauseProgress, LastResponded: item.LastResponded, Course: course, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated,
-		DateCompleted: item.DateCompleted, DateDropped: item.DateDropped}
+		PauseProgress: item.PauseProgress, LastCompleted: item.LastCompleted, LastResponded: item.LastResponded, CompletedModules: item.CompletedModules,
+		Course: course, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated, DateCompleted: item.DateCompleted, DateDropped: item.DateDropped}
 }
 
 func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
-	result := model.UserUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey,
-		Completed: item.Completed, Current: item.Current, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+	result := model.UserUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, ModuleKey: item.ModuleKey,
+		Completed: item.Completed, Current: item.Current, UserSchedule: item.UserSchedule, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 
 	unit, err := sa.customUnitFromStorage(item.Unit)
 	if err != nil {
@@ -184,6 +184,6 @@ func (sa *Adapter) userUnitFromStorage(item userUnit) (model.UserUnit, error) {
 
 func (sa *Adapter) userUnitToStorage(item model.UserUnit) userUnit {
 	unit := sa.customUnitToStorage(item.Unit)
-	return userUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, Unit: unit,
-		Current: item.Current, Completed: item.Completed, LastCompleted: item.LastCompleted, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
+	return userUnit{ID: item.ID, AppID: item.AppID, OrgID: item.OrgID, UserID: item.UserID, CourseKey: item.CourseKey, ModuleKey: item.ModuleKey, Unit: unit,
+		Current: item.Current, Completed: item.Completed, UserSchedule: item.UserSchedule, DateCreated: item.DateCreated, DateUpdated: item.DateUpdated}
 }
