@@ -72,7 +72,9 @@ type UserCourse struct {
 	PauseProgress  int         `json:"pause_progress"`
 	PauseUses      []time.Time `json:"pause_uses"` // timestamps when a pause is used for this course
 
-	LastResponded *time.Time `json:"last_responded"`
+	LastCompleted    *time.Time           `json:"last_completed"`
+	LastResponded    *time.Time           `json:"last_responded"`
+	CompletedModules map[string]time.Time `json:"completed_modules"`
 
 	Course Course `json:"course"`
 
@@ -103,30 +105,55 @@ func (u *UserCourse) MostRecentStreakProcessTime(now *time.Time, snConfig Streak
 		}
 	}
 	nowLocal := now.In(loc)
-	nowLocalSeconds := utils.SecondsInHour*nowLocal.Hour() + 60*nowLocal.Minute() + nowLocal.Second()
+	nowLocalSeconds := utils.SecondsInHour * nowLocal.Hour()
 
-	hour := snConfig.StreaksProcessTime / utils.SecondsInHour
-	minute := (snConfig.StreaksProcessTime % utils.SecondsInHour) / 60
-	second := (snConfig.StreaksProcessTime % utils.SecondsInHour) % 60
-	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), hour, minute, second, 0, loc).UTC()
+	mostRecent := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), snConfig.StreaksProcessTime/utils.SecondsInHour, 0, 0, 0, loc).UTC()
 	if nowLocalSeconds < snConfig.StreaksProcessTime {
 		// go back one day if the current moment is before the process time in the current day
-		mostRecent = mostRecent.Add(time.Duration(-24) * time.Hour)
+		mostRecent = mostRecent.Add(time.Duration(-utils.HoursInDay) * time.Hour)
 	}
 	return &mostRecent
 }
 
-// CanMakePauseProgress returns whether the last user response was before the most recent streak process
-func (u *UserCourse) CanMakePauseProgress(now *time.Time, snConfig StreaksNotificationsConfig) bool {
+// CanIncrementStreak returns whether the last required task was completed before the most recent streak process
+func (u *UserCourse) CanIncrementStreak(lastStreakProcess *time.Time, now *time.Time, snConfig StreaksNotificationsConfig) bool {
 	if u == nil {
 		return false
 	}
 
-	lastStreakProcess := u.MostRecentStreakProcessTime(now, snConfig)
 	if lastStreakProcess == nil {
+		lastStreakProcess = u.MostRecentStreakProcessTime(now, snConfig)
+		if lastStreakProcess == nil {
+			return false
+		}
+	}
+
+	return u.LastCompleted == nil || u.LastCompleted.Before(*lastStreakProcess)
+}
+
+// CanMakePauseProgress returns whether the last user response was before the most recent streak process
+func (u *UserCourse) CanMakePauseProgress(lastStreakProcess *time.Time, now *time.Time, snConfig StreaksNotificationsConfig) bool {
+	if u == nil {
 		return false
 	}
+
+	if lastStreakProcess == nil {
+		lastStreakProcess = u.MostRecentStreakProcessTime(now, snConfig)
+		if lastStreakProcess == nil {
+			return false
+		}
+	}
+
 	return u.LastResponded == nil || u.LastResponded.Before(*lastStreakProcess)
+}
+
+// IsComplete returns whether all required schedule items in the course have been completed
+func (u *UserCourse) IsComplete() bool {
+	if u == nil {
+		return false
+	}
+
+	return len(u.CompletedModules) == len(u.Course.Modules)
 }
 
 // Course represents a custom-defined course (e.g. Essential Skills Coaching)
@@ -143,41 +170,46 @@ type Course struct {
 	DateUpdated *time.Time `json:"-"`
 }
 
-// GetNextUnit returns the next unit in a course given the current unit key
-func (c *Course) GetNextUnit(currentUnitKey string) *Unit {
-	if c == nil {
-		return nil
-	}
-
+// GetNextUnit returns the unit after the one specified by unitKey in the same module as the one specified by moduleKey
+func (c *Course) GetNextUnit(moduleKey string, unitKey string) *Unit {
 	returnNextUnit := false
 	for _, module := range c.Modules {
-		for _, unit := range module.Units {
-			if returnNextUnit {
-				nextUnit := unit
-				return &nextUnit
+		if module.Key == moduleKey {
+			for _, unit := range module.Units {
+				if returnNextUnit {
+					nextUnit := unit
+					return &nextUnit
+				}
+				if unit.Key == unitKey {
+					returnNextUnit = true
+				}
 			}
-			if unit.Key == currentUnitKey {
-				returnNextUnit = true
-			}
+			break
 		}
 	}
 	return nil
 }
 
-// NextRequiredScheduleItem returns the next required schedule item in a course given the current unit key and schedule index (set allowCurrent to return the schedule item corresponding to scheduleIndex if required)
-func (c *Course) NextRequiredScheduleItem(currentUnitKey string, scheduleIndex int, allowCurrent bool) *ScheduleItem {
+// GetNextRequiredScheduleItem returns the next required schedule item in the same module as the one specified by moduleKey given the current unitKey and schedule index (set allowCurrent to return the schedule item corresponding to scheduleIndex if it is required)
+func (c *Course) GetNextRequiredScheduleItem(moduleKey string, unitKey string, scheduleIndex int, allowCurrent bool) *ScheduleItem {
+	if c == nil {
+		return nil
+	}
+
 	returnNextRequired := false
-	for _, module := range c.Modules {
-		for _, unit := range module.Units {
-			if returnNextRequired || unit.Key == currentUnitKey {
-				for j, scheduleItem := range unit.Schedule {
-					if (returnNextRequired || j > scheduleIndex || (allowCurrent && j == scheduleIndex)) && scheduleItem.IsRequired() {
-						nextScheduleItem := scheduleItem
-						return &nextScheduleItem
+	for i, module := range c.Modules {
+		if module.Key == moduleKey {
+			for j, unit := range module.Units {
+				if returnNextRequired || unit.Key == unitKey {
+					for k, scheduleItem := range unit.Schedule {
+						if (returnNextRequired || k > scheduleIndex || (allowCurrent && k == scheduleIndex)) && scheduleItem.IsRequired() {
+							return &c.Modules[i].Units[j].Schedule[k]
+						}
 					}
+					returnNextRequired = true
 				}
-				returnNextRequired = true
 			}
+			break
 		}
 	}
 	return nil
@@ -229,7 +261,12 @@ func (c *StreaksNotificationsConfig) ValidateTimings() error {
 		c.TimezoneOffset = timezone.Offset
 	}
 	if c.StreaksProcessTime < 0 || c.StreaksProcessTime >= utils.SecondsInDay || c.StreaksProcessTime%utils.SecondsInHour != 0 {
-		return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
+		if c.StreaksProcessTime >= 0 && c.StreaksProcessTime < utils.HoursInDay {
+			// allow process time in hours from [0, 24) to be specified, then scale to get seconds
+			c.StreaksProcessTime *= utils.SecondsInHour
+		} else {
+			return errors.ErrorData(logutils.StatusInvalid, "streaks process time", &logutils.FieldArgs{"streaks_process_time": c.StreaksProcessTime})
+		}
 	}
 	for _, notification := range c.Notifications {
 		if notification.ProcessTime < 0 || notification.ProcessTime >= utils.SecondsInDay || c.StreaksProcessTime%utils.SecondsInHour != 0 {
@@ -280,15 +317,15 @@ type UserUnit struct {
 	OrgID     string `json:"org_id"`
 	UserID    string `json:"user_id"`
 	CourseKey string `json:"course_key"`
+	ModuleKey string `json:"module_key"`
 	Unit      Unit   `json:"unit"`
 
 	Completed    int                `json:"completed"` // number of schedule items the user has completed
 	Current      bool               `json:"current"`
 	UserSchedule []UserScheduleItem `json:"user_schedule"`
 
-	LastCompleted *time.Time `json:"last_completed"` // when the last required task of the previous unit was completed
-	DateCreated   time.Time  `json:"date_created"`
-	DateUpdated   *time.Time `json:"date_updated"`
+	DateCreated time.Time  `json:"date_created"`
+	DateUpdated *time.Time `json:"date_updated"`
 }
 
 // GetScheduleItem returns pointers, current status, and required status for the UserScheduleItem and ScheduleItem requested by contentKey or forceCurrent
@@ -296,11 +333,11 @@ func (u *UserUnit) GetScheduleItem(contentKey string, forceCurrent bool) (*UserS
 	if u == nil {
 		return nil, nil, false, false
 	}
-	if u.Completed < 0 || u.Completed >= len(u.Unit.Schedule) || u.Completed >= len(u.UserSchedule) {
-		return nil, nil, false, false
-	}
 
 	if forceCurrent {
+		if u.Completed < 0 || u.Completed >= len(u.Unit.Schedule) || u.Completed >= len(u.UserSchedule) {
+			return nil, nil, false, false
+		}
 		unitScheduleItem := u.Unit.Schedule[u.Completed]
 		return &u.UserSchedule[u.Completed], &unitScheduleItem, true, unitScheduleItem.IsRequired()
 	}
@@ -315,24 +352,6 @@ func (u *UserUnit) GetScheduleItem(contentKey string, forceCurrent bool) (*UserS
 	}
 
 	return nil, nil, false, false
-}
-
-// GetPreviousScheduleItem returns a pointer to a UserScheduleItem in the unit prior the current position based on forceRequired
-func (u *UserUnit) GetPreviousScheduleItem(forceRequired bool) *UserScheduleItem {
-	if u == nil {
-		return nil
-	}
-	if u.Completed <= 0 || u.Completed > len(u.Unit.Schedule) || u.Completed > len(u.UserSchedule) {
-		return nil
-	}
-
-	for i := 1; i <= u.Completed; i++ {
-		if forceRequired && !u.Unit.Schedule[u.Completed-i].IsRequired() {
-			continue
-		}
-		return &u.UserSchedule[u.Completed-i]
-	}
-	return nil
 }
 
 // GetNextScheduleItem returns a pointer to a UserScheduleItem in the unit after the current position based on forceRequired
@@ -563,6 +582,7 @@ func (c *Content) Equals(other *Content) bool {
 // UserResponse includes a user response to a task with timezone info
 type UserResponse struct {
 	Timezone                          // include user timezone info
+	UnitKey    string                 `json:"unit_key"`
 	ContentKey string                 `json:"content_key"`
 	Response   map[string]interface{} `json:"response"`
 }

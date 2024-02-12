@@ -103,8 +103,8 @@ type Storage interface {
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 	DeleteUserCourses(appID string, orgID string, courseKey string) error
 
-	FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey *string) (*model.UserUnit, error)
-	FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, current *bool) ([]model.UserUnit, error)
+	FindUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey *string, unitKey *string, current *bool) (*model.UserUnit, error)
+	FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, moduleKey *string, current *bool) ([]model.UserUnit, error)
 	InsertUserUnit(item model.UserUnit) error
 	UpdateUserUnit(item model.UserUnit) error
 	UpdateUserUnits(key string, item model.Unit) error

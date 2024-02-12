@@ -1,23 +1,23 @@
 put:
   tags:
   - Client
-  summary: Update custom user unit
+  summary: Update module progress
   description: |
-    Update custom user unit
+    Update module progress
   security:
     - bearerAuth: []
   parameters:
     - name: course_key
       in: path
-      description: course key of this unit
+      description: key of course to update progress
       required: true
       style: simple
       explode: false
       schema:
         type: string
-    - name: unit_key
+    - name: module_key
       in: path
-      description: unit key
+      description: key of module to update progress
       required: true
       style: simple
       explode: false
@@ -43,6 +43,6 @@ put:
       description: Unauthorized
     500:
       description: Internal error
-  x-core-function: UpdateUserCourseUnitProgress
+  x-core-function: UpdateUserCourseModuleProgress
   x-data-type: model.UserUnit
   x-authentication-type: User

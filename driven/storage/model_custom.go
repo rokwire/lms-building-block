@@ -35,7 +35,9 @@ type userCourse struct {
 	PauseProgress  int         `bson:"pause_progress"`
 	PauseUses      []time.Time `bson:"pause_uses,omitempty"`
 
-	LastResponded *time.Time `bson:"last_responded"`
+	LastCompleted    *time.Time           `bson:"last_completed"`
+	LastResponded    *time.Time           `bson:"last_responded"`
+	CompletedModules map[string]time.Time `bson:"completed_modules,omitempty"`
 
 	Course course `bson:"course"`
 
@@ -79,16 +81,15 @@ type userUnit struct {
 	OrgID     string `bson:"org_id"`
 	UserID    string `bson:"user_id"`
 	CourseKey string `bson:"course_key"`
-
-	Unit unit `bson:"unit"`
+	ModuleKey string `bson:"module_key"`
+	Unit      unit   `bson:"unit"`
 
 	Completed    int                      `bson:"completed"` // number of schedule items the user has completed
 	Current      bool                     `bson:"current"`
 	UserSchedule []model.UserScheduleItem `bson:"user_schedule"`
 
-	LastCompleted *time.Time `bson:"last_completed"`
-	DateCreated   time.Time  `bson:"date_created"`
-	DateUpdated   *time.Time `bson:"date_updated"`
+	DateCreated time.Time  `bson:"date_created"`
+	DateUpdated *time.Time `bson:"date_updated"`
 }
 
 type unit struct {

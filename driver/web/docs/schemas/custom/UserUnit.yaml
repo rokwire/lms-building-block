@@ -4,6 +4,7 @@ required:
   - org_id
   - user_id
   - course_key
+  - module_key
   - completed
   - current
   - user_schedule
@@ -25,6 +26,9 @@ properties:
   course_key:
     type: string
     readOnly: true
+  module_key:
+    type: string
+    readOnly: true
   completed:
     type: integer
   current:
@@ -36,9 +40,6 @@ properties:
     readOnly: true
   unit:
     $ref: "./Unit.yaml"
-  last_completed:
-    type: string
-    format: date-time
   date_created:
     type: string
     format: date-time

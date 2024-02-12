@@ -267,14 +267,14 @@ func (s *clientImpl) GetCustomCourse(claims *tokenauth.Claims, key string) (*mod
 
 // get all userUnits from a user's given course
 func (s *clientImpl) GetUserCourseUnits(claims *tokenauth.Claims, courseKey string) ([]model.UserUnit, error) {
-	userUnits, err := s.app.storage.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil)
+	userUnits, err := s.app.storage.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 	return userUnits, nil
 }
 
-func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UserResponse) (*model.UserUnit, error) {
+func (s *clientImpl) UpdateUserCourseModuleProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.UserResponse) (*model.UserUnit, error) {
 	err := item.Validate()
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionValidate, model.TypeTimezone, nil, err)
@@ -301,15 +301,24 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		// update timezone name and offset for all user_course of a user
 		err = storageTransaction.UpdateUserTimezone(userCourse.AppID, userCourse.OrgID, userCourse.UserID, item.Name, item.Offset)
 		if err != nil {
-			return err
+			return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeTimezone, nil, err)
 		}
 		userCourse.Timezone.Name = item.Name
 		userCourse.Timezone.Offset = item.Offset
 
-		// find the current user unit (this is managed by the streaks timer)
-		userCourseUnits, err := storageTransaction.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, nil)
+		// get all userUnits under this module and check for multiple current user units
+		moduleUserUnits, err := storageTransaction.FindUserUnits(claims.AppID, claims.OrgID, []string{claims.Subject}, courseKey, &moduleKey, nil)
 		if err != nil {
-			return err
+			return errors.WrapErrorAction(logutils.ActionFind, model.TypeUserUnit, nil, err)
+		}
+		var currentModuleUserUnit *model.UserUnit
+		for i, uUnit := range moduleUserUnits {
+			if uUnit.Current {
+				if currentModuleUserUnit != nil {
+					return errors.ErrorData(logutils.StatusInvalid, model.TypeUserUnit, &logutils.FieldArgs{"id": uUnit.ID, "module_key": moduleKey, "current": true, "current_id": currentModuleUserUnit.ID})
+				}
+				currentModuleUserUnit = &moduleUserUnits[i]
+			}
 		}
 
 		var userScheduleItem *model.UserScheduleItem
@@ -317,20 +326,28 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 		isRequired := false // whether the schedule item being updated is required
 		updatedUserCourse := false
 		now := time.Now().UTC()
-		if len(userCourseUnits) == 0 {
-			unit, err := storageTransaction.FindCustomUnit(claims.AppID, claims.OrgID, unitKey)
+		var lastStreakProcess *time.Time
+		if len(moduleUserUnits) == 0 {
+			// get the requested module and validate the first unit
+			module, err := storageTransaction.FindCustomModule(claims.AppID, claims.OrgID, moduleKey)
 			if err != nil {
-				return errors.WrapErrorAction(logutils.ActionFind, model.TypeUnit, nil, err)
+				return errors.WrapErrorAction(logutils.ActionFind, model.TypeModule, nil, err)
 			}
-			if unit == nil {
-				return errors.ErrorData(logutils.StatusMissing, model.TypeUnit, &logutils.FieldArgs{"key": unitKey})
+			if len(module.Units) == 0 {
+				return errors.ErrorData(logutils.StatusInvalid, model.TypeModule, &logutils.FieldArgs{"units.length": 0})
 			}
+
+			unit := module.Units[0]
+			if unit.Key != item.UnitKey {
+				return errors.ErrorData(logutils.StatusInvalid, model.TypeUnit, &logutils.FieldArgs{"unit_key": item.UnitKey})
+			}
+
 			err = unit.Validate(nil)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionValidate, model.TypeUnit, &logutils.FieldArgs{"app_id": claims.AppID, "org_id": claims.OrgID, "key": unit.Key}, err)
 			}
 
-			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey, Unit: *unit,
+			userUnit = &model.UserUnit{ID: uuid.NewString(), AppID: claims.AppID, OrgID: claims.OrgID, UserID: claims.Subject, CourseKey: courseKey, ModuleKey: moduleKey, Unit: unit,
 				Completed: 0, Current: true, UserSchedule: unit.CreateUserSchedule(), DateCreated: now}
 
 			_, lastStreakProcess, err := s.updateUserContent(storageTransaction, userUnit, item, userCourse, &now, courseConfig.StreaksNotificationsConfig)
@@ -350,17 +367,18 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			}
 		} else {
 			// find the user unit the request wants to update
-			for _, courseUnit := range userCourseUnits {
-				if courseUnit.Unit.Key == unitKey {
-					userUnit = &courseUnit
+			for _, moduleUserUnit := range moduleUserUnits {
+				if moduleUserUnit.Unit.Key == item.UnitKey {
+					userUnit = &moduleUserUnit
 					break
 				}
 			}
 			if userUnit == nil {
-				return errors.ErrorData(logutils.StatusMissing, model.TypeUserUnit, &logutils.FieldArgs{"app_id": claims.AppID, "org_id": claims.OrgID, "user_id": claims.Subject, "course_key": courseKey, "unit.key": unitKey})
+				return errors.ErrorData(logutils.StatusMissing, model.TypeUserUnit, &logutils.FieldArgs{"app_id": claims.AppID, "org_id": claims.OrgID, "user_id": claims.Subject, "course_key": courseKey, "module_key": courseKey, "unit.key": item.UnitKey})
 			}
 
-			shouldUpdateUserUnit, lastStreakProcess, err := s.updateUserContent(storageTransaction, userUnit, item, userCourse, &now, courseConfig.StreaksNotificationsConfig)
+			shouldUpdateUserUnit := true
+			shouldUpdateUserUnit, lastStreakProcess, err = s.updateUserContent(storageTransaction, userUnit, item, userCourse, &now, courseConfig.StreaksNotificationsConfig)
 			if err != nil {
 				return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeUserContent, nil, err)
 			}
@@ -379,55 +397,39 @@ func (s *clientImpl) UpdateUserCourseUnitProgress(claims *tokenauth.Claims, cour
 			}
 		}
 
-		// get the completion time of the last required schedule item
-		var previousRequired *model.UserScheduleItem
-		var previousRequiredCompleted *time.Time
-		if isCurrent {
-			previousRequired = userUnit.GetPreviousScheduleItem(true)
-		}
-		if previousRequired != nil {
-			previousRequiredCompleted = previousRequired.DateCompleted
-		} else if isCurrent && userUnit.LastCompleted != nil {
-			previousRequiredCompleted = userUnit.LastCompleted
-		}
+		if isCurrent && isRequired && userScheduleItem.IsComplete() {
+			// update streak when user completes any required current task for the first time since last streak process
+			if userCourse.CanIncrementStreak(lastStreakProcess, &now, courseConfig.StreaksNotificationsConfig) {
+				userCourse.Streak++
 
-		// use the start time of the current schedule item to determine streak and pauses
-		currentScheduleItem := userScheduleItem
-		currentScheduleItemStart := userScheduleItem.DateStarted
-		if !isCurrent {
-			currentScheduleItem, _, _, _ = userUnit.GetScheduleItem("", true)
-			if currentScheduleItem == nil {
-				return errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})
-			}
-			currentScheduleItemStart = currentScheduleItem.DateStarted
-		}
-
-		// update streak if the following are true:
-		// 1. the current schedule item is required
-		// 2. the current schedule item is completed
-		// 3. the previous schedule item was completed before current schedule item was started or there is no previous schedule item
-		if isRequired && currentScheduleItem.IsComplete() && (previousRequiredCompleted == nil || (currentScheduleItemStart != nil && previousRequiredCompleted.Before(*currentScheduleItemStart))) {
-			newStreak := userCourse.Streak + 1
-
-			// if the user has no active streak and no remaining pauses, then add a streak restart (user has resumed progress after some extended time)
-			if userCourse.Streak == 0 && userCourse.Pauses == 0 {
-				if userCourse.StreakRestarts == nil {
-					userCourse.StreakRestarts = make([]time.Time, 0)
+				// if the user has no active streak and no remaining pauses, then add a streak restart (user has resumed progress after some extended time)
+				if userCourse.Streak == 1 && userCourse.Pauses == 0 {
+					if userCourse.StreakRestarts == nil {
+						userCourse.StreakRestarts = make([]time.Time, 0)
+					}
+					userCourse.StreakRestarts = append(userCourse.StreakRestarts, now)
 				}
-				userCourse.StreakRestarts = append(userCourse.StreakRestarts, now)
 			}
-			userCourse.Streak = newStreak
+
+			userCourse.LastCompleted = &now // a current schedule item has been completed
 			updatedUserCourse = true
 		}
 
-		// update pause progress and pauses when user responds to any required task for the first time since last streak process
-		if isRequired && userCourse.CanMakePauseProgress(&now, courseConfig.StreaksNotificationsConfig) {
-			userCourse.PauseProgress++
-			userCourse.LastResponded = &now
-			if userCourse.PauseProgress == courseConfig.PauseProgressReward && userCourse.Pauses < courseConfig.MaxPauses {
-				userCourse.Pauses++
-				userCourse.PauseProgress = 0
+		if isRequired {
+			// update pause progress and pauses when user responds to any required task for the first time since last streak process
+			if userCourse.CanMakePauseProgress(lastStreakProcess, &now, courseConfig.StreaksNotificationsConfig) {
+				if userCourse.Pauses < courseConfig.MaxPauses {
+					userCourse.PauseProgress++
+
+					// if the user has enough pause progress and has not reached the pause limit, add a pause
+					if userCourse.PauseProgress%courseConfig.PauseProgressReward == 0 {
+						userCourse.Pauses++
+						userCourse.PauseProgress -= courseConfig.PauseProgressReward
+					}
+				}
 			}
+
+			userCourse.LastResponded = &now // the user has responded to a required task
 			updatedUserCourse = true
 		}
 
@@ -526,8 +528,8 @@ func (s *clientImpl) updateUserContent(storage interfaces.Storage, userUnit *mod
 
 func (s *clientImpl) createUserContent(storage interfaces.Storage, userUnit *model.UserUnit, userContentReference *model.UserContentReference, content model.Content, response map[string]interface{}, now time.Time) error {
 	id := uuid.NewString()
-	userContent := model.UserContent{ID: id, AppID: userUnit.AppID, OrgID: userUnit.OrgID, UserID: userUnit.UserID,
-		CourseKey: userUnit.CourseKey, UnitKey: userUnit.Unit.Key, Content: content, Response: response, DateCreated: now}
+	userContent := model.UserContent{ID: id, AppID: userUnit.AppID, OrgID: userUnit.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
+		ModuleKey: userUnit.ModuleKey, UnitKey: userUnit.Unit.Key, Content: content, Response: response, DateCreated: now}
 
 	err := storage.InsertUserContent(userContent)
 	if err != nil {
@@ -546,15 +548,15 @@ func (s *clientImpl) updateUserScheduleItem(storage interfaces.Storage, userUnit
 	now *time.Time, snConfig model.StreaksNotificationsConfig) (*model.UserScheduleItem, bool, bool, bool, error) {
 	userScheduleItem, _, isCurrent, isRequired := userUnit.GetScheduleItem(userResponse.ContentKey, false)
 	if userScheduleItem == nil {
-		return nil, false, false, false, errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"current": true})
+		return nil, false, false, false, errors.ErrorData(logutils.StatusMissing, model.TypeScheduleItem, &logutils.FieldArgs{"user_unit.id": userUnit.ID, "content_key": userResponse.ContentKey})
 	}
 
 	updatedUserCourse := false
 	if isCurrent && userScheduleItem.DateStarted == nil {
-		if lastStreakProcess != nil {
+		userScheduleItem.DateStarted = lastStreakProcess
+		if lastStreakProcess == nil {
+			lastStreakProcess = userCourse.MostRecentStreakProcessTime(now, snConfig)
 			userScheduleItem.DateStarted = lastStreakProcess
-		} else {
-			userScheduleItem.DateStarted = userCourse.MostRecentStreakProcessTime(now, snConfig)
 		}
 	}
 	if isCurrent && userScheduleItem.IsComplete() {
@@ -563,45 +565,52 @@ func (s *clientImpl) updateUserScheduleItem(storage interfaces.Storage, userUnit
 			// set start time of next schedule item if immediately completing the current schedule item
 			nextScheduleItem := userUnit.GetNextScheduleItem(false)
 			if nextScheduleItem != nil {
-				nextScheduleItem.DateStarted = userCourse.MostRecentStreakProcessTime(now, snConfig)
+				nextScheduleItem.DateStarted = lastStreakProcess
+				if lastStreakProcess == nil {
+					lastStreakProcess = userCourse.MostRecentStreakProcessTime(now, snConfig)
+					nextScheduleItem.DateStarted = lastStreakProcess
+				}
 			}
 
 			userUnit.Completed++
-		}
 
-		// if there are no more required schedule items to be done in the course, set date completed
-		// allow the new current schedule item to be returned if current schedule item not required because userUnit.Completed has already been incremented
-		if userCourse.Course.NextRequiredScheduleItem(userUnit.Unit.Key, userUnit.Completed, !isRequired) == nil {
-			// if the schedule item is required, increment completed because it will not be done by the streaks timer since userCourse.DateCompleted will be set
-			if isRequired {
-				userUnit.Completed++
+			// handle course, module, and unit completion if this optional schedule item is last in the
+			// if there are no more required schedule items to be done in the course, set date completed
+			// allow the new current schedule item to be returned if current schedule item not required because userUnit.Completed has already been incremented
+			if userCourse.Course.GetNextRequiredScheduleItem(userUnit.ModuleKey, userUnit.Unit.Key, userUnit.Completed, true) == nil {
+				userUnit.Current = (userUnit.Completed < userUnit.Unit.Required) // allow user to submit responses to any optional ScheduleItems remaining in the course
+
+				if userCourse.CompletedModules == nil {
+					userCourse.CompletedModules = make(map[string]time.Time)
+				}
+				// do not update module completion time if completing an optional schedule item
+				if _, exists := userCourse.CompletedModules[userUnit.ModuleKey]; !exists {
+					userCourse.CompletedModules[userUnit.ModuleKey] = *now
+					if userCourse.IsComplete() {
+						userCourse.DateCompleted = now // prevents streak timer from operating on any data associated with this UserCourse
+					}
+					updatedUserCourse = true
+				}
 			}
-			userUnit.Current = (userUnit.Completed < userUnit.Unit.Required) // allow user to submit responses to any optional ScheduleItems remaining in the course
-			userCourse.DateCompleted = now                                   // prevents streak timer from operating on any data associated with this UserCourse
-			updatedUserCourse = true
-		} else if userUnit.Completed == userUnit.Unit.Required {
-			// user has just completed the current unit by completing an optional ScheduleItem so insert the next user unit
-			nextUnit := userCourse.Course.GetNextUnit(userUnit.Unit.Key)
-			if nextUnit != nil {
-				// get the completion time of the last required schedule item
-				var lastCompleted *time.Time
-				previousRequired := userUnit.GetPreviousScheduleItem(true)
-				if previousRequired != nil {
-					lastCompleted = previousRequired.DateCompleted
-				}
 
-				nextUserSchedule := nextUnit.CreateUserSchedule()
-				nextUserSchedule[0].DateStarted = userCourse.MostRecentStreakProcessTime(now, snConfig)
-				nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: userUnit.AppID, OrgID: userUnit.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
-					Unit: *nextUnit, Completed: 0, Current: true, UserSchedule: nextUserSchedule, LastCompleted: lastCompleted, DateCreated: time.Now().UTC()}
+			if userUnit.Completed == userUnit.Unit.Required {
+				// user has just completed the current unit by completing an optional schedule item so insert the next user unit if necessary
+				nextUnit := userCourse.Course.GetNextUnit(userUnit.ModuleKey, userUnit.Unit.Key)
+				if nextUnit != nil {
+					nextUserSchedule := nextUnit.CreateUserSchedule()
+					nextUserSchedule[0].DateStarted = lastStreakProcess
+					if lastStreakProcess == nil {
+						lastStreakProcess = userCourse.MostRecentStreakProcessTime(now, snConfig)
+						nextUserSchedule[0].DateStarted = lastStreakProcess
+					}
+					nextUserUnit := model.UserUnit{ID: uuid.NewString(), AppID: userUnit.AppID, OrgID: userUnit.OrgID, UserID: userUnit.UserID, CourseKey: userUnit.CourseKey,
+						ModuleKey: userUnit.ModuleKey, Unit: *nextUnit, Completed: 0, Current: true, UserSchedule: nextUserSchedule, DateCreated: time.Now().UTC()}
 
-				err := storage.InsertUserUnit(nextUserUnit)
-				if err != nil {
-					return nil, false, false, false, errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
+					err := storage.InsertUserUnit(nextUserUnit)
+					if err != nil {
+						return nil, false, false, false, errors.WrapErrorAction(logutils.ActionInsert, model.TypeUserUnit, nil, err)
+					}
 				}
-			} else {
-				// there is not next unit and there are no required schedule items remaining
-				userUnit.Current = false
 			}
 		}
 	}

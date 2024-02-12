@@ -369,8 +369,8 @@ func (a *Adapter) getCoreHandler(tag string, ref string) (interface{}, error) {
 		return a.apisHandler.clientDeleteUserCourse, nil
 	case "ClientUpdateUserCourse":
 		return a.apisHandler.clientUpdateUserCourse, nil
-	case "ClientUpdateUserCourseUnitProgress":
-		return a.apisHandler.clientUpdateUserCourseUnitProgress, nil
+	case "ClientUpdateUserCourseModuleProgress":
+		return a.apisHandler.clientUpdateUserCourseModuleProgress, nil
 	case "ClientGetUserContents":
 		return a.apisHandler.clientGetUserContents, nil
 	case "ClientGetUserCourseUnits":

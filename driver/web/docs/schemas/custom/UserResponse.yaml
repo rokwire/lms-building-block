@@ -1,10 +1,13 @@
 allOf:
   - $ref: "./Timezone.yaml"
   - required:
+      - unit_key
       - content_key
       - response
     type: object
     properties:
+      unit_key:
+        type: string
       content_key:
         type: string
       response:

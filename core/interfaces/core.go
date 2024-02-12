@@ -40,7 +40,7 @@ type Client interface {
 
 	// model.UserUnit
 
-	UpdateUserCourseUnitProgress(claims *tokenauth.Claims, courseKey string, unitKey string, item model.UserResponse) (*model.UserUnit, error)
+	UpdateUserCourseModuleProgress(claims *tokenauth.Claims, courseKey string, moduleKey string, item model.UserResponse) (*model.UserUnit, error)
 
 	// model.UserContent
 

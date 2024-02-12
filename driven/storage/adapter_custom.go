@@ -992,14 +992,16 @@ func (sa *Adapter) UpdateUserCourse(item model.UserCourse) error {
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{
-			"streak":          item.Streak,
-			"pauses":          item.Pauses,
-			"pause_progress":  item.PauseProgress,
-			"streak_restarts": item.StreakRestarts,
-			"last_responded":  item.LastResponded,
-			"date_dropped":    item.DateDropped,
-			"date_completed":  item.DateCompleted,
-			"date_updated":    time.Now().UTC(),
+			"streak":            item.Streak,
+			"pauses":            item.Pauses,
+			"pause_progress":    item.PauseProgress,
+			"streak_restarts":   item.StreakRestarts,
+			"last_completed":    item.LastCompleted,
+			"last_responded":    item.LastResponded,
+			"completed_modules": item.CompletedModules,
+			"date_completed":    item.DateCompleted,
+			"date_dropped":      item.DateDropped,
+			"date_updated":      time.Now().UTC(),
 		},
 	}
 	result, err := sa.db.userCourses.UpdateOne(sa.context, filter, update, nil)
@@ -1068,10 +1070,17 @@ func (sa *Adapter) DeleteUserCourses(appID string, orgID string, key string) err
 }
 
 // FindUserUnit finds a user unit
-func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, unitKey *string) (*model.UserUnit, error) {
+func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey *string, unitKey *string, current *bool) (*model.UserUnit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "user_id": userID, "course_key": courseKey}
+
+	if moduleKey != nil {
+		filter["module_key"] = *moduleKey
+	}
 	if unitKey != nil {
 		filter["unit.key"] = *unitKey
+	}
+	if current != nil {
+		filter["current"] = *current
 	}
 
 	var results []userUnit
@@ -1093,13 +1102,17 @@ func (sa *Adapter) FindUserUnit(appID string, orgID string, userID string, cours
 }
 
 // FindUserUnits finds user units by search parameters
-func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, current *bool) ([]model.UserUnit, error) {
+func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, moduleKey *string, current *bool) ([]model.UserUnit, error) {
 	filter := bson.M{"org_id": orgID, "app_id": appID, "course_key": courseKey}
 	if len(userIDs) != 0 {
 		filter["user_id"] = bson.M{"$in": userIDs}
 	}
 	if current != nil {
 		filter["current"] = *current
+	}
+
+	if moduleKey != nil {
+		filter["module_key"] = moduleKey
 	}
 
 	var results []userUnit
@@ -1134,7 +1147,7 @@ func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 
 // UpdateUserUnit updates shcedules in a user unit
 func (sa *Adapter) UpdateUserUnit(item model.UserUnit) error {
-	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "user_id": item.UserID, "course_key": item.CourseKey, "unit.key": item.Unit.Key}
+	filter := bson.M{"org_id": item.OrgID, "app_id": item.AppID, "user_id": item.UserID, "course_key": item.CourseKey, "module_key": item.ModuleKey, "unit.key": item.Unit.Key}
 	errArgs := logutils.FieldArgs(filter)
 	update := bson.M{
 		"$set": bson.M{

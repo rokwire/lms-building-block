@@ -383,12 +383,18 @@ func (m *database) applyUserCoursesChecks(userCourses *collectionWrapper) error 
 // User Unit
 func (m *database) applyUserUnitsChecks(userUnits *collectionWrapper) error {
 	m.logger.Info("apply user unit check.....")
+
+	// remove old indexes
+	userUnits.DropIndex("app_id_1_org_id_1_user_id_1")
+	userUnits.DropIndex("app_id_1_org_id_1_user_id_1_course_key_1_unit.key_1")
+
 	err := userUnits.AddIndex(
 		bson.D{
 			primitive.E{Key: "app_id", Value: 1},
 			primitive.E{Key: "org_id", Value: 1},
 			primitive.E{Key: "user_id", Value: 1},
 			primitive.E{Key: "course_key", Value: 1},
+			primitive.E{Key: "module_key", Value: 1},
 			primitive.E{Key: "unit.key", Value: 1},
 		}, true)
 	if err != nil {

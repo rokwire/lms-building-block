@@ -255,6 +255,7 @@ type UserResponse struct {
 	Response       map[string]interface{} `json:"response"`
 	TimezoneName   string                 `json:"timezone_name"`
 	TimezoneOffset int                    `json:"timezone_offset"`
+	UnitKey        string                 `json:"unit_key"`
 }
 
 // UserScheduleItem defines model for UserScheduleItem.
@@ -266,18 +267,18 @@ type UserScheduleItem struct {
 
 // UserUnit defines model for UserUnit.
 type UserUnit struct {
-	AppId         *string             `json:"app_id,omitempty"`
-	Completed     int                 `json:"completed"`
-	CourseKey     *string             `json:"course_key,omitempty"`
-	Current       bool                `json:"current"`
-	DateCreated   *time.Time          `json:"date_created,omitempty"`
-	DateUpdated   *time.Time          `json:"date_updated,omitempty"`
-	Id            *string             `json:"id,omitempty"`
-	LastCompleted *time.Time          `json:"last_completed,omitempty"`
-	OrgId         *string             `json:"org_id,omitempty"`
-	Unit          Unit                `json:"unit"`
-	UserId        *string             `json:"user_id,omitempty"`
-	UserSchedule  *[]UserScheduleItem `json:"user_schedule,omitempty"`
+	AppId        *string             `json:"app_id,omitempty"`
+	Completed    int                 `json:"completed"`
+	CourseKey    *string             `json:"course_key,omitempty"`
+	Current      bool                `json:"current"`
+	DateCreated  *time.Time          `json:"date_created,omitempty"`
+	DateUpdated  *time.Time          `json:"date_updated,omitempty"`
+	Id           *string             `json:"id,omitempty"`
+	ModuleKey    *string             `json:"module_key,omitempty"`
+	OrgId        *string             `json:"org_id,omitempty"`
+	Unit         Unit                `json:"unit"`
+	UserId       *string             `json:"user_id,omitempty"`
+	UserSchedule *[]UserScheduleItem `json:"user_schedule,omitempty"`
 }
 
 // UsersSource defines model for UsersSource.
@@ -494,8 +495,8 @@ type PostAdminUnitsJSONRequestBody = Unit
 // PutAdminUnitsKeyJSONRequestBody defines body for PutAdminUnitsKey for application/json ContentType.
 type PutAdminUnitsKeyJSONRequestBody = AdminReqUpdateUnit
 
-// PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyUnitsUnitKey for application/json ContentType.
-type PutApiUsersCoursesCourseKeyUnitsUnitKeyJSONRequestBody = UserResponse
+// PutApiUsersCoursesCourseKeyModulesModuleKeyJSONRequestBody defines body for PutApiUsersCoursesCourseKeyModulesModuleKey for application/json ContentType.
+type PutApiUsersCoursesCourseKeyModulesModuleKeyJSONRequestBody = UserResponse
 
 // PostApiUsersCoursesKeyJSONRequestBody defines body for PostApiUsersCoursesKey for application/json ContentType.
 type PostApiUsersCoursesKeyJSONRequestBody = Timezone

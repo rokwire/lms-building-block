@@ -426,27 +426,27 @@ paths:
       x-core-function: UpdateUserCourse
       x-data-type: model.UserCourse
       x-authentication-type: User
-  '/api/users/courses/{course_key}/units/{unit_key}':
+  '/api/users/courses/{course_key}/modules/{module_key}':
     put:
       tags:
         - Client
-      summary: Update custom user unit
+      summary: Update module progress
       description: |
-        Update custom user unit
+        Update module progress
       security:
         - bearerAuth: []
       parameters:
         - name: course_key
           in: path
-          description: course key of this unit
+          description: key of course to update progress
           required: true
           style: simple
           explode: false
           schema:
             type: string
-        - name: unit_key
+        - name: module_key
           in: path
-          description: unit key
+          description: key of module to update progress
           required: true
           style: simple
           explode: false
@@ -472,7 +472,7 @@ paths:
           description: Unauthorized
         '500':
           description: Internal error
-      x-core-function: UpdateUserCourseUnitProgress
+      x-core-function: UpdateUserCourseModuleProgress
       x-data-type: model.UserUnit
       x-authentication-type: User
   /api/users/contents:
@@ -2361,6 +2361,7 @@ components:
         - org_id
         - user_id
         - course_key
+        - module_key
         - completed
         - current
         - user_schedule
@@ -2382,6 +2383,9 @@ components:
         course_key:
           type: string
           readOnly: true
+        module_key:
+          type: string
+          readOnly: true
         completed:
           type: integer
         current:
@@ -2393,9 +2397,6 @@ components:
           readOnly: true
         unit:
           $ref: '#/components/schemas/Unit'
-        last_completed:
-          type: string
-          format: date-time
         date_created:
           type: string
           format: date-time
@@ -2481,10 +2482,13 @@ components:
       allOf:
         - $ref: '#/components/schemas/Timezone'
         - required:
+            - unit_key
             - content_key
             - response
           type: object
           properties:
+            unit_key:
+              type: string
             content_key:
               type: string
             response:
