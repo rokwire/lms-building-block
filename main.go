@@ -114,7 +114,7 @@ func main() {
 
 	// application
 	application := core.NewApplication(Version, Build, storageAdapter, providerAdapter,
-		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, coreAdapter, logger)
+		groupsBBAdapter, notificationsBBAdapter, cacheAdapter, coreAdapter, serviceID, logger)
 	application.Start()
 
 	// web adapter

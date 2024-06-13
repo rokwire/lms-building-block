@@ -45,6 +45,8 @@ type Application struct {
 	nudgesLogic nudgesLogic
 	//streaks and notifications logic
 	streaksNotifications streaksNotifications
+	//delete data logic
+	deleteDataLogic deleteDataLogic
 }
 
 // Start starts the core part of the application
@@ -53,11 +55,13 @@ func (app *Application) Start() {
 
 	app.nudgesLogic.start()
 	app.streaksNotifications.start()
+	app.deleteDataLogic.start()
 }
 
 // NewApplication creates new Application
 func NewApplication(version string, build string, storage interfaces.Storage, provider interfaces.Provider, groupsBB interfaces.GroupsBB,
-	notificationsBB interfaces.NotificationsBB, cacheadapter *cacheadapter.CacheAdapter, coreBB *corebb.Adapter, logger *logs.Logger) *Application {
+	notificationsBB interfaces.NotificationsBB, cacheadapter *cacheadapter.CacheAdapter, coreBB *corebb.Adapter, serciveID string, logger *logs.Logger) *Application {
+	deleteDataLogic := deleteDataLogic{logger: *logger, core: coreBB, serviceID: serciveID, storage: storage}
 
 	timerDone := make(chan bool)
 	nudgesLogic := nudgesLogic{
@@ -92,6 +96,7 @@ func NewApplication(version string, build string, storage interfaces.Storage, pr
 		nudgesLogic:          nudgesLogic,
 		streaksNotifications: streaksNotifications,
 		core:                 coreBB,
+		deleteDataLogic:      deleteDataLogic,
 	}
 
 	// add the drivers ports/interfaces
