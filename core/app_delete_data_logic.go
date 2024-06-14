@@ -148,10 +148,17 @@ func (d deleteDataLogic) processDelete() {
 }
 
 func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accountsIDs []string) {
-	// delete nudhes blocks
+	// delete nudges blocks
 	err := d.storage.DeleteNudgesBlocksByAccountsIDs(nil, accountsIDs)
 	if err != nil {
 		d.logger.Errorf("error deleting nudges blocks by account ID - %s", err)
+		return
+	}
+
+	// delete sent nudges
+	err = d.storage.DeleteSentNudgesByAccountsIDs(nil, accountsIDs)
+	if err != nil {
+		d.logger.Errorf("error deleting sent nudges by account ID - %s", err)
 		return
 	}
 }

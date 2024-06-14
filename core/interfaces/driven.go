@@ -52,6 +52,7 @@ type Storage interface {
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
 	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(ids []string, mode string) error
+	DeleteSentNudgesByAccountsIDs(log *logs.Logger, accountsIDs []string) error
 
 	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
 	UpdateNudgesProcess(ID string, completedAt time.Time, status string, err *string) error

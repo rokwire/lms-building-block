@@ -538,6 +538,15 @@ func (sa *Adapter) DeleteNudgesBlocksByAccountsIDs(log *logs.Logger, accountsIDs
 	return err
 }
 
+// DeleteSentNudgesByAccountsIDs deletes sent nudges by accountsIDs
+func (sa *Adapter) DeleteSentNudgesByAccountsIDs(log *logs.Logger, accountsIDs []string) error {
+	filter := bson.D{
+		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+	}
+	_, err := sa.db.sentNudges.DeleteMany(nil, filter, nil)
+	return err
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)
