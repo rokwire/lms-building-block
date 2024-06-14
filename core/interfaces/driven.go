@@ -107,6 +107,7 @@ type Storage interface {
 	ResetUserCourseStreaks(appID string, orgID string, userIDs []string, key string) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 	DeleteUserCourses(appID string, orgID string, courseKey string) error
+	DeleteUserCoursesByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error
 
 	FindUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey *string, unitKey *string, current *bool) (*model.UserUnit, error)
 	FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, moduleKey *string, current *bool) ([]model.UserUnit, error)

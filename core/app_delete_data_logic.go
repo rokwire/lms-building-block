@@ -168,6 +168,13 @@ func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accou
 		d.logger.Errorf("error deleting user contents by account ID - %s", err)
 		return
 	}
+
+	// delete user courses
+	err = d.storage.DeleteUserCoursesByAccountsIDs(nil, appID, orgID, accountsIDs)
+	if err != nil {
+		d.logger.Errorf("error deleting user courses by account ID - %s", err)
+		return
+	}
 }
 
 func (d deleteDataLogic) getAccountsIDs(memberships []model.DeletedMembership) []string {
