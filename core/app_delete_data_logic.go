@@ -22,7 +22,6 @@ import (
 	"lms/core/interfaces"
 	"lms/core/model"
 	"lms/driven/corebb"
-	"log"
 	"time"
 
 	"github.com/rokwire/logging-library-go/v2/logs"
@@ -68,10 +67,10 @@ func (d deleteDataLogic) setupTimerForDelete() {
 	now := time.Now().In(location)
 	d.logger.Infof("setupTimerForDelete -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	desiredMoment := 14400 //4 AM
+	//nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	//desiredMoment := 14400 //4 AM
 
-	var durationInSeconds int
+	/*var durationInSeconds int
 	d.logger.Infof("setupTimerForDelete -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
 	if nowSecondsInDay <= desiredMoment {
 		d.logger.Infof("setupTimerForDelete -> not delete process today, so the first process will be today")
@@ -81,9 +80,9 @@ func (d deleteDataLogic) setupTimerForDelete() {
 		leftToday := 86400 - nowSecondsInDay
 		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
 	}
-	log.Println(durationInSeconds)
-	//duration := time.Second * time.Duration(3)
-	duration := time.Second * time.Duration(durationInSeconds)
+	log.Println(durationInSeconds)*/
+	duration := time.Second * time.Duration(3)
+	//duration := time.Second * time.Duration(durationInSeconds)
 	d.logger.Infof("setupTimerForDelete -> first call after %s", duration)
 
 	d.dailyDeleteTimer = time.NewTimer(duration)
@@ -149,7 +148,12 @@ func (d deleteDataLogic) processDelete() {
 }
 
 func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accountsIDs []string) {
-
+	// delete nudhes blocks
+	err := d.storage.DeleteNudgesBlocksByAccountsIDs(nil, accountsIDs)
+	if err != nil {
+		d.logger.Errorf("error deleting nudges blocks by account ID - %s", err)
+		return
+	}
 }
 
 func (d deleteDataLogic) getAccountsIDs(memberships []model.DeletedMembership) []string {

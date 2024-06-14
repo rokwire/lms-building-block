@@ -521,6 +521,23 @@ func (sa *Adapter) withContext(context mongo.SessionContext) *Adapter {
 	return &Adapter{db: sa.db, context: context}
 }
 
+// DeleteNudgesBlocksByAccountsIDs deletes specific items from nudges blocks based on accountsIDs
+func (sa *Adapter) DeleteNudgesBlocksByAccountsIDs(log *logs.Logger, accountsIDs []string) error {
+	filter := bson.D{
+		primitive.E{Key: "items.user_id", Value: primitive.M{"$in": accountsIDs}},
+	}
+	update := bson.M{
+		"$pull": bson.M{
+			"items": bson.M{
+				"user_id": bson.M{"$in": accountsIDs},
+			},
+		},
+	}
+
+	_, err := sa.db.nudgesBlocks.UpdateMany(nil, filter, update, nil)
+	return err
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)

@@ -18,7 +18,10 @@ import (
 	"lms/core/model"
 	"lms/driven/groups"
 	"lms/driven/notifications"
+
 	"time"
+
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
@@ -58,6 +61,7 @@ type Storage interface {
 	InsertBlock(block model.Block) error
 	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
+	DeleteNudgesBlocksByAccountsIDs(log *logs.Logger, accountsIDs []string) error
 
 	FindCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
 	FindCustomCourse(appID string, orgID string, key string) (*model.Course, error)
