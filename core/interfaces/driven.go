@@ -120,6 +120,7 @@ type Storage interface {
 	InsertUserContent(item model.UserContent) error
 	UpdateUserContent(item model.UserContent, updateContent bool) error
 	DeleteUserContents(appID string, orgID string, userID string, courseKey *string) error
+	DeleteUserContentsByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error
 
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error

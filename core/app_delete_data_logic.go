@@ -161,6 +161,13 @@ func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accou
 		d.logger.Errorf("error deleting sent nudges by account ID - %s", err)
 		return
 	}
+
+	// delete user contents
+	err = d.storage.DeleteUserContentsByAccountsIDs(nil, appID, orgID, accountsIDs)
+	if err != nil {
+		d.logger.Errorf("error deleting user contents by account ID - %s", err)
+		return
+	}
 }
 
 func (d deleteDataLogic) getAccountsIDs(memberships []model.DeletedMembership) []string {
