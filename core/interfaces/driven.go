@@ -116,6 +116,7 @@ type Storage interface {
 	UpdateUserUnits(key string, item model.Unit) error
 	DeleteUserUnit(appID string, orgID string, key string) error
 	DeleteUserUnits(appID string, orgID string, userID string, courseKey string) error
+	DeleteUserUnitsByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error
 
 	FindUserContents(id []string, appID string, orgID string, userID string) ([]model.UserContent, error)
 	InsertUserContent(item model.UserContent) error

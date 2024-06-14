@@ -569,6 +569,17 @@ func (sa *Adapter) DeleteUserCoursesByAccountsIDs(log *logs.Log, appID string, o
 	return err
 }
 
+// DeleteUserUnitsByAccountsIDs deletes an user units by accountsIDs
+func (sa *Adapter) DeleteUserUnitsByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error {
+	filter := bson.D{
+		{Key: "app_id", Value: appID},
+		{Key: "org_id", Value: orgID},
+		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+	}
+	_, err := sa.db.userUnits.DeleteMany(nil, filter, nil)
+	return err
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)
