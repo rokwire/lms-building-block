@@ -26,6 +26,7 @@ type DeletedUserData struct {
 
 // DeletedMembership defines model for DeletedMembership.
 type DeletedMembership struct {
-	AccountID string                  `json:"account_id"`
-	Context   *map[string]interface{} `json:"context,omitempty"`
+	AccountID   string                  `json:"account_id"`
+	Context     *map[string]interface{} `json:"context,omitempty"`
+	ExternalIDs *map[string]string      `json:"external_ids"`
 }

@@ -128,6 +128,8 @@ type Storage interface {
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error
 	DeleteUnitKeyFromModules(appID string, orgID string, key string) error
 	DeleteModuleKeyFromCourses(appID string, orgID string, key string) error
+
+	DeleteAdapterPrUsersByNetIDs(log *logs.Log, appID string, orgID string, netIDs []string) error
 }
 
 // Provider interface for LMS provider

@@ -580,6 +580,15 @@ func (sa *Adapter) DeleteUserUnitsByAccountsIDs(log *logs.Log, appID string, org
 	return err
 }
 
+// DeleteAdapterPrUsersByNetIDs deletes an adapter pr users by netIDs
+func (sa *Adapter) DeleteAdapterPrUsersByNetIDs(log *logs.Log, appID string, orgID string, netIDs []string) error {
+	filter := bson.D{
+		primitive.E{Key: "net_id", Value: primitive.M{"$in": netIDs}},
+	}
+	_, err := sa.db.adapterPrUsers.DeleteMany(nil, filter, nil)
+	return err
+}
+
 // NewStorageAdapter creates a new storage adapter instance
 func NewStorageAdapter(mongoDBAuth string, mongoDBName string, mongoTimeout string, logger *logs.Logger) *Adapter {
 	timeout, err := strconv.Atoi(mongoTimeout)

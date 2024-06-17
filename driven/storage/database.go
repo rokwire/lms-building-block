@@ -36,8 +36,9 @@ type database struct {
 
 	logger *logs.Logger
 
-	db       *mongo.Database
-	dbClient *mongo.Client
+	db             *mongo.Database
+	dbClient       *mongo.Client
+	adapterPrUsers *collectionWrapper
 
 	configs         *collectionWrapper
 	users           *collectionWrapper
@@ -87,6 +88,12 @@ func (m *database) start() error {
 
 	users := &collectionWrapper{database: m, coll: db.Collection("adapter_pr_users")}
 	err = m.applyUsersChecks(users)
+	if err != nil {
+		return err
+	}
+
+	adapterPrUsers := &collectionWrapper{database: m, coll: db.Collection("adapter_pr_users")}
+	err = m.applyAdapterPrUsersChecks(adapterPrUsers)
 	if err != nil {
 		return err
 	}
@@ -167,6 +174,7 @@ func (m *database) start() error {
 	m.db = db
 	m.dbClient = client
 
+	m.adapterPrUsers = adapterPrUsers
 	m.configs = configs
 	m.users = users
 	m.nudges = nudges
@@ -420,6 +428,13 @@ func (m *database) applyUserContentsChecks(userContents *collectionWrapper) erro
 		return err
 	}
 	m.logger.Info("user content check passed")
+	return nil
+}
+
+// Custom Content
+func (m *database) applyAdapterPrUsersChecks(customContents *collectionWrapper) error {
+	m.logger.Info("apply adapter pr users check.....")
+	m.logger.Info("custom adapter pr users passed")
 	return nil
 }
 

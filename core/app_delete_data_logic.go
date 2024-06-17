@@ -22,6 +22,7 @@ import (
 	"lms/core/interfaces"
 	"lms/core/model"
 	"lms/driven/corebb"
+	"log"
 	"time"
 
 	"github.com/rokwire/logging-library-go/v2/logs"
@@ -67,10 +68,10 @@ func (d deleteDataLogic) setupTimerForDelete() {
 	now := time.Now().In(location)
 	d.logger.Infof("setupTimerForDelete -> now - hours:%d minutes:%d seconds:%d\n", now.Hour(), now.Minute(), now.Second())
 
-	//nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
-	//desiredMoment := 14400 //4 AM
+	nowSecondsInDay := 60*60*now.Hour() + 60*now.Minute() + now.Second()
+	desiredMoment := 14400 //4 AM
 
-	/*var durationInSeconds int
+	var durationInSeconds int
 	d.logger.Infof("setupTimerForDelete -> nowSecondsInDay:%d desiredMoment:%d\n", nowSecondsInDay, desiredMoment)
 	if nowSecondsInDay <= desiredMoment {
 		d.logger.Infof("setupTimerForDelete -> not delete process today, so the first process will be today")
@@ -80,9 +81,9 @@ func (d deleteDataLogic) setupTimerForDelete() {
 		leftToday := 86400 - nowSecondsInDay
 		durationInSeconds = leftToday + desiredMoment // the time which left today + desired moment from tomorrow
 	}
-	log.Println(durationInSeconds)*/
-	duration := time.Second * time.Duration(3)
-	//duration := time.Second * time.Duration(durationInSeconds)
+	log.Println(durationInSeconds)
+	//duration := time.Second * time.Duration(3)
+	duration := time.Second * time.Duration(durationInSeconds)
 	d.logger.Infof("setupTimerForDelete -> first call after %s", duration)
 
 	d.dailyDeleteTimer = time.NewTimer(duration)
@@ -142,12 +143,21 @@ func (d deleteDataLogic) processDelete() {
 
 		d.logger.Infof("accounts for deletion - %s", accountsIDs)
 
+		//store the net ids
+		netIDs := d.getNetIDs(appOrgSection.Memberships)
+		if len(netIDs) == 0 {
+			d.logger.Info("no netIDs for deletion")
+			continue
+		}
+
+		d.logger.Infof("netIDs for deletion - %s", netIDs)
+
 		//delete the data
-		d.deleteAppOrgUsersData(appOrgSection.AppID, appOrgSection.OrgID, accountsIDs)
+		d.deleteAppOrgUsersData(appOrgSection.AppID, appOrgSection.OrgID, accountsIDs, netIDs)
 	}
 }
 
-func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accountsIDs []string) {
+func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accountsIDs []string, netIDs []string) {
 	// delete nudges blocks
 	err := d.storage.DeleteNudgesBlocksByAccountsIDs(nil, accountsIDs)
 	if err != nil {
@@ -182,6 +192,13 @@ func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accou
 		d.logger.Errorf("error deleting user units by account ID - %s", err)
 		return
 	}
+
+	//delete adapter_pr_users
+	err = d.storage.DeleteAdapterPrUsersByNetIDs(nil, appID, orgID, netIDs)
+	if err != nil {
+		d.logger.Errorf("error deleting adapter PR users by netIDs- %s", err)
+		return
+	}
 }
 
 func (d deleteDataLogic) getAccountsIDs(memberships []model.DeletedMembership) []string {
@@ -190,6 +207,18 @@ func (d deleteDataLogic) getAccountsIDs(memberships []model.DeletedMembership) [
 		res[i] = item.AccountID
 	}
 	return res
+}
+
+func (d deleteDataLogic) getNetIDs(data []model.DeletedMembership) []string {
+	var netIDs []string
+	for _, deletedMemberships := range data {
+		if deletedMemberships.ExternalIDs != nil {
+			if netID, ok := (*deletedMemberships.ExternalIDs)["net_id"]; ok {
+				netIDs = append(netIDs, netID)
+			}
+		}
+	}
+	return netIDs
 }
 
 // deleteLogic creates new deleteLogic
