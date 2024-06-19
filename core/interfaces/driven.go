@@ -18,7 +18,10 @@ import (
 	"lms/core/model"
 	"lms/driven/groups"
 	"lms/driven/notifications"
+
 	"time"
+
+	"github.com/rokwire/logging-library-go/v2/logs"
 )
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc
@@ -33,6 +36,7 @@ type Storage interface {
 	FindUsers(netIDs []string) ([]model.ProviderUser, error)
 	FindUsersByCanvasUserID(canvasUserIds []int) ([]model.ProviderUser, error)
 	SaveUser(providerUser model.ProviderUser) error
+	DeleteUsersByNetIDs(log *logs.Log, netIDs []string) error
 
 	CreateNudgesConfig(nudgesConfig model.NudgesConfig) error
 	FindNudgesConfig() (*model.NudgesConfig, error)
@@ -49,6 +53,7 @@ type Storage interface {
 	FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error)
 	FindSentNudges(nudgeID *string, userID *string, netID *string, criteriaHash *[]uint32, mode *string) ([]model.SentNudge, error)
 	DeleteSentNudges(ids []string, mode string) error
+	DeleteSentNudgesByAccountsIDs(log *logs.Logger, accountsIDs []string) error
 
 	InsertNudgesProcess(nudgesProcess model.NudgesProcess) error
 	UpdateNudgesProcess(ID string, completedAt time.Time, status string, err *string) error
@@ -58,6 +63,7 @@ type Storage interface {
 	InsertBlock(block model.Block) error
 	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
+	DeleteNudgesBlocksByAccountsIDs(log *logs.Logger, accountsIDs []string) error
 
 	FindCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
 	FindCustomCourse(appID string, orgID string, key string) (*model.Course, error)
@@ -102,6 +108,7 @@ type Storage interface {
 	ResetUserCourseStreaks(appID string, orgID string, userIDs []string, key string) error
 	DeleteUserCourse(appID string, orgID string, userID string, courseKey string) error
 	DeleteUserCourses(appID string, orgID string, courseKey string) error
+	DeleteUserCoursesByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error
 
 	FindUserUnit(appID string, orgID string, userID string, courseKey string, moduleKey *string, unitKey *string, current *bool) (*model.UserUnit, error)
 	FindUserUnits(appID string, orgID string, userIDs []string, courseKey string, moduleKey *string, current *bool) ([]model.UserUnit, error)
@@ -110,11 +117,13 @@ type Storage interface {
 	UpdateUserUnits(key string, item model.Unit) error
 	DeleteUserUnit(appID string, orgID string, key string) error
 	DeleteUserUnits(appID string, orgID string, userID string, courseKey string) error
+	DeleteUserUnitsByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error
 
 	FindUserContents(id []string, appID string, orgID string, userID string) ([]model.UserContent, error)
 	InsertUserContent(item model.UserContent) error
 	UpdateUserContent(item model.UserContent, updateContent bool) error
 	DeleteUserContents(appID string, orgID string, userID string, courseKey *string) error
+	DeleteUserContentsByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error
 
 	DeleteContentKeyFromLinkedContents(appID string, orgID string, key string) error
 	DeleteContentKeyFromUnits(appID string, orgID string, key string) error

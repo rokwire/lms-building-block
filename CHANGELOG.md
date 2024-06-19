@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Remove user data [#109](ttps://github.com/rokwire/lms-building-block/issues/109)
+
 ## [1.10.3] - 2024-02-12
 ### Changed
 - Allow users to progress on multiple modules [#98](https://github.com/rokwire/lms-building-block/issues/98)
