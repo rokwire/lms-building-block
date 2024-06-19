@@ -158,14 +158,14 @@ func (d deleteDataLogic) processDelete() {
 
 func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accountsIDs []string, netIDs []string) {
 	// delete nudges blocks
-	err := d.storage.DeleteNudgesBlocksByAccountsIDs(nil, accountsIDs)
-	if err != nil {
-		d.logger.Errorf("error deleting nudges blocks by account ID - %s", err)
-		return
-	}
+	/*	err := d.storage.DeleteNudgesBlocksByAccountsIDs(nil, accountsIDs)
+		if err != nil {
+			d.logger.Errorf("error deleting nudges blocks by account ID - %s", err)
+			return
+		} */
 
 	// delete sent nudges
-	err = d.storage.DeleteSentNudgesByAccountsIDs(nil, accountsIDs)
+	err := d.storage.DeleteSentNudgesByAccountsIDs(nil, accountsIDs)
 	if err != nil {
 		d.logger.Errorf("error deleting sent nudges by account ID - %s", err)
 		return
@@ -192,15 +192,12 @@ func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accou
 		return
 	}
 
-	/*
-	   //delete adapter_pr_users
-
-	   	err = d.storage.DeleteAdapterPrUsersByNetIDs(nil, appID, orgID, netIDs)
-	   	if err != nil {
-	   		d.logger.Errorf("error deleting adapter PR users by netIDs- %s", err)
-	   		return
-	   	}
-	*/
+	//delete rgw adaorer users
+	err = d.storage.DeleteUsersByNetIDs(nil, netIDs)
+	if err != nil {
+		d.logger.Errorf("error deleting adapter PR users by netIDs- %s", err)
+		return
+	}
 }
 
 func (d deleteDataLogic) getAccountsIDs(memberships []model.DeletedMembership) []string {

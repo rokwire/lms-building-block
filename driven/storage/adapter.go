@@ -173,6 +173,15 @@ func (sa *Adapter) SaveUser(providerUser model.ProviderUser) error {
 	return nil
 }
 
+// DeleteUsersByNetIDs deletes users by netIDs
+func (sa *Adapter) DeleteUsersByNetIDs(log *logs.Log, netIDs []string) error {
+	filter := bson.D{
+		primitive.E{Key: "net_id", Value: primitive.M{"$in": netIDs}},
+	}
+	_, err := sa.db.users.DeleteMany(nil, filter, nil)
+	return err
+}
+
 // CreateNudgesConfig creates nudges config
 func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
 	storageConfig := configEntity{Name: "nudges", Config: nudgesConfig}

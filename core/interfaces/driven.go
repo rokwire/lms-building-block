@@ -36,6 +36,7 @@ type Storage interface {
 	FindUsers(netIDs []string) ([]model.ProviderUser, error)
 	FindUsersByCanvasUserID(canvasUserIds []int) ([]model.ProviderUser, error)
 	SaveUser(providerUser model.ProviderUser) error
+	DeleteUsersByNetIDs(log *logs.Log, netIDs []string) error
 
 	CreateNudgesConfig(nudgesConfig model.NudgesConfig) error
 	FindNudgesConfig() (*model.NudgesConfig, error)
