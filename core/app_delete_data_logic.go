@@ -193,12 +193,15 @@ func (d deleteDataLogic) deleteAppOrgUsersData(appID string, orgID string, accou
 		return
 	}
 
-	//delete adapter_pr_users
-	err = d.storage.DeleteAdapterPrUsersByNetIDs(nil, appID, orgID, netIDs)
-	if err != nil {
-		d.logger.Errorf("error deleting adapter PR users by netIDs- %s", err)
-		return
-	}
+	/*
+	   //delete adapter_pr_users
+
+	   	err = d.storage.DeleteAdapterPrUsersByNetIDs(nil, appID, orgID, netIDs)
+	   	if err != nil {
+	   		d.logger.Errorf("error deleting adapter PR users by netIDs- %s", err)
+	   		return
+	   	}
+	*/
 }
 
 func (d deleteDataLogic) getAccountsIDs(memberships []model.DeletedMembership) []string {
