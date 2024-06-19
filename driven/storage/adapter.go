@@ -173,6 +173,15 @@ func (sa *Adapter) SaveUser(providerUser model.ProviderUser) error {
 	return nil
 }
 
+// DeleteUsersByNetIDs deletes users by netIDs
+func (sa *Adapter) DeleteUsersByNetIDs(log *logs.Log, netIDs []string) error {
+	filter := bson.D{
+		primitive.E{Key: "net_id", Value: primitive.M{"$in": netIDs}},
+	}
+	_, err := sa.db.users.DeleteMany(nil, filter, nil)
+	return err
+}
+
 // CreateNudgesConfig creates nudges config
 func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
 	storageConfig := configEntity{Name: "nudges", Config: nudgesConfig}
@@ -519,6 +528,65 @@ func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, e
 // Creates a new Adapter with provided context
 func (sa *Adapter) withContext(context mongo.SessionContext) *Adapter {
 	return &Adapter{db: sa.db, context: context}
+}
+
+// DeleteNudgesBlocksByAccountsIDs deletes specific items from nudges blocks based on accountsIDs
+func (sa *Adapter) DeleteNudgesBlocksByAccountsIDs(log *logs.Logger, accountsIDs []string) error {
+	filter := bson.D{
+		primitive.E{Key: "items.user_id", Value: primitive.M{"$in": accountsIDs}},
+	}
+	update := bson.M{
+		"$pull": bson.M{
+			"items": bson.M{
+				"user_id": bson.M{"$in": accountsIDs},
+			},
+		},
+	}
+
+	_, err := sa.db.nudgesBlocks.UpdateMany(nil, filter, update, nil)
+	return err
+}
+
+// DeleteSentNudgesByAccountsIDs deletes sent nudges by accountsIDs
+func (sa *Adapter) DeleteSentNudgesByAccountsIDs(log *logs.Logger, accountsIDs []string) error {
+	filter := bson.D{
+		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+	}
+	_, err := sa.db.sentNudges.DeleteMany(nil, filter, nil)
+	return err
+}
+
+// DeleteUserContentsByAccountsIDs deletes an user contents by accountsIDs
+func (sa *Adapter) DeleteUserContentsByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error {
+	filter := bson.D{
+		{Key: "app_id", Value: appID},
+		{Key: "org_id", Value: orgID},
+		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+	}
+	_, err := sa.db.userContents.DeleteMany(nil, filter, nil)
+	return err
+}
+
+// DeleteUserCoursesByAccountsIDs deletes an user courses by accountsIDs
+func (sa *Adapter) DeleteUserCoursesByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error {
+	filter := bson.D{
+		{Key: "app_id", Value: appID},
+		{Key: "org_id", Value: orgID},
+		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+	}
+	_, err := sa.db.userCourses.DeleteMany(nil, filter, nil)
+	return err
+}
+
+// DeleteUserUnitsByAccountsIDs deletes an user units by accountsIDs
+func (sa *Adapter) DeleteUserUnitsByAccountsIDs(log *logs.Log, appID string, orgID string, accountsIDs []string) error {
+	filter := bson.D{
+		{Key: "app_id", Value: appID},
+		{Key: "org_id", Value: orgID},
+		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+	}
+	_, err := sa.db.userUnits.DeleteMany(nil, filter, nil)
+	return err
 }
 
 // NewStorageAdapter creates a new storage adapter instance

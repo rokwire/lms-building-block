@@ -20,16 +20,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"lms/core/model"
 	"log"
 	"net/http"
 	"strings"
 
 	"github.com/rokwire/core-auth-library-go/v3/authservice"
+	"github.com/rokwire/logging-library-go/logs"
 )
 
 // Adapter implements the Core interface
 type Adapter struct {
+	logger                logs.Logger
 	coreURL               string
 	serviceAccountManager *authservice.ServiceAccountManager
 
@@ -180,6 +183,52 @@ func (a *Adapter) makeRequest(method string, url string, body io.Reader) ([]byte
 		return nil, fmt.Errorf("gateway adapter: unable to parse json: %s", err)
 	}
 	return data, nil
+}
+
+// LoadDeletedMemberships loads deleted memberships
+func (a *Adapter) LoadDeletedMemberships() ([]model.DeletedUserData, error) {
+
+	if a.serviceAccountManager == nil {
+		log.Println("LoadDeletedMemberships: service account manager is nil")
+		return nil, errors.New("service account manager is nil")
+	}
+
+	url := fmt.Sprintf("%s/bbs/deleted-memberships?service_id=%s", a.coreURL, a.serviceAccountManager.AuthService.ServiceID)
+
+	// Create a new HTTP request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		a.logger.Errorf("delete membership: error creating request - %s", err)
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := a.serviceAccountManager.MakeRequest(req, "all", "all")
+	if err != nil {
+		log.Printf("LoadDeletedMemberships: error sending request - %s", err)
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		log.Printf("LoadDeletedMemberships: error with response code - %d", resp.StatusCode)
+		return nil, fmt.Errorf("LoadDeletedMemberships: error with response code != 200")
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("LoadDeletedMemberships: unable to read json: %s", err)
+		return nil, fmt.Errorf("LoadDeletedMemberships: unable to parse json: %s", err)
+	}
+
+	var deletedMemberships []model.DeletedUserData
+	err = json.Unmarshal(data, &deletedMemberships)
+	if err != nil {
+		log.Printf("LoadDeletedMemberships: unable to parse json: %s", err)
+		return nil, fmt.Errorf("LoadDeletedMemberships: unable to parse json: %s", err)
+	}
+
+	return deletedMemberships, nil
 }
 
 // NewCoreAdapter creates a new adapter for Core API
