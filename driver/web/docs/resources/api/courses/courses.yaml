@@ -23,7 +23,6 @@ get:
       explode: false
       schema:
         type: integer
-        format: int32
   responses:
     200:
       description: Successful operation
