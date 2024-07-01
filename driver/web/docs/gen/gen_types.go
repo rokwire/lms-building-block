@@ -419,6 +419,9 @@ type GetAdminUnitsParams struct {
 type GetApiCoursesParams struct {
 	// CourseType course type
 	CourseType *string `form:"course_type,omitempty" json:"course_type,omitempty"`
+
+	// Limit maximum number of results to return
+	Limit *int32 `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetApiCoursesIdAssignmentGroupsParams defines parameters for GetApiCoursesIdAssignmentGroups.

@@ -57,6 +57,15 @@ paths:
           explode: false
           schema:
             type: string
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: integer
+            format: int32
       responses:
         '200':
           description: Successful operation
