@@ -35,13 +35,13 @@ type clientImpl struct {
 	app *Application
 }
 
-func (s *clientImpl) GetCourses(claims *tokenauth.Claims, courseType *string) ([]model.ProviderCourse, error) {
+func (s *clientImpl) GetCourses(claims *tokenauth.Claims, courseType *string, limit *int) ([]model.ProviderCourse, error) {
 	providerUserID := s.getProviderUserID(claims)
 	if len(providerUserID) == 0 {
 		return nil, errors.ErrorData(logutils.StatusMissing, "net_id", nil)
 	}
 
-	courses, err := s.app.provider.GetCourses(providerUserID)
+	courses, err := s.app.provider.GetCourses(providerUserID, limit)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionGet, "course", nil, err)
 	}
