@@ -7,3 +7,5 @@ properties:
     type: string
   access_restricted_by_date:
     type: boolean
+  created_at:
+    type: string

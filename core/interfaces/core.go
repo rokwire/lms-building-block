@@ -18,7 +18,7 @@ type Default interface {
 type Client interface {
 	// model.ProviderCourse
 
-	GetCourses(claims *tokenauth.Claims, courseType *string) ([]model.ProviderCourse, error)
+	GetCourses(claims *tokenauth.Claims, courseType *string, limit *int) ([]model.ProviderCourse, error)
 	GetCourse(claims *tokenauth.Claims, id string) (*model.ProviderCourse, error)
 
 	// model.AssignmentGroup

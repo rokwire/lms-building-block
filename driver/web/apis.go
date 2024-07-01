@@ -30,7 +30,12 @@ func (a APIsHandler) clientGetCourses(claims *tokenauth.Claims, params map[strin
 		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("course_type"), err)
 	}
 
-	return a.app.Client.GetCourses(claims, courseType)
+	limit, err := utils.GetValue[*int](params, "limit", false)
+	if err != nil {
+		return nil, errors.WrapErrorAction(logutils.ActionGet, logutils.TypePathParam, logutils.StringArgs("limit"), err)
+	}
+
+	return a.app.Client.GetCourses(claims, courseType, limit)
 }
 
 func (a APIsHandler) clientGetCourse(claims *tokenauth.Claims, params map[string]interface{}) (*model.ProviderCourse, error) {
