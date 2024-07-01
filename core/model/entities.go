@@ -38,6 +38,7 @@ type ProviderCourse struct {
 	Name                   string `json:"name" bson:"name"`
 	AccessRestrictedByDate bool   `json:"access_restricted_by_date" bson:"access_restricted_by_date"`
 	AccountID              int    `json:"account_id" bson:"account_id"`
+	CreatedAt              string `json:"created_at" bson:"created_at"`
 }
 
 // Assignment entity
