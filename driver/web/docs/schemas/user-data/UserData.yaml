@@ -1,0 +1,26 @@
+type: object
+properties:
+  sent_nudges:
+    type: array
+    items:
+      $ref: "./SentNudgeResponse.yaml"
+  nudges_processes:
+    type: array
+    items:
+      $ref: "./NudgesProcessesResponse.yaml"   
+  nudges_blocks:
+    type: array
+    items:
+      $ref: "./NudgesBlocksResponse.yaml"  
+  user_contents:
+    type: array
+    items:
+      $ref: "./UserContentResponse.yaml"     
+  user_courses:
+    type: array
+    items:
+      $ref: "./UserCoursesResponse.yaml"   
+  user_units:
+    type: array
+    items:
+      $ref: "./UserUnitsResponse.yaml"              

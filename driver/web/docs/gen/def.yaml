@@ -2599,6 +2599,75 @@ components:
           type: object
         strings:
           type: object
+    NudgesBlocksResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+    NudgesProcessResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+    SentNudgeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+    UserContentResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+    UserCoursesResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+    UserUnitsResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+    UserData:
+      type: object
+      properties:
+        sent_nudges:
+          type: array
+          items:
+            $ref: '#/components/schemas/SentNudgeResponse'
+        nudges_processes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NudgesProcessResponse'
+        nudges_blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/NudgesBlocksResponse'
+        user_contents:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserContentResponse'
+        user_courses:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCoursesResponse'
+        user_units:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserUnitsResponse'
     _admin_req_create_nudge:
       required:
         - id

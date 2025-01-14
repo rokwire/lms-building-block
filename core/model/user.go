@@ -30,3 +30,49 @@ type DeletedMembership struct {
 	Context     *map[string]interface{} `json:"context,omitempty"`
 	ExternalIDs *map[string]string      `json:"external_ids"`
 }
+
+// // UserDataResponse represents a user data response
+type UserDataResponse struct {
+	SentNudgeResponse     []SentNudgeResponse       `json:"sent_nudges"`
+	NudgesProcessResponse []NudgesProcessesResponse `json:"nudges_processes"`
+	NudgesBlocksResponse  []NudgesBlocksResponse    `json:"nudges_blocks"`
+	UserContentResponse   []UserContentResponse     `json:"user_contents"`
+	UserCoursesResponse   []UserCoursesResponse     `json:"user_courses"`
+	UserUnitsResponse     []UserUnitsResponse       `json:"user_units"`
+}
+
+// SentNudgeResponse entity
+type SentNudgeResponse struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+// NudgesProcessesResponse entity
+type NudgesProcessesResponse struct {
+	ID     string `json:"id" bson:"_id"`
+	UserID string `json:"user_id"`
+}
+
+// NudgesBlocksResponse entity
+type NudgesBlocksResponse struct {
+	ID     string `json:"id" bson:"_id"`
+	UserID string `json:"user_id"`
+}
+
+// UserContentResponse entity
+type UserContentResponse struct {
+	ID     string `json:"id" bson:"_id"`
+	UserID string `json:"user_id"`
+}
+
+// UserCoursesResponse entity
+type UserCoursesResponse struct {
+	ID     string `json:"id" bson:"_id"`
+	UserID string `json:"user_id"`
+}
+
+// UserUnitsResponse entity
+type UserUnitsResponse struct {
+	ID     string `json:"id" bson:"_id"`
+	UserID string `json:"user_id"`
+}
