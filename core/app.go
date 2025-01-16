@@ -34,6 +34,7 @@ type Application struct {
 	provider        interfaces.Provider
 	groupsBB        interfaces.GroupsBB
 	notificationsBB interfaces.NotificationsBB
+	shared          appShared
 
 	storage      interfaces.Storage
 	cacheAdapter *cacheadapter.CacheAdapter
