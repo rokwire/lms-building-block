@@ -18,12 +18,14 @@ import (
 	"context"
 	"fmt"
 	"lms/core"
+
 	"log"
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
 
 	"github.com/rokwire/core-auth-library-go/v3/authservice"
+	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
 	"github.com/rokwire/logging-library-go/v2/errors"
 	"github.com/rokwire/logging-library-go/v2/logs"
 	"github.com/rokwire/logging-library-go/v2/logutils"
@@ -51,7 +53,8 @@ type Adapter struct {
 	serviceID     string
 	auth          *Auth
 
-	apisHandler APIsHandler
+	apisHandler       APIsHandler
+	clientAPIsHandler ClientAPIsHandler
 
 	paths map[string]*openapi3.PathItem
 
@@ -67,6 +70,9 @@ func (a *Adapter) Start() {
 	subrouter := router.PathPrefix("/" + a.serviceID).Subrouter()
 	subrouter.PathPrefix("/doc/ui").Handler(a.serveDocUI())
 	subrouter.HandleFunc("/doc", a.serveDoc)
+
+	clientRouter := router.PathPrefix("/api").Subrouter()
+	clientRouter.HandleFunc("/user-data", a.wrapFunc(a.clientAPIsHandler.getUserData, a.auth.client.User)).Methods("GET")
 
 	err := a.routeAPIs(router)
 	if err != nil {
@@ -145,6 +151,35 @@ func (a *Adapter) serveDocUI() http.Handler {
 // 	}
 // 	return requestValidationInput, nil
 // }
+
+type handlerFunc = func(*logs.Log, *http.Request, *tokenauth.Claims) logs.HTTPResponse
+
+func (a *Adapter) wrapFunc(handler handlerFunc, authorization tokenauth.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		logObj := a.logger.NewRequestLog(req)
+
+		logObj.RequestReceived()
+
+		var response logs.HTTPResponse
+		if authorization != nil {
+			responseStatus, claims, err := authorization.Check(req)
+			if err != nil {
+				logObj.SendHTTPResponse(w, logObj.HTTPResponseErrorAction(logutils.ActionValidate, logutils.TypeRequest, nil, err, responseStatus, true))
+				return
+			}
+
+			if claims != nil {
+				logObj.SetContext("account_id", claims.Subject)
+			}
+			response = handler(logObj, req, claims)
+		} else {
+			response = handler(logObj, req, nil)
+		}
+
+		logObj.SendHTTPResponse(w, response)
+		logObj.RequestComplete()
+	}
+}
 
 // NewWebAdapter creates new WebAdapter instance
 func NewWebAdapter(baseURL string, port string, serviceID string, app *core.Application, serviceRegManager *authservice.ServiceRegManager, logger *logs.Logger) Adapter {
