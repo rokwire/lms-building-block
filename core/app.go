@@ -35,7 +35,7 @@ type Application struct {
 	provider        interfaces.Provider
 	groupsBB        interfaces.GroupsBB
 	notificationsBB interfaces.NotificationsBB
-	shared          interfaces.Shared
+	Shared          interfaces.Shared
 
 	storage      interfaces.Storage
 	cacheAdapter *cacheadapter.CacheAdapter
@@ -106,6 +106,7 @@ func NewApplication(version string, build string, storage interfaces.Storage, pr
 	application.Client = &clientImpl{app: &application}
 	application.Admin = &adminImpl{app: &application}
 	application.Manual = &appManual{app: &application}
+	application.Shared = &appShared{app: &application}
 
 	return &application
 }

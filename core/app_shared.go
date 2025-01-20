@@ -35,3 +35,8 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 	fmt.Println(nudgesBlocks)
 	return nil, nil
 }
+
+// newAppShared creates new appShared
+func newAppShared(app *Application) appShared {
+	return appShared{app: app}
+}
