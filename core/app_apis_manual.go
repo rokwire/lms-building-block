@@ -26,5 +26,5 @@ type appManual struct {
 }
 
 func (s *clientImpl) GetUserData(claims *tokenauth.Claims) (*model.UserDataResponse, error) {
-	return s.app.shared.getUserData(claims)
+	return s.app.shared.GetUserData(*claims)
 }

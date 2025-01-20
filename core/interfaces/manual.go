@@ -28,5 +28,5 @@ type Manual interface {
 
 // Shared exposes shared APIs for other interface implementations
 type Shared interface {
-	getUserData(claims tokenauth.Claims) (*model.UserDataResponse, error)
+	GetUserData(claims tokenauth.Claims) (*model.UserDataResponse, error)
 }

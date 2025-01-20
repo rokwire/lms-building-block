@@ -30,11 +30,12 @@ type Application struct {
 	Default interfaces.Default
 	Client  interfaces.Client
 	Admin   interfaces.Admin
+	Manual  interfaces.Manual
 
 	provider        interfaces.Provider
 	groupsBB        interfaces.GroupsBB
 	notificationsBB interfaces.NotificationsBB
-	shared          appShared
+	shared          interfaces.Shared
 
 	storage      interfaces.Storage
 	cacheAdapter *cacheadapter.CacheAdapter

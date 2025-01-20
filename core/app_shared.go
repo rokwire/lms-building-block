@@ -15,6 +15,7 @@
 package core
 
 import (
+	"fmt"
 	"lms/core/model"
 
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
@@ -25,6 +26,12 @@ type appShared struct {
 	app *Application
 }
 
-func (s *appShared) getUserData(claims *tokenauth.Claims) (*model.UserDataResponse, error) {
+func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataResponse, error) {
+	nudgesBlocks, err := s.app.storage.LoadNudgesBlocksByUserID(claims.Subject)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(nudgesBlocks)
 	return nil, nil
 }

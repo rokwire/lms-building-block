@@ -64,6 +64,7 @@ type Storage interface {
 	InsertBlocks(blocks []model.Block) error
 	FindBlock(processID string, blockNumber int) (*model.Block, error)
 	DeleteNudgesBlocksByAccountsIDs(log *logs.Logger, accountsIDs []string) error
+	LoadNudgesBlocksByUserID(accountID string) ([]model.Block, error)
 
 	FindCustomCourses(appID string, orgID string, id []string, name []string, key []string, moduleKeys []string) ([]model.Course, error)
 	FindCustomCourse(appID string, orgID string, key string) (*model.Course, error)

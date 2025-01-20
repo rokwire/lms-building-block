@@ -14,11 +14,13 @@
 package web
 
 import (
+	"encoding/json"
 	"lms/core"
 	"net/http"
 
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
 	"github.com/rokwire/logging-library-go/v2/logs"
+	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 // ClientAPIsHandler handles the client rest APIs implementation
@@ -27,5 +29,15 @@ type ClientAPIsHandler struct {
 }
 
 func (h ClientAPIsHandler) getUserData(l *logs.Log, r *http.Request, claims *tokenauth.Claims) logs.HTTPResponse {
-	return l.HTTPResponseSuccess()
+	userData, err := h.app.Manual.GetUserData(*claims)
+	if err != nil {
+		return l.HTTPResponseErrorAction(logutils.ActionMarshal, logutils.TypeResponseBody, nil, err, http.StatusInternalServerError, false)
+
+	}
+	response, err := json.Marshal(userData)
+	if err != nil {
+		return l.HTTPResponseErrorAction(logutils.ActionMarshal, logutils.TypeResponseBody, nil, err, http.StatusInternalServerError, false)
+	}
+
+	return l.HTTPResponseSuccessJSON(response)
 }
