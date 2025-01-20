@@ -15,7 +15,6 @@
 package core
 
 import (
-	"fmt"
 	"lms/core/model"
 
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
@@ -31,9 +30,14 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 	if err != nil {
 		return nil, err
 	}
+	var nudgesBlocksResponse []model.NudgesBlocksResponse
+	for _, nb := range nudgesBlocks {
+		nbr := model.NudgesBlocksResponse{ID: nb.ProcessID, UserID: claims.Subject}
+		nudgesBlocksResponse = append(nudgesBlocksResponse, nbr)
+	}
 
-	fmt.Println(nudgesBlocks)
-	return nil, nil
+	userData := model.UserDataResponse{NudgesBlocksResponse: nudgesBlocksResponse}
+	return &userData, nil
 }
 
 // newAppShared creates new appShared

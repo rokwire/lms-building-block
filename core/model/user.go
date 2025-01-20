@@ -55,7 +55,7 @@ type NudgesProcessesResponse struct {
 
 // NudgesBlocksResponse entity
 type NudgesBlocksResponse struct {
-	ID     string `json:"id" bson:"_id"`
+	ID     string `json:"process_id"`
 	UserID string `json:"user_id"`
 }
 
