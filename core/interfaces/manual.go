@@ -23,7 +23,7 @@ import (
 // Manual exposes manually defined APIs to the driver adapters
 type Manual interface {
 	//Client
-	GetUserData(claims tokenauth.Claims) (*model.UserDataResponse, error)
+	GetUserData(claims *tokenauth.Claims) (*model.UserDataResponse, error)
 }
 
 // Shared exposes shared APIs for other interface implementations

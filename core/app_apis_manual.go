@@ -25,6 +25,6 @@ type appManual struct {
 	app *Application
 }
 
-func (s *clientImpl) GetUserData(claims *tokenauth.Claims) (*model.UserDataResponse, error) {
+func (s *appManual) GetUserData(claims *tokenauth.Claims) (*model.UserDataResponse, error) {
 	return s.app.shared.GetUserData(*claims)
 }

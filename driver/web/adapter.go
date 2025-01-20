@@ -23,7 +23,6 @@ import (
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
-
 	"github.com/rokwire/core-auth-library-go/v3/authservice"
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
 	"github.com/rokwire/logging-library-go/v2/errors"
@@ -54,7 +53,7 @@ type Adapter struct {
 	auth          *Auth
 
 	apisHandler       APIsHandler
-	clientAPIsHandler ClientAPIsHandler
+	manualAPIsHandler ManualAPIsHandler
 
 	paths map[string]*openapi3.PathItem
 
@@ -71,8 +70,8 @@ func (a *Adapter) Start() {
 	subrouter.PathPrefix("/doc/ui").Handler(a.serveDocUI())
 	subrouter.HandleFunc("/doc", a.serveDoc)
 
-	clientRouter := router.PathPrefix("/api").Subrouter()
-	clientRouter.HandleFunc("/user-data", a.wrapFunc(a.clientAPIsHandler.getUserData, a.auth.client.User)).Methods("GET")
+	mainRouter := subrouter.PathPrefix("/api").Subrouter()
+	mainRouter.HandleFunc("/user-data", a.wrapFunc(a.manualAPIsHandler.getUserData, a.auth.client.User)).Methods("GET")
 
 	err := a.routeAPIs(router)
 	if err != nil {
@@ -209,15 +208,18 @@ func NewWebAdapter(baseURL string, port string, serviceID string, app *core.Appl
 	}
 
 	apisHandler := NewAPIsHandler(app)
+	manualApisHandler := NewManualAPIsHandler(app)
 	return Adapter{
-		lmsServiceURL: baseURL,
-		port:          port,
-		serviceID:     serviceID,
-		auth:          auth,
-		paths:         paths,
-		apisHandler:   apisHandler,
-		logger:        logger,
+		lmsServiceURL:     baseURL,
+		port:              port,
+		serviceID:         serviceID,
+		auth:              auth,
+		paths:             paths,
+		apisHandler:       apisHandler,
+		manualAPIsHandler: manualApisHandler,
+		logger:            logger,
 	}
+
 }
 
 // AppListener implements core.ApplicationListener interface

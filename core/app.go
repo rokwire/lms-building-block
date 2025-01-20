@@ -105,6 +105,7 @@ func NewApplication(version string, build string, storage interfaces.Storage, pr
 	application.Default = &defaultImpl{app: &application}
 	application.Client = &clientImpl{app: &application}
 	application.Admin = &adminImpl{app: &application}
+	application.Manual = &appManual{app: &application}
 
 	return &application
 }

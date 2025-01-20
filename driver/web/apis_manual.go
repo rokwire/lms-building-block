@@ -23,13 +23,13 @@ import (
 	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
-// ClientAPIsHandler handles the client rest APIs implementation
-type ClientAPIsHandler struct {
+// ManualAPIsHandler handles the client rest APIs implementation
+type ManualAPIsHandler struct {
 	app *core.Application
 }
 
-func (h ClientAPIsHandler) getUserData(l *logs.Log, r *http.Request, claims *tokenauth.Claims) logs.HTTPResponse {
-	userData, err := h.app.Manual.GetUserData(*claims)
+func (h ManualAPIsHandler) getUserData(l *logs.Log, r *http.Request, claims *tokenauth.Claims) logs.HTTPResponse {
+	userData, err := h.app.Manual.GetUserData(claims)
 	if err != nil {
 		return l.HTTPResponseErrorAction(logutils.ActionMarshal, logutils.TypeResponseBody, nil, err, http.StatusInternalServerError, false)
 
@@ -40,4 +40,9 @@ func (h ClientAPIsHandler) getUserData(l *logs.Log, r *http.Request, claims *tok
 	}
 
 	return l.HTTPResponseSuccessJSON(response)
+}
+
+// NewManualAPIsHandler creates new client API handler instance
+func NewManualAPIsHandler(app *core.Application) ManualAPIsHandler {
+	return ManualAPIsHandler{app: app}
 }
