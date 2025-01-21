@@ -26,79 +26,137 @@ type appShared struct {
 }
 
 func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataResponse, error) {
-	nudgesBlocks, err := s.app.storage.LoadNudgesBlocksByUserID(claims.Subject)
-	if err != nil {
-		return nil, err
-	}
-	var nudgesBlocksResponse []model.NudgesBlocksResponse
-	var nudgesProcessResponse []model.NudgesProcessesResponse
-	var sendNudgesResponse []model.SentNudgeResponse
-	var userContentsResponse []model.UserContentResponse
-	var userCoursesResponse []model.UserCoursesResponse
-	var userUnitsResponse []model.UserUnitsResponse
-	var processIDs []string
-	for _, nb := range nudgesBlocks {
-		nbr := model.NudgesBlocksResponse{ID: nb.ProcessID, UserID: claims.Subject}
-		nudgesBlocksResponse = append(nudgesBlocksResponse, nbr)
-		processIDs = append(processIDs, nb.ProcessID)
-	}
+	var (
+		nudgesBlocksResponse  []model.NudgesBlocksResponse
+		nudgesProcessResponse []model.NudgesProcessesResponse
+		sendNudgesResponse    []model.SentNudgeResponse
+		userContentsResponse  []model.UserContentResponse
+		userCoursesResponse   []model.UserCoursesResponse
+		userUnitsResponse     []model.UserUnitsResponse
+		processIDs            []string
+	)
 
-	nudgesProcess, err := s.app.storage.FindNudgesProcesses(0, 0)
-	if err != nil {
-		return nil, err
-	}
+	errChan := make(chan error, 6) // To collect errors from goroutines
+	done := make(chan struct{})    // To signal completion of all goroutines
+	defer close(errChan)
 
-	for _, np := range nudgesProcess {
-		for _, n := range processIDs {
-			if np.ID == n {
-				npr := model.NudgesProcessesResponse{ID: np.ID, UserID: claims.Subject, Status: np.Status}
-				nudgesProcessResponse = append(nudgesProcessResponse, npr)
+	// Load Nudges Blocks
+	go func() {
+		defer func() { done <- struct{}{} }()
+		nudgesBlocks, err := s.app.storage.LoadNudgesBlocksByUserID(claims.Subject)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		for _, nb := range nudgesBlocks {
+			nbr := model.NudgesBlocksResponse{ID: nb.ProcessID, UserID: claims.Subject}
+			nudgesBlocksResponse = append(nudgesBlocksResponse, nbr)
+			processIDs = append(processIDs, nb.ProcessID)
+		}
+	}()
+
+	// Load Nudges Process
+	go func() {
+		defer func() { done <- struct{}{} }()
+		nudgesProcess, err := s.app.storage.FindNudgesProcesses(0, 0)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		for _, np := range nudgesProcess {
+			for _, n := range processIDs {
+				if np.ID == n {
+					npr := model.NudgesProcessesResponse{ID: np.ID, UserID: claims.Subject, Status: np.Status}
+					nudgesProcessResponse = append(nudgesProcessResponse, npr)
+				}
 			}
 		}
+	}()
+
+	// Load Sent Nudges
+	go func() {
+		defer func() { done <- struct{}{} }()
+		sendNudges, err := s.app.storage.FindSendNudgesByUserID(claims.Subject)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		for _, sn := range sendNudges {
+			snr := model.SentNudgeResponse{UserID: claims.Subject, ID: sn.ID, NudgeID: sn.NudgeID}
+			sendNudgesResponse = append(sendNudgesResponse, snr)
+		}
+	}()
+
+	// Load User Contents
+	go func() {
+		defer func() { done <- struct{}{} }()
+		userContents, err := s.app.storage.FindUserContents(nil, claims.AppID, claims.OrgID, claims.Subject)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		for _, uc := range userContents {
+			ucr := model.UserContentResponse{ID: uc.ID, UserID: uc.UserID}
+			userContentsResponse = append(userContentsResponse, ucr)
+		}
+	}()
+
+	// Load User Courses
+	go func() {
+		defer func() { done <- struct{}{} }()
+		userCourses, err := s.app.storage.FindUserCourses(nil, claims.AppID, claims.OrgID, nil, nil, &claims.Subject, nil, nil)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		for _, ucours := range userCourses {
+			ucoursR := model.UserCoursesResponse{ID: ucours.ID, UserID: ucours.UserID}
+			userCoursesResponse = append(userCoursesResponse, ucoursR)
+		}
+	}()
+
+	// Load User Units
+	go func() {
+		defer func() { done <- struct{}{} }()
+		userUnits, err := s.app.storage.FindUserUnitsByUserID(claims.Subject)
+		if err != nil {
+			errChan <- err
+			return
+		}
+
+		for _, uu := range userUnits {
+			uur := model.UserUnitsResponse{ID: uu.ID, UserID: uu.UserID}
+			userUnitsResponse = append(userUnitsResponse, uur)
+		}
+	}()
+
+	// Wait for all goroutines to complete
+	for i := 0; i < 6; i++ {
+		<-done
 	}
 
-	sendNudges, err := s.app.storage.FindSendNudgesByUserID(claims.Subject)
-	if err != nil {
+	// Check if there are any errors
+	select {
+	case err := <-errChan:
 		return nil, err
+	default:
 	}
 
-	for _, sn := range sendNudges {
-		snr := model.SentNudgeResponse{UserID: claims.Subject, ID: sn.ID, NudgeID: sn.NudgeID}
-		sendNudgesResponse = append(sendNudgesResponse, snr)
+	// Combine all data into the response
+	userData := model.UserDataResponse{
+		NudgesBlocksResponse:  nudgesBlocksResponse,
+		NudgesProcessResponse: nudgesProcessResponse,
+		SentNudgeResponse:     sendNudgesResponse,
+		UserContentResponse:   userContentsResponse,
+		UserCoursesResponse:   userCoursesResponse,
+		UserUnitsResponse:     userUnitsResponse,
 	}
 
-	userContents, err := s.app.storage.FindUserContents(nil, claims.AppID, claims.OrgID, claims.Subject)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, uc := range userContents {
-		ucr := model.UserContentResponse{ID: uc.ID, UserID: uc.UserID}
-		userContentsResponse = append(userContentsResponse, ucr)
-	}
-
-	userCourses, err := s.app.storage.FindUserCourses(nil, claims.AppID, claims.OrgID, nil, nil, &claims.Subject, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, ucours := range userCourses {
-		ucoursR := model.UserCoursesResponse{ID: ucours.ID, UserID: ucours.UserID}
-		userCoursesResponse = append(userCoursesResponse, ucoursR)
-	}
-
-	userUnits, err := s.app.storage.FindUserUnitsByUserID(claims.Subject)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, uu := range userUnits {
-		uur := model.UserUnitsResponse{ID: uu.ID, UserID: uu.UserID}
-		userUnitsResponse = append(userUnitsResponse, uur)
-	}
-
-	userData := model.UserDataResponse{NudgesBlocksResponse: nudgesBlocksResponse, NudgesProcessResponse: nudgesProcessResponse,
-		SentNudgeResponse: sendNudgesResponse, UserContentResponse: userContentsResponse, UserCoursesResponse: userCoursesResponse, UserUnitsResponse: userUnitsResponse}
 	return &userData, nil
 }
 
