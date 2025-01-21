@@ -31,7 +31,7 @@ type DeletedMembership struct {
 	ExternalIDs *map[string]string      `json:"external_ids"`
 }
 
-// // UserDataResponse represents a user data response
+// UserDataResponse represents a user data response
 type UserDataResponse struct {
 	SentNudgeResponse     []SentNudgeResponse       `json:"sent_nudges"`
 	NudgesProcessResponse []NudgesProcessesResponse `json:"nudges_processes"`
