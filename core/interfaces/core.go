@@ -121,4 +121,3 @@ type Admin interface {
 	UpdateCustomCourseConfig(claims *tokenauth.Claims, key string, item model.CourseConfig) (*model.CourseConfig, error)
 	DeleteCustomCourseConfig(claims *tokenauth.Claims, key string) error
 }
-
