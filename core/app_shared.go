@@ -31,12 +31,40 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 		return nil, err
 	}
 	var nudgesBlocksResponse []model.NudgesBlocksResponse
+	var nudgesProcessResponse []model.NudgesProcessesResponse
+	var sendNudgesResponse []model.SentNudgeResponse
+	var processIDs []string
 	for _, nb := range nudgesBlocks {
 		nbr := model.NudgesBlocksResponse{ID: nb.ProcessID, UserID: claims.Subject}
 		nudgesBlocksResponse = append(nudgesBlocksResponse, nbr)
+		processIDs = append(processIDs, nb.ProcessID)
 	}
 
-	userData := model.UserDataResponse{NudgesBlocksResponse: nudgesBlocksResponse}
+	nudgesProcess, err := s.app.storage.FindNudgesProcesses(0, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, np := range nudgesProcess {
+		for _, n := range processIDs {
+			if np.ID == n {
+				npr := model.NudgesProcessesResponse{ID: np.ID, UserID: claims.Subject, Status: np.Status}
+				nudgesProcessResponse = append(nudgesProcessResponse, npr)
+			}
+		}
+	}
+
+	sendNudges, err := s.app.storage.FindSendNudgesByUserID(claims.Subject)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sn := range sendNudges {
+		snr := model.SentNudgeResponse{UserID: claims.Subject, ID: sn.ID, NudgeID: sn.NudgeID}
+		sendNudgesResponse = append(sendNudgesResponse, snr)
+	}
+
+	userData := model.UserDataResponse{NudgesBlocksResponse: nudgesBlocksResponse, NudgesProcessResponse: nudgesProcessResponse, SentNudgeResponse: sendNudgesResponse}
 	return &userData, nil
 }
 

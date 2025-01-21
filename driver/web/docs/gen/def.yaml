@@ -2635,12 +2635,16 @@ components:
           type: integer
         user_id:
           type: string
+        status:
+          type: string
     SentNudgeResponse:
       type: object
       properties:
         id:
           type: integer
         user_id:
+          type: string
+        nudge_id:
           type: string
     UserContentResponse:
       type: object

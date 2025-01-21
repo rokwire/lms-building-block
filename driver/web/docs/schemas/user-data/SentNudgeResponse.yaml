@@ -4,3 +4,5 @@ properties:
     type: integer
   user_id:
     type: string
+  nudge_id:
+    type: string  

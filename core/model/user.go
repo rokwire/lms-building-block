@@ -43,14 +43,16 @@ type UserDataResponse struct {
 
 // SentNudgeResponse entity
 type SentNudgeResponse struct {
-	ID     string `json:"id"`
-	UserID string `json:"user_id"`
+	ID      string `json:"id"`
+	UserID  string `json:"user_id"`
+	NudgeID string `json:"nudge_id"`
 }
 
 // NudgesProcessesResponse entity
 type NudgesProcessesResponse struct {
-	ID     string `json:"id" bson:"_id"`
+	ID     string `json:"id"`
 	UserID string `json:"user_id"`
+	Status string `json:"status"`
 }
 
 // NudgesBlocksResponse entity
