@@ -33,6 +33,7 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 	var nudgesBlocksResponse []model.NudgesBlocksResponse
 	var nudgesProcessResponse []model.NudgesProcessesResponse
 	var sendNudgesResponse []model.SentNudgeResponse
+	var userContentsResponse []model.UserContentResponse
 	var processIDs []string
 	for _, nb := range nudgesBlocks {
 		nbr := model.NudgesBlocksResponse{ID: nb.ProcessID, UserID: claims.Subject}
@@ -64,7 +65,18 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 		sendNudgesResponse = append(sendNudgesResponse, snr)
 	}
 
-	userData := model.UserDataResponse{NudgesBlocksResponse: nudgesBlocksResponse, NudgesProcessResponse: nudgesProcessResponse, SentNudgeResponse: sendNudgesResponse}
+	userContents, err := s.app.storage.FindUserContents(nil, claims.AppID, claims.OrgID, claims.Subject)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, uc := range userContents {
+		ucr := model.UserContentResponse{ID: uc.ID, UserID: uc.UserID}
+		userContentsResponse = append(userContentsResponse, ucr)
+	}
+
+	userData := model.UserDataResponse{NudgesBlocksResponse: nudgesBlocksResponse, NudgesProcessResponse: nudgesProcessResponse,
+		SentNudgeResponse: sendNudgesResponse, UserContentResponse: userContentsResponse}
 	return &userData, nil
 }
 
