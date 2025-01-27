@@ -16,8 +16,11 @@ package core
 
 import (
 	"lms/core/model"
+	"sync"
 
 	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
+	"github.com/rokwire/logging-library-go/v2/errors"
+	"github.com/rokwire/logging-library-go/v2/logutils"
 )
 
 // appShared contains shared implementations
@@ -26,7 +29,134 @@ type appShared struct {
 }
 
 func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataResponse, error) {
-	return nil, nil
+	providerUserID := s.getProviderUserID(claims)
+	if len(providerUserID) == 0 {
+		return nil, errors.ErrorData(logutils.StatusMissing, "net_id", nil)
+	}
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex // For protecting shared resources
+	var errList error
+
+	var providerCourses []model.ProviderCourse
+	var user []model.ProviderUser
+	var assignments []model.Assignment
+	var courses []model.UserCourse
+	var units []model.UserUnit
+	var contents []model.UserContent
+
+	wg.Add(5) // Number of asynchronous operations
+
+	// Fetch provider courses
+	go func() {
+		defer wg.Done()
+		courses, err := s.app.provider.GetCourses(providerUserID, nil)
+		mu.Lock()
+		defer mu.Unlock()
+		if err != nil {
+			errList = errors.WrapErrorAction(logutils.ActionGet, "provider course", nil, err)
+		} else {
+			providerCourses = courses
+		}
+	}()
+
+	// Fetch users
+	go func() {
+		defer wg.Done()
+		if providerCourses != nil {
+			var ids []int
+			for _, c := range providerCourses {
+				ids = append(ids, c.AccountID)
+			}
+			users, err := s.app.provider.FindUsersByCanvasUserID(ids)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				errList = errors.WrapErrorAction(logutils.ActionGet, "user", nil, err)
+			} else {
+				user = users
+			}
+		}
+	}()
+
+	// Fetch completed assignments
+	go func() {
+		defer wg.Done()
+		assignments, err := s.app.provider.GetCompletedAssignments(providerUserID)
+		mu.Lock()
+		defer mu.Unlock()
+		if err != nil {
+			errList = errors.WrapErrorAction(logutils.ActionGet, "assignments", nil, err)
+		} else {
+			assignments = assignments
+		}
+	}()
+
+	// Fetch user courses
+	go func() {
+		defer wg.Done()
+		courses, err := s.app.storage.FindUserCourses(nil, claims.AppID, claims.OrgID, nil, nil, &claims.Subject, nil, nil)
+		mu.Lock()
+		defer mu.Unlock()
+		if err != nil {
+			errList = errors.WrapErrorAction(logutils.ActionGet, "courses", nil, err)
+		} else {
+			courses = courses
+		}
+	}()
+
+	// Fetch user units
+	go func() {
+		defer wg.Done()
+		units, err := s.app.storage.FindUserUnitsByUserID(claims.Subject)
+		mu.Lock()
+		defer mu.Unlock()
+		if err != nil {
+			errList = errors.WrapErrorAction(logutils.ActionGet, "user units", nil, err)
+		} else {
+			units = units
+		}
+	}()
+
+	// Fetch user contents
+	go func() {
+		defer wg.Done()
+		contents, err := s.app.storage.FindUserContents(nil, claims.AppID, claims.OrgID, claims.Subject)
+		mu.Lock()
+		defer mu.Unlock()
+		if err != nil {
+			errList = errors.WrapErrorAction(logutils.ActionGet, "user contents", nil, err)
+		} else {
+			contents = contents
+		}
+	}()
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+
+	// Check if there were any errors
+	if errList != nil {
+		return nil, errList
+	}
+
+	// Construct the user data response
+	userData := model.UserDataResponse{
+		ProviderCourses:    providerCourses,
+		ProviderAccount:    &user[0],
+		ProviderAssignment: assignments,
+		Courses:            courses,
+		Units:              units,
+		Content:            contents,
+	}
+
+	return &userData, nil
+}
+
+func (s *appShared) getProviderUserID(claims *tokenauth.Claims) string {
+	if claims == nil {
+		return ""
+	}
+	return claims.ExternalIDs["net_id"]
 }
 
 // newAppShared creates new appShared
