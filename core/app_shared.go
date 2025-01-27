@@ -50,13 +50,13 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 	// Fetch provider courses
 	go func() {
 		defer wg.Done()
-		courses, err := s.app.provider.GetCourses(providerUserID, nil)
+		c, err := s.app.provider.GetCourses(providerUserID, nil)
 		mu.Lock()
 		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "provider course", nil, err)
 		} else {
-			providerCourses = courses
+			providerCourses = c
 		}
 	}()
 
@@ -68,13 +68,13 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 			for _, c := range providerCourses {
 				ids = append(ids, c.AccountID)
 			}
-			users, err := s.app.provider.FindUsersByCanvasUserID(ids)
+			u, err := s.app.provider.FindUsersByCanvasUserID(ids)
 			mu.Lock()
 			defer mu.Unlock()
 			if err != nil {
 				errList = errors.WrapErrorAction(logutils.ActionGet, "user", nil, err)
 			} else {
-				user = users
+				user = u
 			}
 		}
 	}()
@@ -82,52 +82,52 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 	// Fetch completed assignments
 	go func() {
 		defer wg.Done()
-		assignments, err := s.app.provider.GetCompletedAssignments(providerUserID)
+		a, err := s.app.provider.GetCompletedAssignments(providerUserID)
 		mu.Lock()
 		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "assignments", nil, err)
 		} else {
-			assignments = assignments
+			assignments = a
 		}
 	}()
 
 	// Fetch user courses
 	go func() {
 		defer wg.Done()
-		courses, err := s.app.storage.FindUserCourses(nil, claims.AppID, claims.OrgID, nil, nil, &claims.Subject, nil, nil)
+		c, err := s.app.storage.FindUserCourses(nil, claims.AppID, claims.OrgID, nil, nil, &claims.Subject, nil, nil)
 		mu.Lock()
 		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "courses", nil, err)
 		} else {
-			courses = courses
+			courses = c
 		}
 	}()
 
 	// Fetch user units
 	go func() {
 		defer wg.Done()
-		units, err := s.app.storage.FindUserUnitsByUserID(claims.Subject)
+		u, err := s.app.storage.FindUserUnitsByUserID(claims.Subject)
 		mu.Lock()
 		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "user units", nil, err)
 		} else {
-			units = units
+			units = u
 		}
 	}()
 
 	// Fetch user contents
 	go func() {
 		defer wg.Done()
-		contents, err := s.app.storage.FindUserContents(nil, claims.AppID, claims.OrgID, claims.Subject)
+		co, err := s.app.storage.FindUserContents(nil, claims.AppID, claims.OrgID, claims.Subject)
 		mu.Lock()
 		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "user contents", nil, err)
 		} else {
-			contents = contents
+			contents = co
 		}
 	}()
 
