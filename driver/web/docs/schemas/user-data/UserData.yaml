@@ -1,26 +1,17 @@
 type: object
 properties:
-  sent_nudges:
+  my_provider_courses:
     type: array
-    items:
-      $ref: "./SentNudgeResponse.yaml"
-  nudges_processes:
+    $ref: "../../schemas/provider/Course.yaml"   
+  my_provider_assigments:
     type: array
-    items:
-      $ref: "./NudgesProcessesResponse.yaml"   
-  nudges_blocks:
-    type: array
-    items:
-      $ref: "./NudgesBlocksResponse.yaml"  
-  user_contents:
-    type: array
-    items:
-      $ref: "./UserContentResponse.yaml"     
-  user_courses:
-    type: array
-    items:
-      $ref: "./UserCoursesResponse.yaml"   
-  user_units:
-    type: array
-    items:
-      $ref: "./UserUnitsResponse.yaml"              
+    $ref: "../../schemas/provider/Assignment.yaml"  
+  provider_account:
+    $ref: "../../schemas/provider/User.yaml"   
+  my_courses:
+    $ref: "../../schemas/custom/Course.yaml"  
+  my_unit:
+    $ref: "../../schemas/custom/Unit.yaml"  
+  my_content:
+    $ref: "../../schemas/custom/Content.yaml"           
+

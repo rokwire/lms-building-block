@@ -57,18 +57,6 @@ Styles:
   $ref: "./custom/Styles.yaml"
 
 # user data  
-NudgesBlocksResponse:
-  $ref: "./user-data/NudgesBlocksResponse.yaml"
-NudgesProcessResponse:
-  $ref: "./user-data/NudgesProcessesResponse.yaml"  
-SentNudgeResponse:
-  $ref: "./user-data/SentNudgeResponse.yaml"  
-UserContentResponse:
-  $ref: "./user-data/UserContentResponse.yaml"   
-UserCoursesResponse:
-  $ref: "./user-data/UserCoursesResponse.yaml" 
-UserUnitsResponse:
-  $ref: "./user-data/UserUnitsResponse.yaml"  
 UserData:
   $ref: "./user-data/UserData.yaml"       
 

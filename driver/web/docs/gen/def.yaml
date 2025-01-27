@@ -2621,79 +2621,23 @@ components:
           type: object
         strings:
           type: object
-    NudgesBlocksResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        user_id:
-          type: string
-    NudgesProcessResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        user_id:
-          type: string
-        status:
-          type: string
-    SentNudgeResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        user_id:
-          type: string
-        nudge_id:
-          type: string
-    UserContentResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        user_id:
-          type: string
-    UserCoursesResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        user_id:
-          type: string
-    UserUnitsResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        user_id:
-          type: string
     UserData:
       type: object
       properties:
-        sent_nudges:
+        my_provider_courses:
           type: array
-          items:
-            $ref: '#/components/schemas/SentNudgeResponse'
-        nudges_processes:
+          $ref: '#/components/schemas/ProviderCourse'
+        my_provider_assigments:
           type: array
-          items:
-            $ref: '#/components/schemas/NudgesProcessResponse'
-        nudges_blocks:
-          type: array
-          items:
-            $ref: '#/components/schemas/NudgesBlocksResponse'
-        user_contents:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserContentResponse'
-        user_courses:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserCoursesResponse'
-        user_units:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserUnitsResponse'
+          $ref: '#/components/schemas/Assignment'
+        provider_account:
+          $ref: '#/components/schemas/User'
+        my_courses:
+          $ref: '#/components/schemas/Course'
+        my_unit:
+          $ref: '#/components/schemas/Unit'
+        my_content:
+          $ref: '#/components/schemas/Content'
     _admin_req_create_nudge:
       required:
         - id
