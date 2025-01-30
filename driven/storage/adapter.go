@@ -251,20 +251,6 @@ func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 	return result, nil
 }
 
-// LoadNudgesBlocksByUserID loads nudges blocks by accountID
-func (sa *Adapter) LoadNudgesBlocksByUserID(accountID string) ([]model.Block, error) {
-	filter := bson.D{primitive.E{Key: "items.user_id", Value: accountID}}
-	var result []model.Block
-	err := sa.db.nudgesBlocks.Find(sa.context, filter, &result, nil)
-	if err != nil {
-		return nil, errors.WrapErrorAction(logutils.ActionFind, "nudges_blocks", nil, err)
-	}
-	if len(result) == 0 {
-		return make([]model.Block, 0), nil
-	}
-	return result, nil
-}
-
 // FindSendNudgesByUserID finds send nudges by accountID
 func (sa *Adapter) FindSendNudgesByUserID(accountID string) ([]model.SentNudge, error) {
 	filter := bson.D{primitive.E{Key: "user_id", Value: accountID}}

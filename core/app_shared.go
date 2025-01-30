@@ -35,11 +35,11 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 	}
 
 	var wg sync.WaitGroup
-	var mu sync.Mutex // For protecting shared resources
+	var mu sync.Mutex
 	var errList error
 
 	var providerCourses []model.ProviderCourse
-	var user []model.ProviderUser
+	var user *model.User
 	var assignments []model.Assignment
 	var courses []model.UserCourse
 	var units []model.UserUnit
@@ -47,91 +47,78 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 
 	wg.Add(5) // Number of asynchronous operations
 
-	// Fetch provider courses
+	// Fetch provider courses asynchronously
 	go func() {
 		defer wg.Done()
 		c, err := s.app.provider.GetCourses(providerUserID, nil)
 		mu.Lock()
-		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "provider course", nil, err)
 		} else {
 			providerCourses = c
 		}
+		mu.Unlock()
 	}()
 
-	// Fetch users
-	go func() {
-		defer wg.Done()
-		if providerCourses != nil {
-			var ids []int
-			for _, c := range providerCourses {
-				ids = append(ids, c.AccountID)
-			}
-			u, err := s.app.provider.FindUsersByCanvasUserID(ids)
-			mu.Lock()
-			defer mu.Unlock()
-			if err != nil {
-				errList = errors.WrapErrorAction(logutils.ActionGet, "user", nil, err)
-			} else {
-				user = u
-			}
-		}
-	}()
-
-	// Fetch completed assignments
+	// Fetch completed assignments asynchronously
 	go func() {
 		defer wg.Done()
 		a, err := s.app.provider.GetCompletedAssignments(providerUserID)
 		mu.Lock()
-		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "assignments", nil, err)
 		} else {
 			assignments = a
 		}
+		mu.Unlock()
 	}()
 
-	// Fetch user courses
+	// Fetch user courses asynchronously
 	go func() {
 		defer wg.Done()
 		c, err := s.app.storage.FindUserCourses(nil, claims.AppID, claims.OrgID, nil, nil, &claims.Subject, nil, nil)
 		mu.Lock()
-		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "courses", nil, err)
 		} else {
 			courses = c
 		}
+		mu.Unlock()
 	}()
 
-	// Fetch user units
+	// Fetch user units asynchronously
 	go func() {
 		defer wg.Done()
 		u, err := s.app.storage.FindUserUnitsByUserID(claims.Subject)
 		mu.Lock()
-		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "user units", nil, err)
 		} else {
 			units = u
 		}
+		mu.Unlock()
 	}()
 
-	// Fetch user contents
+	// Fetch user contents asynchronously
 	go func() {
 		defer wg.Done()
 		co, err := s.app.storage.FindUserContents(nil, claims.AppID, claims.OrgID, claims.Subject)
 		mu.Lock()
-		defer mu.Unlock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "user contents", nil, err)
 		} else {
 			contents = co
 		}
+		mu.Unlock()
 	}()
 
-	// Wait for all goroutines to finish
+	// Fetch current user synchronously as it's required before async operations
+	user, err := s.app.provider.GetCurrentUser(providerUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for all async operations to complete
 	wg.Wait()
 
 	// Check if there were any errors
@@ -142,7 +129,7 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 	// Construct the user data response
 	userData := model.UserDataResponse{
 		ProviderCourses:    providerCourses,
-		ProviderAccount:    &user[0],
+		ProviderAccount:    user,
 		ProviderAssignment: assignments,
 		Courses:            courses,
 		Units:              units,
