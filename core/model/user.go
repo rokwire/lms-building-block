@@ -30,3 +30,13 @@ type DeletedMembership struct {
 	Context     *map[string]interface{} `json:"context,omitempty"`
 	ExternalIDs *map[string]string      `json:"external_ids"`
 }
+
+// UserDataResponse represents a user data response
+type UserDataResponse struct {
+	ProviderCourses    []ProviderCourse `json:"my_provider_courses"`
+	ProviderAssignment []Assignment     `json:"my_provider_assignments"`
+	ProviderAccount    *User            `json:"provider_account"`
+	Courses            []UserCourse     `json:"my_courses"`
+	Units              []UserUnit       `json:"my_unit"`
+	Content            []UserContent    `json:"my_contents"`
+}

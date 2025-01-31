@@ -30,10 +30,12 @@ type Application struct {
 	Default interfaces.Default
 	Client  interfaces.Client
 	Admin   interfaces.Admin
+	Manual  interfaces.Manual
 
 	provider        interfaces.Provider
 	groupsBB        interfaces.GroupsBB
 	notificationsBB interfaces.NotificationsBB
+	Shared          interfaces.Shared
 
 	storage      interfaces.Storage
 	cacheAdapter *cacheadapter.CacheAdapter
@@ -103,6 +105,8 @@ func NewApplication(version string, build string, storage interfaces.Storage, pr
 	application.Default = &defaultImpl{app: &application}
 	application.Client = &clientImpl{app: &application}
 	application.Admin = &adminImpl{app: &application}
+	application.Manual = &appManual{app: &application}
+	application.Shared = &appShared{app: &application}
 
 	return &application
 }

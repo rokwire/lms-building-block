@@ -51,6 +51,8 @@ paths:
     $ref: "./resources/api/custom/courses-key.yaml"
   /api/custom/course-configs/{key}:
     $ref: "./resources/api/custom/course-configs-key.yaml"
+  /api/user-data:
+    $ref: "./resources/api/user/user-data.yaml"  
 
   #admin
   /admin/nudges-config:

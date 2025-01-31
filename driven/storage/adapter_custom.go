@@ -1134,6 +1134,29 @@ func (sa *Adapter) FindUserUnits(appID string, orgID string, userIDs []string, c
 	return userUnits, nil
 }
 
+// FindUserUnitsByUserID finds user units by userID
+func (sa *Adapter) FindUserUnitsByUserID(userID string) ([]model.UserUnit, error) {
+	filter := bson.M{"user_id": userID}
+
+	var results []userUnit
+	err := sa.db.userUnits.Find(sa.context, filter, &results, nil)
+	if err != nil {
+		errArgs := logutils.FieldArgs(filter)
+		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserUnit, &errArgs, err)
+	}
+
+	userUnits := make([]model.UserUnit, len(results))
+	for i, result := range results {
+		convertedResult, err := sa.userUnitFromStorage(result)
+		if err != nil {
+			return nil, err
+		}
+		userUnits[i] = convertedResult
+	}
+
+	return userUnits, nil
+}
+
 // InsertUserUnit inserts a user unit
 func (sa *Adapter) InsertUserUnit(item model.UserUnit) error {
 	userUnit := sa.userUnitToStorage(item)

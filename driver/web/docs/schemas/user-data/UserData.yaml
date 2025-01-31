@@ -1,0 +1,17 @@
+type: object
+properties:
+  my_provider_courses:
+    type: array
+    $ref: "../../schemas/provider/Course.yaml"   
+  my_provider_assigments:
+    type: array
+    $ref: "../../schemas/provider/Assignment.yaml"  
+  provider_account:
+    $ref: "../../schemas/provider/User.yaml"   
+  my_courses:
+    $ref: "../../schemas/custom/Course.yaml"  
+  my_unit:
+    $ref: "../../schemas/custom/Unit.yaml"  
+  my_content:
+    $ref: "../../schemas/custom/Content.yaml"           
+
