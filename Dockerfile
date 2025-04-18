@@ -10,10 +10,10 @@ WORKDIR /lms-app
 COPY . .
 RUN make
 
-FROM alpine:3.17
+FROM alpine:3.21.3
 
-#we need timezone database
-RUN apk --no-cache add tzdata
+#we need timezone database + certificates
+RUN apk add --no-cache tzdata ca-certificates
 
 COPY --from=builder /lms-app/bin/lms /
 COPY --from=builder /lms-app/driver/web/docs/gen/def.yaml /driver/web/docs/gen/def.yaml
