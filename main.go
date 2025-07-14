@@ -27,9 +27,9 @@ import (
 	"strings"
 
 	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth"
-	"github.com/rokwire/rokwire-building-block-sdk-go/utils/envloader"
 	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/keys"
 	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/sigauth"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/envloader"
 	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
 )
 
