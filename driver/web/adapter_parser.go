@@ -8,10 +8,10 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
-	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
-	"github.com/rokwire/logging-library-go/v2/errors"
-	"github.com/rokwire/logging-library-go/v2/logs"
-	"github.com/rokwire/logging-library-go/v2/logutils"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/tokenauth"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/errors"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logutils"
 )
 
 const (
@@ -241,7 +241,7 @@ func getSchemaFromString(strs []string, schema *openapi3.Schema, required bool) 
 	if schema == nil {
 		return nil, errors.ErrorData(logutils.StatusMissing, "openapi3 schema", nil)
 	}
-	if schema.Type == openapi3.TypeString {
+	if containsType(*schema.Type, "string") {
 		if schema.Format == openapi3FormatDateTime {
 			if required {
 				return time.Parse(time.RFC3339, strs[0])
@@ -261,7 +261,7 @@ func getSchemaFromString(strs []string, schema *openapi3.Schema, required bool) 
 			return &strs[0], nil
 		}
 		return (*string)(nil), nil
-	} else if schema.Type == openapi3.TypeInteger {
+	} else if containsType(*schema.Type, "integer") {
 		if required {
 			return strconv.Atoi(strs[0])
 		} else if len(strs) > 0 {
@@ -272,7 +272,7 @@ func getSchemaFromString(strs []string, schema *openapi3.Schema, required bool) 
 			return &intValue, nil
 		}
 		return (*int)(nil), nil
-	} else if schema.Type == openapi3.TypeNumber {
+	} else if containsType(*schema.Type, "number") {
 		bitSize := 64
 		if schema.Format == openapi3FormatFloat {
 			bitSize = 32
@@ -287,7 +287,7 @@ func getSchemaFromString(strs []string, schema *openapi3.Schema, required bool) 
 			return &floatValue, nil
 		}
 		return (*float64)(nil), nil
-	} else if schema.Type == openapi3.TypeBoolean {
+	} else if containsType(*schema.Type, "boolean") {
 		if required {
 			return strconv.ParseBool(strs[0])
 		} else if len(strs) > 0 {
@@ -298,7 +298,7 @@ func getSchemaFromString(strs []string, schema *openapi3.Schema, required bool) 
 			return &boolValue, nil
 		}
 		return (*bool)(nil), nil
-	} else if schema.Type == openapi3.TypeArray {
+	} else if containsType(*schema.Type, "array") {
 		if schema.Items == nil {
 			return nil, errors.ErrorData(logutils.StatusMissing, "schema items reference", nil)
 		}
@@ -307,22 +307,31 @@ func getSchemaFromString(strs []string, schema *openapi3.Schema, required bool) 
 			return nil, errors.ErrorData(logutils.StatusMissing, "schema items value", nil)
 		}
 
-		switch itemsSchema.Type {
-		case openapi3.TypeString:
-			if itemsSchema.Type == openapi3FormatDateTime {
+		if containsType(*itemsSchema.Type, "string") {
+			if containsType(*itemsSchema.Type, openapi3.TypeString) && itemsSchema.Format == openapi3FormatDateTime {
 				return parseArray[time.Time](strs, schema, required)
 			}
 			return parseArray[string](strs, schema, required)
-		case openapi3.TypeInteger:
+		} else if containsType(*itemsSchema.Type, "integer") {
 			return parseArray[int](strs, schema, required)
-		case openapi3.TypeNumber:
+		} else if containsType(*itemsSchema.Type, "number") {
 			return parseArray[float64](strs, schema, required)
-		case openapi3.TypeBoolean:
+		} else if containsType(*itemsSchema.Type, "boolean") {
 			return parseArray[bool](strs, schema, required)
 		}
 	}
 
 	return nil, errors.ErrorData(logutils.StatusInvalid, "schema type", logutils.StringArgs("parameter"))
+}
+
+// containsType checks if the schema type contains the wanted type
+func containsType(t openapi3.Types, want string) bool {
+	for _, val := range t {
+		if val == want {
+			return true
+		}
+	}
+	return false
 }
 
 /* Helper for recursively defining an array from a string
