@@ -18,7 +18,7 @@ import (
 	"lms/core/model"
 	Def "lms/driver/web/docs/gen"
 
-	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/tokenauth"
 )
 
 func nudgesConfigFromDef(claims *tokenauth.Claims, item *Def.NudgesConfig) (*model.NudgesConfig, error) {

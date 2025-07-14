@@ -18,12 +18,12 @@ import (
 	"lms/core"
 	"net/http"
 
-	"github.com/rokwire/core-auth-library-go/v3/authorization"
-	"github.com/rokwire/core-auth-library-go/v3/authservice"
-	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
-	"github.com/rokwire/logging-library-go/v2/errors"
-	"github.com/rokwire/logging-library-go/v2/logs"
-	"github.com/rokwire/logging-library-go/v2/logutils"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/authorization"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/tokenauth"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/errors"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logutils"
 )
 
 // Auth handler
@@ -34,7 +34,7 @@ type Auth struct {
 }
 
 // NewAuth creates new auth handler
-func NewAuth(serviceRegManager *authservice.ServiceRegManager, app *core.Application) (*Auth, error) {
+func NewAuth(serviceRegManager *auth.ServiceRegManager, app *core.Application) (*Auth, error) {
 	client, err := newClientAuth(serviceRegManager)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionCreate, "client auth", nil, err)
@@ -51,7 +51,7 @@ func NewAuth(serviceRegManager *authservice.ServiceRegManager, app *core.Applica
 	return &auth, nil
 }
 
-func newClientAuth(serviceRegManager *authservice.ServiceRegManager) (*tokenauth.StandardHandler, error) {
+func newClientAuth(serviceRegManager *auth.ServiceRegManager) (*tokenauth.StandardHandler, error) {
 	clientPermissionAuth := authorization.NewCasbinStringAuthorization("driver/web/client_permission_policy.csv")
 	clientScopeAuth := authorization.NewCasbinScopeAuthorization("driver/web/client_scope_policy.csv", serviceRegManager.AuthService.ServiceID)
 	clientTokenAuth, err := tokenauth.NewTokenAuth(true, serviceRegManager, clientPermissionAuth, clientScopeAuth)
@@ -74,7 +74,7 @@ func newClientAuth(serviceRegManager *authservice.ServiceRegManager) (*tokenauth
 	return auth, nil
 }
 
-func newAdminAuth(serviceRegManager *authservice.ServiceRegManager) (*tokenauth.StandardHandler, error) {
+func newAdminAuth(serviceRegManager *auth.ServiceRegManager) (*tokenauth.StandardHandler, error) {
 	adminPermissionAuth := authorization.NewCasbinStringAuthorization("driver/web/admin_permission_policy.csv")
 	adminTokenAuth, err := tokenauth.NewTokenAuth(true, serviceRegManager, adminPermissionAuth, nil)
 	if err != nil {
