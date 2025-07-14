@@ -21,7 +21,7 @@ import (
 
 	"time"
 
-	"github.com/rokwire/logging-library-go/v2/logs"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
 )
 
 // Storage is used by core to storage data - DB storage adapter, file storage adapter etc

@@ -19,7 +19,7 @@ import (
 	cacheadapter "lms/driven/cache"
 	"lms/driven/corebb"
 
-	"github.com/rokwire/logging-library-go/v2/logs"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
 )
 
 // Application represents the core application code based on hexagonal architecture

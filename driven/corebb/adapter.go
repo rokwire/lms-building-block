@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rokwire/core-auth-library-go/v3/authservice"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth"
 	"github.com/rokwire/logging-library-go/logs"
 )
 
@@ -34,7 +34,7 @@ import (
 type Adapter struct {
 	logger                logs.Logger
 	coreURL               string
-	serviceAccountManager *authservice.ServiceAccountManager
+	serviceAccountManager *auth.ServiceAccountManager
 
 	appID string
 	orgID string
@@ -232,6 +232,6 @@ func (a *Adapter) LoadDeletedMemberships() ([]model.DeletedUserData, error) {
 }
 
 // NewCoreAdapter creates a new adapter for Core API
-func NewCoreAdapter(coreURL string, serviceAccountManager *authservice.ServiceAccountManager, orgID string, appID string) *Adapter {
+func NewCoreAdapter(coreURL string, serviceAccountManager *auth.ServiceAccountManager, orgID string, appID string) *Adapter {
 	return &Adapter{coreURL: coreURL, serviceAccountManager: serviceAccountManager, appID: appID, orgID: orgID}
 }

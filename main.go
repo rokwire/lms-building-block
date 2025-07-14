@@ -26,11 +26,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/rokwire/core-auth-library-go/v3/authservice"
-	"github.com/rokwire/core-auth-library-go/v3/envloader"
-	"github.com/rokwire/core-auth-library-go/v3/keys"
-	"github.com/rokwire/core-auth-library-go/v3/sigauth"
-	"github.com/rokwire/logging-library-go/v2/logs"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/envloader"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/keys"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/sigauth"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
 )
 
 var (
@@ -91,19 +91,19 @@ func main() {
 	baseURL := envLoader.GetAndLogEnvVar(envPrefix+"BASE_URL", true, false)
 	coreBBBaseURL := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_BASE_URL", true, false)
 
-	authService := authservice.AuthService{
+	authService := auth.Service{
 		ServiceID:   serviceID,
 		ServiceHost: baseURL,
 		FirstParty:  true,
 		AuthBaseURL: coreBBBaseURL,
 	}
 
-	serviceRegLoader, err := authservice.NewRemoteServiceRegLoader(&authService, []string{"groups", "notifications"})
+	serviceRegLoader, err := auth.NewRemoteServiceRegLoader(&authService, []string{"groups", "notifications"})
 	if err != nil {
 		logger.Fatalf("Error initializing remote service registration loader: %v", err)
 	}
 
-	serviceRegManager, err := authservice.NewServiceRegManager(&authService, serviceRegLoader, !strings.HasPrefix(baseURL, "http://localhost"))
+	serviceRegManager, err := auth.NewServiceRegManager(&authService, serviceRegLoader, !strings.HasPrefix(baseURL, "http://localhost"))
 	if err != nil {
 		logger.Fatalf("Error initializing service registration manager: %v", err)
 	}
@@ -123,11 +123,11 @@ func main() {
 	webAdapter.Start()
 }
 
-func getCoreBBAdapterValues(logger *logs.Logger, serviceID string, serviceRegManager *authservice.ServiceRegManager, envLoader envloader.EnvLoader, envPrefix string) (string, *authservice.ServiceAccountManager) {
+func getCoreBBAdapterValues(logger *logs.Logger, serviceID string, serviceRegManager *auth.ServiceRegManager, envLoader envloader.EnvLoader, envPrefix string) (string, *auth.ServiceAccountManager) {
 	host := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_CURRENT_HOST", true, false)
 	coreBBHost := envLoader.GetAndLogEnvVar(envPrefix+"CORE_BB_CORE_HOST", true, false)
 
-	authService := authservice.AuthService{
+	authService := auth.Service{
 		ServiceID:   serviceID,
 		ServiceHost: host,
 		FirstParty:  true,
@@ -148,12 +148,12 @@ func getCoreBBAdapterValues(logger *logs.Logger, serviceID string, serviceRegMan
 		log.Fatalf("Error initializing signature auth: %v", err)
 	}
 
-	serviceAccountLoader, err := authservice.NewRemoteServiceAccountLoader(&authService, serviceAccountID, signatureAuth)
+	serviceAccountLoader, err := auth.NewRemoteServiceAccountLoader(&authService, serviceAccountID, signatureAuth)
 	if err != nil {
 		log.Fatalf("Error initializing remote service account loader: %v", err)
 	}
 
-	serviceAccountManager, err := authservice.NewServiceAccountManager(&authService, serviceAccountLoader)
+	serviceAccountManager, err := auth.NewServiceAccountManager(&authService, serviceAccountLoader)
 	if err != nil {
 		log.Fatalf("Error initializing service account manager: %v", err)
 	}

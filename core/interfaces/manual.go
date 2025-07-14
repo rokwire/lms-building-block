@@ -17,7 +17,7 @@ package interfaces
 import (
 	"lms/core/model"
 
-	"github.com/rokwire/core-auth-library-go/v3/tokenauth"
+	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth/tokenauth"
 )
 
 // Manual exposes manually defined APIs to the driver adapters
