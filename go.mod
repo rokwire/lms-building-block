@@ -10,7 +10,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rokwire/logging-library-go v1.0.3
 	github.com/rokwire/rokwire-building-block-sdk-go v1.8.3
 	github.com/swaggo/http-swagger v1.3.4
 	go.mongodb.org/mongo-driver v1.17.3

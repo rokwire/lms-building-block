@@ -27,7 +27,7 @@ import (
 	"strings"
 
 	"github.com/rokwire/rokwire-building-block-sdk-go/services/core/auth"
-	"github.com/rokwire/logging-library-go/logs"
+	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
 )
 
 // Adapter implements the Core interface
