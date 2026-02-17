@@ -134,7 +134,7 @@ type Storage interface {
 
 // Provider interface for LMS provider
 type Provider interface {
-	GetCourses(userID string, limit *int) ([]model.ProviderCourse, error)
+	GetCourses(userID string, limit *int, includeSections bool) ([]model.ProviderCourse, error)
 	GetCourse(userID string, courseID int) (*model.ProviderCourse, error)
 	GetCourseUsers(courseID int) ([]model.User, error)
 	GetAssignmentGroups(userID string, courseID int, includeAssignments bool, includeSubmission bool) ([]model.AssignmentGroup, error)

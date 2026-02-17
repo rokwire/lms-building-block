@@ -15,6 +15,14 @@ get:
       explode: false
       schema:
         type: string
+    - name: includes
+      in: query
+      description: includes to specify what additional information to include in the response, e.g. sections
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: string
     - name: limit
       in: query
       description: maximum number of results to return

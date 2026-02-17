@@ -45,8 +45,8 @@ type Adapter struct {
 }
 
 // GetCourses gets the user courses
-func (a *Adapter) GetCourses(userID string, limit *int) ([]model.ProviderCourse, error) {
-	return a.loadCourses(userID, limit)
+func (a *Adapter) GetCourses(userID string, limit *int, includeSections bool) ([]model.ProviderCourse, error) {
+	return a.loadCourses(userID, limit, includeSections)
 }
 
 // GetCourse gives the the course for the provided id
@@ -440,7 +440,7 @@ func (a *Adapter) loadCoursesAndAssignments(netID string, allCourses map[int]mod
 	data := []model.ProviderUserCourse{} //to be loaded in the function
 
 	// first load the courses for the id
-	courses, err := a.loadCourses(netID, nil)
+	courses, err := a.loadCourses(netID, nil, false)
 	if err != nil {
 		a.logger.Errorf("error loading user courses from the provider for - %s", netID)
 		return nil, nil, err
@@ -498,7 +498,7 @@ func (a *Adapter) loadCourseData(netID string, course model.ProviderCourse, sync
 	return &userCourse, nil
 }
 
-func (a *Adapter) loadCourses(userID string, limit *int) ([]model.ProviderCourse, error) {
+func (a *Adapter) loadCourses(userID string, limit *int, includeSections bool) ([]model.ProviderCourse, error) {
 	//params
 	queryParamsItems := map[string][]string{}
 
@@ -508,6 +508,15 @@ func (a *Adapter) loadCourses(userID string, limit *int) ([]model.ProviderCourse
 	//limit
 	if limit != nil {
 		queryParamsItems["per_page"] = []string{fmt.Sprintf("%d", *limit)}
+	}
+
+	//includes
+	includes := []string{}
+	if includeSections {
+		includes = append(includes, "sections")
+	}
+	if len(includes) > 0 {
+		queryParamsItems["include[]"] = includes
 	}
 
 	queryParams := a.constructQueryParams(queryParamsItems)
@@ -680,7 +689,7 @@ func (a *Adapter) GetMissedAssignments(userID string) ([]model.Assignment, error
 // GetCompletedAssignments gives the completed assignments of the user
 func (a *Adapter) GetCompletedAssignments(userID string) ([]model.Assignment, error) {
 	//1. first we need to find all courses for the user
-	userCourses, err := a.GetCourses(userID, nil)
+	userCourses, err := a.GetCourses(userID, nil, false)
 	if err != nil {
 		log.Print("error getting user courses for early completed assignments")
 		return nil, err
