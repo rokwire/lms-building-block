@@ -50,7 +50,7 @@ func (s *appShared) GetUserData(claims *tokenauth.Claims) (*model.UserDataRespon
 	// Fetch provider courses asynchronously
 	go func() {
 		defer wg.Done()
-		c, err := s.app.provider.GetCourses(providerUserID, nil)
+		c, err := s.app.provider.GetCourses(providerUserID, nil, false)
 		mu.Lock()
 		if err != nil {
 			errList = errors.WrapErrorAction(logutils.ActionGet, "provider course", nil, err)

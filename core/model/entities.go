@@ -34,11 +34,22 @@ const (
 
 // ProviderCourse entity
 type ProviderCourse struct {
-	ID                     int    `json:"id"  bson:"id"`
-	Name                   string `json:"name" bson:"name"`
-	AccessRestrictedByDate bool   `json:"access_restricted_by_date" bson:"access_restricted_by_date"`
-	AccountID              int    `json:"account_id" bson:"account_id"`
-	CreatedAt              string `json:"created_at" bson:"created_at"`
+	ID                     int       `json:"id"  bson:"id"`
+	Name                   string    `json:"name" bson:"name"`
+	AccessRestrictedByDate bool      `json:"access_restricted_by_date" bson:"access_restricted_by_date"`
+	AccountID              int       `json:"account_id" bson:"account_id"`
+	CreatedAt              string    `json:"created_at" bson:"created_at"`
+	Sections               []Section `json:"sections" bson:"sections"`
+}
+
+// Section entity
+type Section struct {
+	ID             int        `json:"id" bson:"id"`
+	Name           string     `json:"name" bson:"name"`
+	StartAt        *time.Time `json:"start_at" bson:"start_at"`
+	EndAt          *time.Time `json:"end_at" bson:"end_at"`
+	CreatedAt      *time.Time `json:"created_at" bson:"created_at"`
+	EnrollmentRole string     `json:"enrollment_role" bson:"enrollment_role"`
 }
 
 // Assignment entity
