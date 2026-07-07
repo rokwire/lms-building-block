@@ -1,8 +1,6 @@
 module lms
 
-go 1.24.2
-
-toolchain go1.24.4
+go 1.26.4
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
