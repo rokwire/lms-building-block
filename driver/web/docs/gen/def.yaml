@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Rokwire LMS Building Block API
   description: LMS Building Block API Documentation
-  version: 1.15.1
+  version: 1.15.2
 servers:
   - url: 'https://api.rokwire.illinois.edu/lms'
     description: Production server
@@ -59,7 +59,7 @@ paths:
             type: string
         - name: includes
           in: query
-          description: includes to specify what additional information to include in the response, e.g. sections
+          description: 'includes to specify what additional information to include in the response, e.g. sections'
           required: false
           style: form
           explode: false
