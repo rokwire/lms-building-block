@@ -6,8 +6,8 @@ import (
 
 	"github.com/rokwire/rokwire-building-block-sdk-go/utils/errors"
 	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logutils"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 // FindCustomCourses finds courses by a set of parameters
@@ -546,10 +546,9 @@ func (sa *Adapter) FindUserContents(id []string, appID string, orgID string, use
 	errArgs := logutils.FieldArgs(filter)
 
 	var result []model.UserContent
-	opts := options.FindOptions{}
-	opts.SetSort(bson.M{"date_created": -1})
+	opts := options.Find().SetSort(bson.M{"date_created": -1})
 
-	err := sa.db.userContents.Find(sa.context, filter, &result, &opts)
+	err := sa.db.userContents.Find(sa.context, filter, &result, opts)
 	if err != nil {
 		return nil, errors.WrapErrorAction(logutils.ActionFind, model.TypeUserContent, &errArgs, err)
 	}

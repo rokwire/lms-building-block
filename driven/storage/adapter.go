@@ -26,10 +26,8 @@ import (
 	"github.com/rokwire/rokwire-building-block-sdk-go/utils/errors"
 	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
 	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logutils"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type configEntity struct {
@@ -41,7 +39,7 @@ type configEntity struct {
 type Adapter struct {
 	db *database
 
-	context mongo.SessionContext
+	context context.Context
 }
 
 // Start starts the storage
@@ -58,7 +56,7 @@ func (sa *Adapter) SetListener(listener interfaces.CollectionListener) {
 // PerformTransaction performs a transaction
 func (sa *Adapter) PerformTransaction(transaction func(storage interfaces.Storage) error) error {
 	// transaction
-	callback := func(sessionContext mongo.SessionContext) (interface{}, error) {
+	callback := func(sessionContext context.Context) (interface{}, error) {
 		adapter := sa.withContext(sessionContext)
 
 		err := transaction(adapter)
@@ -90,7 +88,7 @@ func (sa *Adapter) PerformTransaction(transaction func(storage interfaces.Storag
 
 // UserExist returns whether a user exists with the given netID
 func (sa *Adapter) UserExist(netID string) (*bool, error) {
-	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
+	filter := bson.D{bson.E{Key: "net_id", Value: netID}}
 
 	count, err := sa.db.users.CountDocuments(sa.context, filter)
 	if err != nil {
@@ -117,7 +115,7 @@ func (sa *Adapter) InsertUser(user model.ProviderUser) error {
 
 // FindUser finds a provider user by netID
 func (sa *Adapter) FindUser(netID string) (*model.ProviderUser, error) {
-	filter := bson.D{primitive.E{Key: "net_id", Value: netID}}
+	filter := bson.D{bson.E{Key: "net_id", Value: netID}}
 	var result []model.ProviderUser
 	err := sa.db.users.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -134,7 +132,7 @@ func (sa *Adapter) FindUser(netID string) (*model.ProviderUser, error) {
 
 // FindUsers finds provider users by netID
 func (sa *Adapter) FindUsers(netIDs []string) ([]model.ProviderUser, error) {
-	filter := bson.D{primitive.E{Key: "net_id", Value: bson.M{"$in": netIDs}}}
+	filter := bson.D{bson.E{Key: "net_id", Value: bson.M{"$in": netIDs}}}
 	var result []model.ProviderUser
 	err := sa.db.users.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -149,7 +147,7 @@ func (sa *Adapter) FindUsers(netIDs []string) ([]model.ProviderUser, error) {
 
 // FindUsersByCanvasUserID finds provider users by canvas user ID
 func (sa *Adapter) FindUsersByCanvasUserID(canvasUserIds []int) ([]model.ProviderUser, error) {
-	filter := bson.D{primitive.E{Key: "user.id", Value: bson.M{"$in": canvasUserIds}}}
+	filter := bson.D{bson.E{Key: "user.id", Value: bson.M{"$in": canvasUserIds}}}
 	var result []model.ProviderUser
 	err := sa.db.users.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -176,7 +174,7 @@ func (sa *Adapter) SaveUser(providerUser model.ProviderUser) error {
 // DeleteUsersByNetIDs deletes users by netIDs
 func (sa *Adapter) DeleteUsersByNetIDs(log *logs.Log, netIDs []string) error {
 	filter := bson.D{
-		primitive.E{Key: "net_id", Value: primitive.M{"$in": netIDs}},
+		bson.E{Key: "net_id", Value: bson.M{"$in": netIDs}},
 	}
 	_, err := sa.db.users.DeleteMany(nil, filter, nil)
 	return err
@@ -194,7 +192,7 @@ func (sa *Adapter) CreateNudgesConfig(nudgesConfig model.NudgesConfig) error {
 
 // FindNudgesConfig finds the nudges config
 func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
-	filter := bson.D{primitive.E{Key: "_id", Value: "nudges"}}
+	filter := bson.D{bson.E{Key: "_id", Value: "nudges"}}
 	var result []configEntity
 	err := sa.db.configs.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -220,16 +218,16 @@ func (sa *Adapter) FindNudgesConfig() (*model.NudgesConfig, error) {
 
 // SaveNudgesConfig updates the nudges config
 func (sa *Adapter) SaveNudgesConfig(nudgesConfig model.NudgesConfig) error {
-	filter := bson.D{primitive.E{Key: "_id", Value: "nudges"}}
+	filter := bson.D{bson.E{Key: "_id", Value: "nudges"}}
 	update := bson.D{
-		primitive.E{Key: "$set", Value: bson.D{
-			primitive.E{Key: "config", Value: nudgesConfig},
+		bson.E{Key: "$set", Value: bson.D{
+			bson.E{Key: "config", Value: nudgesConfig},
 		}},
 	}
 
 	upsert := true
-	opts := options.UpdateOptions{Upsert: &upsert}
-	_, err := sa.db.configs.UpdateOne(sa.context, filter, update, &opts)
+	opts := options.UpdateOne().SetUpsert(upsert)
+	_, err := sa.db.configs.UpdateOne(sa.context, filter, update, opts)
 	if err != nil {
 		return errors.WrapErrorAction(logutils.ActionUpdate, model.TypeNudgesConfig, &logutils.FieldArgs{"id": "nudges"}, err)
 	}
@@ -253,7 +251,7 @@ func (sa *Adapter) LoadAllNudges() ([]model.Nudge, error) {
 
 // LoadActiveNudges loads all active nudges
 func (sa *Adapter) LoadActiveNudges() ([]model.Nudge, error) {
-	filter := bson.D{primitive.E{Key: "active", Value: true}}
+	filter := bson.D{bson.E{Key: "active", Value: true}}
 	var result []model.Nudge
 	err := sa.db.nudges.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -277,15 +275,15 @@ func (sa *Adapter) InsertNudge(item model.Nudge) error {
 // UpdateNudge updates nudge
 func (sa *Adapter) UpdateNudge(item model.Nudge) error {
 
-	nudgeFilter := bson.D{primitive.E{Key: "_id", Value: item.ID}}
+	nudgeFilter := bson.D{bson.E{Key: "_id", Value: item.ID}}
 	updateNudge := bson.D{
-		primitive.E{Key: "$set", Value: bson.D{
-			primitive.E{Key: "name", Value: item.Name},
-			primitive.E{Key: "body", Value: item.Body},
-			primitive.E{Key: "deep_link", Value: item.DeepLink},
-			primitive.E{Key: "params", Value: item.Params},
-			primitive.E{Key: "active", Value: item.Active},
-			primitive.E{Key: "users_sources", Value: item.UsersSources},
+		bson.E{Key: "$set", Value: bson.D{
+			bson.E{Key: "name", Value: item.Name},
+			bson.E{Key: "body", Value: item.Body},
+			bson.E{Key: "deep_link", Value: item.DeepLink},
+			bson.E{Key: "params", Value: item.Params},
+			bson.E{Key: "active", Value: item.Active},
+			bson.E{Key: "users_sources", Value: item.UsersSources},
 		}},
 	}
 
@@ -345,11 +343,11 @@ func (sa *Adapter) InsertSentNudges(sentNudges []model.SentNudge) error {
 // FindSentNudge finds sent nudge entity
 func (sa *Adapter) FindSentNudge(nudgeID string, userID string, netID string, criteriaHash uint32, mode string) (*model.SentNudge, error) {
 	filter := bson.D{
-		primitive.E{Key: "nudge_id", Value: nudgeID},
-		primitive.E{Key: "user_id", Value: userID},
-		primitive.E{Key: "net_id", Value: netID},
-		primitive.E{Key: "criteria_hash", Value: criteriaHash},
-		primitive.E{Key: "mode", Value: mode}}
+		bson.E{Key: "nudge_id", Value: nudgeID},
+		bson.E{Key: "user_id", Value: userID},
+		bson.E{Key: "net_id", Value: netID},
+		bson.E{Key: "criteria_hash", Value: criteriaHash},
+		bson.E{Key: "mode", Value: mode}}
 
 	var result []model.SentNudge
 	err := sa.db.sentNudges.Find(sa.context, filter, &result, nil)
@@ -370,23 +368,23 @@ func (sa *Adapter) FindSentNudges(nudgeID *string, userID *string, netID *string
 	filter := bson.D{}
 
 	if nudgeID != nil {
-		filter = append(filter, primitive.E{Key: "nudge_id", Value: *nudgeID})
+		filter = append(filter, bson.E{Key: "nudge_id", Value: *nudgeID})
 	}
 
 	if userID != nil {
-		filter = append(filter, primitive.E{Key: "user_id", Value: *userID})
+		filter = append(filter, bson.E{Key: "user_id", Value: *userID})
 	}
 
 	if netID != nil {
-		filter = append(filter, primitive.E{Key: "net_id", Value: *netID})
+		filter = append(filter, bson.E{Key: "net_id", Value: *netID})
 	}
 
 	if criteriaHashes != nil {
-		filter = append(filter, primitive.E{Key: "criteria_hash", Value: bson.M{"$in": *criteriaHashes}})
+		filter = append(filter, bson.E{Key: "criteria_hash", Value: bson.M{"$in": *criteriaHashes}})
 	}
 
 	if mode != nil {
-		filter = append(filter, primitive.E{Key: "mode", Value: *mode})
+		filter = append(filter, bson.E{Key: "mode", Value: *mode})
 	}
 
 	var result []model.SentNudge
@@ -454,12 +452,12 @@ func (sa *Adapter) InsertNudgesProcess(nudgesProcess model.NudgesProcess) error 
 
 // UpdateNudgesProcess updates a nudges process
 func (sa *Adapter) UpdateNudgesProcess(ID string, completedAt time.Time, status string, errStr *string) error {
-	filter := bson.D{primitive.E{Key: "_id", Value: ID}}
+	filter := bson.D{bson.E{Key: "_id", Value: ID}}
 	update := bson.D{
-		primitive.E{Key: "$set", Value: bson.D{
-			primitive.E{Key: "completed_at", Value: completedAt},
-			primitive.E{Key: "status", Value: status},
-			primitive.E{Key: "error", Value: errStr},
+		bson.E{Key: "$set", Value: bson.D{
+			bson.E{Key: "completed_at", Value: completedAt},
+			bson.E{Key: "status", Value: status},
+			bson.E{Key: "error", Value: errStr},
 		}},
 	}
 
@@ -476,7 +474,7 @@ func (sa *Adapter) UpdateNudgesProcess(ID string, completedAt time.Time, status 
 
 // CountNudgesProcesses counts the nudges process by status
 func (sa *Adapter) CountNudgesProcesses(status string) (*int64, error) {
-	filter := bson.D{primitive.E{Key: "status", Value: status}}
+	filter := bson.D{bson.E{Key: "status", Value: status}}
 
 	count, err := sa.db.nudgesProcesses.CountDocuments(sa.context, filter)
 	if err != nil {
@@ -511,8 +509,8 @@ func (sa *Adapter) InsertBlocks(blocks []model.Block) error {
 
 // FindBlock finds for a nudges process
 func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, error) {
-	filter := bson.D{primitive.E{Key: "process_id", Value: processID},
-		primitive.E{Key: "number", Value: blockNumber}}
+	filter := bson.D{bson.E{Key: "process_id", Value: processID},
+		bson.E{Key: "number", Value: blockNumber}}
 	var result []model.Block
 	err := sa.db.nudgesBlocks.Find(sa.context, filter, &result, nil)
 	if err != nil {
@@ -526,14 +524,14 @@ func (sa *Adapter) FindBlock(processID string, blockNumber int) (*model.Block, e
 }
 
 // Creates a new Adapter with provided context
-func (sa *Adapter) withContext(context mongo.SessionContext) *Adapter {
+func (sa *Adapter) withContext(context context.Context) *Adapter {
 	return &Adapter{db: sa.db, context: context}
 }
 
 // DeleteNudgesBlocksByAccountsIDs deletes specific items from nudges blocks based on accountsIDs
 func (sa *Adapter) DeleteNudgesBlocksByAccountsIDs(log *logs.Logger, accountsIDs []string) error {
 	filter := bson.D{
-		primitive.E{Key: "items.user_id", Value: primitive.M{"$in": accountsIDs}},
+		bson.E{Key: "items.user_id", Value: bson.M{"$in": accountsIDs}},
 	}
 	update := bson.M{
 		"$pull": bson.M{
@@ -550,7 +548,7 @@ func (sa *Adapter) DeleteNudgesBlocksByAccountsIDs(log *logs.Logger, accountsIDs
 // DeleteSentNudgesByAccountsIDs deletes sent nudges by accountsIDs
 func (sa *Adapter) DeleteSentNudgesByAccountsIDs(log *logs.Logger, accountsIDs []string) error {
 	filter := bson.D{
-		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+		bson.E{Key: "user_id", Value: bson.M{"$in": accountsIDs}},
 	}
 	_, err := sa.db.sentNudges.DeleteMany(nil, filter, nil)
 	return err
@@ -561,7 +559,7 @@ func (sa *Adapter) DeleteUserContentsByAccountsIDs(log *logs.Log, appID string, 
 	filter := bson.D{
 		{Key: "app_id", Value: appID},
 		{Key: "org_id", Value: orgID},
-		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+		bson.E{Key: "user_id", Value: bson.M{"$in": accountsIDs}},
 	}
 	_, err := sa.db.userContents.DeleteMany(nil, filter, nil)
 	return err
@@ -572,7 +570,7 @@ func (sa *Adapter) DeleteUserCoursesByAccountsIDs(log *logs.Log, appID string, o
 	filter := bson.D{
 		{Key: "app_id", Value: appID},
 		{Key: "org_id", Value: orgID},
-		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+		bson.E{Key: "user_id", Value: bson.M{"$in": accountsIDs}},
 	}
 	_, err := sa.db.userCourses.DeleteMany(nil, filter, nil)
 	return err
@@ -583,7 +581,7 @@ func (sa *Adapter) DeleteUserUnitsByAccountsIDs(log *logs.Log, appID string, org
 	filter := bson.D{
 		{Key: "app_id", Value: appID},
 		{Key: "org_id", Value: orgID},
-		primitive.E{Key: "user_id", Value: primitive.M{"$in": accountsIDs}},
+		bson.E{Key: "user_id", Value: bson.M{"$in": accountsIDs}},
 	}
 	_, err := sa.db.userUnits.DeleteMany(nil, filter, nil)
 	return err
