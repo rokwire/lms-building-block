@@ -21,10 +21,9 @@ import (
 	"time"
 
 	"github.com/rokwire/rokwire-building-block-sdk-go/utils/logging/logs"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type database struct {
@@ -60,10 +59,8 @@ func (m *database) start() error {
 	m.logger.Info("database -> start")
 
 	//connect to the database
-	clientOptions := options.Client().ApplyURI(m.mongoDBAuth)
-	connectContext, cancel := context.WithTimeout(context.Background(), m.mongoTimeout)
-	client, err := mongo.Connect(connectContext, clientOptions)
-	cancel()
+	clientOptions := options.Client().ApplyURI(m.mongoDBAuth).SetBSONOptions(&options.BSONOptions{DefaultDocumentMap: true})
+	client, err := mongo.Connect(clientOptions)
 	if err != nil {
 		return err
 	}
@@ -198,13 +195,13 @@ func (m *database) applyUsersChecks(users *collectionWrapper) error {
 	m.logger.Info("apply adapter users checks.....")
 
 	//add net id index
-	err := users.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
+	err := users.AddIndex(bson.D{bson.E{Key: "net_id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
 	//add user id index
-	err = users.AddIndex(bson.D{primitive.E{Key: "user.id", Value: 1}}, false)
+	err = users.AddIndex(bson.D{bson.E{Key: "user.id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
@@ -224,25 +221,25 @@ func (m *database) applySentNudgesChecks(sentNudges *collectionWrapper) error {
 	m.logger.Info("apply sent nudges checks.....")
 
 	//add nudge_id index
-	err := sentNudges.AddIndex(bson.D{primitive.E{Key: "nudge_id", Value: 1}}, false)
+	err := sentNudges.AddIndex(bson.D{bson.E{Key: "nudge_id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
 	//add user_id index
-	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "user_id", Value: 1}}, false)
+	err = sentNudges.AddIndex(bson.D{bson.E{Key: "user_id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
 	//add net_id index
-	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "net_id", Value: 1}}, false)
+	err = sentNudges.AddIndex(bson.D{bson.E{Key: "net_id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
 	//add criteria_hash index
-	err = sentNudges.AddIndex(bson.D{primitive.E{Key: "criteria_hash", Value: 1}}, false)
+	err = sentNudges.AddIndex(bson.D{bson.E{Key: "criteria_hash", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
@@ -255,7 +252,7 @@ func (m *database) applyNudgesProcessesChecks(nudgesProcesses *collectionWrapper
 	m.logger.Info("apply nudges processes checks.....")
 
 	//add blocks number index
-	err := nudgesProcesses.AddIndex(bson.D{primitive.E{Key: "blocks.number", Value: 1}}, false)
+	err := nudgesProcesses.AddIndex(bson.D{bson.E{Key: "blocks.number", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
@@ -268,13 +265,13 @@ func (m *database) applyNudgesBlocksChecks(nudgesProcesses *collectionWrapper) e
 	m.logger.Info("apply nudges blocks checks.....")
 
 	//add process id index
-	err := nudgesProcesses.AddIndex(bson.D{primitive.E{Key: "process_id", Value: 1}}, false)
+	err := nudgesProcesses.AddIndex(bson.D{bson.E{Key: "process_id", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
 
 	//add blocks number index
-	err = nudgesProcesses.AddIndex(bson.D{primitive.E{Key: "number", Value: 1}}, false)
+	err = nudgesProcesses.AddIndex(bson.D{bson.E{Key: "number", Value: 1}}, false)
 	if err != nil {
 		return err
 	}
@@ -288,9 +285,9 @@ func (m *database) applyCourseConfigsChecks(courseConfigs *collectionWrapper) er
 	m.logger.Info("apply course configs check.....")
 	err := courseConfigs.AddIndex(
 		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "course_key", Value: 1},
+			bson.E{Key: "app_id", Value: 1},
+			bson.E{Key: "org_id", Value: 1},
+			bson.E{Key: "course_key", Value: 1},
 		}, true)
 	if err != nil {
 		return err
@@ -304,9 +301,9 @@ func (m *database) applyCustomCoursesChecks(customCourses *collectionWrapper) er
 	m.logger.Info("apply custom course check.....")
 	err := customCourses.AddIndex(
 		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "key", Value: 1},
+			bson.E{Key: "app_id", Value: 1},
+			bson.E{Key: "org_id", Value: 1},
+			bson.E{Key: "key", Value: 1},
 		}, true)
 	if err != nil {
 		return err
@@ -320,9 +317,9 @@ func (m *database) applyCustomModulesChecks(customModules *collectionWrapper) er
 	m.logger.Info("apply custom module check.....")
 	err := customModules.AddIndex(
 		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "key", Value: 1},
+			bson.E{Key: "app_id", Value: 1},
+			bson.E{Key: "org_id", Value: 1},
+			bson.E{Key: "key", Value: 1},
 		}, true)
 	if err != nil {
 		return err
@@ -336,9 +333,9 @@ func (m *database) applyCustomUnitsChecks(customUnits *collectionWrapper) error 
 	m.logger.Info("apply custom unit check.....")
 	err := customUnits.AddIndex(
 		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "key", Value: 1},
+			bson.E{Key: "app_id", Value: 1},
+			bson.E{Key: "org_id", Value: 1},
+			bson.E{Key: "key", Value: 1},
 		}, true)
 	if err != nil {
 		return err
@@ -352,9 +349,9 @@ func (m *database) applyCustomContentChecks(customContents *collectionWrapper) e
 	m.logger.Info("apply custom content check.....")
 	err := customContents.AddIndex(
 		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "key", Value: 1},
+			bson.E{Key: "app_id", Value: 1},
+			bson.E{Key: "org_id", Value: 1},
+			bson.E{Key: "key", Value: 1},
 		}, true)
 	if err != nil {
 		return err
@@ -368,10 +365,10 @@ func (m *database) applyUserCoursesChecks(userCourses *collectionWrapper) error 
 	m.logger.Info("apply user course check.....")
 	err := userCourses.AddIndex(
 		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "user_id", Value: 1},
-			primitive.E{Key: "course.key", Value: 1},
+			bson.E{Key: "app_id", Value: 1},
+			bson.E{Key: "org_id", Value: 1},
+			bson.E{Key: "user_id", Value: 1},
+			bson.E{Key: "course.key", Value: 1},
 		}, true)
 	if err != nil {
 		return err
@@ -390,12 +387,12 @@ func (m *database) applyUserUnitsChecks(userUnits *collectionWrapper) error {
 
 	err := userUnits.AddIndex(
 		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "user_id", Value: 1},
-			primitive.E{Key: "course_key", Value: 1},
-			primitive.E{Key: "module_key", Value: 1},
-			primitive.E{Key: "unit.key", Value: 1},
+			bson.E{Key: "app_id", Value: 1},
+			bson.E{Key: "org_id", Value: 1},
+			bson.E{Key: "user_id", Value: 1},
+			bson.E{Key: "course_key", Value: 1},
+			bson.E{Key: "module_key", Value: 1},
+			bson.E{Key: "unit.key", Value: 1},
 		}, true)
 	if err != nil {
 		return err
@@ -408,13 +405,13 @@ func (m *database) applyUserContentsChecks(userContents *collectionWrapper) erro
 	m.logger.Info("apply user content check.....")
 	err := userContents.AddIndex(
 		bson.D{
-			primitive.E{Key: "app_id", Value: 1},
-			primitive.E{Key: "org_id", Value: 1},
-			primitive.E{Key: "user_id", Value: 1},
-			primitive.E{Key: "course_key", Value: 1},
-			primitive.E{Key: "module_key", Value: 1},
-			primitive.E{Key: "unit_key", Value: 1},
-			primitive.E{Key: "content.key", Value: 1},
+			bson.E{Key: "app_id", Value: 1},
+			bson.E{Key: "org_id", Value: 1},
+			bson.E{Key: "user_id", Value: 1},
+			bson.E{Key: "course_key", Value: 1},
+			bson.E{Key: "module_key", Value: 1},
+			bson.E{Key: "unit_key", Value: 1},
+			bson.E{Key: "content.key", Value: 1},
 		}, false)
 	if err != nil {
 		return err
